@@ -7,11 +7,16 @@
 
 #include "sLinsysRootAugHierInner.h"
 
-sLinsysRootAugHierInner::sLinsysRootAugHierInner(DistributedFactory* factory, DistributedQP* prob_, Vector<double>* dd_, Vector<double>* dq_,
-      Vector<double>* nomegaInv_, Vector<double>* regP_, Vector<double>* regDy_, Vector<double>* regDz_, Vector<double>* rhs_) : sLinsysRootAug(
-      factory, prob_, dynamic_cast<DistributedVector<double>*>(dd_)->first, dynamic_cast<DistributedVector<double>*>(dq_)->first,
-      dynamic_cast<DistributedVector<double>*>(nomegaInv_)->first, dynamic_cast<DistributedVector<double>*>(regP_)->first,
-      dynamic_cast<DistributedVector<double>*>(regDy_)->first, dynamic_cast<DistributedVector<double>*>(regDz_)->first, rhs_, false) {
+sLinsysRootAugHierInner::sLinsysRootAugHierInner(DistributedFactory* factory, DistributedQP* prob_,
+   std::shared_ptr<Vector<double>> dd_, std::shared_ptr<Vector<double>> dq_,
+   std::shared_ptr<Vector<double>> nomegaInv_, std::shared_ptr<Vector<double>> regP_,
+   std::shared_ptr<Vector<double>> regDy_, std::shared_ptr<Vector<double>> regDz_, std::shared_ptr<Vector<double>> rhs_)
+   : sLinsysRootAug(
+   factory, prob_, dynamic_cast<DistributedVector<double>&>(*dd_).first,
+   dynamic_cast<DistributedVector<double>&>(*dq_).first,
+   dynamic_cast<DistributedVector<double>&>(*nomegaInv_).first, dynamic_cast<DistributedVector<double>&>(*regP_).first,
+   dynamic_cast<DistributedVector<double>&>(*regDy_).first, dynamic_cast<DistributedVector<double>&>(*regDz_).first,
+   rhs_, false) {
    assert(locnx == 0);
    assert(locmy == 0);
    assert(locmz == 0);
@@ -74,13 +79,15 @@ void sLinsysRootAugHierInner::Ltsolve2(DistributedVector<double>& x, SimpleVecto
 }
 
 void
-sLinsysRootAugHierInner::LsolveHierarchyBorder(DenseMatrix& result, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border, bool two_link_border,
-      int begin_cols, int end_cols) {
+sLinsysRootAugHierInner::LsolveHierarchyBorder(DenseMatrix& result, BorderLinsys& Br,
+   std::vector<BorderMod>& Br_mod_border, bool two_link_border,
+   int begin_cols, int end_cols) {
    LsolveHierarchyBorder(result, Br, Br_mod_border, false, two_link_border, begin_cols, end_cols);
 }
 
-void sLinsysRootAugHierInner::LtsolveHierarchyBorder(AbstractMatrix& res, const DenseMatrix& X0, BorderLinsys& Bl, BorderLinsys& Br,
-      std::vector<BorderMod>& br_mod_border, bool sym_res, bool sparse_res, int begin_cols, int end_cols) {
+void sLinsysRootAugHierInner::LtsolveHierarchyBorder(AbstractMatrix& res, const DenseMatrix& X0, BorderLinsys& Bl,
+   BorderLinsys& Br,
+   std::vector<BorderMod>& br_mod_border, bool sym_res, bool sparse_res, int begin_cols, int end_cols) {
    if (Bl.isEmpty() || (Br.isEmpty() && br_mod_border.empty()))
       return;
 
@@ -88,9 +95,10 @@ void sLinsysRootAugHierInner::LtsolveHierarchyBorder(AbstractMatrix& res, const 
 }
 
 void
-sLinsysRootAugHierInner::computeInnerSystemRightHandSide(DistributedVector<double>& rhs_inner, const SimpleVector<double>& b0, bool use_local_RAC) {
+sLinsysRootAugHierInner::computeInnerSystemRightHandSide(DistributedVector<double>& rhs_inner,
+   const SimpleVector<double>& b0, bool use_local_RAC) {
    BorderLinsys Border(0, dynamic_cast<StripMatrix&>(*dynamic_cast<const DistributedMatrix&>(*data->A).Blmat),
-         dynamic_cast<StripMatrix&>(*dynamic_cast<const DistributedMatrix&>(*data->C).Blmat), use_local_RAC);
+      dynamic_cast<StripMatrix&>(*dynamic_cast<const DistributedMatrix&>(*data->C).Blmat), use_local_RAC);
 
    if (Border.isEmpty())
       return;
@@ -132,12 +140,13 @@ void sLinsysRootAugHierInner::addLniziLinkCons(Vector<double>& z0_, Vector<doubl
    solveCompressed(*sol_inner);
 
    BorderLinsys Bl(0, dynamic_cast<StripMatrix&>(*dynamic_cast<const DistributedMatrix&>(*data->A).Blmat),
-         dynamic_cast<StripMatrix&>(*dynamic_cast<const DistributedMatrix&>(*data->C).Blmat), use_local_RAC);
+      dynamic_cast<StripMatrix&>(*dynamic_cast<const DistributedMatrix&>(*data->C).Blmat), use_local_RAC);
 
    addBorderTimesRhsToB0(*sol_inner, z0, Bl);
 }
 
-void sLinsysRootAugHierInner::addBorderTimesRhsToB0(DistributedVector<double>& rhs, SimpleVector<double>& b0, BorderLinsys& border) {
+void sLinsysRootAugHierInner::addBorderTimesRhsToB0(DistributedVector<double>& rhs, SimpleVector<double>& b0,
+   BorderLinsys& border) {
    assert(rhs.children.size() == children.size());
    assert(border.F.children.size() == children.size());
    for (size_t i = 0; i < children.size(); ++i) {
@@ -156,11 +165,11 @@ void sLinsysRootAugHierInner::addBorderTimesRhsToB0(DistributedVector<double>& r
       }
 
       const SparseMatrix& F_border = border.has_RAC ? dynamic_cast<SparseMatrix&>(*border.A.last).getTranspose()
-                                                 : data->getLocalF().getTranspose();
+         : data->getLocalF().getTranspose();
       const SparseMatrix& G_border = border.has_RAC ? dynamic_cast<SparseMatrix&>(*border.C.last).getTranspose()
-                                                 : data->getLocalG().getTranspose();
+         : data->getLocalG().getTranspose();
 
-      const auto [mFb, nFb] = F_border.n_rows_columns();
+      const auto[mFb, nFb] = F_border.n_rows_columns();
       int nGb = G_border.n_columns();
 
       assert(mFb == G_border.n_rows());
@@ -181,7 +190,8 @@ void sLinsysRootAugHierInner::addBorderTimesRhsToB0(DistributedVector<double>& r
    }
 }
 
-void sLinsysRootAugHierInner::addBorderX0ToRhs(DistributedVector<double>& rhs, const SimpleVector<double>& x0, BorderLinsys& border) {
+void sLinsysRootAugHierInner::addBorderX0ToRhs(DistributedVector<double>& rhs, const SimpleVector<double>& x0,
+   BorderLinsys& border) {
    assert(rhs.children.size() == children.size());
    assert(border.F.children.size() == children.size());
 
@@ -201,7 +211,7 @@ void sLinsysRootAugHierInner::addBorderX0ToRhs(DistributedVector<double>& rhs, c
    if (border.has_RAC || border.use_local_RAC) {
       const SparseMatrix& F_border = border.has_RAC ? dynamic_cast<SparseMatrix&>(*border.A.last) : data->getLocalF();
       const SparseMatrix& G_border = border.has_RAC ? dynamic_cast<SparseMatrix&>(*border.C.last) : data->getLocalG();
-      const auto [mFb, nFb] = F_border.n_rows_columns();
+      const auto[mFb, nFb] = F_border.n_rows_columns();
       const auto mGb = G_border.n_rows();
 
       assert(rhs.first);
@@ -223,8 +233,9 @@ void sLinsysRootAugHierInner::addBorderX0ToRhs(DistributedVector<double>& rhs, c
 
 /* res += [ B_inner^T K_i^{-1} (Br - SUM_j Brmodj Xj) ]^T = (Br^T - SUM_j Xj^T Brmodj^T) K_i^{-1} B_inner from begin_cols to end_cols in */
 void
-sLinsysRootAugHierInner::addInnerBorderKiInvBrToRes(AbstractMatrix& result, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border, bool use_local_RAC,
-      bool sparse_res, bool sym_res, int begin_cols, int end_cols, int n_empty_rows_inner_border) {
+sLinsysRootAugHierInner::addInnerBorderKiInvBrToRes(AbstractMatrix& result, BorderLinsys& Br,
+   std::vector<BorderMod>& Br_mod_border, bool use_local_RAC,
+   bool sparse_res, bool sym_res, int begin_cols, int end_cols, int n_empty_rows_inner_border) {
    const auto mres = result.n_rows();
    assert(dynamic_cast<const DistributedMatrix&>(*data->A).Blmat->is_a(kStripMatrix));
    assert(dynamic_cast<const DistributedMatrix&>(*data->C).Blmat->is_a(kStripMatrix));
@@ -243,11 +254,12 @@ sLinsysRootAugHierInner::addInnerBorderKiInvBrToRes(AbstractMatrix& result, Bord
    allocateAndZeroBlockedComputationsBuffer(mres, n_buffer);
 #endif
 
-   addBlTKiInvBrToResBlockwise(result, Bl, Br, Br_mod_border, sym_res, sparse_res, *buffer_blocked_hierarchical, begin_cols, end_cols);
+   addBlTKiInvBrToResBlockwise(result, Bl, Br, Br_mod_border, sym_res, sparse_res, *buffer_blocked_hierarchical,
+      begin_cols, end_cols);
 }
 
 void sLinsysRootAugHierInner::addTermToSchurComplBlocked(bool sparseSC, SymmetricMatrix& SC, bool use_local_RAC,
-      int n_empty_rows_inner_border) {
+   int n_empty_rows_inner_border) {
    assert(data->getLocalFBorder().n_columns() == data->getLocalGBorder().n_columns());
    assert(dynamic_cast<const DistributedMatrix&>(*data->A).Blmat->is_a(kStripMatrix));
    assert(dynamic_cast<const DistributedMatrix&>(*data->C).Blmat->is_a(kStripMatrix));
@@ -264,9 +276,11 @@ void sLinsysRootAugHierInner::addTermToSchurComplBlocked(bool sparseSC, Symmetri
 }
 
 /* compute (Bli^T X_i = Bli^T Ki^-1 (Bri - Bi_{inner} X0))^T and add it to SC */
-void sLinsysRootAugHierInner::LniTransMultHierarchyBorder(AbstractMatrix& res, const DenseMatrix& X0, BorderLinsys& Bl, BorderLinsys& Br,
-      std::vector<BorderMod>& Br_mod_border, bool sparse_res, bool sym_res, bool use_local_RAC, int begin_cols, int end_cols,
-      int n_empty_rows_inner_border) {
+void sLinsysRootAugHierInner::LniTransMultHierarchyBorder(AbstractMatrix& res, const DenseMatrix& X0, BorderLinsys& Bl,
+   BorderLinsys& Br,
+   std::vector<BorderMod>& Br_mod_border, bool sparse_res, bool sym_res, bool use_local_RAC, int begin_cols,
+   int end_cols,
+   int n_empty_rows_inner_border) {
 
    if (Bl.isEmpty() || (Br.isEmpty() && Br_mod_border.empty()))
       return;
@@ -284,10 +298,11 @@ void sLinsysRootAugHierInner::LniTransMultHierarchyBorder(AbstractMatrix& res, c
    // buffer b0 for blockwise computation of Br0 - SUM_i  Bi_{inner}^T Ki^{-1} ( Bri - sum_j Bmodij Xij ), stored in transposed form (for quick access of cols in solve)
    // dense since we have no clue about any structure in the system and Xij are dense
    const int m_buffer = allocateAndZeroBlockedComputationsBuffer(res.n_rows(), n_buffer);
-   (void)m_buffer;
+   (void) m_buffer;
    assert(end_cols - begin_cols <= m_buffer);
 
-   addBlTKiInvBrToResBlockwise(res, Bl, Br, border_mod, sym_res, sparse_res, *buffer_blocked_hierarchical, begin_cols, end_cols);
+   addBlTKiInvBrToResBlockwise(res, Bl, Br, border_mod, sym_res, sparse_res, *buffer_blocked_hierarchical, begin_cols,
+      end_cols);
 }
 
 void sLinsysRootAugHierInner::put_primal_diagonal() {
@@ -295,10 +310,10 @@ void sLinsysRootAugHierInner::put_primal_diagonal() {
    assert(primal_diagonal->isKindOf(kStochVector));
 
    auto& primal_diagonal_loc = dynamic_cast<DistributedVector<double>&>(*primal_diagonal);
-   xDiag = primal_diagonal_loc.first;
+   xDiag = primal_diagonal_loc.first.get();
 
    assert(children.size() == primal_diagonal_loc.children.size());
-   for (auto & it : children)
+   for (auto& it : children)
       it->put_primal_diagonal();
 }
 
@@ -309,10 +324,10 @@ void sLinsysRootAugHierInner::put_dual_inequalites_diagonal() {
 
    auto& dual_inequality_diagonal_loc = dynamic_cast<DistributedVector<double>&>(*nomegaInv);
 
-   zDiag = dual_inequality_diagonal_loc.first;
-   zDiagLinkCons = dual_inequality_diagonal_loc.last;
+   zDiag = dual_inequality_diagonal_loc.first.get();
+   zDiagLinkCons = dual_inequality_diagonal_loc.last.get();
 
    assert(children.size() == dual_inequality_diagonal_loc.children.size());
-   for (auto & it : children)
+   for (auto& it : children)
       it->put_dual_inequalites_diagonal();
 }

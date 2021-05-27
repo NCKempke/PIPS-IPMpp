@@ -29,9 +29,10 @@ class DistributedSymmetricMatrix;
 
 class BorderedSymmetricMatrix : public SymmetricMatrix {
 public:
-   BorderedSymmetricMatrix(DistributedSymmetricMatrix* inner_matrix, StripMatrix* border_vertical, SymmetricMatrix* bottom_block, MPI_Comm mpiComm_);
+   BorderedSymmetricMatrix(std::shared_ptr<DistributedSymmetricMatrix> inner_matrix, std::unique_ptr<StripMatrix> border_vertical,
+      std::unique_ptr<SymmetricMatrix> top_left_block, MPI_Comm mpiComm_);
 
-   ~BorderedSymmetricMatrix() override;
+   ~BorderedSymmetricMatrix() override = default;
 
    [[nodiscard]] int is_a(int type) const override;
 
@@ -72,10 +73,10 @@ public:
    void putSparseTriple(const int[], int, const int[], const double[], int&) override { assert("Not implemented" && 0); };
 
    // TODO could be more general..
-   DistributedSymmetricMatrix* inner_matrix;
-   StripMatrix* border_vertical;
+   std::shared_ptr<DistributedSymmetricMatrix> inner_matrix;
+   std::unique_ptr<StripMatrix> border_vertical;
 
-   SymmetricMatrix* top_left_block;
+   std::unique_ptr<SymmetricMatrix> top_left_block;
 
 protected:
 

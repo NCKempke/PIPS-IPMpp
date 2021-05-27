@@ -80,21 +80,21 @@ protected:
 
 
    /** - (T_n^-1 \Lambda_n + U_n^-1 \Pi_n)^-1*/
-   Vector<double>* nomegaInv{};
+   std::shared_ptr<Vector<double>> nomegaInv{};
 
    DistributedFactory* factory;
 
    /** right-hand side of the system */
-   Vector<double>* rhs{};
+   std::shared_ptr<Vector<double>> rhs{};
 
    // TODO : add parameters
    /** regularization parameters */
    const bool apply_regularization{};
    std::unique_ptr<RegularizationStrategy> regularization_strategy;
 
-   Vector<double>* primal_regularization_diagonal{};
-   Vector<double>* dual_equality_regularization_diagonal{};
-   Vector<double>* dual_inequality_regularization_diagonal{};
+   std::shared_ptr<Vector<double>> primal_regularization_diagonal{};
+   std::shared_ptr<Vector<double>> dual_equality_regularization_diagonal{};
+   std::shared_ptr<Vector<double>> dual_inequality_regularization_diagonal{};
 
    LinearSystem(DistributedFactory* factory_, const QP& problem, bool create_iter_ref_vecs);
 
@@ -104,14 +104,14 @@ protected:
    long long mz{0};
 
    /** dq = diag(Q); dd = dq - gamma/ v + phi/w */
-   Vector<double>* primal_diagonal{};
-   Vector<double>* dq{};
+   std::shared_ptr<Vector<double>> primal_diagonal{};
+   std::shared_ptr<Vector<double>> dq{};
 
    /** index matrices for the upper and lower bounds on x and Cx */
-   Vector<double>* ixupp{};
-   Vector<double>* icupp{};
-   Vector<double>* ixlow{};
-   Vector<double>* iclow{};
+   std::shared_ptr<Vector<double>> ixupp{};
+   std::shared_ptr<Vector<double>> icupp{};
+   std::shared_ptr<Vector<double>> ixlow{};
+   std::shared_ptr<Vector<double>> iclow{};
 
    /** dimensions of the upper and lower bound vectors */
    long long nxupp{0};
@@ -122,19 +122,19 @@ protected:
    bool useRefs{false};
 
    /** Work vectors for iterative refinement of the XYZ linear system */
-   Vector<double>* sol{};
-   Vector<double>* sol2{};
-   Vector<double>* res{};
-   Vector<double>* resx{};
-   Vector<double>* resy{};
-   Vector<double>* resz{};
+   std::unique_ptr<Vector<double>> sol{};
+   std::unique_ptr<Vector<double>> sol2{};
+   std::unique_ptr<Vector<double>> res{};
+   std::unique_ptr<Vector<double>> resx{};
+   std::unique_ptr<Vector<double>> resy{};
+   std::unique_ptr<Vector<double>> resz{};
 
    /** Work vectors for BiCGStab */
-   Vector<double>* sol3{};
-   Vector<double>* res2{};
-   Vector<double>* res3{};
-   Vector<double>* res4{};
-   Vector<double>* res5{};
+   std::unique_ptr<Vector<double>> sol3{};
+   std::unique_ptr<Vector<double>> res2{};
+   std::unique_ptr<Vector<double>> res3{};
+   std::unique_ptr<Vector<double>> res4{};
+   std::unique_ptr<Vector<double>> res5{};
 
    /// error absorbtion in linear system outer level
    const int outerSolve;
@@ -158,11 +158,11 @@ protected:
 public:
    LinearSystem(DistributedFactory* factory, const QP& problem);
 
-   LinearSystem(DistributedFactory* factory_, const QP& problem, Vector<double>* dd_, Vector<double>* dq_, Vector<double>* nomegaInv_,
-         Vector<double>* primal_regularization_, Vector<double>* dual_equality_regularization, Vector<double>* dual_inequality_regularization_,
-         Vector<double>* rhs_, bool create_iter_ref_vecs);
+   LinearSystem(DistributedFactory* factory_, const QP& problem, std::shared_ptr<Vector<double>> dd_, std::shared_ptr<Vector<double>> dq_, std::shared_ptr<Vector<double>> nomegaInv_,
+         std::shared_ptr<Vector<double>> primal_regularization_, std::shared_ptr<Vector<double>> dual_equality_regularization, std::shared_ptr<Vector<double>> dual_inequality_regularization_,
+         std::shared_ptr<Vector<double>> rhs_, bool create_iter_ref_vecs);
 
-   ~LinearSystem() override;
+   ~LinearSystem() override = default;
 
 
    /** sets up the matrix for the main linear system in "augmented

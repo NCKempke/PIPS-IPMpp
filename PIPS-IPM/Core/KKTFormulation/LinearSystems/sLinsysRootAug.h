@@ -43,8 +43,8 @@ class sLinsysRootAug : public DistributedRootLinearSystem {
 
 public:
    sLinsysRootAug(DistributedFactory* factory_, DistributedQP* prob_);
-   sLinsysRootAug(DistributedFactory* factory, DistributedQP* prob_, Vector<double>* dd_, Vector<double>* dq_, Vector<double>* nomegaInv_,
-         Vector<double>* regP, Vector<double>* regDy, Vector<double>* regDz, Vector<double>* rhs_, bool creat_solvers);
+   sLinsysRootAug(DistributedFactory* factory, DistributedQP* prob_, std::shared_ptr<Vector<double>> dd_, std::shared_ptr<Vector<double>> dq_, std::shared_ptr<Vector<double>> nomegaInv_,
+         std::shared_ptr<Vector<double>> regP, std::shared_ptr<Vector<double>> regDy, std::shared_ptr<Vector<double>> regDz, std::shared_ptr<Vector<double>> rhs_, bool creat_solvers);
    ~sLinsysRootAug() override = default;
 
    void finalizeKKT() override;

@@ -11,8 +11,9 @@
 #include "pipsdef.h"
 #include <algorithm>
 
-BorderedSymmetricMatrix::BorderedSymmetricMatrix(DistributedSymmetricMatrix* inner_matrix_, StripMatrix* border_vertical_, SymmetricMatrix* top_left_block_, MPI_Comm mpiComm_)
-      : inner_matrix(inner_matrix_), border_vertical(border_vertical_), top_left_block(top_left_block_), mpiComm(mpiComm_),
+BorderedSymmetricMatrix::BorderedSymmetricMatrix(std::shared_ptr<DistributedSymmetricMatrix> inner_matrix_, std::unique_ptr<StripMatrix> border_vertical_,
+   std::unique_ptr<SymmetricMatrix> top_left_block_, MPI_Comm mpiComm_)
+      : inner_matrix(std::move(inner_matrix_)), border_vertical(std::move(border_vertical_)), top_left_block(std::move(top_left_block_)), mpiComm(mpiComm_),
       iAmDistrib(mpiComm == MPI_COMM_NULL) {
    assert(inner_matrix);
    assert(border_vertical);
@@ -35,12 +36,6 @@ BorderedSymmetricMatrix::BorderedSymmetricMatrix(DistributedSymmetricMatrix* inn
    assert(n_inner == m_border);
    assert(n_bottom == n_border);
 #endif
-}
-
-BorderedSymmetricMatrix::~BorderedSymmetricMatrix() {
-   delete inner_matrix;
-   delete border_vertical;
-   delete top_left_block;
 }
 
 int BorderedSymmetricMatrix::is_a(int type) const {

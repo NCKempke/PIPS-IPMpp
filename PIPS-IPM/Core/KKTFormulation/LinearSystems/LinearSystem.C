@@ -12,6 +12,7 @@
 #include "Options.h"
 #include "PIPSIPMppOptions.h"
 #include "DistributedFactory.h"
+#include <utility>
 #include <vector>
 #include <functional>
 #include <type_traits>
@@ -52,76 +53,52 @@ LinearSystem::LinearSystem(DistributedFactory* factory_, const QP& problem, bool
    if (create_iter_ref_vecs) {
       if (outerSolve || xyzs_solve_print_residuals) {
          //for iterative refinement or BICGStab
-         sol = factory->make_right_hand_side();
-         sol2 = factory->make_right_hand_side();
-         res = factory->make_right_hand_side();
-         resx = factory->make_primal_vector();
-         resy = factory->make_equalities_dual_vector();
-         resz = factory->make_inequalities_dual_vector();
+         sol.reset(factory->make_right_hand_side());
+         sol2.reset(factory->make_right_hand_side());
+         res.reset(factory->make_right_hand_side());
+         resx.reset(factory->make_primal_vector());
+         resy.reset(factory->make_equalities_dual_vector());
+         resz.reset(factory->make_inequalities_dual_vector());
 
          if (outerSolve == 2) {
             //BiCGStab; additional vectors needed
-            sol3 = factory->make_right_hand_side();
-            res2 = factory->make_right_hand_side();
-            res3 = factory->make_right_hand_side();
-            res4 = factory->make_right_hand_side();
-            res5 = factory->make_right_hand_side();
+            sol3.reset(factory->make_right_hand_side());
+            res2.reset(factory->make_right_hand_side());
+            res3.reset(factory->make_right_hand_side());
+            res4.reset(factory->make_right_hand_side());
+            res5.reset(factory->make_right_hand_side());
          }
       }
    }
 }
 
-LinearSystem::LinearSystem(DistributedFactory* factory_, const QP& problem, Vector<double>* primal_diagonal_, Vector<double>* dq_,
-      Vector<double>* nomegaInv_, Vector<double>* primal_regularization_, Vector<double>* dual_equality_regularization_,
-      Vector<double>* dual_inequality_regularization_, Vector<double>* rhs_, bool create_iter_ref_vecs) : LinearSystem(factory_, problem,
+LinearSystem::LinearSystem(DistributedFactory* factory_, const QP& problem, std::shared_ptr<Vector<double>> primal_diagonal_, std::shared_ptr<Vector<double>> dq_,
+      std::shared_ptr<Vector<double>> nomegaInv_, std::shared_ptr<Vector<double>> primal_regularization_, std::shared_ptr<Vector<double>> dual_equality_regularization_,
+      std::shared_ptr<Vector<double>> dual_inequality_regularization_, std::shared_ptr<Vector<double>> rhs_, bool create_iter_ref_vecs) : LinearSystem(factory_, problem,
       create_iter_ref_vecs) {
-   primal_diagonal = primal_diagonal_;
-   dq = dq_;
-   nomegaInv = nomegaInv_;
-   primal_regularization_diagonal = primal_regularization_;
-   dual_equality_regularization_diagonal = dual_equality_regularization_;
-   dual_inequality_regularization_diagonal = dual_inequality_regularization_;
-   rhs = rhs_;
+   primal_diagonal = std::move(primal_diagonal_);
+   dq = std::move(dq_);
+   nomegaInv = std::move(nomegaInv_);
+   primal_regularization_diagonal = std::move(primal_regularization_);
+   dual_equality_regularization_diagonal = std::move(dual_equality_regularization_);
+   dual_inequality_regularization_diagonal = std::move(dual_inequality_regularization_);
+   rhs = std::move(rhs_);
 }
 
 LinearSystem::LinearSystem(DistributedFactory* factory_, const QP& problem) : LinearSystem(factory_, problem, true) {
    if (nxupp + nxlow > 0) {
-      primal_diagonal = factory->make_primal_vector();
-      dq = factory->make_primal_vector();
+      primal_diagonal.reset(factory->make_primal_vector());
+      dq.reset(factory->make_primal_vector());
       data.hessian_diagonal(*dq);
    }
 
-   nomegaInv = factory->make_inequalities_dual_vector();
-   rhs = factory->make_right_hand_side();
+   nomegaInv.reset(factory->make_inequalities_dual_vector());
+   rhs.reset(factory->make_right_hand_side());
 
 
-   primal_regularization_diagonal = factory->make_primal_vector();
-   dual_equality_regularization_diagonal = factory->make_equalities_dual_vector();
-   dual_inequality_regularization_diagonal = factory->make_inequalities_dual_vector();
-}
-
-LinearSystem::~LinearSystem() {
-   if (!useRefs) {
-      delete dual_inequality_regularization_diagonal;
-      delete dual_equality_regularization_diagonal;
-      delete primal_regularization_diagonal;
-      delete primal_diagonal;
-      delete dq;
-      delete rhs;
-      delete nomegaInv;
-   }
-
-   delete sol;
-   delete res;
-   delete resx;
-   delete resy;
-   delete resz;
-   delete sol2;
-   delete sol3;
-   delete res2;
-   delete res3;
-   delete res4;
-   delete res5;
+   primal_regularization_diagonal.reset(factory->make_primal_vector());
+   dual_equality_regularization_diagonal.reset(factory->make_equalities_dual_vector());
+   dual_inequality_regularization_diagonal.reset(factory->make_inequalities_dual_vector());
 }
 
 int LinearSystem::getIntValue(const std::string& s) const {
@@ -173,8 +150,8 @@ static void biCGStabCommunicateStatus(int flag, int it) {
    if (g_iterNumber >= 0.5) {
       bicgIters.push_back(it);
 
-      for (size_t i = 0; i < bicgIters.size(); i++)
-         iterAvg += double(bicgIters[i]);
+      for (int bicgIter : bicgIters)
+         iterAvg += double(bicgIter);
 
       iterAvg /= bicgIters.size();
    }
@@ -447,7 +424,7 @@ void LinearSystem::solveXYZS(Vector<double>& stepx, Vector<double>& stepy, Vecto
    }
 
    assert(rhs);
-   this->joinRHS(*rhs, stepx, stepy, stepz);
+   LinearSystem::joinRHS(*rhs, stepx, stepy, stepz);
 
    if (outerSolve == 1) {
       ///////////////////////////////////////////////////////////////
@@ -459,7 +436,7 @@ void LinearSystem::solveXYZS(Vector<double>& stepx, Vector<double>& stepy, Vecto
 
       solveCompressedIterRefin(computeResiduals);
 
-      this->separateVars(stepx, stepy, stepz, *sol);
+      LinearSystem::separateVars(stepx, stepy, stepz, *sol);
 
    }
    else if (outerSolve == 0) {
@@ -488,7 +465,7 @@ void LinearSystem::solveXYZS(Vector<double>& stepx, Vector<double>& stepy, Vecto
 
       solveCompressedBiCGStab(matMult, matInfnorm);
 
-      this->separateVars(stepx, stepy, stepz, *sol);
+      LinearSystem::separateVars(stepx, stepy, stepz, *sol);
 
       /* notify observers about result of BiCGStab */
       notifyObservers();
@@ -497,10 +474,10 @@ void LinearSystem::solveXYZS(Vector<double>& stepx, Vector<double>& stepy, Vecto
    if (xyzs_solve_print_residuals) {
       assert(sol);
       const double bnorm = residual->inf_norm();
-      this->joinRHS(*sol, stepx, stepy, stepz);
+      LinearSystem::joinRHS(*sol, stepx, stepy, stepz);
       this->system_mult(1.0, *residual, -1.0, *sol, data, stepx, stepy, stepz, true);
 
-      this->separateVars(*resx, *resy, *resz, *residual);
+      LinearSystem::separateVars(*resx, *resy, *resz, *residual);
       const double resxnorm = resx->inf_norm();
       const double resynorm = resy->inf_norm();
       const double resznorm = resz->inf_norm();
@@ -788,7 +765,7 @@ LinearSystem::system_mult(double beta, Vector<double>& res, double alpha, const 
    if (use_regularized_system && dual_inequality_regularization_diagonal)
       resz->axzpy(alpha, *dual_inequality_regularization_diagonal, solz);
 
-   this->joinRHS(res, *resx, *resy, *resz);
+   LinearSystem::joinRHS(res, *resx, *resy, *resz);
 }
 
 /* computes infinity norm of entire system; solx, soly, solz are used as temporary buffers */

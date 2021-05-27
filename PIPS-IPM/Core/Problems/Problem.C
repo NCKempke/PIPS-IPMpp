@@ -1,28 +1,21 @@
 #include <SimpleVector.h>
 #include "Problem.h"
 
-Problem::Problem(Vector<double>* c_in, Vector<double>* xlow_in, Vector<double>* ixlow_in, Vector<double>* xupp_in,
-      Vector<double>* ixupp_in, GeneralMatrix* A_in, Vector<double>* bA_in, GeneralMatrix* C_in, Vector<double>* clow_in, Vector<double>* iclow_in,
-      Vector<double>* cupp_in, Vector<double>* icupp_in) : nxlow{ixlow_in->number_nonzeros()}, nxupp{ixupp_in->number_nonzeros()},
-      mclow{iclow_in->number_nonzeros()}, mcupp{icupp_in->number_nonzeros()} {
-   SpReferTo(g, c_in);
-   SpReferTo(bA, bA_in);
-   SpReferTo(blx, xlow_in);
-   SpReferTo(ixlow, ixlow_in);
-   SpReferTo(bux, xupp_in);
-   SpReferTo(ixupp, ixupp_in);
-   SpReferTo(bl, clow_in);
-   SpReferTo(iclow, iclow_in);
-   SpReferTo(bu, cupp_in);
-   SpReferTo(icupp, icupp_in);
-
-   nx = g->length();
-
-   SpReferTo(A, A_in);
-   my = A->n_rows();
-
-   SpReferTo(C, C_in);
-   mz = C->n_rows();
+Problem::Problem(std::shared_ptr<Vector<double>> g_in, std::shared_ptr<Vector<double>> xlow_in,
+   std::shared_ptr<Vector<double>> ixlow_in, std::shared_ptr<Vector<double>> xupp_in,
+   std::shared_ptr<Vector<double>> ixupp_in,
+   std::shared_ptr<GeneralMatrix> A_in, std::shared_ptr<Vector<double>> bA_in, std::shared_ptr<GeneralMatrix> C_in,
+   std::shared_ptr<Vector<double>> clow_in, std::shared_ptr<Vector<double>> iclow_in,
+   std::shared_ptr<Vector<double>> cupp_in, std::shared_ptr<Vector<double>> icupp_in) : A{std::move(A_in)},
+   C{std::move(C_in)},
+   g{std::move(g_in)}, bA{std::move(bA_in)}, bux{std::move(xupp_in)}, ixupp{std::move(ixupp_in)},
+   blx{std::move(xlow_in)},
+   ixlow{std::move(ixlow_in)}, bu{std::move(cupp_in)}, icupp{std::move(icupp_in)}, bl{std::move(clow_in)},
+   iclow{std::move(iclow_in)},
+   nx{g->length()}, my{A->n_rows()}, mz{C->n_rows()}, nxlow{ixlow->number_nonzeros()},
+   nxupp{ixupp->number_nonzeros()},
+   mclow{iclow->number_nonzeros()}, mcupp{icupp->number_nonzeros()} {
+   assert(ixlow && ixupp && iclow && icupp);
 }
 
 void Problem::Amult(double beta, Vector<double>& y, double alpha, const Vector<double>& x) const {

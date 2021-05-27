@@ -51,9 +51,10 @@ class AbstractLinearSystem;
 class DistributedFactory {
 public:
    DistributedFactory(DistributedInputTree* tree, MPI_Comm comm = MPI_COMM_WORLD);
+
    Problem* make_problem();
 
-   Residuals* make_residuals(Problem& problem);
+   Residuals* make_residuals(Problem& problem) const;
 
    Variables* make_variables(Problem& problem);
 
@@ -71,34 +72,38 @@ public:
    /** create rhs for augmented system using tree */
    Vector<double>* make_right_hand_side() const;
 
-   std::unique_ptr<DistributedRootLinearSystem> make_linear_system_root();
+   std::unique_ptr<DistributedRootLinearSystem> make_linear_system_root(DistributedQP* problem);
 
-   std::unique_ptr<DistributedRootLinearSystem> make_root_hierarchical_linear_system();
+   std::unique_ptr<DistributedRootLinearSystem> make_root_hierarchical_linear_system(DistributedQP* problem);
 
-   DistributedRootLinearSystem* make_linear_system_root(DistributedQP* problem, Vector<double>* primal_diagonal, Vector<double>* dq, Vector<double>* nomegaInv,
-         Vector<double>* primal_regularization, Vector<double>* dual_equality_regularization, Vector<double>* dual_inequality_regularization,
-         Vector<double>* rhs);
+   DistributedRootLinearSystem*
+   make_linear_system_root(DistributedQP* problem, std::shared_ptr<Vector<double>> primal_diagonal,
+      std::shared_ptr<Vector<double>> dq, std::shared_ptr<Vector<double>> nomegaInv,
+      std::shared_ptr<Vector<double>> primal_regularization,
+      std::shared_ptr<Vector<double>> dual_equality_regularization,
+      std::shared_ptr<Vector<double>> dual_inequality_regularization,
+      std::shared_ptr<Vector<double>> rhs);
 
-   Problem* switchToHierarchicalData(Problem* problem);
+   DistributedQP* switchToHierarchicalData(DistributedQP* problem);
 
    void switchToOriginalTree();
 
    DistributedLeafLinearSystem*
-   make_linear_system_leaf(DistributedQP* problem, Vector<double>* primal_diagonal, Vector<double>* dq, Vector<double>* nomegaInv,
-         Vector<double>* primal_regularization, Vector<double>* dual_equality_regularization, Vector<double>* dual_inequality_regularization,
-         Vector<double>* rhs);
+   make_linear_system_leaf(DistributedQP* problem, std::shared_ptr<Vector<double>> primal_diagonal, std::shared_ptr<Vector<double>> dq,
+      std::shared_ptr<Vector<double>> nomegaInv,
+      std::shared_ptr<Vector<double>> primal_regularization, std::shared_ptr<Vector<double>> dual_equality_regularization,
+      std::shared_ptr<Vector<double>> dual_inequality_regularization,
+      std::shared_ptr<Vector<double>> rhs);
 
-   DoubleLinearSolver* make_leaf_solver(const AbstractMatrix* kkt);
+   static DoubleLinearSolver* make_leaf_solver(const AbstractMatrix* kkt);
 
    DistributedTree* tree{};
-   DistributedQP* problem{};
 
    void iterate_started();
 
    void iterate_ended();
 
    DistributedResiduals* residuals{};
-   std::vector<DistributedVariables*> registered_variables;
 
    //DistributedRootLinearSystem* linear_system{};
 
@@ -118,6 +123,7 @@ protected:
    long long mz{0};
 
    std::unique_ptr<DistributedTree> hier_tree_swap{};
+
    DistributedFactory() = default;
 };
 

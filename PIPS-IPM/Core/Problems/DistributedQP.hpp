@@ -23,10 +23,15 @@ protected:
 
 public:
    /** constructor that sets up pointers to the data objects that are passed as arguments */
-   DistributedQP(const DistributedTree* stochNode, Vector<double>* c, SymmetricMatrix* Q, Vector<double>* xlow, Vector<double>* ixlow, Vector<double>* xupp,
-         Vector<double>* ixupp, GeneralMatrix* A, Vector<double>* bA, GeneralMatrix* C, Vector<double>* clow, Vector<double>* iclow, Vector<double>* cupp,
-         Vector<double>* ciupp, bool add_children = true, bool is_hierarchy_root = false, bool is_hierarchy_inner_root = false,
-         bool is_hierarchy_inner_leaf = false);
+   DistributedQP(const DistributedTree* stochNode, std::shared_ptr<Vector<double>> c,
+      std::shared_ptr<SymmetricMatrix> Q, std::shared_ptr<Vector<double>> xlow,
+      std::shared_ptr<Vector<double>> ixlow, std::shared_ptr<Vector<double>> xupp,
+      std::shared_ptr<Vector<double>> ixupp, std::shared_ptr<GeneralMatrix> A, std::shared_ptr<Vector<double>> bA,
+      std::shared_ptr<GeneralMatrix> C, std::shared_ptr<Vector<double>> clow, std::shared_ptr<Vector<double>> iclow,
+      std::shared_ptr<Vector<double>> cupp,
+      std::shared_ptr<Vector<double>> icupp, bool add_children = true, bool is_hierarchy_root = false,
+      bool is_hierarchy_inner_root = false,
+      bool is_hierarchy_inner_leaf = false);
 
    std::vector<DistributedQP*> children;
 
@@ -104,12 +109,14 @@ public:
    bool isRootNodeInSync() const;
 
 protected:
-   static void removeN0LinkVarsIn2Links(std::vector<int>& n_blocks_per_link_var, const DistributedMatrix& Astoch, const DistributedMatrix& Cstoch,
-         const std::vector<int>& linkStartBlockIdA, const std::vector<int>& linkStartBlockIdC);
+   static void removeN0LinkVarsIn2Links(std::vector<int>& n_blocks_per_link_var, const DistributedMatrix& Astoch,
+      const DistributedMatrix& Cstoch,
+      const std::vector<int>& linkStartBlockIdA, const std::vector<int>& linkStartBlockIdC);
 
    static Permutation
-   getChildLinkConsFirstOwnLinkConsLastPermutation(const std::vector<unsigned int>& map_block_subtree, const std::vector<int>& linkStartBlockId,
-         int n_links_after_split);
+   getChildLinkConsFirstOwnLinkConsLastPermutation(const std::vector<unsigned int>& map_block_subtree,
+      const std::vector<int>& linkStartBlockId,
+      int n_links_after_split);
 
    void addChildrenForSplit();
 
@@ -143,7 +150,8 @@ public:
    double objective_value(const Variables& variables) const override;
 
    void
-   cleanUpPresolvedData(const DistributedVector<int>& rowNnzVecA, const DistributedVector<int>& rowNnzVecC, const DistributedVector<int>& colNnzVec);
+   cleanUpPresolvedData(const DistributedVector<int>& rowNnzVecA, const DistributedVector<int>& rowNnzVecC,
+      const DistributedVector<int>& colNnzVec);
 
    // marker that indicates whether a Schur complement row is (2-link) local
    const std::vector<bool>& getSCrowMarkerLocal() const;
@@ -159,17 +167,20 @@ public:
 
    // start and end positions for local 2-links in Schur complement that are non-zero if only
    // blocks greater equal blocksStart and smaller blocksEnd are considered
-   void getSCrangeMarkers(int blocksStart, int blocksEnd, int& local2linksStartEq, int& local2linksEndEq, int& local2linksStartIneq,
-         int& local2linksEndIneq) const;
+   void getSCrangeMarkers(int blocksStart, int blocksEnd, int& local2linksStartEq, int& local2linksEndEq,
+      int& local2linksStartIneq,
+      int& local2linksEndIneq) const;
 
    // start and end positions for local 2-links in Schur complement that are owned by
    // blocks greater equal blocksStart and smaller blocksEnd are considered
-   void getSCrangeMarkersMy(int blocksStart, int blocksEnd, int& local2linksStartEq, int& local2linksEndEq, int& local2linksStartIneq,
-         int& local2linksEndIneq) const;
+   void getSCrangeMarkersMy(int blocksStart, int blocksEnd, int& local2linksStartEq, int& local2linksEndEq,
+      int& local2linksStartIneq,
+      int& local2linksEndIneq) const;
 
    bool isHierarchySparseTopLayerOnlyTwolinks() const {
-      return (pipsipmpp_options::get_bool_parameter("HIERARCHICAL")) && (pipsipmpp_options::get_int_parameter("HIERARCHICAL_APPROACH_N_LAYERS") > 1) &&
-             threshold_global_cons <= 1 && threshold_global_vars == 0;
+      return (pipsipmpp_options::get_bool_parameter("HIERARCHICAL")) &&
+         (pipsipmpp_options::get_int_parameter("HIERARCHICAL_APPROACH_N_LAYERS") > 1) &&
+         threshold_global_cons <= 1 && threshold_global_vars == 0;
    };
 
    bool isHierarchyRoot() const { return is_hierarchy_root; };
@@ -199,8 +210,9 @@ private:
    static Permutation get0VarsLastGlobalsFirstPermutation(std::vector<int>& linkVarsNnzCount, int& n_globals);
 
    static Permutation
-   getAscending2LinkFirstGlobalsLastPermutation(std::vector<int>& linkStartBlockId, std::vector<int>& n_blocks_per_row, size_t nBlocks,
-         int& n_globals);
+   getAscending2LinkFirstGlobalsLastPermutation(std::vector<int>& linkStartBlockId, std::vector<int>& n_blocks_per_row,
+      size_t nBlocks,
+      int& n_globals);
 
    // returns number of block rows
    static int getSCdiagBlocksNRows(const std::vector<int>& linkStartBlockLengths);
@@ -215,15 +227,16 @@ private:
    static int getSCdiagBlocksMaxNnz(size_t nRows, const std::vector<int>& linkStartBlockLengths);
 
    // distributed version
-   static int getSCdiagBlocksMaxNnzDist(size_t nRows, const std::vector<int>& linkStartBlockLengths, int blocksStart, int blocksEnd);
+   static int getSCdiagBlocksMaxNnzDist(size_t nRows, const std::vector<int>& linkStartBlockLengths, int blocksStart,
+      int blocksEnd);
 
    // max nnz in Schur complement mixed block signified by given vectors
    static int getSCmixedBlocksMaxNnz(size_t nRows, size_t nCols, const std::vector<int>& linkStartBlockLength_Left,
-         const std::vector<int>& linkStartBlockLength_Right);
+      const std::vector<int>& linkStartBlockLength_Right);
 
    // distributed version
    static int getSCmixedBlocksMaxNnzDist(size_t nRows, size_t nCols, const std::vector<int>& linkStartBlockLength_Left,
-         const std::vector<int>& linkStartBlockLength_Right, int blocksStart, int blocksEnd);
+      const std::vector<int>& linkStartBlockLength_Right, int blocksStart, int blocksEnd);
 
    // number of sparse 2-link rows
    static int n2linksRows(const std::vector<int>& linkStartBlockLengths);

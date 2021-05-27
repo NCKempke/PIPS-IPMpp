@@ -131,21 +131,21 @@ DistributedVector<double>* DistributedTree::new_primal_vector(bool empty) const 
    if (!sub_root) {
       auto* x = new DistributedVector<double>(empty ? 0 : nx(), commWrkrs);
       for (auto it : children) {
-         DistributedVector<double>* child = it->new_primal_vector(empty);
-         x->AddChild(child);
+         std::shared_ptr<DistributedVector<double>> child{it->new_primal_vector(empty)};
+         x->AddChild(std::move(child));
       }
       return x;
    }
    else {
-      assert(children.size() == 0);
+      assert(children.empty());
       if (sub_root->commWrkrs == MPI_COMM_NULL) {
          DistributedVector<double>* x = new DistributedDummyVector<double>();
          return x;
       }
       else {
-         DistributedVector<double>* x_vec = sub_root->new_primal_vector(empty);
-         auto* x = new DistributedVector<double>(x_vec, nullptr, commWrkrs);
-         x_vec->parent = x;
+         std::unique_ptr<DistributedVector<double>> x_vec{sub_root->new_primal_vector(empty)};
+         auto* x = new DistributedVector<double>(std::move(x_vec), nullptr, commWrkrs);
+         dynamic_cast<DistributedVector<double>&>(*x->first).parent = x;
          return x;
       }
    }
@@ -162,8 +162,8 @@ DistributedVector<double>* DistributedTree::newDualYVector(bool empty) const {
       y = new DistributedVector<double>(empty ? std::min(0, my()) : my(), empty ? std::min(yl, 0) : yl, commWrkrs);
 
       for (auto it : children) {
-         DistributedVector<double>* child = it->newDualYVector(empty);
-         y->AddChild(child);
+         std::shared_ptr<DistributedVector<double>> child{it->newDualYVector(empty)};
+         y->AddChild(std::move(child));
       }
    }
    else {
@@ -172,11 +172,11 @@ DistributedVector<double>* DistributedTree::newDualYVector(bool empty) const {
       if (sub_root->commWrkrs == MPI_COMM_NULL)
          y = new DistributedDummyVector<double>();
       else {
-         DistributedVector<double>* y_vec = sub_root->newDualYVector(empty);
+         std::unique_ptr<DistributedVector<double>> y_vec{sub_root->newDualYVector(empty)};
          assert(yl == -1);
 
-         y = new DistributedVector<double>(y_vec, nullptr, commWrkrs);
-         y_vec->parent = y;
+         y = new DistributedVector<double>(std::move(y_vec), nullptr, commWrkrs);
+         dynamic_cast<DistributedVector<double>&>(*y->first).parent = y;
       }
    }
    return y;
@@ -193,8 +193,8 @@ DistributedVector<double>* DistributedTree::newDualZVector(bool empty) const {
 
       z = new DistributedVector<double>(empty ? std::min(mz(), 0) : mz(), empty ? std::min(zl, 0) : zl, commWrkrs);
       for (auto it : children) {
-         DistributedVector<double>* child = it->newDualZVector(empty);
-         z->AddChild(child);
+         std::shared_ptr<DistributedVector<double>> child{it->newDualZVector(empty)};
+         z->AddChild(std::move(child));
       }
    }
    else {
@@ -202,11 +202,11 @@ DistributedVector<double>* DistributedTree::newDualZVector(bool empty) const {
       if (sub_root->commWrkrs == MPI_COMM_NULL)
          z = new DistributedDummyVector<double>();
       else {
-         DistributedVector<double>* z_vec = sub_root->newDualZVector(empty);
+         std::unique_ptr<DistributedVector<double>> z_vec{sub_root->newDualZVector(empty)};
          assert(zl == -1);
 
-         z = new DistributedVector<double>(z_vec, nullptr, commWrkrs);
-         z_vec->parent = z;
+         z = new DistributedVector<double>(std::move(z_vec), nullptr, commWrkrs);
+         dynamic_cast<DistributedVector<double>&>(*z->first).parent = z;
       }
    }
 
@@ -229,8 +229,8 @@ DistributedVector<double>* DistributedTree::newRhs() const {
       rhs = new DistributedVector<double>(nx() + std::max(my(), 0) + std::max(mz(), 0) + locmyl + locmzl, commWrkrs);
 
       for (auto it : children) {
-         DistributedVector<double>* child = it->newRhs();
-         rhs->AddChild(child);
+         std::shared_ptr<DistributedVector<double>> child{it->newRhs()};
+         rhs->AddChild(std::move(child));
       }
    }
    else

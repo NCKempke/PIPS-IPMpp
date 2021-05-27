@@ -12,35 +12,32 @@ class QP;
 class DistributedTree;
 
 class DistributedVariables : public Variables {
+
 public:
    /** constructor in which the data and variable pointers are set to point to the given arguments */
-   DistributedVariables(const DistributedTree* tree, Vector<double>* x_in, Vector<double>* s_in, Vector<double>* y_in, Vector<double>* z_in,
-         Vector<double>* v_in, Vector<double>* gamma_in, Vector<double>* w_in, Vector<double>* phi_in, Vector<double>* t_in,
-         Vector<double>* lambda_in, Vector<double>* u_in, Vector<double>* pi_in, Vector<double>* ixlow_in, long long nxlowGlobal,
-         Vector<double>* ixupp_in, long long nxuppGlobal, Vector<double>* iclow_in, long long mclowGlobal, Vector<double>* icupp_in,
+   DistributedVariables(const DistributedTree* tree, std::unique_ptr<Vector<double>> x_in, std::unique_ptr<Vector<double>> s_in,
+      std::unique_ptr<Vector<double>> y_in, std::unique_ptr<Vector<double>> z_in, std::unique_ptr<Vector<double>> v_in,
+      std::unique_ptr<Vector<double>> gamma_in, std::unique_ptr<Vector<double>> w_in, std::unique_ptr<Vector<double>> phi_in, std::unique_ptr<Vector<double>> t_in,
+      std::unique_ptr<Vector<double>> lambda_in, std::unique_ptr<Vector<double>> u_in, std::unique_ptr<Vector<double>> pi_in,
+      std::shared_ptr<Vector<double>> ixlow_in, long long nxlowGlobal, std::shared_ptr<Vector<double>> ixupp_in,
+      long long nxuppGlobal, std::shared_ptr<Vector<double>> iclow_in, long long mclowGlobal, std::shared_ptr<Vector<double>> icupp_in,
          long long mcuppGlobal);
 
    DistributedVariables(const DistributedVariables& vars);
 
-   virtual ~DistributedVariables();
+   ~DistributedVariables() override = default;
 
-   bool isRootNodeInSync() const;
+   [[nodiscard]] bool isRootNodeInSync() const;
 
-   std::vector<DistributedVariables*> children;
-
-   void collapseHierarchicalStructure(const DistributedQP& hier_data, const DistributedTree* stochNode, SmartPointer<Vector<double> > ixlow_,
-         SmartPointer<Vector<double> > ixupp_, SmartPointer<Vector<double> > iclow_, SmartPointer<Vector<double> > icupp_);
+   void collapseHierarchicalStructure(const DistributedQP& hier_data, const DistributedTree* stochNode_,
+      std::shared_ptr<Vector<double>> ixlow_, std::shared_ptr<Vector<double>> ixupp_, std::shared_ptr<Vector<double>> iclow_,
+      std::shared_ptr<Vector<double>> icupp_);
 
    void permuteVec0Entries(const std::vector<unsigned int>& perm, bool vars_only = false);
    void permuteEqLinkingEntries(const std::vector<unsigned int>& perm);
    void permuteIneqLinkingEntries(const std::vector<unsigned int>& perm, bool vars_only = false);
 
-   void sync();
-
 protected:
-   void createChildren();
-   void AddChild(DistributedVariables* child);
-
    const DistributedTree* stochNode;
 };
 

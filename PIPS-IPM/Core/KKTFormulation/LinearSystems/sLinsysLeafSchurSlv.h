@@ -16,12 +16,17 @@ class DistributedQP;
  */
 class sLinsysLeafSchurSlv : public DistributedLeafLinearSystem {
 public:
-   sLinsysLeafSchurSlv(DistributedFactory* factory, DistributedQP* prob_, Vector<double>* dd_, Vector<double>* dq_, Vector<double>* nomegaInv_,
-         Vector<double>* primal_reg_, Vector<double>* dual_y_reg_, Vector<double>* dual_z_reg_, Vector<double>* rhs_) : DistributedLeafLinearSystem(factory, prob_,
-         dd_, dq_, nomegaInv_, primal_reg_, dual_y_reg_, dual_z_reg_, rhs_) {};
+   sLinsysLeafSchurSlv(DistributedFactory* factory, DistributedQP* prob_, std::shared_ptr<Vector<double>> dd_,
+      std::shared_ptr<Vector<double>> dq_, std::shared_ptr<Vector<double>> nomegaInv_,
+      std::shared_ptr<Vector<double>> primal_reg_, std::shared_ptr<Vector<double>> dual_y_reg_,
+      std::shared_ptr<Vector<double>> dual_z_reg_, std::shared_ptr<Vector<double>> rhs_) : DistributedLeafLinearSystem(
+      factory, prob_,
+      std::move(dd_), std::move(dq_), std::move(nomegaInv_), std::move(primal_reg_), std::move(dual_y_reg_), std::move(dual_z_reg_), std::move(rhs_)) {};
 
    void factor2() override;
+
    void addTermToDenseSchurCompl(DenseSymmetricMatrix& SC) override;
+
    void addTermToSparseSchurCompl(SparseSymmetricMatrix& SC) override;
 
 private:

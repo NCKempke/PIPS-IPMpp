@@ -45,15 +45,15 @@ protected:
    std::unique_ptr<Vector<double>> vec_colscale{};
 
    // problem data
-   SmartPointer<SymmetricMatrix> Q;
-   SmartPointer<GeneralMatrix> A;
-   SmartPointer<GeneralMatrix> C;
-   SmartPointer<Vector<double> > obj;
-   SmartPointer<Vector<double> > bA;
-   SmartPointer<Vector<double> > bux;
-   SmartPointer<Vector<double> > blx;
-   SmartPointer<Vector<double> > rhsC;
-   SmartPointer<Vector<double> > lhsC;
+   std::shared_ptr<SymmetricMatrix> Q;
+   std::shared_ptr<GeneralMatrix> A;
+   std::shared_ptr<GeneralMatrix> C;
+   std::shared_ptr<Vector<double>> obj;
+   std::shared_ptr<Vector<double>> bA;
+   std::shared_ptr<Vector<double>> bux;
+   std::shared_ptr<Vector<double>> blx;
+   std::shared_ptr<Vector<double>> rhsC;
+   std::shared_ptr<Vector<double>> lhsC;
 
    // scaling factor for objective
    double factor_objscale;

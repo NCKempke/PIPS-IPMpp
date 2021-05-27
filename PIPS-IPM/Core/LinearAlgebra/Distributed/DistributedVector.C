@@ -10,8 +10,8 @@
 #include <memory>
 
 template<typename T>
-DistributedVector<T>::DistributedVector(Vector<T>* first, Vector<T>* last, MPI_Comm mpi_comm)
-      : first(first), last(last), mpiComm(mpi_comm), iAmDistrib(PIPS_MPIgetDistributed(mpiComm)),
+DistributedVector<T>::DistributedVector(std::unique_ptr<Vector<T>> first_in, std::unique_ptr<Vector<T>> last_in, MPI_Comm mpi_comm)
+      : first{std::move(first_in)}, last{std::move(last_in)}, mpiComm(mpi_comm), iAmDistrib(PIPS_MPIgetDistributed(mpiComm)),
       iAmSpecial(PIPS_MPIiAmSpecial(iAmDistrib, mpiComm)) {
    assert(first || last);
 
@@ -24,7 +24,7 @@ DistributedVector<T>::DistributedVector(Vector<T>* first, Vector<T>* last, MPI_C
 template<typename T>
 DistributedVector<T>::DistributedVector(int n_, MPI_Comm mpiComm_)
       : Vector<T>(n_), mpiComm(mpiComm_), iAmDistrib(PIPS_MPIgetDistributed(mpiComm)), iAmSpecial(PIPS_MPIiAmSpecial(iAmDistrib, mpiComm)) {
-   first = new SimpleVector<T>(n_);
+   first = std::make_unique<SimpleVector<T>>(n_);
    last = nullptr;
 }
 
@@ -32,21 +32,21 @@ template<typename T>
 DistributedVector<T>::DistributedVector(int n_, int nl_, MPI_Comm mpiComm_)
       : mpiComm(mpiComm_), iAmDistrib(PIPS_MPIgetDistributed(mpiComm)), iAmSpecial(PIPS_MPIiAmSpecial(iAmDistrib, mpiComm)) {
    if (n_ >= 0) {
-      first = new SimpleVector<T>(n_);
+      first = std::make_unique<SimpleVector<T>>(n_);
       this->n += n_;
    }
 
    if (nl_ >= 0) {
-      last = new SimpleVector<T>(nl_);
+      last = std::make_unique<SimpleVector<T>>(nl_);
       this->n += nl_;
    }
 }
 
 template<typename T>
-void DistributedVector<T>::AddChild(DistributedVector<T>* child) {
+void DistributedVector<T>::AddChild(std::shared_ptr<DistributedVector<T>> child) {
    child->parent = this;
    if (child->first->isKindOf(kStochVector))
-      dynamic_cast<DistributedVector<T>*>(child->first)->parent = this;
+      dynamic_cast<DistributedVector<T>*>(child->first.get())->parent = this;
 
    children.push_back(child);
 
@@ -54,21 +54,18 @@ void DistributedVector<T>::AddChild(DistributedVector<T>* child) {
 }
 
 template<typename T>
-DistributedVector<T>::~DistributedVector() {
-   for (size_t it = 0; it < children.size(); it++)
-      delete children[it];
-
-   delete first;
-   delete last;
-}
-
-template<typename T>
 Vector<T>* DistributedVector<T>::clone() const {
    assert(first || last);
-   auto* clone = new DistributedVector<T>(first ? first->clone() : nullptr, last ? last->clone() : nullptr, mpiComm);
 
-   for (size_t it = 0; it < children.size(); it++)
-      clone->AddChild(dynamic_cast<DistributedVector<T>*>(children[it]->clone()));
+   std::unique_ptr<Vector<T>> clone_first{first ? first->clone() : nullptr};
+   std::unique_ptr<Vector<T>> clone_last{last ? last->clone() : nullptr};
+
+   auto* clone = new DistributedVector<T>(std::move(clone_first), std::move(clone_last), mpiComm);
+
+   for (size_t it = 0; it < children.size(); it++) {
+      std::shared_ptr<DistributedVector<T>> clone_child{dynamic_cast<DistributedVector<T>*>(children[it]->clone())};
+      clone->AddChild(std::move(clone_child));
+   }
 
    assert(this->n == clone->n);
    return clone;
@@ -77,10 +74,16 @@ Vector<T>* DistributedVector<T>::clone() const {
 template<typename T>
 Vector<T>* DistributedVector<T>::cloneFull() const {
    assert(first || last);
-   auto* clone = new DistributedVector<T>(first ? first->cloneFull() : nullptr, last ? last->cloneFull() : nullptr, mpiComm);
+   std::unique_ptr<Vector<T>> clone_first{first ? first->cloneFull() : nullptr};
+   std::unique_ptr<Vector<T>> clone_last{last ? last->cloneFull() : nullptr};
+   assert(clone_first || clone_last);
 
-   for (size_t it = 0; it < children.size(); it++)
-      clone->AddChild(dynamic_cast<DistributedVector<T>*>(children[it]->cloneFull()));
+   auto* clone = new DistributedVector<T>(std::move(clone_first), std::move(clone_last), mpiComm);
+
+   for (size_t it = 0; it < children.size(); it++) {
+      std::shared_ptr<DistributedVector<T>> clone_child{dynamic_cast<DistributedVector<T>*>(children[it]->cloneFull())};
+      clone->AddChild(clone_child);
+   }
 
    assert(this->n == clone->n);
    return clone;
@@ -1118,16 +1121,16 @@ void DistributedVector<T>::pushAwayFromZero(double tol, double amount, const Vec
    const DistributedVector<T>* selects = select ? dynamic_cast<const DistributedVector<T>*>(select) : nullptr;
 
    if (first)
-      first->pushAwayFromZero(tol, amount, selects ? selects->first : nullptr);
+      first->pushAwayFromZero(tol, amount, selects ? selects->first.get() : nullptr);
 
    if (last)
-      last->pushAwayFromZero(tol, amount, selects ? selects->last : nullptr);
+      last->pushAwayFromZero(tol, amount, selects ? selects->last.get() : nullptr);
 
    if (selects)
       assert(children.size() == selects->children.size());
 
    for (size_t i = 0; i < this->children.size(); ++i)
-      this->children[i]->pushAwayFromZero(tol, amount, selects ? selects->children[i] : nullptr);
+      this->children[i]->pushAwayFromZero(tol, amount, selects ? selects->children[i].get() : nullptr);
 }
 
 template<typename T>
@@ -1138,19 +1141,19 @@ void DistributedVector<T>::getSumCountIfSmall(double tol, double& sum_small, int
       assert(children.size() == selects->children.size());
 
    for (size_t i = 0; i < children.size(); ++i)
-      this->children[i]->getSumCountIfSmall(tol, sum_small, n_close, selects ? selects->children[i] : nullptr);
+      this->children[i]->getSumCountIfSmall(tol, sum_small, n_close, selects ? selects->children[i].get() : nullptr);
 
    if (first && (iAmSpecial || first->isKindOf(kStochVector))) {
       if (selects)
          assert(selects->first);
 
-      first->getSumCountIfSmall(tol, sum_small, n_close, selects ? selects->first : nullptr);
+      first->getSumCountIfSmall(tol, sum_small, n_close, selects ? selects->first.get() : nullptr);
    }
 
    if (iAmSpecial && last) {
       if (selects)
          assert(selects->last);
-      last->getSumCountIfSmall(tol, sum_small, n_close, selects ? selects->last : nullptr);
+      last->getSumCountIfSmall(tol, sum_small, n_close, selects ? selects->last.get() : nullptr);
    }
 
    if (iAmDistrib && parent == nullptr) {
@@ -1785,9 +1788,9 @@ int DistributedVector<T>::getNnzs() const {
 template<typename T>
 void DistributedVector<T>::recomputeSize() {
    if (first && first->isKindOf(kStochVector))
-      dynamic_cast<DistributedVector<double>*>(first)->recomputeSize();
+      dynamic_cast<DistributedVector<double>&>(*first).recomputeSize();
    if (last && last->isKindOf(kStochVector))
-      dynamic_cast<DistributedVector<double>*>(last)->recomputeSize();
+      dynamic_cast<DistributedVector<double>&>(*last).recomputeSize();
 
    this->n = 0;
    if (first)
@@ -1804,13 +1807,13 @@ void DistributedVector<T>::recomputeSize() {
 template<typename T>
 void DistributedVector<T>::permuteVec0Entries(const std::vector<unsigned int>& permvec) {
    if (first)
-      dynamic_cast<SimpleVector<T>*>(first)->permuteEntries(permvec);
+      dynamic_cast<SimpleVector<T>&>(*first).permuteEntries(permvec);
 }
 
 template<typename T>
 void DistributedVector<T>::permuteLinkingEntries(const std::vector<unsigned int>& permvec) {
    if (last)
-      dynamic_cast<SimpleVector<T>*>(last)->permuteEntries(permvec);
+      dynamic_cast<SimpleVector<T>&>(*last).permuteEntries(permvec);
 }
 
 template<typename T>
@@ -1957,9 +1960,9 @@ n_links_in_root
       assert(twolinks_start_in_block.empty());
 
    const unsigned int n_new_children = getNDistinctValues(map_blocks_children);
-   std::vector<DistributedVector<T>*> new_children(n_new_children);
+   std::vector<std::shared_ptr<DistributedVector<T>>> new_children(n_new_children);
 
-   auto* vecl_leftover = dynamic_cast<SimpleVector<T>*>(last);
+   auto* vecl_leftover = dynamic_cast<SimpleVector<T>*>(last.get());
 
    unsigned int begin_curr_child_blocks{0};
    unsigned int end_curr_child_blocks{0};
@@ -1973,34 +1976,35 @@ n_links_in_root
             twolinks_start_in_block.begin() + end_curr_child_blocks, 0) : -1;
       const unsigned int n_blocks_for_child = end_curr_child_blocks - begin_curr_child_blocks + 1;
 
-      SimpleVector<T>* vecl_child = last ? vecl_leftover->shaveBorder(n_links_for_child, true) : nullptr;
+      std::unique_ptr<SimpleVector<T>> vecl_child{last ? vecl_leftover->shaveBorder(n_links_for_child, true) : nullptr};
 
       if (child_comms[i] == MPI_COMM_NULL) {
-         delete vecl_child;
          vecl_child = nullptr;
       }
 
-      DistributedVector<T>* vec = (child_comms[i] == MPI_COMM_NULL) ? nullptr : new DistributedVector<T>(new SimpleVector<T>(0), vecl_child,
-            child_comms[i]);
+      std::unique_ptr<DistributedVector<T>> vec{(child_comms[i] == MPI_COMM_NULL) ? nullptr :
+         new DistributedVector<T>(std::make_unique<SimpleVector<T>>(0), std::move(vecl_child), child_comms[i])};
 
       for (unsigned int j = 0; j < n_blocks_for_child; ++j) {
-         DistributedVector<T>* child = children.front();
+         std::shared_ptr<DistributedVector<T>> child = children.front();
          assert(!child->last);
          children.erase(children.begin());
 
          if (child_comms[i] == MPI_COMM_NULL)
             assert(child->mpiComm == MPI_COMM_NULL);
-
-         if (child_comms[i] != MPI_COMM_NULL)
+         else
             vec->AddChild(child);
-//         else
-//            delete child;
       }
 
       /* create child holding the new DistributedVector<double> as it's first part */
-      new_children[i] = (child_comms[i] == MPI_COMM_NULL) ? new DistributedDummyVector<T>() : new DistributedVector<T>(vec, nullptr, child_comms[i]);
-      if (vec)
-         vec->parent = new_children[i];
+      new_children[i].reset((child_comms[i] == MPI_COMM_NULL) ? new DistributedDummyVector<T>() : new DistributedVector<T>(std::move(vec), nullptr, child_comms[i]));
+
+      assert(new_children[i]);
+      if (dynamic_cast<DistributedVector<T>*>(new_children[i]->first.get()))
+      {
+         assert(new_children[i]->first.get());
+         dynamic_cast<DistributedVector<T>*>(new_children[i]->first.get())->parent = new_children[i].get();
+      }
 
       ++end_curr_child_blocks;
       begin_curr_child_blocks = end_curr_child_blocks;
@@ -2033,9 +2037,9 @@ DistributedVector<T>* DistributedVector<T>::raiseBorder(int n_first_to_shave, in
       assert(this->first->length() >= n_first_to_shave);
    }
 
-   SimpleVector<T>* new_first{};
+   std::unique_ptr<SimpleVector<T>> new_first{};
    if (n_first_to_shave >= 0) {
-      new_first = dynamic_cast<SimpleVector<T>*>(this->first)->shaveBorder(n_first_to_shave, true);
+      new_first.reset(dynamic_cast<SimpleVector<T>&>(*this->first).shaveBorder(n_first_to_shave, true));
    }
 
    /* shave from last if there */
@@ -2044,16 +2048,16 @@ DistributedVector<T>* DistributedVector<T>::raiseBorder(int n_first_to_shave, in
       assert(this->last->length() >= n_last_to_shave);
    }
 
-   SimpleVector<T>* new_last{};
+   std::unique_ptr<SimpleVector<T>> new_last{};
    if (n_last_to_shave >= 0) {
-      new_last = dynamic_cast<SimpleVector<T>*>(this->last)->shaveBorder(n_last_to_shave, false);
+      new_last.reset(dynamic_cast<SimpleVector<T>&>(*this->last).shaveBorder(n_last_to_shave, false));
    }
 
-   auto* top_layer = new DistributedVector<T>(new_first, new_last, mpiComm);
+   auto top_layer = new DistributedVector<T>(std::move(new_first), std::move(new_last), mpiComm);
 
    this->n = this->n - std::max(0, n_first_to_shave) - std::max(0, n_last_to_shave);
    this->parent = top_layer;
-   top_layer->AddChild(this);
+   top_layer->AddChild(std::dynamic_pointer_cast<DistributedVector>(this->shared_from_this()));
 
    DistributedVector<T>* me = this;
    IotrAddRef(&me);
@@ -2074,10 +2078,8 @@ void DistributedVector<T>::collapseFromHierarchical(const DistributedQP& data_hi
    assert(data_hier.children.size() == 1);
 
    /* hierarchical top */
-   std::vector<DistributedVector<T>*> new_children;
+   std::vector<std::shared_ptr<DistributedVector<T>>> new_children;
    children[0]->appendHierarchicalToThis(new_first, new_last, new_children, *tree_hier.getChildren()[0], *data_hier.children[0], type, empty_vec);
-
-   delete children[0];
    children.clear();
 
    if (first && !empty_vec)
@@ -2088,15 +2090,13 @@ void DistributedVector<T>::collapseFromHierarchical(const DistributedQP& data_hi
    this->n = new_first->length();
    if (new_last)
       this->n += new_last->length();
-   for (auto child : new_children) {
+   for (const auto& child : new_children) {
       assert(child->children.empty());
       this->AddChild(child);
    }
 
-   delete first;
-   delete last;
-   first = new_first;
-   last = new_last;
+   first.reset(new_first);
+   last.reset(new_last);
 
    if (first)
       PIPS_MPImaxArrayInPlace(dynamic_cast<SimpleVector<double>&>(*first).elements(), first->length());
@@ -2107,30 +2107,30 @@ void DistributedVector<T>::collapseFromHierarchical(const DistributedQP& data_hi
 
 template<typename T>
 void
-DistributedVector<T>::appendHierarchicalToThis(SimpleVector<T>* new_vec, SimpleVector<T>* new_vecl, std::vector<DistributedVector<T>*>& new_children,
+DistributedVector<T>::appendHierarchicalToThis(SimpleVector<T>* new_vec, SimpleVector<T>* new_vecl, std::vector<std::shared_ptr<DistributedVector<T>>>& new_children,
       const DistributedTree& tree_hier, const DistributedQP& data_hier, VectorType type, bool empty_vec) {
    assert(children.size() == tree_hier.nChildren());
    assert(children.size() == data_hier.children.size());
 
    for (size_t i = 0; i < children.size(); ++i) {
-      DistributedVector<T>& child = *children[i];
+      std::shared_ptr<DistributedVector<T>> child = children[i];
       const DistributedTree* sub_root = tree_hier.getChildren()[i]->getSubRoot();
 
       // not a leaf
       if (sub_root) {
-         if (child.isKindOf(kStochDummy))
-            child.appendHierarchicalToThis(new_vec, new_vecl, new_children, *sub_root, *data_hier.children[i], type, empty_vec);
+         if (child->isKindOf(kStochDummy))
+            child->appendHierarchicalToThis(new_vec, new_vecl, new_children, *sub_root, *data_hier.children[i], type, empty_vec);
          else {
-            assert(child.first->isKindOf(kStochVector));
-            assert(!child.last);
-            dynamic_cast<DistributedVector<T>&>(*child.first).appendHierarchicalToThis(new_vec, new_vecl, new_children, *sub_root,
+            assert(child->first->isKindOf(kStochVector));
+            assert(!child->last);
+            dynamic_cast<DistributedVector<T>&>(*child->first).appendHierarchicalToThis(new_vec, new_vecl, new_children, *sub_root,
                   *data_hier.children[i], type, empty_vec);
          }
       }
       else {
          // a leaf gets added to new_children
-         assert(child.children.empty());
-         new_children.insert(new_children.end(), &child);
+         assert(child->children.empty());
+         new_children.insert(new_children.end(), child);
          children[i] = nullptr;
       }
    }
@@ -2156,13 +2156,13 @@ DistributedVector<T>::appendHierarchicalToThis(SimpleVector<T>* new_vec, SimpleV
 }
 
 template<typename T>
-void DistributedDummyVector<T>::appendHierarchicalToThis(SimpleVector<T>*, SimpleVector<T>* new_vecl, std::vector<DistributedVector<T>*>& new_children,
+void DistributedDummyVector<T>::appendHierarchicalToThis(SimpleVector<T>*, SimpleVector<T>* new_vecl, std::vector<std::shared_ptr<DistributedVector<T>>>& new_children,
       const DistributedTree& tree_hier, const DistributedQP&, VectorType type, bool empty_vec) {
    assert(tree_hier.getCommWorkers() == MPI_COMM_NULL);
-   const int n_dummies = tree_hier.nChildren();
+   const unsigned int n_dummies = tree_hier.nChildren();
    /* insert the children this dummy is representing */
-   for (int i = 0; i < n_dummies; ++i)
-      new_children.insert(new_children.end(), new DistributedDummyVector<T>());
+   for (unsigned int i = 0; i < n_dummies; ++i)
+      new_children.insert(new_children.end(), std::unique_ptr<DistributedDummyVector<T>>(new DistributedDummyVector<T>()));
 
    if (type == VectorType::DUAL_Y && !empty_vec)
       new_vecl->appendToBack(tree_hier.getMYL(), -std::numeric_limits<T>::infinity());
@@ -2177,7 +2177,7 @@ Vector<T>* DistributedVector<T>::getLinkingVecNotHierarchicalTop() const {
    if (curr_par == nullptr) {
       /* we are the top */
       assert(first);
-      return first;
+      return first.get();
    }
 
    while (curr_par->parent != nullptr)
@@ -2186,12 +2186,12 @@ Vector<T>* DistributedVector<T>::getLinkingVecNotHierarchicalTop() const {
    if (curr_par->children.size() == 1 && curr_par->children[0]->children.size() != 0) {
       /* the current parent is the hierarchical top */
       assert(curr_par->children[0]->first);
-      return curr_par->children[0]->first;
+      return curr_par->children[0]->first.get();
    }
    else {
       /* the current parent is a normal top */
       assert(curr_par->first);
-      return curr_par->first;
+      return curr_par->first.get();
    }
 }
 

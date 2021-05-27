@@ -17,6 +17,7 @@
  **/
 
 #include <cassert>
+#include <memory>
 #include "./SmartPointer.h"
 
 /**

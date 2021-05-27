@@ -5,8 +5,9 @@
 #include "StripMatrix.h"
 #include <cassert>
 
-DistributedSymmetricMatrix::DistributedSymmetricMatrix(SymmetricMatrix* diag_, SparseMatrix* border_, MPI_Comm mpiComm_) : diag{diag_}, border{border_}, mpiComm{mpiComm_},
-      iAmDistrib(PIPS_MPIgetDistributed(mpiComm)) {
+DistributedSymmetricMatrix::DistributedSymmetricMatrix(std::unique_ptr<SymmetricMatrix> diag_,
+   std::unique_ptr<SparseMatrix> border_, MPI_Comm mpiComm_) : diag{std::move(diag_)}, border{std::move(border_)}, mpiComm{mpiComm_},
+   iAmDistrib(PIPS_MPIgetDistributed(mpiComm)) {
    assert(diag);
    recomputeSize();
 }
@@ -21,41 +22,34 @@ DistributedSymmetricMatrix::DistributedSymmetricMatrix(SymmetricMatrix* diag_, S
  * 'AddChild' method correctly sets the parent and (re)creates an EMPTY
  * border with correct sizes.
  */
-DistributedSymmetricMatrix::DistributedSymmetricMatrix(long long global_n, int local_n, int local_nnz, MPI_Comm mpiComm_) : n(global_n), mpiComm(mpiComm_),
-      iAmDistrib(PIPS_MPIgetDistributed(mpiComm)) {
-   diag = new SparseSymmetricMatrix(local_n, local_nnz);
+DistributedSymmetricMatrix::DistributedSymmetricMatrix(long long global_n, int local_n, int local_nnz,
+   MPI_Comm mpiComm_) : n(global_n), mpiComm(mpiComm_),
+   iAmDistrib(PIPS_MPIgetDistributed(mpiComm)) {
+   diag = std::make_unique<SparseSymmetricMatrix>(local_n, local_nnz);
    // the cross Hessian is nullptr for the root node; it may be also nullptr for
    // children in the case when the Hessian does not have cross terms and
    // the children are created with this constructor. The border will be
    // set up to correct sizes later for this case.
 }
 
-void DistributedSymmetricMatrix::AddChild(DistributedSymmetricMatrix* child) {
+void DistributedSymmetricMatrix::AddChild(std::shared_ptr<DistributedSymmetricMatrix> child) {
    child->parent = this;
    assert(this->border == nullptr);
 
    if (!child->border)
-      child->border = new SparseMatrix(static_cast<int>(child->diag->size()), static_cast<int>(this->diag->size()), 0);
+      child->border = std::make_unique<SparseMatrix>(static_cast<int>(child->diag->size()), static_cast<int>(this->diag->size()), 0);
 
    children.push_back(child);
 }
 
-DistributedSymmetricMatrix::~DistributedSymmetricMatrix() {
-   for (auto & it : children)
-      delete it;
-
-   delete diag;
-   delete border;
-}
-
 SymmetricMatrix* DistributedSymmetricMatrix::clone() const {
-   SymmetricMatrix* diag_clone = diag->clone();
-   SparseMatrix* border_clone = border ? dynamic_cast<SparseMatrix*>(border->cloneFull()) : nullptr;
+   std::unique_ptr<SymmetricMatrix> diag_clone{diag->clone()};
+   std::unique_ptr<SparseMatrix> border_clone{border ? dynamic_cast<SparseMatrix*>(border->cloneFull()) : nullptr};
 
-   auto* clone = new DistributedSymmetricMatrix(diag_clone, border_clone, mpiComm);
+   auto* clone = new DistributedSymmetricMatrix(std::move(diag_clone), std::move(border_clone), mpiComm);
 
-   for (auto it : children) {
-      auto* child = dynamic_cast<DistributedSymmetricMatrix*>(it->clone());
+   for (const auto& it : children) {
+      std::shared_ptr<DistributedSymmetricMatrix> child{dynamic_cast<DistributedSymmetricMatrix*>(it->clone())};
       clone->AddChild(child);
       clone->n += child->n;
    }
@@ -68,15 +62,15 @@ void DistributedSymmetricMatrix::recomputeSize() {
    assert(diag);
    n = 0;
    for (auto& child : children) {
-      if ( !child->is_a(kStochSymDummyMatrix)) {
+      if (!child->is_a(kStochSymDummyMatrix)) {
          child->recomputeSize();
       }
 
       n += child->size();
    }
 
-   if (diag->is_a(kStochSymMatrix) && !diag->is_a(kStochSymDummyMatrix)){
-      dynamic_cast<DistributedSymmetricMatrix*>(diag)->recomputeSize();
+   if (diag->is_a(kStochSymMatrix) && !diag->is_a(kStochSymDummyMatrix)) {
+      dynamic_cast<DistributedSymmetricMatrix&>(*diag).recomputeSize();
    }
 
    n += diag->size();
@@ -126,8 +120,7 @@ void DistributedSymmetricMatrix::mult(double beta, Vector<double>& y_, double al
          diag->mult(beta, *y.first, alpha, *x.first);
       else
          y.first->setToZero();
-   }
-   else
+   } else
       diag->mult(beta, *y.first, alpha, *x.first);
 
    // y0 = y0 + alpha * border^T * xi
@@ -148,11 +141,12 @@ void DistributedSymmetricMatrix::mult(double beta, Vector<double>& y_, double al
       children[it]->mult(beta, *(y.children[it]), alpha, *(x.children[it]));
 
    if (iAmDistrib && !parent)
-      PIPS_MPIsumArrayInPlace(dynamic_cast<SimpleVector<double>*>(y.first)->elements(), y.first->length(), mpiComm);
+      PIPS_MPIsumArrayInPlace(dynamic_cast<SimpleVector<double>&>(*y.first).elements(), y.first->length(), mpiComm);
 }
 
 /** y = beta * y + alpha * this^T * x */
-void DistributedSymmetricMatrix::transMult(double beta, Vector<double>& y_, double alpha, const Vector<double>& x_) const {
+void
+DistributedSymmetricMatrix::transMult(double beta, Vector<double>& y_, double alpha, const Vector<double>& x_) const {
    // We are symmetric, this^T = this, therefore call 'mult' method
    this->mult(beta, y_, alpha, x_);
 }
@@ -162,7 +156,7 @@ void DistributedSymmetricMatrix::transMult(double beta, Vector<double>& y_, doub
 double DistributedSymmetricMatrix::inf_norm() const {
    double maxNorm = 0.0;
 
-   for (auto it : children)
+   for (const auto& it : children)
       maxNorm = std::max(maxNorm, it->inf_norm());
 
    if (iAmDistrib)
@@ -177,7 +171,7 @@ double DistributedSymmetricMatrix::inf_norm() const {
 double DistributedSymmetricMatrix::abminnormNonZero(double tol) const {
    double min = std::numeric_limits<double>::infinity();
 
-   for (auto it : children)
+   for (const auto& it : children)
       min = std::min(min, it->abminnormNonZero(tol));
 
    if (iAmDistrib)
@@ -209,7 +203,7 @@ void DistributedSymmetricMatrix::writeToStreamDense(std::ostream& out) const {
    else  //  !iAmDistrib || (iAmDistrib && rank == 0)
       this->diag->writeToStreamDense(sout);
 
-   for (auto it : children) {
+   for (const auto& it : children) {
       it->writeToStreamDenseChild(sout, offset);
       offset += static_cast<int>(it->diag->size());
    }
@@ -221,8 +215,7 @@ void DistributedSymmetricMatrix::writeToStreamDense(std::ostream& out) const {
       // send offset to next process:
       if (rank < world_size - 1)
          MPI_Ssend(&offset, 1, MPI_INT, rank + 1, 0, mpiComm);
-   }
-   else if (!iAmDistrib)
+   } else if (!iAmDistrib)
       out << sout.str();
    else if (iAmDistrib && rank == 0) {
       out << sout.str();
@@ -256,8 +249,7 @@ void DistributedSymmetricMatrix::writeToStreamDenseChild(std::stringstream& out,
          dynamic_cast<const SparseSymmetricMatrix&>(*diag).writeToStreamDenseRow(out, r);
          out << "\n";
       }
-   }
-   else
+   } else
       dynamic_cast<const DistributedSymmetricMatrix&>(*diag).writeToStreamDense(out);
 }
 
@@ -313,6 +305,7 @@ void DistributedSymmetricMatrix::atAddDiagonal(int idiag, const Vector<double>& 
    for (int it = 0; it < nChildren; it++)
       children[it]->atAddDiagonal(idiag, *v.children[it]);
 }
+
 void DistributedSymmetricMatrix::fromGetDiagonal(int, Vector<double>& x_) const {
    assert("The value of the parameter is not supported!");
 
@@ -365,7 +358,7 @@ void DistributedSymmetricMatrix::scalarMult(double num) {
    diag->scalarMult(num);
    if (border)
       border->scalarMult(num);
-   for (auto & it : children)
+   for (auto& it : children)
       it->scalarMult(num);
 }
 
@@ -373,7 +366,7 @@ void DistributedSymmetricMatrix::deleteEmptyRowsCols(const Vector<int>& nnzVec, 
    const auto& nnzVecStoch = dynamic_cast<const DistributedVector<int>&>(nnzVec);
    assert(children.size() == nnzVecStoch.children.size());
 
-   const auto* vec = dynamic_cast<const SimpleVector<int>*>( nnzVecStoch.first );
+   const auto* vec = dynamic_cast<const SimpleVector<int>*>(nnzVecStoch.first.get());
    assert(vec);
 
    const long long n_old = n;
@@ -386,8 +379,7 @@ void DistributedSymmetricMatrix::deleteEmptyRowsCols(const Vector<int>& nnzVec, 
       // adapt border
       assert(dynamic_cast<const SimpleVector<int>*>(linkParent));
       border->deleteEmptyRowsCols(*vec, *linkParent);
-   }
-   else
+   } else
       assert(!border);
 
    assert(diag->is_a(kSparseSymMatrix));
@@ -415,27 +407,29 @@ int StochSymDummyMatrix::is_a(int type) const {
    return type == kStochSymDummyMatrix || type == kStochSymMatrix;
 }
 
-void DistributedSymmetricMatrix::splitMatrix(const std::vector<unsigned int>& map_blocks_children, const std::vector<MPI_Comm>& child_comms) {
+void DistributedSymmetricMatrix::splitMatrix(const std::vector<unsigned int>& map_blocks_children,
+   const std::vector<MPI_Comm>& child_comms) {
    const unsigned int n_curr_children = children.size();
    assert(n_curr_children == map_blocks_children.size());
 
    const unsigned int n_new_children = getNDistinctValues(map_blocks_children);
-   std::vector<DistributedSymmetricMatrix*> new_children(n_new_children);
+   std::vector<std::shared_ptr<DistributedSymmetricMatrix>> new_children(n_new_children);
 
    unsigned int begin_curr_child_blocks{0};
    unsigned int end_curr_child_blocks{0};
    for (unsigned int i = 0; i < n_new_children; ++i) {
       while (end_curr_child_blocks != (n_curr_children - 1) &&
-             map_blocks_children[end_curr_child_blocks] == map_blocks_children[end_curr_child_blocks + 1])
+         map_blocks_children[end_curr_child_blocks] == map_blocks_children[end_curr_child_blocks + 1])
          ++end_curr_child_blocks;
 
       const unsigned int n_blocks_for_child = end_curr_child_blocks - begin_curr_child_blocks + 1;
 
-      DistributedSymmetricMatrix* diag_new = (child_comms[i] == MPI_COMM_NULL) ? nullptr : new DistributedSymmetricMatrix(0, 0, 0, child_comms[i]);
+      std::unique_ptr<DistributedSymmetricMatrix> diag_new{(child_comms[i] == MPI_COMM_NULL) ? nullptr
+         : new DistributedSymmetricMatrix(0, 0, 0, child_comms[i])};
 
       /* shave off empty two link part from respective children and add them to the new root/remove them from the old root */
       for (unsigned int j = 0; j < n_blocks_for_child; ++j) {
-         DistributedSymmetricMatrix* child = children.front();
+         std::shared_ptr<DistributedSymmetricMatrix> child = children.front();
          children.erase(children.begin());
 
          if (child_comms[i] == MPI_COMM_NULL)
@@ -443,16 +437,15 @@ void DistributedSymmetricMatrix::splitMatrix(const std::vector<unsigned int>& ma
 
          if (diag_new)
             diag_new->AddChild(child);
-//         else
-//            delete child;
       }
       if (diag_new)
          diag_new->recomputeSize();
 
       /* create child holding the new Bmat and it's Blmat part */
-      new_children[i] = (child_comms[i] != MPI_COMM_NULL) ? new DistributedSymmetricMatrix(diag_new, nullptr, child_comms[i]) : new StochSymDummyMatrix();
+      new_children[i].reset((child_comms[i] != MPI_COMM_NULL) ? new DistributedSymmetricMatrix(std::move(diag_new), nullptr,
+         child_comms[i]) : new StochSymDummyMatrix());
       if (child_comms[i] != MPI_COMM_NULL)
-         dynamic_cast<DistributedSymmetricMatrix*>(new_children[i]->diag)->parent = new_children[i];
+         dynamic_cast<DistributedSymmetricMatrix&>(*new_children[i]->diag).parent = new_children[i].get();
 
       ++end_curr_child_blocks;
       begin_curr_child_blocks = end_curr_child_blocks;
@@ -470,15 +463,13 @@ void DistributedSymmetricMatrix::splitMatrix(const std::vector<unsigned int>& ma
 }
 
 BorderedSymmetricMatrix* DistributedSymmetricMatrix::raiseBorder(int n_vars) {
-   assert(parent == nullptr);
-   assert(border == nullptr);
+   assert(!parent);
+   assert(!border);
 
-   StripMatrix* border_vertical = shaveBorder(n_vars);
+   std::unique_ptr<StripMatrix> border_vertical{shaveBorder(n_vars)};
 
-   BorderedSymmetricMatrix* const border_layer = new BorderedSymmetricMatrix(this, border_vertical, new SparseSymmetricMatrix(n_vars, 0, false), mpiComm);
-
-   DistributedSymmetricMatrix* me = this;
-   IotrAddRef(&me);
+   auto* const border_layer = new BorderedSymmetricMatrix(std::dynamic_pointer_cast<DistributedSymmetricMatrix>(this->shared_from_this()),
+      std::move(border_vertical), std::make_unique<SparseSymmetricMatrix>(n_vars, 0, false), mpiComm);
 
    assert(n >= 0);
 
@@ -488,12 +479,12 @@ BorderedSymmetricMatrix* DistributedSymmetricMatrix::raiseBorder(int n_vars) {
 StripMatrix* DistributedSymmetricMatrix::shaveBorder(int n_vars) {
    assert(diag->is_a(kSparseSymMatrix));
 
-   SparseMatrix* const border_top_left = parent ? new SparseMatrix(0, n_vars, 0) : dynamic_cast<SparseSymmetricMatrix*>(diag)->shaveSymLeftBottom(
-         n_vars);
-   auto* const border_vertical = new StripMatrix(true, border_top_left, nullptr, mpiComm);
+   std::unique_ptr<SparseMatrix> border_top_left{parent ? new SparseMatrix(0, n_vars, 0)
+      : dynamic_cast<SparseSymmetricMatrix*>(diag.get())->shaveSymLeftBottom(n_vars)};
+   StripMatrix* border_vertical = new StripMatrix(true, std::move(border_top_left), nullptr, mpiComm);
 
-   for (auto & it : children)
-      border_vertical->addChild(it->shaveBorder2(n_vars));
+   for (auto& it : children)
+      border_vertical->addChild(std::unique_ptr<StripMatrix>(it->shaveBorder2(n_vars)));
 
    n -= n_vars;
    border_vertical->recomputeNonzeros();
@@ -504,14 +495,13 @@ StripMatrix* DistributedSymmetricMatrix::shaveBorder2(int n_vars) {
    n -= n_vars;
 
    if (border) {
-      SparseMatrix* const border_block = border->shaveLeft(n_vars);
-      return new StripMatrix(true, border_block, nullptr, mpiComm);
-   }
-   else {
+      std::unique_ptr<SparseMatrix> border_block{border->shaveLeft(n_vars)};
+      return new StripMatrix(true, std::move(border_block), nullptr, mpiComm);
+   } else {
       assert(children.empty());
       assert(diag->is_a(kStochSymMatrix));
 
       auto& diags = dynamic_cast<DistributedSymmetricMatrix&>(*diag);
-      return new StripMatrix(true, diags.shaveBorder(n_vars), nullptr, mpiComm);
+      return new StripMatrix(true, std::unique_ptr<StripMatrix>(diags.shaveBorder(n_vars)), nullptr, mpiComm);
    }
 }

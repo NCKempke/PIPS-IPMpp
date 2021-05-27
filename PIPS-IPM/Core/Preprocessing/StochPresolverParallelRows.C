@@ -203,43 +203,43 @@ bool StochPresolverParallelRows::applyPresolving() {
 void StochPresolverParallelRows::setNormalizedPointersMatrices(int node) {
    assert(-1 <= node && node < nChildren);
 
-   const DistributedMatrix& matrixA = dynamic_cast<const DistributedMatrix&>(*(presolve_data.getPresProb().A));
-   const DistributedMatrix& matrixC = dynamic_cast<const DistributedMatrix&>(*(presolve_data.getPresProb().C));
+   const auto& matrixA = dynamic_cast<const DistributedMatrix&>(*(presolve_data.getPresProb().A));
+   const auto& matrixC = dynamic_cast<const DistributedMatrix&>(*(presolve_data.getPresProb().C));
 
    if (node == -1) {
       /* EQUALITY_SYSTEM */
       norm_Amat.reset();
       norm_AmatTrans.reset();
 
-      norm_Bmat.reset(new SparseStorageDynamic(dynamic_cast<SparseMatrix*>(matrixA.Bmat)->getStorageDynamicRef()));
-      norm_BmatTrans.reset(new SparseStorageDynamic(dynamic_cast<SparseMatrix*>(matrixA.Bmat)->getStorageDynamicTransposedRef()));
+      norm_Bmat.reset(new SparseStorageDynamic(dynamic_cast<SparseMatrix&>(*matrixA.Bmat).getStorageDynamicRef()));
+      norm_BmatTrans.reset(new SparseStorageDynamic(dynamic_cast<SparseMatrix&>(*matrixA.Bmat).getStorageDynamicTransposedRef()));
 
       /* INEQUALITY_SYSTEM */
       norm_Cmat.reset();
       norm_CmatTrans.reset();
 
-      norm_Dmat.reset(new SparseStorageDynamic(dynamic_cast<SparseMatrix*>(matrixC.Bmat)->getStorageDynamicRef()));
-      norm_DmatTrans.reset(new SparseStorageDynamic(dynamic_cast<SparseMatrix*>(matrixC.Bmat)->getStorageDynamicTransposedRef()));
+      norm_Dmat.reset(new SparseStorageDynamic(dynamic_cast<SparseMatrix&>(*matrixC.Bmat).getStorageDynamicRef()));
+      norm_DmatTrans.reset(new SparseStorageDynamic(dynamic_cast<SparseMatrix&>(*matrixC.Bmat).getStorageDynamicTransposedRef()));
    }
    else {
       if (!presolve_data.nodeIsDummy(node)) {
          /* EQUALITY_SYSTEM */
-         norm_Amat.reset(new SparseStorageDynamic(dynamic_cast<SparseMatrix*>(matrixA.children[node]->Amat)->getStorageDynamicRef()));
+         norm_Amat.reset(new SparseStorageDynamic(dynamic_cast<SparseMatrix&>(*matrixA.children[node]->Amat).getStorageDynamicRef()));
          norm_AmatTrans.reset(
-               new SparseStorageDynamic(dynamic_cast<SparseMatrix*>(matrixA.children[node]->Amat)->getStorageDynamicTransposedRef()));
+               new SparseStorageDynamic(dynamic_cast<SparseMatrix&>(*matrixA.children[node]->Amat).getStorageDynamicTransposedRef()));
 
-         norm_Bmat.reset(new SparseStorageDynamic(dynamic_cast<SparseMatrix*>(matrixA.children[node]->Bmat)->getStorageDynamicRef()));
+         norm_Bmat.reset(new SparseStorageDynamic(dynamic_cast<SparseMatrix&>(*matrixA.children[node]->Bmat).getStorageDynamicRef()));
          norm_BmatTrans.reset(
-               new SparseStorageDynamic(dynamic_cast<SparseMatrix*>(matrixA.children[node]->Bmat)->getStorageDynamicTransposedRef()));
+               new SparseStorageDynamic(dynamic_cast<SparseMatrix&>(*matrixA.children[node]->Bmat).getStorageDynamicTransposedRef()));
 
          /* INEQUALITY_SYSTEM */
-         norm_Cmat.reset(new SparseStorageDynamic(dynamic_cast<SparseMatrix*>(matrixC.children[node]->Amat)->getStorageDynamicRef()));
+         norm_Cmat.reset(new SparseStorageDynamic(dynamic_cast<SparseMatrix&>(*matrixC.children[node]->Amat).getStorageDynamicRef()));
          norm_CmatTrans.reset(
-               new SparseStorageDynamic(dynamic_cast<SparseMatrix*>(matrixC.children[node]->Amat)->getStorageDynamicTransposedRef()));
+               new SparseStorageDynamic(dynamic_cast<SparseMatrix&>(*matrixC.children[node]->Amat).getStorageDynamicTransposedRef()));
 
-         norm_Dmat.reset(new SparseStorageDynamic(dynamic_cast<SparseMatrix*>(matrixC.children[node]->Bmat)->getStorageDynamicRef()));
+         norm_Dmat.reset(new SparseStorageDynamic(dynamic_cast<SparseMatrix&>(*matrixC.children[node]->Bmat).getStorageDynamicRef()));
          norm_DmatTrans.reset(
-               new SparseStorageDynamic(dynamic_cast<SparseMatrix*>(matrixC.children[node]->Bmat)->getStorageDynamicTransposedRef()));
+               new SparseStorageDynamic(dynamic_cast<SparseMatrix&>(*matrixC.children[node]->Bmat).getStorageDynamicTransposedRef()));
       }
       else {
          norm_Amat.reset();
@@ -277,34 +277,34 @@ void StochPresolverParallelRows::updateExtendedPointersForCurrentNode(int node) 
 
    if (node == -1) {
       /* INEQUALITY_SYSTEM */
-      currCmat = dynamic_cast<SparseMatrix*>(dynamic_cast<const DistributedMatrix&>(*(presolve_data.getPresProb().C)).Bmat)->getStorageDynamic();
-      currCmatTrans = dynamic_cast<SparseMatrix*>(dynamic_cast<const DistributedMatrix&>(*(presolve_data.getPresProb().C)).Bmat)->getStorageDynamicTransposed();
+      currCmat = dynamic_cast<SparseMatrix&>(*dynamic_cast<const DistributedMatrix&>(*(presolve_data.getPresProb().C)).Bmat).getStorageDynamic();
+      currCmatTrans = dynamic_cast<SparseMatrix&>(*dynamic_cast<const DistributedMatrix&>(*(presolve_data.getPresProb().C)).Bmat).getStorageDynamicTransposed();
 
       currDmat = nullptr;
       currDmatTrans = nullptr;
 
-      currIneqRhs = dynamic_cast<const SimpleVector<double>*>(dynamic_cast<const DistributedVector<double>&>(*(presolve_data.getPresProb().bu)).first);
-      currIneqLhs = dynamic_cast<const SimpleVector<double>*>(dynamic_cast<const DistributedVector<double>&>(*(presolve_data.getPresProb().bl)).first);
-      currIcupp = dynamic_cast<const SimpleVector<double>*>(dynamic_cast<const DistributedVector<double>&>(*(presolve_data.getPresProb().icupp)).first);
-      currIclow = dynamic_cast<const SimpleVector<double>*>(dynamic_cast<const DistributedVector<double>&>(*(presolve_data.getPresProb().iclow)).first);
+      currIneqRhs = dynamic_cast<const SimpleVector<double>*>(dynamic_cast<const DistributedVector<double>&>(*(presolve_data.getPresProb().bu)).first.get());
+      currIneqLhs = dynamic_cast<const SimpleVector<double>*>(dynamic_cast<const DistributedVector<double>&>(*(presolve_data.getPresProb().bl)).first.get());
+      currIcupp = dynamic_cast<const SimpleVector<double>*>(dynamic_cast<const DistributedVector<double>&>(*(presolve_data.getPresProb().icupp)).first.get());
+      currIclow = dynamic_cast<const SimpleVector<double>*>(dynamic_cast<const DistributedVector<double>&>(*(presolve_data.getPresProb().iclow)).first.get());
 
-      currNnzRowC = dynamic_cast<const SimpleVector<int>*>(presolve_data.getNnzsRowC().first);
+      currNnzRowC = dynamic_cast<const SimpleVector<int>*>(presolve_data.getNnzsRowC().first.get());
    }
    else {
 
       /* INEQUALITY_SYSTEM */
-      currCmat = dynamic_cast<SparseMatrix*>(dynamic_cast<const DistributedMatrix&>(*(presolve_data.getPresProb().C)).children[node]->Amat)->getStorageDynamic();
-      currCmatTrans = dynamic_cast<SparseMatrix*>(dynamic_cast<const DistributedMatrix&>(*(presolve_data.getPresProb().C)).children[node]->Amat)->getStorageDynamicTransposed();
+      currCmat = dynamic_cast<SparseMatrix&>(*dynamic_cast<const DistributedMatrix&>(*(presolve_data.getPresProb().C)).children[node]->Amat).getStorageDynamic();
+      currCmatTrans = dynamic_cast<SparseMatrix&>(*dynamic_cast<const DistributedMatrix&>(*(presolve_data.getPresProb().C)).children[node]->Amat).getStorageDynamicTransposed();
 
-      currDmat = dynamic_cast<SparseMatrix*>(dynamic_cast<const DistributedMatrix&>(*(presolve_data.getPresProb().C)).children[node]->Bmat)->getStorageDynamic();
-      currDmatTrans = dynamic_cast<SparseMatrix*>(dynamic_cast<const DistributedMatrix&>(*(presolve_data.getPresProb().C)).children[node]->Bmat)->getStorageDynamicTransposed();
+      currDmat = dynamic_cast<SparseMatrix&>(*dynamic_cast<const DistributedMatrix&>(*(presolve_data.getPresProb().C)).children[node]->Bmat).getStorageDynamic();
+      currDmatTrans = dynamic_cast<SparseMatrix&>(*dynamic_cast<const DistributedMatrix&>(*(presolve_data.getPresProb().C)).children[node]->Bmat).getStorageDynamicTransposed();
 
-      currIneqRhs = dynamic_cast<const SimpleVector<double>*>(dynamic_cast<const DistributedVector<double>&>(*(presolve_data.getPresProb().bu)).children[node]->first);
-      currIneqLhs = dynamic_cast<const SimpleVector<double>*>(dynamic_cast<const DistributedVector<double>&>(*(presolve_data.getPresProb().bl)).children[node]->first);
-      currIcupp = dynamic_cast<const SimpleVector<double>*>(dynamic_cast<const DistributedVector<double>&>(*(presolve_data.getPresProb().icupp)).children[node]->first);
-      currIclow = dynamic_cast<const SimpleVector<double>*>(dynamic_cast<const DistributedVector<double>&>(*(presolve_data.getPresProb().iclow)).children[node]->first);
+      currIneqRhs = dynamic_cast<const SimpleVector<double>*>(dynamic_cast<const DistributedVector<double>&>(*(presolve_data.getPresProb().bu)).children[node]->first.get());
+      currIneqLhs = dynamic_cast<const SimpleVector<double>*>(dynamic_cast<const DistributedVector<double>&>(*(presolve_data.getPresProb().bl)).children[node]->first.get());
+      currIcupp = dynamic_cast<const SimpleVector<double>*>(dynamic_cast<const DistributedVector<double>&>(*(presolve_data.getPresProb().icupp)).children[node]->first.get());
+      currIclow = dynamic_cast<const SimpleVector<double>*>(dynamic_cast<const DistributedVector<double>&>(*(presolve_data.getPresProb().iclow)).children[node]->first.get());
 
-      currNnzRowC = dynamic_cast<const SimpleVector<int>*>(presolve_data.getNnzsRowC().children[node]->first);
+      currNnzRowC = dynamic_cast<const SimpleVector<int>*>(presolve_data.getNnzsRowC().children[node]->first.get());
    }
 
 }

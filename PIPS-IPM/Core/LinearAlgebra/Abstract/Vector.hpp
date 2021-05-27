@@ -11,6 +11,7 @@
 #include <iostream>
 #include <fstream>
 #include <sstream>
+#include <memory>
 #include <functional>
 #include "../../Base/IotrRefCount.h"
 #include "../../Utilities/pipsdef.h"
@@ -23,7 +24,7 @@
  *  @ingroup AbstractLinearAlgebra
  */
 template<typename T>
-class Vector : public IotrRefCount {
+class Vector : public IotrRefCount, public std::enable_shared_from_this<Vector<T>> {
 protected:
    int n{0};
 public:
@@ -33,7 +34,7 @@ public:
    Vector(int n_);
 
    Vector() = default;
-   ~Vector() override = default;
+   virtual ~Vector() = default;
 
    virtual void pushAwayFromZero(double /*tol*/, double /*amount*/, const Vector<T>* /*select */ ) = 0;
 

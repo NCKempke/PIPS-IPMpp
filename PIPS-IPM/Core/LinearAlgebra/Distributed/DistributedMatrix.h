@@ -17,7 +17,7 @@ protected:
    DistributedMatrix() = default;
 public:
 
-   DistributedMatrix(GeneralMatrix* Amat, GeneralMatrix* Bmat, GeneralMatrix* Blmat, MPI_Comm mpiComm_, bool inner_leaf = false, bool inner_root = false);
+   DistributedMatrix(std::unique_ptr<GeneralMatrix> Amat, std::unique_ptr<GeneralMatrix> Bmat, std::unique_ptr<GeneralMatrix> Blmat, MPI_Comm mpiComm_, bool inner_leaf = false, bool inner_root = false);
 
    /** Constructs a matrix having local A and B blocks having the sizes and number of nz specified by
     *  A_m, A_n, A_nnz and B_m, B_n, B_nnz.
@@ -35,19 +35,19 @@ public:
    DistributedMatrix(long long global_m, long long global_n, MPI_Comm mpiComm_);
 
    // constructor for combining scenarios
-   ~DistributedMatrix() override;
+   ~DistributedMatrix() override = default;
 
    using GeneralMatrix::cloneFull;
    using GeneralMatrix::cloneEmptyRows;
    [[nodiscard]] GeneralMatrix* cloneEmptyRows(bool switchToDynamicStorage) const override;
    [[nodiscard]] GeneralMatrix* cloneFull(bool switchToDynamicStorage) const override;
 
-   virtual void AddChild(DistributedMatrix* child);
+   virtual void AddChild(const std::shared_ptr<DistributedMatrix>& child);
 
-   std::vector<DistributedMatrix*> children;
-   GeneralMatrix* Amat{};
-   GeneralMatrix* Bmat{};
-   GeneralMatrix* Blmat{};
+   std::vector<std::shared_ptr<DistributedMatrix>> children;
+   std::unique_ptr<GeneralMatrix> Amat{};
+   std::unique_ptr<GeneralMatrix> Bmat{};
+   std::unique_ptr<GeneralMatrix> Blmat{};
 
    long long m{-1};
    long long n{-1};
@@ -58,7 +58,7 @@ public:
    const bool inner_leaf{false};
    const bool inner_root{false};
 private:
-   virtual bool hasSparseMatrices() const;
+   [[nodiscard]] virtual bool hasSparseMatrices() const;
 
    /** trans mult method for children with linking constraints */
    virtual void transMult2(double beta, DistributedVector<double>& y, double alpha, const DistributedVector<double>& x, const Vector<double>* xvecl) const;
@@ -129,8 +129,8 @@ public:
    void writeToStream(std::ostream&) const override { assert("Not implemented" && 0); };
    virtual void writeToStreamDense(std::ostream& out, int offset) const;
    virtual void writeToStreamDenseBordered(const StripMatrix& border, std::ostream& out, int offset) const;
-   virtual void writeToStreamDense(std::ostream& out) const override { writeToStreamDense(out, 0); };
-   virtual void writeDashedLineToStream(std::ostream& out) const override { writeDashedLineToStream(out, 0); };
+   void writeToStreamDense(std::ostream& out) const override { writeToStreamDense(out, 0); };
+   void writeDashedLineToStream(std::ostream& out) const override { writeDashedLineToStream(out, 0); };
    virtual void writeDashedLineToStream(std::ostream& out, int offset) const;
 
    void writeMPSformatRows(std::ostream& out, int rowType, const Vector<double>* irhs) const override;
@@ -214,7 +214,7 @@ protected:
    virtual void getColMinMaxVecChild(bool getMin, bool initializeVec, const Vector<double>* rowScaleVec, const Vector<double>* rowScaleParent,
          Vector<double>& minmaxVec) const;
 
-   virtual bool amatEmpty() const;
+   [[nodiscard]] virtual bool amatEmpty() const;
    virtual void shaveBorder(int m_conss, int n_vars, StripMatrix* border_left, StripMatrix* border_bottom);
    [[nodiscard]] virtual StripMatrix* shaveLeftBorder(int n_vars);
    [[nodiscard]] virtual StripMatrix* shaveLeftBorderChild(int n_vars);
@@ -233,7 +233,7 @@ public:
 
    StochGenDummyMatrix() : DistributedMatrix(0, 0, 0, 0, 0, 0, 0, 0, MPI_COMM_NULL) {};
    ~StochGenDummyMatrix() override = default;
-   void AddChild(DistributedMatrix*) override {};
+   void AddChild(const std::shared_ptr<DistributedMatrix>& ) override {};
 
 public:
    void updateTransposed() const override {};
@@ -317,7 +317,7 @@ public:
    void initStaticStorageFromDynamic(const Vector<int>&, const Vector<int>&) override {};
    void initStaticStorageFromDynamic(const Vector<int>&, const Vector<int>&, const Vector<int>*, const Vector<int>*) override {};
 
-   std::vector<int> get2LinkStartBlocks() const override { return std::vector<int>(); };
+   [[nodiscard]] std::vector<int> get2LinkStartBlocks() const override { return std::vector<int>(); };
 
    void updateKLinkVarsCount(std::vector<int>&) const override {};
    void updateKLinkConsCount(std::vector<int>&) const override {};
@@ -325,13 +325,14 @@ public:
    void permuteLinkingVars(const std::vector<unsigned int>&) override {};
    void permuteLinkingCons(const std::vector<unsigned int>&) override {};
 
-   bool isRootNodeInSync() const override { return true; };
+   [[nodiscard]] bool isRootNodeInSync() const override { return true; };
 
    int appendRow(const DistributedMatrix&, int, int, bool) override {
       assert(0 && "CANNOT APPEND ROW TO DUMMY MATRIX");
       return -1;
    };
-   double localRowTimesVec(const DistributedVector<double>&, int, int, bool) const override {
+
+   [[nodiscard]] double localRowTimesVec(const DistributedVector<double>&, int, int, bool) const override {
       assert(0 && "CANNOT MULTIPLY ROW WITH DUMMY MATRIX");
       return -1;
    };
@@ -340,7 +341,7 @@ public:
    void axpyWithRowAtPosNeg(double, DistributedVector<double>*, SimpleVector<double>*, DistributedVector<double>*, SimpleVector<double>*, int, int,
          bool) const override {};
 
-   BorderedMatrix* raiseBorder(int, int) override {
+   [[nodiscard]] BorderedMatrix* raiseBorder(int, int) override {
       assert(0 && "CANNOT SHAVE BORDER OFF OF A DUMMY MATRIX");
       return nullptr;
    };
@@ -354,8 +355,8 @@ protected:
    void getColMinMaxVecChild(bool, bool, const Vector<double>*, const Vector<double>*, Vector<double>&) const override {};
 
    void shaveBorder(int, int, StripMatrix* border_left, StripMatrix* border_bottom) override {
-      border_left->addChild(new StringGenDummyMatrix());
-      border_bottom->addChild(new StringGenDummyMatrix());
+      border_left->addChild(std::make_unique<StringGenDummyMatrix>());
+      border_bottom->addChild(std::make_unique<StringGenDummyMatrix>());
    };
    StripMatrix* shaveLeftBorder(int) override { return new StringGenDummyMatrix(); };
    StripMatrix* shaveLeftBorderChild(int) override { return new StringGenDummyMatrix(); };

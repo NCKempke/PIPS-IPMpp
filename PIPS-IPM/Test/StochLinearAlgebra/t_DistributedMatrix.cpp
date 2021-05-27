@@ -22,8 +22,8 @@ DistributedMatrixSplittingTest::createTestMatrix(unsigned int n_link_vars, unsig
    auto* root = new DistributedMatrix(0, 0, 0, 0, 0, m_link_vars, n_link_vars, 0, m_link_cons, n_link_vars, 0, MPI_COMM_WORLD);
 
    for (unsigned int i = 0; i < n_blocks; ++i) {
-      auto* child = new DistributedMatrix(0, 0, m_diag, n_link_vars, 0, m_diag, n_diag, 0, m_link_cons, n_diag, 0, MPI_COMM_WORLD);
-      root->AddChild(child);
+      std::unique_ptr<DistributedMatrix> child = std::make_unique<DistributedMatrix>(0, 0, m_diag, n_link_vars, 0, m_diag, n_diag, 0, m_link_cons, n_diag, 0, MPI_COMM_WORLD);
+      root->AddChild(std::move(child));
    }
 
    root->recomputeSize();

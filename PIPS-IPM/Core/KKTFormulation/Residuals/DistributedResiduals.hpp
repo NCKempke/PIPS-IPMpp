@@ -17,33 +17,33 @@ class DistributedTree;
 
 class DistributedResiduals : public Residuals {
 public:
-   /**
-    * Constructor
-    */
-   DistributedResiduals(Vector<double>* rQ, Vector<double>* rA, Vector<double>* rC, Vector<double>* rz, Vector<double>* rt, Vector<double>* rlambda,
-         Vector<double>* ru, Vector<double>* rpi, Vector<double>* rv, Vector<double>* rgamma, Vector<double>* rw, Vector<double>* rphi,
-         Vector<double>* ixlow, double nxlowGlobal, Vector<double>* ixupp, double nxuppGlobal, Vector<double>* iclow, double mclowGlobal,
-         Vector<double>* icupp, double mcuppGlobal);
+   DistributedResiduals(std::unique_ptr<Vector<double>> rQ_, std::unique_ptr<Vector<double>> rA_,
+      std::unique_ptr<Vector<double>> rC_, std::unique_ptr<Vector<double>> rz_, std::unique_ptr<Vector<double>> rt_,
+      std::unique_ptr<Vector<double>> rlambda_, std::unique_ptr<Vector<double>> ru_,
+      std::unique_ptr<Vector<double>> rpi_, std::unique_ptr<Vector<double>> rv_,
+      std::unique_ptr<Vector<double>> rgamma_, std::unique_ptr<Vector<double>> rw_,
+      std::unique_ptr<Vector<double>> rphi_, std::shared_ptr<Vector<double>> ixlow_,
+      std::shared_ptr<Vector<double>> ixupp_, std::shared_ptr<Vector<double>> iclow_,
+      std::shared_ptr<Vector<double>> icupp_);
 
-   DistributedResiduals(const DistributedTree* tree, Vector<double>* ixlow_, Vector<double>* ixupp_, Vector<double>* iclow_, Vector<double>* icupp_);
+   DistributedResiduals(const DistributedResiduals& res) = default;
 
-   DistributedResiduals(const DistributedResiduals& res);
-
-   ~DistributedResiduals() override;
+   ~DistributedResiduals() override = default;
 
    void permuteVec0Entries(const std::vector<unsigned int>& perm, bool resids_only = false);
+
    void permuteEqLinkingEntries(const std::vector<unsigned int>& perm);
+
    void permuteIneqLinkingEntries(const std::vector<unsigned int>& perm, bool resids_only = false);
 
-   bool isRootNodeInSync() const;
+   [[nodiscard]] bool isRootNodeInSync() const;
 
-   void collapseHierarchicalStructure(const DistributedQP& data, const DistributedTree* tree_hier, SmartPointer<Vector<double> > ixlow_,
-         SmartPointer<Vector<double> > ixupp_, SmartPointer<Vector<double> > iclow_, SmartPointer<Vector<double> > icupp_);
+   void collapseHierarchicalStructure(const DistributedQP& data_hier, const DistributedTree* tree_hier,
+      std::shared_ptr<Vector<double>> ixlow_,
+      std::shared_ptr<Vector<double>> ixupp_, std::shared_ptr<Vector<double>> iclow_,
+      std::shared_ptr<Vector<double>> icupp_);
 
-   std::vector<DistributedResiduals*> children;
 protected:
-   void createChildren();
-   void AddChild(DistributedResiduals* child);
 };
 
 #endif

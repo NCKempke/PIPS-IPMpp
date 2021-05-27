@@ -22,7 +22,7 @@
 
 class QpPresolver : public Presolver {
 public:
-   QpPresolver(const Problem& prob, Postsolver* postsolver = nullptr);
+   explicit QpPresolver(const Problem& prob, Postsolver* postsolver = nullptr);
    ~QpPresolver() override = default;
 };
 

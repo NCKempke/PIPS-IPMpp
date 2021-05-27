@@ -6,8 +6,8 @@
 #define VARIABLES_H
 
 #include <cassert>
+#include <memory>
 #include "Vector.hpp"
-#include "SmartPointer.h"
 
 class Problem;
 
@@ -28,12 +28,6 @@ enum {
  * @ingroup AbstractProblemFormulation
  */
 
-
-
-#ifdef TESTING
-class VariablesTester;
-#endif
-
 /**
  * Holds the variables used by the interior point solver. In terms of
  * in our abstract problem formulation, these variables are the
@@ -42,9 +36,6 @@ class VariablesTester;
  * @ingroup AbstractProblemFormulation */
 class Variables {
 public:
-#ifdef TESTING
-   friend VariablesTester;
-#endif
 
    /** number of complementary primal-dual variables. */
    long long number_complementarity_pairs;
@@ -53,34 +44,35 @@ public:
    long long my;
    long long mz, mcupp, mclow;
 
-   SmartPointer<Vector<double> > ixlow;
-   SmartPointer<Vector<double> > ixupp;
-   SmartPointer<Vector<double> > icupp;
-   SmartPointer<Vector<double> > iclow;
+   std::shared_ptr<Vector<double>> ixlow;
+   std::shared_ptr<Vector<double>> ixupp;
+   std::shared_ptr<Vector<double>> iclow;
+   std::shared_ptr<Vector<double>> icupp;
 
-   SmartPointer<Vector<double> > primals;
-   SmartPointer<Vector<double> > slacks;
-   SmartPointer<Vector<double> > equality_duals;
-   SmartPointer<Vector<double> > inequality_duals;
+   std::unique_ptr<Vector<double>> primals;
+   std::unique_ptr<Vector<double>> slacks;
+   std::unique_ptr<Vector<double>> equality_duals;
+   std::unique_ptr<Vector<double>> inequality_duals;
 
-   SmartPointer<Vector<double> > primal_lower_bound_gap;
-   SmartPointer<Vector<double> > primal_lower_bound_gap_dual;
+   std::unique_ptr<Vector<double>> primal_lower_bound_gap;
+   std::unique_ptr<Vector<double>> primal_lower_bound_gap_dual;
 
-   SmartPointer<Vector<double> > primal_upper_bound_gap;
-   SmartPointer<Vector<double> > primal_upper_bound_gap_dual;
+   std::unique_ptr<Vector<double>> primal_upper_bound_gap;
+   std::unique_ptr<Vector<double>> primal_upper_bound_gap_dual;
 
-   SmartPointer<Vector<double> > slack_lower_bound_gap;
-   SmartPointer<Vector<double> > slack_lower_bound_gap_dual;
+   std::unique_ptr<Vector<double>> slack_lower_bound_gap;
+   std::unique_ptr<Vector<double>> slack_lower_bound_gap_dual;
 
-   SmartPointer<Vector<double> > slack_upper_bound_gap;
-   SmartPointer<Vector<double> > slack_upper_bound_gap_dual;
+   std::unique_ptr<Vector<double>> slack_upper_bound_gap;
+   std::unique_ptr<Vector<double>> slack_upper_bound_gap_dual;
 
    /** constructor in which the data and variable pointers are set to
        point to the given arguments */
-   Variables(Vector<double>* x_in, Vector<double>* s_in, Vector<double>* y_in, Vector<double>* z_in, Vector<double>* v_in, Vector<double>* gamma_in,
-         Vector<double>* w_in, Vector<double>* phi_in, Vector<double>* t_in, Vector<double>* lambda_in, Vector<double>* u_in, Vector<double>* pi_in,
-         Vector<double>* ixlow_in, Vector<double>* ixupp_in, Vector<double>* iclow_in, Vector<double>* icupp_in);
-   Variables() {};
+   Variables(std::unique_ptr<Vector<double>> x_in, std::unique_ptr<Vector<double>> s_in, std::unique_ptr<Vector<double>> y_in, std::unique_ptr<Vector<double>> z_in, std::unique_ptr<Vector<double>> v_in,
+      std::unique_ptr<Vector<double>> gamma_in, std::unique_ptr<Vector<double>> w_in, std::unique_ptr<Vector<double>> phi_in, std::unique_ptr<Vector<double>> t_in, std::unique_ptr<Vector<double>> lambda_in, std::unique_ptr<Vector<double>> u_in,
+      std::unique_ptr<Vector<double>> pi_in, std::shared_ptr<Vector<double>> ixlow_in, std::shared_ptr<Vector<double>> ixupp_in, std::shared_ptr<Vector<double>> iclow_in,
+      std::shared_ptr<Vector<double>> icupp_in);
+
    Variables(const Variables& vars);
 
    [[nodiscard]] double get_average_distance_to_bound_for_converged_vars(const Problem&, double tol) const;
@@ -88,7 +80,7 @@ public:
    void push_slacks_from_bound(double tol, double amount);
 
    /** computes mu = (t'lambda +u'pi + v'gamma + w'phi)/(mclow+mcupp+nxlow+nxupp) */
-   double mu();
+   [[nodiscard]] double mu() const;
 
    double mustep_pd(const Variables& step, double alpha_primal, double alpha_dual);
 
@@ -137,11 +129,11 @@ public:
     *
     * @see stepbound
     * */
-   double find_blocking(const Variables& step_in, double& primalValue, double& primalStep, double& dualValue, double& dualStep, int& firstOrSecond);
+   double find_blocking(const Variables& step_in, double& primalValue, double& primalStep, double& dualValue, double& dualStep, int& firstOrSecond) const;
 
    void find_blocking(const Variables& step_in, double& primalValue, double& primalStep, double& dualValue, double& dualStep, double& primalValue_d,
          double& primalStep_d, double& dualValue_d, double& dualStep_d, double& alphaPrimal, double& alphaDual, bool& primalBlocking,
-         bool& dualBlocking);
+         bool& dualBlocking) const;
 
    /** sets components of (u,t,v,w) to alpha and of (lambda,pi,phi,gamma) to beta */
    void push_to_interior(double alpha, double beta);
@@ -150,9 +142,9 @@ public:
        (lambda,pi,phi,gamma) */
    void shift_bound_variables(double alpha, double beta);
 
-   double violation();
+   [[nodiscard]] double violation() const;
 
-   void print();
+   void print() const;
    void print_solution(MpsReader* reader, Problem* problem, int& iErr);
 
    void unscale_solution(Problem* problem);

@@ -9,6 +9,7 @@
 #include <vector>
 #include <iostream>
 #include <fstream>
+#include <memory>
 
 #include "mpi.h"
 
@@ -33,7 +34,7 @@ private:
    virtual void writeToStreamDenseChild(std::stringstream& out, int offset) const;
 
 public:
-   DistributedSymmetricMatrix(SymmetricMatrix* diag, SparseMatrix* border, MPI_Comm mpiComm);
+   DistributedSymmetricMatrix(std::unique_ptr<SymmetricMatrix> diag, std::unique_ptr<SparseMatrix> border, MPI_Comm mpiComm);
 
    /** Constructs a matrix with local size 'local_n' having 'local_nnz' local nonzeros
        and set the global size and the id to to 'global_n' and 'id', respectively.
@@ -41,17 +42,17 @@ public:
        The created matrix will have no children.*/
    DistributedSymmetricMatrix(long long global_n, int local_n, int local_nnz, MPI_Comm mpiComm);
 
-   ~DistributedSymmetricMatrix() override;
+   ~DistributedSymmetricMatrix() override = default;
 
-   std::vector<DistributedSymmetricMatrix*> children;
-   SymmetricMatrix* diag{};
-   SparseMatrix* border{};
+   std::vector<std::shared_ptr<DistributedSymmetricMatrix>> children;
+   std::unique_ptr<SymmetricMatrix> diag{};
+   std::unique_ptr<SparseMatrix> border{};
 
    long long n{0};
    MPI_Comm mpiComm{MPI_COMM_NULL};
    int iAmDistrib{0};
 
-   void AddChild(DistributedSymmetricMatrix* child);
+   void AddChild(std::shared_ptr<DistributedSymmetricMatrix> child);
 
    [[nodiscard]] SymmetricMatrix* clone() const override;
 

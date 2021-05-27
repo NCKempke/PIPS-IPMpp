@@ -26,25 +26,25 @@ sLinsysRootBordered::sLinsysRootBordered(DistributedFactory* factory_, Distribut
 
 void sLinsysRootBordered::add_regularization_local_kkt(double primal_regularization, double dual_equality_regularization,
       double dual_inequality_regularization) {
-   assert(dynamic_cast<DistributedVector<double>*>(primal_regularization_diagonal));
-   assert(dynamic_cast<DistributedVector<double>*>(dual_equality_regularization_diagonal));
-   assert(dynamic_cast<DistributedVector<double>*>(dual_inequality_regularization_diagonal));
+   assert(dynamic_cast<DistributedVector<double>*>(primal_regularization_diagonal.get()));
+   assert(dynamic_cast<DistributedVector<double>*>(dual_equality_regularization_diagonal.get()));
+   assert(dynamic_cast<DistributedVector<double>*>(dual_inequality_regularization_diagonal.get()));
 
    if (locnx > 0) {
-      assert(dynamic_cast<DistributedVector<double>*>(primal_regularization_diagonal)->first);
-      dynamic_cast<DistributedVector<double>*>(primal_regularization_diagonal)->first->addConstant(primal_regularization);
+      assert(dynamic_cast<DistributedVector<double>&>(*primal_regularization_diagonal).first);
+      dynamic_cast<DistributedVector<double>&>(*primal_regularization_diagonal).first->addConstant(primal_regularization);
       kkt->diagonal_add_constant_from(0, locnx, primal_regularization);
    }
 
    if (locmyl > 0) {
-      assert(dynamic_cast<DistributedVector<double>*>(dual_equality_regularization_diagonal)->last);
-      dynamic_cast<DistributedVector<double>*>(dual_equality_regularization_diagonal)->last->addConstant(dual_equality_regularization);
+      assert(dynamic_cast<DistributedVector<double>&>(*dual_equality_regularization_diagonal).last);
+      dynamic_cast<DistributedVector<double>&>(*dual_equality_regularization_diagonal).last->addConstant(dual_equality_regularization);
       kkt->diagonal_add_constant_from(locnx, locmyl, dual_equality_regularization);
    }
 
    if (locmzl > 0) {
-      assert(dynamic_cast<DistributedVector<double>*>(dual_inequality_regularization_diagonal)->last);
-      dynamic_cast<DistributedVector<double>*>(dual_inequality_regularization_diagonal)->last->addConstant(dual_inequality_regularization);
+      assert(dynamic_cast<DistributedVector<double>&>(*dual_inequality_regularization_diagonal).last);
+      dynamic_cast<DistributedVector<double>&>(*dual_inequality_regularization_diagonal).last->addConstant(dual_inequality_regularization);
       kkt->diagonal_add_constant_from(locnx + locmyl, locmzl, dual_inequality_regularization);
    }
 }

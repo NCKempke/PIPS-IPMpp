@@ -3,6 +3,7 @@
    See license and copyright information in the documentation */
 
 #include <memory>
+#include <utility>
 
 #include "PIPSIPMppOptions.h"
 #include "BorderedSymmetricMatrix.h"
@@ -10,11 +11,15 @@
 #include "DistributedFactory.h"
 #include "DistributedQP.hpp"
 
-DistributedLinearSystem::DistributedLinearSystem(DistributedFactory* factory_, DistributedQP* problem, bool is_hierarchy_root) : LinearSystem(
-      factory_, *problem), data{problem}, computeBlockwiseSC(pipsipmpp_options::get_bool_parameter("SC_COMPUTE_BLOCKWISE")),
-      blocksizemax(pipsipmpp_options::get_int_parameter("SC_BLOCKWISE_BLOCKSIZE_MAX")), is_hierarchy_root(is_hierarchy_root),
-      blocksize_hierarchical(pipsipmpp_options::get_int_parameter("SC_BLOCKSIZE_HIERARCHICAL")),
-      sc_compute_blockwise_hierarchical{pipsipmpp_options::get_bool_parameter("SC_HIERARCHICAL_COMPUTE_BLOCKWISE")}, stochNode{factory_->tree} {
+DistributedLinearSystem::DistributedLinearSystem(DistributedFactory* factory_, DistributedQP* problem,
+   bool is_hierarchy_root) : LinearSystem(
+   factory_, *problem), data{problem},
+   computeBlockwiseSC(pipsipmpp_options::get_bool_parameter("SC_COMPUTE_BLOCKWISE")),
+   blocksizemax(pipsipmpp_options::get_int_parameter("SC_BLOCKWISE_BLOCKSIZE_MAX")),
+   is_hierarchy_root(is_hierarchy_root),
+   blocksize_hierarchical(pipsipmpp_options::get_int_parameter("SC_BLOCKSIZE_HIERARCHICAL")),
+   sc_compute_blockwise_hierarchical{pipsipmpp_options::get_bool_parameter("SC_HIERARCHICAL_COMPUTE_BLOCKWISE")},
+   stochNode{factory_->tree} {
    if (sc_compute_blockwise_hierarchical && PIPS_MPIgetRank() == 0)
       std::cout << "Computing hierarchical Schur complements blockwise with buffersize " << blocksize_hierarchical
                 << " (times # of available OMP threads)\n";
@@ -30,21 +35,25 @@ DistributedLinearSystem::DistributedLinearSystem(DistributedFactory* factory_, D
    this->iAmDistrib = dds.iAmDistrib;
 }
 
-DistributedLinearSystem::DistributedLinearSystem(DistributedFactory* factory_, DistributedQP* problem, Vector<double>* dd_, Vector<double>* dq_,
-      Vector<double>* nomegaInv_, Vector<double>* primal_reg_, Vector<double>* dual_y_reg_, Vector<double>* dual_z_reg_, Vector<double>* rhs_,
-      bool create_iter_ref_vecs) : LinearSystem(factory_, *problem, dd_, dq_, nomegaInv_, primal_reg_, dual_y_reg_, dual_z_reg_, rhs_,
-      create_iter_ref_vecs), data{problem}, computeBlockwiseSC(pipsipmpp_options::get_bool_parameter("SC_COMPUTE_BLOCKWISE")),
-      blocksizemax(pipsipmpp_options::get_int_parameter("SC_BLOCKWISE_BLOCKSIZE_MAX")),
-      blocksize_hierarchical(pipsipmpp_options::get_int_parameter("SC_BLOCKSIZE_HIERARCHICAL")),
-      sc_compute_blockwise_hierarchical{pipsipmpp_options::get_bool_parameter("SC_HIERARCHICAL_COMPUTE_BLOCKWISE")}, stochNode{factory_->tree} {
+DistributedLinearSystem::DistributedLinearSystem(DistributedFactory* factory_, DistributedQP* problem,
+   std::shared_ptr<Vector<double>> dd_, std::shared_ptr<Vector<double>> dq_,
+   std::shared_ptr<Vector<double>> nomegaInv_, std::shared_ptr<Vector<double>> primal_reg_,
+   std::shared_ptr<Vector<double>> dual_y_reg_, std::shared_ptr<Vector<double>> dual_z_reg_,
+   std::shared_ptr<Vector<double>> rhs_,
+   bool create_iter_ref_vecs) : LinearSystem(factory_, *problem, std::move(dd_), std::move(dq_), std::move(nomegaInv_),
+   std::move(primal_reg_), std::move(dual_y_reg_), std::move(dual_z_reg_), std::move(rhs_), create_iter_ref_vecs), data{problem},
+   computeBlockwiseSC(pipsipmpp_options::get_bool_parameter("SC_COMPUTE_BLOCKWISE")),
+   blocksizemax(pipsipmpp_options::get_int_parameter("SC_BLOCKWISE_BLOCKSIZE_MAX")),
+   blocksize_hierarchical(pipsipmpp_options::get_int_parameter("SC_BLOCKSIZE_HIERARCHICAL")),
+   sc_compute_blockwise_hierarchical{pipsipmpp_options::get_bool_parameter("SC_HIERARCHICAL_COMPUTE_BLOCKWISE")},
+   stochNode{factory_->tree} {
    problem->getLocalSizes(locnx, locmy, locmz, locmyl, locmzl);
 
    if (primal_diagonal) {
       const auto& primal_diagonal_stoch = dynamic_cast<const DistributedVector<double>&>(*primal_diagonal);
       mpiComm = primal_diagonal_stoch.mpiComm;
       iAmDistrib = primal_diagonal_stoch.iAmDistrib;
-   }
-   else {
+   } else {
       mpiComm = MPI_COMM_NULL;
       iAmDistrib = false;
    }
@@ -87,14 +96,16 @@ void DistributedLinearSystem::factorize_with_correct_inertia() {
    // TODO : add max tries..
    while (!regularization_strategy->is_inertia_correct(solver->get_inertia())) {
       auto[primal_regularization_value, dual_equality_regularization_value, dual_inequality_regularization_value] =
-      this->regularization_strategy->get_regularization_parameters(solver->get_inertia(), barrier_parameter_current_iterate);
+      this->regularization_strategy->get_regularization_parameters(solver->get_inertia(),
+         barrier_parameter_current_iterate);
       solver->matrixChanged();
 
       regularization_strategy->is_inertia_correct(solver->get_inertia());
       solver->matrixChanged();
       regularization_strategy->is_inertia_correct(solver->get_inertia());
 
-      this->add_regularization_local_kkt(primal_regularization_value, dual_equality_regularization_value, dual_inequality_regularization_value);
+      this->add_regularization_local_kkt(primal_regularization_value, dual_equality_regularization_value,
+         dual_inequality_regularization_value);
       solver->matrixChanged();
    }
 }
@@ -133,7 +144,8 @@ void DistributedLinearSystem::addLnizi(Vector<double>& z0_, Vector<double>& zi_)
 }
 
 void
-DistributedLinearSystem::finalizeDenseBorderModBlocked(std::vector<BorderMod>& border_mod, DenseMatrix& result, int begin_rows, int end_rows) {
+DistributedLinearSystem::finalizeDenseBorderModBlocked(std::vector<BorderMod>& border_mod, DenseMatrix& result,
+   int begin_rows, int end_rows) {
    /* compute BiT_buffer += X_j^T Bmodj for all j */
    for (auto& border_mod_block : border_mod) {
       if (border_mod_block.border.isEmpty())
@@ -143,7 +155,8 @@ DistributedLinearSystem::finalizeDenseBorderModBlocked(std::vector<BorderMod>& b
 }
 
 void
-DistributedLinearSystem::multRightDenseBorderModBlocked(std::vector<BorderMod>& border_mod, DenseMatrix& result, int begin_cols, int end_cols) {
+DistributedLinearSystem::multRightDenseBorderModBlocked(std::vector<BorderMod>& border_mod, DenseMatrix& result,
+   int begin_cols, int end_cols) {
    /* compute BiT_buffer += X_j^T Bmodj for all j */
    for (auto& border_mod_block : border_mod) {
       std::unique_ptr<BorderBiBlock> BiT_mod{};
@@ -155,16 +168,21 @@ DistributedLinearSystem::multRightDenseBorderModBlocked(std::vector<BorderMod>& 
 
       if (border.use_local_RAC)
          BiT_mod = std::make_unique<BorderBiBlock>(
-               data->getLocalCrossHessian().getTranspose(), data->getLocalA().getTranspose(), data->getLocalC().getTranspose(),
-                     border.n_empty_rows, dynamic_cast<SparseMatrix&>(*border.F.first), dynamic_cast<SparseMatrix&>(*border.G.first));
+            data->getLocalCrossHessian().getTranspose(), data->getLocalA().getTranspose(),
+            data->getLocalC().getTranspose(),
+            border.n_empty_rows, dynamic_cast<SparseMatrix&>(*border.F.first),
+            dynamic_cast<SparseMatrix&>(*border.G.first));
       else if (border.has_RAC)
          BiT_mod = std::make_unique<BorderBiBlock>(dynamic_cast<SparseMatrix&>(*border.R.first).getTranspose(),
-               dynamic_cast<SparseMatrix&>(*border.A.first).getTranspose(), dynamic_cast<SparseMatrix&>(*border.C.first).getTranspose(),
-               border.n_empty_rows, dynamic_cast<SparseMatrix&>(*border.F.first), dynamic_cast<SparseMatrix&>(*border.G.first));
+            dynamic_cast<SparseMatrix&>(*border.A.first).getTranspose(),
+            dynamic_cast<SparseMatrix&>(*border.C.first).getTranspose(),
+            border.n_empty_rows, dynamic_cast<SparseMatrix&>(*border.F.first),
+            dynamic_cast<SparseMatrix&>(*border.G.first));
       else
          BiT_mod = std::make_unique<BorderBiBlock>(
-               border.n_empty_rows, dynamic_cast<SparseMatrix&>(*border.F.first), dynamic_cast<SparseMatrix&>(*border.G.first),
-                     false);
+            border.n_empty_rows, dynamic_cast<SparseMatrix&>(*border.F.first),
+            dynamic_cast<SparseMatrix&>(*border.G.first),
+            false);
 
       multRightDenseBorderBlocked(*BiT_mod, border_mod_block.multiplier, result, begin_cols, end_cols);
    }
@@ -183,19 +201,20 @@ DistributedLinearSystem::multRightDenseBorderModBlocked(std::vector<BorderMod>& 
  *               [ G0V  0     0    ]
  */
 void
-DistributedLinearSystem::finalizeDenseBorderBlocked(BorderLinsys& B, const DenseMatrix& X, DenseMatrix& result, int begin_rows, int end_rows) {
+DistributedLinearSystem::finalizeDenseBorderBlocked(BorderLinsys& B, const DenseMatrix& X, DenseMatrix& result,
+   int begin_rows, int end_rows) {
    const bool has_RAC = B.has_RAC;
 
    if (!B.has_RAC && !B.use_local_RAC)
       return;
 
-   const SparseMatrix* F0cons_border = has_RAC ? dynamic_cast<SparseMatrix*>(B.F.first) : nullptr;
-   const SparseMatrix* G0cons_border = has_RAC ? dynamic_cast<SparseMatrix*>(B.G.first) : nullptr;
+   const SparseMatrix* F0cons_border = has_RAC ? dynamic_cast<SparseMatrix*>(B.F.first.get()) : nullptr;
+   const SparseMatrix* G0cons_border = has_RAC ? dynamic_cast<SparseMatrix*>(B.G.first.get()) : nullptr;
 
-   const SparseMatrix* A0_border = has_RAC ? dynamic_cast<SparseMatrix*>(B.A.first) : nullptr;
-   const SparseMatrix* C0_border = has_RAC ? dynamic_cast<SparseMatrix*>(B.C.first) : nullptr;
-   const SparseMatrix* F0vec_border = has_RAC ? dynamic_cast<SparseMatrix*>(B.A.last) : &data->getLocalF();
-   const SparseMatrix* G0vec_border = has_RAC ? dynamic_cast<SparseMatrix*>(B.C.last) : &data->getLocalG();
+   const SparseMatrix* A0_border = has_RAC ? dynamic_cast<SparseMatrix*>(B.A.first.get()) : nullptr;
+   const SparseMatrix* C0_border = has_RAC ? dynamic_cast<SparseMatrix*>(B.C.first.get()) : nullptr;
+   const SparseMatrix* F0vec_border = has_RAC ? dynamic_cast<SparseMatrix*>(B.A.last.get()) : &data->getLocalF();
+   const SparseMatrix* G0vec_border = has_RAC ? dynamic_cast<SparseMatrix*>(B.C.last.get()) : &data->getLocalG();
 
    assert(F0vec_border);
    assert(G0vec_border);
@@ -209,7 +228,7 @@ DistributedLinearSystem::finalizeDenseBorderBlocked(BorderLinsys& B, const Dense
    if (F0cons_border) {
       std::tie(mF0C, nF0C) = F0cons_border->n_rows_columns();
    }
-   const auto [mF0V, nF0V] = F0vec_border->n_rows_columns();
+   const auto[mF0V, nF0V] = F0vec_border->n_rows_columns();
    const auto nG0V = G0vec_border->n_columns();
 
    if (!has_RAC && nF0V == 0 && nG0V == 0) {
@@ -222,8 +241,8 @@ DistributedLinearSystem::finalizeDenseBorderBlocked(BorderLinsys& B, const Dense
 
    const auto mG0V = G0vec_border->n_rows();
 
-   const auto [mX0, nX0] = X.n_rows_columns();
-   const auto [mRes, nRes] = result.n_rows_columns();
+   const auto[mX0, nX0] = X.n_rows_columns();
+   const auto[mRes, nRes] = result.n_rows_columns();
 
    long long mG0C{0};
    long long nG0C{0};
@@ -283,8 +302,9 @@ DistributedLinearSystem::finalizeDenseBorderBlocked(BorderLinsys& B, const Dense
 
 
 /* calculate res -= X * BT */
-void DistributedLinearSystem::multRightDenseBorderBlocked(BorderBiBlock& BT, const DenseMatrix& X, DenseMatrix& result, int begin_rows,
-      int end_rows) {
+void DistributedLinearSystem::multRightDenseBorderBlocked(BorderBiBlock& BT, const DenseMatrix& X, DenseMatrix& result,
+   int begin_rows,
+   int end_rows) {
    /*
     *        [  RiT   AiT   CiT ]
     * Bi^T = [   0     0     0  ]
@@ -308,19 +328,18 @@ void DistributedLinearSystem::multRightDenseBorderBlocked(BorderBiBlock& BT, con
    const auto nG = BT.G.n_columns();
 
    const int n_empty_rows = BT.n_empty_rows;
-   const auto [mRes, nRes] = result.n_rows_columns();
+   const auto[mRes, nRes] = result.n_rows_columns();
 
    assert(nF == nG);
    if (with_RAC) {
-      const auto [mC, nC] = BT.C.n_rows_columns();
+      const auto[mC, nC] = BT.C.n_rows_columns();
       assert(mR == mA);
       assert(mR == mC);
       assert(nR == nF);
 
       assert(nR + nA + nC == nRes);
       assert(mR + n_empty_rows + mF + mG == nX);
-   }
-   else {
+   } else {
       assert(nF <= nRes);
       assert(mF + mG == nX);
    }
@@ -371,7 +390,8 @@ void DistributedLinearSystem::multRightDenseBorderBlocked(BorderBiBlock& BT, con
    }
 }
 
-void DistributedLinearSystem::putBiTBorder(DenseMatrix& res, const BorderBiBlock& BiT, int begin_rows, int end_rows) const {
+void
+DistributedLinearSystem::putBiTBorder(DenseMatrix& res, const BorderBiBlock& BiT, int begin_rows, int end_rows) const {
    /* add (Bri)^T to res
     *
     *                [ RiT AiT CiT ]
@@ -380,7 +400,7 @@ void DistributedLinearSystem::putBiTBorder(DenseMatrix& res, const BorderBiBlock
     *                [  Gi  0   0  ]
     */
 
-   const auto [mRt, nRt] = BiT.R.n_rows_columns();
+   const auto[mRt, nRt] = BiT.R.n_rows_columns();
    const auto nAt = BiT.A.n_columns();
    const auto mF = BiT.F.n_rows();
 
@@ -388,11 +408,11 @@ void DistributedLinearSystem::putBiTBorder(DenseMatrix& res, const BorderBiBlock
 
 #ifndef NDEBUG
    const auto nF = BiT.F.n_columns();
-   const auto [mG, nG] = BiT.G.n_rows_columns();
+   const auto[mG, nG] = BiT.G.n_rows_columns();
 
    const long long m_border = BiT.has_RAC ? mRt + n_empty_rows + mF + mG : n_empty_rows + mF + mG;
 
-   const auto [mres, nres] = res.n_rows_columns();
+   const auto[mres, nres] = res.n_rows_columns();
    const auto nCt = BiT.C.n_columns();
 
    assert(mres >= end_rows - begin_rows);
@@ -400,8 +420,7 @@ void DistributedLinearSystem::putBiTBorder(DenseMatrix& res, const BorderBiBlock
    if (BiT.has_RAC) {
       assert(nF == nRt);
       assert(nRt + nAt + nCt == nres);
-   }
-   else
+   } else
       assert(nres >= nF);
 
    assert(0 <= begin_rows && begin_rows <= end_rows && end_rows <= m_border);
@@ -738,10 +757,11 @@ void DistributedLinearSystem::addTermToDenseSchurCompl(DenseSymmetricMatrix& SC)
 }
 
 /* res += [ Bl^T Ki^{-1} BT ]^T for cols begin_rows to end_rows in res */
-void DistributedLinearSystem::addBiTLeftKiDenseToResBlockedParallelSolvers(bool sparse_res, bool sym_res, const BorderBiBlock& BlT,
-      /* const */ DenseMatrix& BT, AbstractMatrix& result, int begin_rows_res, int end_rows_res) {
+void DistributedLinearSystem::addBiTLeftKiDenseToResBlockedParallelSolvers(bool sparse_res, bool sym_res,
+   const BorderBiBlock& BlT,
+   /* const */ DenseMatrix& BT, AbstractMatrix& result, int begin_rows_res, int end_rows_res) {
 #ifndef NDEBUG
-   const auto [m_res, n_res] = result.n_rows_columns();
+   const auto[m_res, n_res] = result.n_rows_columns();
    assert(m_res >= 0 && n_res >= 0);
    if (sym_res)
       assert(m_res == n_res);
@@ -782,7 +802,8 @@ void DistributedLinearSystem::addBiTLeftKiDenseToResBlockedParallelSolvers(bool 
          assert(colId[j] < m_res);
       }
 
-      addLeftBorderTimesDenseColsToResTransp(BlT, colsBlockDense_loc, colId.data(), nB, actual_blocksize, sparse_res, sym_res, result);
+      addLeftBorderTimesDenseColsToResTransp(BlT, colsBlockDense_loc, colId.data(), nB, actual_blocksize, sparse_res,
+         sym_res, result);
    }
 
 #ifdef TIME_SCHUR
@@ -803,15 +824,17 @@ void DistributedLinearSystem::addBiTLeftKiDenseToResBlockedParallelSolvers(bool 
  *                [ C 0 0 0 ]                          [ F 0 0 ]
  *                                                     [ G 0 0 ]
  */
-void DistributedLinearSystem::addBiTLeftKiBiRightToResBlockedParallelSolvers(bool sparse_res, bool sym_res, const BorderBiBlock& border_left_transp,
-      /* const */ BorderBiBlock& border_right, AbstractMatrix& result, int begin_cols, int end_cols, int begin_rows_res, int end_rows_res) {
+void DistributedLinearSystem::addBiTLeftKiBiRightToResBlockedParallelSolvers(bool sparse_res, bool sym_res,
+   const BorderBiBlock& border_left_transp,
+   /* const */ BorderBiBlock& border_right, AbstractMatrix& result, int begin_cols, int end_cols, int begin_rows_res,
+   int end_rows_res) {
    if (sparse_res)
       assert(sym_res);
 
    const auto nF_right = border_right.F.n_columns();
    const auto nG_right = border_right.G.n_columns();
 
-   const auto [mR_r, nR_r] = border_right.R.n_rows_columns();
+   const auto[mR_r, nR_r] = border_right.R.n_rows_columns();
    const auto mA_r = border_right.A.n_rows();
 
    const bool with_RAC = border_right.has_RAC;
@@ -825,18 +848,18 @@ void DistributedLinearSystem::addBiTLeftKiBiRightToResBlockedParallelSolvers(boo
    const auto mG_right = border_right.G.n_rows();
    const auto nA_r = border_right.A.n_columns();
 
-   const auto [n_res_tp, m_res_tp] = result.n_rows_columns();
+   const auto[n_res_tp, m_res_tp] = result.n_rows_columns();
 
    assert(0 <= begin_cols && begin_cols <= end_cols);
    assert(end_cols - begin_cols <= n_res_tp);
 
-   const auto [mF_left, nF_left] = border_left_transp.F.n_rows_columns();
-   const auto [mG_left, nG_left] = border_left_transp.G.n_rows_columns();
+   const auto[mF_left, nF_left] = border_left_transp.F.n_rows_columns();
+   const auto[mG_left, nG_left] = border_left_transp.G.n_rows_columns();
 
    if (border_left_transp.has_RAC) {
-      const auto [mR_left, nR_left] = border_left_transp.R.n_rows_columns();
-      const auto [mA_left, nA_left] = border_left_transp.A.n_rows_columns();
-      const auto [mC_left, nC_left] = border_left_transp.C.n_rows_columns();
+      const auto[mR_left, nR_left] = border_left_transp.R.n_rows_columns();
+      const auto[mA_left, nA_left] = border_left_transp.A.n_rows_columns();
+      const auto[mC_left, nC_left] = border_left_transp.C.n_rows_columns();
 
       assert(mR_left == mA_left);
       assert(mR_left == mC_left);
@@ -845,15 +868,14 @@ void DistributedLinearSystem::addBiTLeftKiBiRightToResBlockedParallelSolvers(boo
 
       assert(mR_left + border_left_transp.n_empty_rows + mF_left + mG_left == m_res_tp);
       assert(nR_left + nA_left + nC_left == length_col);
-   }
-   else {
+   } else {
       assert(nF_left == nG_left);
       assert(nF_left <= length_col);
       assert(border_left_transp.n_empty_rows + mF_left + mG_left == m_res_tp);
    }
 
    if (with_RAC) {
-      const auto [mC_right, nC_right] = border_right.C.n_rows_columns();
+      const auto[mC_right, nC_right] = border_right.C.n_rows_columns();
 
       assert(nR_r == nA_r);
       assert(nR_r == nC_right);
@@ -862,8 +884,7 @@ void DistributedLinearSystem::addBiTLeftKiBiRightToResBlockedParallelSolvers(boo
 
       assert(end_cols <= nR_r + border_right.n_empty_rows + nF_right + nG_right);
       assert(mR_r + mA_r + mC_right == length_col);
-   }
-   else {
+   } else {
       assert(mF_right == mG_right);
       assert(mF_right <= length_col);
 
@@ -903,7 +924,7 @@ void DistributedLinearSystem::addBiTLeftKiBiRightToResBlockedParallelSolvers(boo
       //                       (C)
       if (begin_cols < nR_r) {
          const int begin_block_RAC = begin_cols;
-         const int end_block_RAC = std::min(end_cols, (int)nR_r);
+         const int end_block_RAC = std::min(end_cols, (int) nR_r);
 
          const int n_cols = end_block_RAC - begin_block_RAC;
          // TODO : add buffer for nonzeros and do not reallocate all the time
@@ -918,7 +939,8 @@ void DistributedLinearSystem::addBiTLeftKiBiRightToResBlockedParallelSolvers(boo
          for (int i = 0; i < chunks_RAC; i++) {
             assert(i * chunk_length + begin_block_RAC <= end_block_RAC);
 
-            const int actual_blocksize = std::min((i + 1) * chunk_length + begin_block_RAC, end_block_RAC) - (i * chunk_length + begin_block_RAC);
+            const int actual_blocksize =
+               std::min((i + 1) * chunk_length + begin_block_RAC, end_block_RAC) - (i * chunk_length + begin_block_RAC);
             assert(0 <= actual_blocksize);
             assert(i * chunk_length + actual_blocksize <= n_cols);
 
@@ -934,8 +956,10 @@ void DistributedLinearSystem::addBiTLeftKiBiRightToResBlockedParallelSolvers(boo
             std::fill(colsBlockDense.begin(), colsBlockDense.end(), 0);
 
             border_right.R.fromGetColsBlock(colId.data(), nrhs, length_col, 0, colsBlockDense.data(), colSparsity_ptr);
-            border_right.A.fromGetColsBlock(colId.data(), nrhs, length_col, mR_r, colsBlockDense.data(), colSparsity_ptr);
-            border_right.C.fromGetColsBlock(colId.data(), nrhs, length_col, (mR_r + mA_r), colsBlockDense.data(), colSparsity_ptr);
+            border_right.A.fromGetColsBlock(colId.data(), nrhs, length_col, mR_r, colsBlockDense.data(),
+               colSparsity_ptr);
+            border_right.C.fromGetColsBlock(colId.data(), nrhs, length_col, (mR_r + mA_r), colsBlockDense.data(),
+               colSparsity_ptr);
 
             solver->solve(nrhs, colsBlockDense.data(), colSparsity_ptr);
 
@@ -945,8 +969,9 @@ void DistributedLinearSystem::addBiTLeftKiBiRightToResBlockedParallelSolvers(boo
                assert(colId[j] < n_res_tp);
             }
 
-            addLeftBorderTimesDenseColsToResTransp(border_left_transp, colsBlockDense.data(), colId.data(), length_col, nrhs, sparse_res, sym_res,
-                  result);
+            addLeftBorderTimesDenseColsToResTransp(border_left_transp, colsBlockDense.data(), colId.data(), length_col,
+               nrhs, sparse_res, sym_res,
+               result);
          }
       }
    }
@@ -972,7 +997,8 @@ void DistributedLinearSystem::addBiTLeftKiBiRightToResBlockedParallelSolvers(boo
 
          // do block-wise multiplication for columns of F^T part
          for (int i = 0; i < chunks_F; ++i) {
-            const int actual_blocksize = std::min((i + 1) * chunk_length + begin_block_F, end_block_F) - (i * chunk_length + begin_block_F);
+            const int actual_blocksize =
+               std::min((i + 1) * chunk_length + begin_block_F, end_block_F) - (i * chunk_length + begin_block_F);
 
             int nrhs = 0;
 
@@ -995,8 +1021,9 @@ void DistributedLinearSystem::addBiTLeftKiBiRightToResBlockedParallelSolvers(boo
                assert(colId[j] < n_res_tp);
             }
 
-            addLeftBorderTimesDenseColsToResTransp(border_left_transp, colsBlockDense.data(), colId.data(), length_col, nrhs, sparse_res, sym_res,
-                  result);
+            addLeftBorderTimesDenseColsToResTransp(border_left_transp, colsBlockDense.data(), colId.data(), length_col,
+               nrhs, sparse_res, sym_res,
+               result);
          }
       }
    }
@@ -1023,7 +1050,8 @@ void DistributedLinearSystem::addBiTLeftKiBiRightToResBlockedParallelSolvers(boo
 
          // do block-wise multiplication for columns of G^T part
          for (int i = 0; i < chunks_G; ++i) {
-            const int actual_blocksize = std::min((i + 1) * chunk_length + begin_block_G, end_block_G) - (i * chunk_length + begin_block_G);
+            const int actual_blocksize =
+               std::min((i + 1) * chunk_length + begin_block_G, end_block_G) - (i * chunk_length + begin_block_G);
 
             int nrhs = 0;
 
@@ -1045,8 +1073,9 @@ void DistributedLinearSystem::addBiTLeftKiBiRightToResBlockedParallelSolvers(boo
                assert(colId[j] < n_res_tp);
             }
 
-            addLeftBorderTimesDenseColsToResTransp(border_left_transp, colsBlockDense.data(), colId.data(), length_col, nrhs, sparse_res, sym_res,
-                  result);
+            addLeftBorderTimesDenseColsToResTransp(border_left_transp, colsBlockDense.data(), colId.data(), length_col,
+               nrhs, sparse_res, sym_res,
+               result);
          }
       }
    }
@@ -1079,8 +1108,9 @@ void DistributedLinearSystem::addBiTLeftKiBiRightToResBlockedParallelSolvers(boo
 }
 
 void
-DistributedLinearSystem::addLeftBorderTimesDenseColsToResTranspSparse(const BorderBiBlock& Bl, const double* cols, const int* cols_id, int length_col,
-      int n_cols, SparseSymmetricMatrix& res) {
+DistributedLinearSystem::addLeftBorderTimesDenseColsToResTranspSparse(const BorderBiBlock& Bl, const double* cols,
+   const int* cols_id, int length_col,
+   int n_cols, SparseSymmetricMatrix& res) {
    /*                  [ R A C ]
     * compute res^T += [ 0 0 0 ] * cols = border_left * cols
     *                  [ F 0 0 ]
@@ -1102,9 +1132,9 @@ DistributedLinearSystem::addLeftBorderTimesDenseColsToResTranspSparse(const Bord
 
    assert(mRes == nRes);
    if (with_RAC) {
-      const auto [mR, nR] = Bl.R.n_rows_columns();
-      const auto [mA, nA] = Bl.A.n_rows_columns();
-      const auto [mC, nC] = Bl.C.n_rows_columns();
+      const auto[mR, nR] = Bl.R.n_rows_columns();
+      const auto[mA, nA] = Bl.A.n_rows_columns();
+      const auto[mC, nC] = Bl.C.n_rows_columns();
 
       assert(nF == nG && nF == nR);
       assert(length_col == nR + nA + nC);
@@ -1144,8 +1174,9 @@ DistributedLinearSystem::addLeftBorderTimesDenseColsToResTranspSparse(const Bord
 }
 
 void
-DistributedLinearSystem::addLeftBorderTimesDenseColsToResTranspDense(const BorderBiBlock& Bl, const double* cols, const int* cols_id, int length_col,
-      int n_cols, int n_cols_res, double** res) const {
+DistributedLinearSystem::addLeftBorderTimesDenseColsToResTranspDense(const BorderBiBlock& Bl, const double* cols,
+   const int* cols_id, int length_col,
+   int n_cols, int n_cols_res, double** res) const {
    /*                  [ R A C ]
     * compute res^T += [ 0 0 0 ] * colsBlockDense = border_left * colsBlockDense
     *                  [ F 0 0 ]
@@ -1166,16 +1197,15 @@ DistributedLinearSystem::addLeftBorderTimesDenseColsToResTranspDense(const Borde
    const auto nG = Bl.G.n_columns();
 
    if (with_RAC) {
-      const auto [mR, nR] = Bl.R.n_rows_columns();
-      const auto [mA, nA] = Bl.A.n_rows_columns();
-      const auto [mC, nC] = Bl.C.n_rows_columns();
+      const auto[mR, nR] = Bl.R.n_rows_columns();
+      const auto[mA, nA] = Bl.A.n_rows_columns();
+      const auto[mC, nC] = Bl.C.n_rows_columns();
 
       assert(mR == mA && mA == mC);
       assert(nF == nG && nF == nR);
       assert(length_col == nR + nA + nC);
       assert(n_cols_res >= mR + mF + mG);
-   }
-   else
+   } else
       assert(n_cols_res >= mF + mG);
 
    assert(n_cols_res >= 1);
@@ -1205,8 +1235,10 @@ DistributedLinearSystem::addLeftBorderTimesDenseColsToResTranspDense(const Borde
    }
 }
 
-void DistributedLinearSystem::addLeftBorderTimesDenseColsToResTransp(const BorderBiBlock& border_left, const double* cols, const int* cols_id,
-      int length_col, int blocksize, bool sparse_res, bool sym_res, AbstractMatrix& res) const {
+void
+DistributedLinearSystem::addLeftBorderTimesDenseColsToResTransp(const BorderBiBlock& border_left, const double* cols,
+   const int* cols_id,
+   int length_col, int blocksize, bool sparse_res, bool sym_res, AbstractMatrix& res) const {
    if (border_left.isEmpty())
       return;
 
@@ -1216,8 +1248,7 @@ void DistributedLinearSystem::addLeftBorderTimesDenseColsToResTransp(const Borde
       assert(sym_res);
       auto& res_sparse = dynamic_cast<SparseSymmetricMatrix&>(res);
       addLeftBorderTimesDenseColsToResTranspSparse(border_left, cols, cols_id, length_col, blocksize, res_sparse);
-   }
-   else {
+   } else {
       double** res_array;
       int res_ncols;
 
@@ -1235,14 +1266,14 @@ void DistributedLinearSystem::addLeftBorderTimesDenseColsToResTransp(const Borde
          auto& res_dense = dynamic_cast<DenseSymmetricMatrix&>(res);
          res_array = res_dense.mStorage->M;
          res_ncols = res_dense.size();
-      }
-      else {
+      } else {
          auto& res_dense = dynamic_cast<DenseMatrix&>(res);
          res_array = res_dense.mStorage->M;
          res_ncols = res_dense.mStorage->n;
       }
 
-      addLeftBorderTimesDenseColsToResTranspDense(border_left, cols, cols_id, length_col, blocksize, res_ncols, res_array);
+      addLeftBorderTimesDenseColsToResTranspDense(border_left, cols, cols_id, length_col, blocksize, res_ncols,
+         res_array);
    }
 }
 
@@ -1251,12 +1282,13 @@ int DistributedLinearSystem::allocateAndZeroBlockedComputationsBuffer(int buffer
    assert(buffer_m > 0);
    assert(buffer_n > 0);
 
-   const int buffer_m_blocked = sc_compute_blockwise_hierarchical ? PIPSgetnOMPthreads() * blocksize_hierarchical : buffer_m;
+   const int buffer_m_blocked = sc_compute_blockwise_hierarchical ? PIPSgetnOMPthreads() * blocksize_hierarchical
+      : buffer_m;
 
    if (!buffer_blocked_hierarchical)
       buffer_blocked_hierarchical = std::make_unique<DenseMatrix>(buffer_m_blocked, buffer_n);
    else {
-      const auto [mbuf, nbuf] = buffer_blocked_hierarchical->n_rows_columns();
+      const auto[mbuf, nbuf] = buffer_blocked_hierarchical->n_rows_columns();
       if (mbuf < buffer_m_blocked || nbuf < buffer_n)
          buffer_blocked_hierarchical = std::make_unique<DenseMatrix>(buffer_m_blocked, buffer_n);
    }
@@ -1275,8 +1307,7 @@ bool DistributedLinearSystem::BorderLinsys::isEmpty() const {
             return R.numberOfNonZeros() == 0 && A.numberOfNonZeros() == 0 && C.numberOfNonZeros() == 0;
          else
             return true;
-      }
-      else
+      } else
          return false;
    }
 }
@@ -1291,8 +1322,7 @@ bool DistributedLinearSystem::BorderBiBlock::isEmpty() const {
             return R.numberOfNonZeros() == 0 && A.numberOfNonZeros() == 0 && C.numberOfNonZeros() == 0;
          else
             return true;
-      }
-      else
+      } else
          return false;
    }
 }

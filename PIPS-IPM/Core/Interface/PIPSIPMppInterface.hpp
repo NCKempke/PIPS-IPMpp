@@ -75,7 +75,7 @@ public:
 private:
    static void printComplementarityResiduals(const DistributedVariables& vars) ;
 
-   std::vector<double> gatherFromSolution(SmartPointer<Vector<double> > DistributedVariables::* member_to_gather);
+   std::vector<double> gatherFromSolution(std::unique_ptr<Vector<double>> DistributedVariables::* member_to_gather);
 
 protected:
    std::unique_ptr<DistributedFactory> factory;

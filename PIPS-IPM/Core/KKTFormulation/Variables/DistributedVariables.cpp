@@ -1,142 +1,74 @@
 #include "DistributedVariables.h"
 #include "Vector.hpp"
-#include "SmartPointer.h"
 #include "Problem.h"
 #include "DistributedVector.h"
 #include "DistributedTree.h"
 #include "DistributedTreeCallbacks.h"
 #include <iostream>
+#include <utility>
 
-DistributedVariables::DistributedVariables(const DistributedTree* tree, Vector<double>* x_in, Vector<double>* s_in, Vector<double>* y_in, Vector<double>* z_in,
-      Vector<double>* v_in, Vector<double>* gamma_in, Vector<double>* w_in, Vector<double>* phi_in, Vector<double>* t_in, Vector<double>* lambda_in,
-      Vector<double>* u_in, Vector<double>* pi_in, Vector<double>* ixlow_in, long long nxlowGlobal, Vector<double>* ixupp_in, long long nxuppGlobal,
-      Vector<double>* iclow_in, long long mclowGlobal, Vector<double>* icupp_in, long long mcuppGlobal) : Variables() {
+DistributedVariables::DistributedVariables(const DistributedTree* tree, std::unique_ptr<Vector<double>> x_in, std::unique_ptr<Vector<double>> s_in,
+   std::unique_ptr<Vector<double>> y_in, std::unique_ptr<Vector<double>> z_in, std::unique_ptr<Vector<double>> v_in,
+   std::unique_ptr<Vector<double>> gamma_in, std::unique_ptr<Vector<double>> w_in, std::unique_ptr<Vector<double>> phi_in, std::unique_ptr<Vector<double>> t_in,
+   std::unique_ptr<Vector<double>> lambda_in, std::unique_ptr<Vector<double>> u_in, std::unique_ptr<Vector<double>> pi_in,
+   std::shared_ptr<Vector<double>> ixlow_in, long long nxlowGlobal, std::shared_ptr<Vector<double>> ixupp_in, long long nxuppGlobal,
+   std::shared_ptr<Vector<double>> iclow_in, long long mclowGlobal, std::shared_ptr<Vector<double>> icupp_in, long long mcuppGlobal) :
+   Variables(std::move(x_in), std::move(s_in), std::move(y_in), std::move(z_in), std::move(v_in), std::move(gamma_in),
+      std::move(w_in), std::move(phi_in), std::move(t_in), std::move(lambda_in), std::move(u_in), std::move(pi_in),
+      std::move(ixlow_in), std::move(ixupp_in), std::move(iclow_in), std::move(icupp_in)) {
 
    stochNode = tree;
 
-   SpReferTo(primals, x_in);
-   SpReferTo(slacks, s_in);
-   SpReferTo(equality_duals, y_in);
-   SpReferTo(inequality_duals, z_in);
-   SpReferTo(primal_lower_bound_gap, v_in);
-   SpReferTo(primal_upper_bound_gap_dual, phi_in);
-   SpReferTo(primal_upper_bound_gap, w_in);
-   SpReferTo(primal_lower_bound_gap_dual, gamma_in);
-   SpReferTo(slack_lower_bound_gap, t_in);
-   SpReferTo(slack_lower_bound_gap_dual, lambda_in);
-   SpReferTo(slack_upper_bound_gap, u_in);
-   SpReferTo(slack_upper_bound_gap_dual, pi_in);
-   SpReferTo(ixlow, ixlow_in);
-   SpReferTo(ixupp, ixupp_in);
-   SpReferTo(iclow, iclow_in);
-   SpReferTo(icupp, icupp_in);
-
-   nx = primals->length();
-   my = equality_duals->length();
-   mz = inequality_duals->length();
-
-   assert(nx == ixlow->length() || 0 == ixlow->length());
-   assert(nx == ixupp->length() || 0 == ixupp->length());
-   assert(mz == iclow->length() || 0 == iclow->length());
-   assert(mz == icupp->length() || 0 == icupp->length());
-
+   /* overwrite local values with distributed globals */
    nxlow = nxlowGlobal;
    nxupp = nxuppGlobal;
    mclow = mclowGlobal;
    mcupp = mcuppGlobal;
-   number_complementarity_pairs = mclow + mcupp + nxlow + nxupp;
-
-   assert(mz == slacks->length());
-   assert(nx == primal_lower_bound_gap->length() || (0 == primal_lower_bound_gap->length() && nxlow == 0));
-   assert(nx == primal_lower_bound_gap_dual->length() || (0 == primal_lower_bound_gap_dual->length() && nxlow == 0));
-
-   assert(nx == primal_upper_bound_gap->length() || (0 == primal_upper_bound_gap->length() && nxupp == 0));
-   assert(nx == primal_upper_bound_gap_dual->length() || (0 == primal_upper_bound_gap_dual->length() && nxupp == 0));
-
-   assert(mz == slack_lower_bound_gap->length() || (0 == slack_lower_bound_gap->length() && mclow == 0));
-   assert(mz == slack_lower_bound_gap_dual->length() || (0 == slack_lower_bound_gap_dual->length() && mclow == 0));
-
-   assert(mz == slack_upper_bound_gap->length() || (0 == slack_upper_bound_gap->length() && mcupp == 0));
-   assert(mz == slack_upper_bound_gap_dual->length() || (0 == slack_upper_bound_gap_dual->length() && mcupp == 0));
-
-   createChildren();
 }
 
 DistributedVariables::DistributedVariables(const DistributedVariables& vars) : Variables(vars) {
    stochNode = vars.stochNode;
-   for (auto i : vars.children) {
-      children.push_back(new DistributedVariables(*i));
-   }
-}
-
-DistributedVariables::~DistributedVariables() {
-   for (auto & c : children)
-      delete c;
-}
-
-void DistributedVariables::AddChild(DistributedVariables* child) {
-   children.push_back(child);
-}
-
-
-void DistributedVariables::createChildren() {
-   DistributedVector<double>& xst = dynamic_cast<DistributedVector<double>&>(*primals);
-   DistributedVector<double>& sst = dynamic_cast<DistributedVector<double>&>(*slacks);
-   DistributedVector<double>& yst = dynamic_cast<DistributedVector<double>&>(*equality_duals);
-   DistributedVector<double>& zst = dynamic_cast<DistributedVector<double>&>(*inequality_duals);
-   DistributedVector<double>& vst = dynamic_cast<DistributedVector<double>&>(*primal_lower_bound_gap);
-   DistributedVector<double>& gammast = dynamic_cast<DistributedVector<double>&>(*primal_lower_bound_gap_dual);
-   DistributedVector<double>& wst = dynamic_cast<DistributedVector<double>&>(*primal_upper_bound_gap);
-   DistributedVector<double>& phist = dynamic_cast<DistributedVector<double>&>(*primal_upper_bound_gap_dual);
-   DistributedVector<double>& tst = dynamic_cast<DistributedVector<double>&>(*slack_lower_bound_gap);
-   DistributedVector<double>& lambdast = dynamic_cast<DistributedVector<double>&>(*slack_lower_bound_gap_dual);
-   DistributedVector<double>& ust = dynamic_cast<DistributedVector<double>&>(*slack_upper_bound_gap);
-   DistributedVector<double>& pist = dynamic_cast<DistributedVector<double>&>(*slack_upper_bound_gap_dual);
-   DistributedVector<double>& ixlowst = dynamic_cast<DistributedVector<double>&>(*ixlow);
-   DistributedVector<double>& ixuppst = dynamic_cast<DistributedVector<double>&>(*ixupp);
-   DistributedVector<double>& iclowst = dynamic_cast<DistributedVector<double>&>(*iclow);
-   DistributedVector<double>& icuppst = dynamic_cast<DistributedVector<double>&>(*icupp);
-
-
-   for (size_t it = 0; it < xst.children.size(); it++) {
-      AddChild(new DistributedVariables(stochNode->getChildren()[it], xst.children[it], sst.children[it], yst.children[it], zst.children[it],
-            vst.children[it], gammast.children[it], wst.children[it], phist.children[it], tst.children[it], lambdast.children[it], ust.children[it],
-            pist.children[it], ixlowst.children[it], nxlow, ixuppst.children[it], nxupp, iclowst.children[it], mclow, icuppst.children[it], mcupp));
-   }
-
 }
 
 void
-DistributedVariables::collapseHierarchicalStructure(const DistributedQP& hier_data, const DistributedTree* stochNode_, SmartPointer<Vector<double> > ixlow_,
-      SmartPointer<Vector<double> > ixupp_, SmartPointer<Vector<double> > iclow_, SmartPointer<Vector<double> > icupp_) {
-   dynamic_cast<DistributedVector<double>&>(*primals).collapseFromHierarchical(hier_data, *stochNode, VectorType::PRIMAL);
+DistributedVariables::collapseHierarchicalStructure(const DistributedQP& hier_data, const DistributedTree* stochNode_,
+ std::shared_ptr<Vector<double>> ixlow_, std::shared_ptr<Vector<double>> ixupp_, std::shared_ptr<Vector<double>> iclow_,
+ std::shared_ptr<Vector<double>> icupp_) {
+   dynamic_cast<DistributedVector<double>&>(*primals).collapseFromHierarchical(hier_data, *stochNode,
+      VectorType::PRIMAL);
 
-   dynamic_cast<DistributedVector<double>&>(*primal_lower_bound_gap).collapseFromHierarchical(hier_data, *stochNode, VectorType::PRIMAL);
-   dynamic_cast<DistributedVector<double>&>(*primal_upper_bound_gap).collapseFromHierarchical(hier_data, *stochNode, VectorType::PRIMAL);
-   dynamic_cast<DistributedVector<double>&>(*primal_upper_bound_gap_dual).collapseFromHierarchical(hier_data, *stochNode, VectorType::PRIMAL);
-   dynamic_cast<DistributedVector<double>&>(*primal_lower_bound_gap_dual).collapseFromHierarchical(hier_data, *stochNode, VectorType::PRIMAL);
+   dynamic_cast<DistributedVector<double>&>(*primal_lower_bound_gap).collapseFromHierarchical(hier_data, *stochNode,
+      VectorType::PRIMAL);
+   dynamic_cast<DistributedVector<double>&>(*primal_upper_bound_gap).collapseFromHierarchical(hier_data, *stochNode,
+      VectorType::PRIMAL);
+   dynamic_cast<DistributedVector<double>&>(*primal_upper_bound_gap_dual).collapseFromHierarchical(hier_data,
+      *stochNode, VectorType::PRIMAL);
+   dynamic_cast<DistributedVector<double>&>(*primal_lower_bound_gap_dual).collapseFromHierarchical(hier_data,
+      *stochNode, VectorType::PRIMAL);
 
-   dynamic_cast<DistributedVector<double>&>(*equality_duals).collapseFromHierarchical(hier_data, *stochNode, VectorType::DUAL_Y);
+   dynamic_cast<DistributedVector<double>&>(*equality_duals).collapseFromHierarchical(hier_data, *stochNode,
+      VectorType::DUAL_Y);
 
-   dynamic_cast<DistributedVector<double>&>(*slacks).collapseFromHierarchical(hier_data, *stochNode, VectorType::DUAL_Z);
-   dynamic_cast<DistributedVector<double>&>(*inequality_duals).collapseFromHierarchical(hier_data, *stochNode, VectorType::DUAL_Z);
-   dynamic_cast<DistributedVector<double>&>(*slack_lower_bound_gap).collapseFromHierarchical(hier_data, *stochNode, VectorType::DUAL_Z);
-   dynamic_cast<DistributedVector<double>&>(*slack_upper_bound_gap).collapseFromHierarchical(hier_data, *stochNode, VectorType::DUAL_Z);
-   dynamic_cast<DistributedVector<double>&>(*slack_upper_bound_gap_dual).collapseFromHierarchical(hier_data, *stochNode, VectorType::DUAL_Z);
-   dynamic_cast<DistributedVector<double>&>(*slack_lower_bound_gap_dual).collapseFromHierarchical(hier_data, *stochNode, VectorType::DUAL_Z);
+   dynamic_cast<DistributedVector<double>&>(*slacks).collapseFromHierarchical(hier_data, *stochNode,
+      VectorType::DUAL_Z);
+   dynamic_cast<DistributedVector<double>&>(*inequality_duals).collapseFromHierarchical(hier_data, *stochNode,
+      VectorType::DUAL_Z);
+   dynamic_cast<DistributedVector<double>&>(*slack_lower_bound_gap).collapseFromHierarchical(hier_data, *stochNode,
+      VectorType::DUAL_Z);
+   dynamic_cast<DistributedVector<double>&>(*slack_upper_bound_gap).collapseFromHierarchical(hier_data, *stochNode,
+      VectorType::DUAL_Z);
+   dynamic_cast<DistributedVector<double>&>(*slack_upper_bound_gap_dual).collapseFromHierarchical(hier_data, *stochNode,
+      VectorType::DUAL_Z);
+   dynamic_cast<DistributedVector<double>&>(*slack_lower_bound_gap_dual).collapseFromHierarchical(hier_data, *stochNode,
+      VectorType::DUAL_Z);
 
    stochNode = stochNode_;
 
-   ixlow = ixlow_;
-   ixupp = ixupp_;
-   iclow = iclow_;
-   icupp = icupp_;
+   ixlow = std::move(ixlow_);
+   ixupp = std::move(ixupp_);
+   iclow = std::move(iclow_);
+   icupp = std::move(icupp_);
 
-   for (size_t c = 0; c < children.size(); c++)
-      delete children[c];
-
-   children.clear();
-   createChildren();
 }
 
 void DistributedVariables::permuteVec0Entries(const std::vector<unsigned int>& perm, bool vars_only) {

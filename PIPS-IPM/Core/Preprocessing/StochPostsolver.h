@@ -221,7 +221,7 @@ private:
    bool complementarySlackRowMet(const DistributedVariables& vars, const INDEX& row, double tol) const;
 
    bool sameNonZeroPatternDistributed(const DistributedVector<double>& svec) const; // TODO: move
-   bool sameNonZeroPatternDistributed(const SimpleVector<double>& vec) const; // TODO: move
+   static bool sameNonZeroPatternDistributed(const SimpleVector<double>& vec) ; // TODO: move
 
    template<typename T>
    void setOriginalValuesFromReduced(DistributedVector<T>& original_vector, const DistributedVector<T>& reduced_vector,

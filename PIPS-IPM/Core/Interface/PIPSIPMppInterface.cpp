@@ -52,8 +52,6 @@ scaler_type, PresolverType presolver_type, const std::string& settings) : comm(c
 
       presolved_problem.reset(dynamic_cast<DistributedQP*>(presolver->presolve()));
 
-      factory->problem = presolved_problem.get(); // todo update also sTree* of factory
-
       MPI_Barrier(comm);
       const double t_presolve = MPI_Wtime();
       if (my_rank == 0)
@@ -61,8 +59,8 @@ scaler_type, PresolverType presolver_type, const std::string& settings) : comm(c
    }
    else {
       presolved_problem.reset(dynamic_cast<DistributedQP*>(factory->make_problem()));
-      assert(presolved_problem);
    }
+   assert(presolved_problem);
 
 #if 0
    ofstream myfile;
@@ -92,12 +90,12 @@ scaler_type, PresolverType presolver_type, const std::string& settings) : comm(c
          presolved_problem->writeToStreamDense(std::cout);
    }
 
-   variables.reset(dynamic_cast<DistributedVariables*>( factory->make_variables(*presolved_problem)));
+   variables.reset(dynamic_cast<DistributedVariables*>(factory->make_variables(*presolved_problem)));
 #ifdef TIMING
    if( my_rank == 0 ) printf("variables created\n");
 #endif
 
-   residuals.reset(dynamic_cast<DistributedResiduals*>( factory->make_residuals(*presolved_problem)));
+   residuals.reset(dynamic_cast<DistributedResiduals*>(factory->make_residuals(*presolved_problem)));
 #ifdef TIMING
    if( my_rank == 0 ) printf("resids created\n");
 #endif
@@ -260,7 +258,7 @@ void PIPSIPMppInterface::getResidsUnscaledUnperm() {
       unscaleUnpermNotHierResids.reset(presolved_problem->getResidsUnperm(*residuals, *dataUnpermNotHier));
 }
 
-std::vector<double> PIPSIPMppInterface::gatherFromSolution(SmartPointer<Vector<double>> DistributedVariables::* member_to_gather) {
+std::vector<double> PIPSIPMppInterface::gatherFromSolution(std::unique_ptr<Vector<double>> DistributedVariables::* member_to_gather) {
    if (unscaleUnpermNotHierVars == nullptr)
       this->getVarsUnscaledUnperm();
 
@@ -381,13 +379,13 @@ std::vector<double> PIPSIPMppInterface::gatherInequalityConsValues() {
 
 
 std::vector<double> PIPSIPMppInterface::getFirstStagePrimalColSolution() const {
-   auto const& v = *dynamic_cast<SimpleVector<double> const*>(dynamic_cast<DistributedVector<double> const&>(*variables->primals).first);
+   auto const& v = dynamic_cast<const SimpleVector<double>&>(*dynamic_cast<DistributedVector<double> const&>(*variables->primals).first);
    return std::vector<double>(&v[0], &v[0] + v.length());
 }
 
 
 std::vector<double> PIPSIPMppInterface::getSecondStagePrimalColSolution(int scen) const {
-   auto const& v = *dynamic_cast<SimpleVector<double> const*>(dynamic_cast<DistributedVector<double> const&>(*variables->primals).children[scen]->first);
+   auto const& v = dynamic_cast<const SimpleVector<double>&>(*dynamic_cast<DistributedVector<double> const&>(*variables->primals).children[scen]->first);
    if (!v.length())
       return std::vector<double>(); //this vector is not on this processor
    else
@@ -479,7 +477,6 @@ void PIPSIPMppInterface::postsolveComputedSolution() {
       factory->switchToOriginalTree();
 
    dynamic_cast<DistributedTreeCallbacks*>(factory->tree)->switchToOriginalData();
-   factory->problem = original_problem.get();
 
    postsolved_variables.reset(dynamic_cast<DistributedVariables*>(factory->make_variables(*original_problem)));
 

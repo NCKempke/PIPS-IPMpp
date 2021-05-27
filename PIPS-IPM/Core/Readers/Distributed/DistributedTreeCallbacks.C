@@ -153,8 +153,8 @@ void DistributedTreeCallbacks::initPresolvedData(const DistributedQP& presolved_
    const auto& g = dynamic_cast<const DistributedVector<double>&>(*presolved_data.g);
    const auto& b = dynamic_cast<const DistributedVector<double>&>(*presolved_data.bA);
 
-   assert(presolved_data.icupp.notNil() || presolved_data.icupp.notNil());
-   const DistributedVector<double>& ic = presolved_data.iclow.notNil() ? dynamic_cast<const DistributedVector<double>&>(*presolved_data.iclow)
+   assert(presolved_data.icupp || presolved_data.icupp);
+   const DistributedVector<double>& ic = presolved_data.iclow ? dynamic_cast<const DistributedVector<double>&>(*presolved_data.iclow)
                                                                        : dynamic_cast<const DistributedVector<double>&>(*presolved_data.icupp);
 
    initPresolvedData(Q, A, C, g, b, ic, -1, -1);
@@ -175,8 +175,8 @@ DistributedTreeCallbacks::initPresolvedData(const DistributedSymmetricMatrix& Q,
    const auto& nxVecSimple = dynamic_cast<const SimpleVector<double>&>(*nxVec.first);
    const auto& myVecSimple = dynamic_cast<const SimpleVector<double>&>(*myVec.first);
    const auto& mzVecSimple = dynamic_cast<const SimpleVector<double>&>(*mzVec.first);
-   const auto* const myVecSimpleLink = dynamic_cast<const SimpleVector<double>*>(myVec.last);
-   const auto* const mzVecSimpleLink = dynamic_cast<const SimpleVector<double>*>(mzVec.last);
+   const auto* const myVecSimpleLink = dynamic_cast<const SimpleVector<double>*>(myVec.last.get());
+   const auto* const mzVecSimpleLink = dynamic_cast<const SimpleVector<double>*>(mzVec.last.get());
 
    N_INACTIVE = nxVecSimple.length();
    MY_INACTIVE = myVecSimple.length();
@@ -186,7 +186,7 @@ DistributedTreeCallbacks::initPresolvedData(const DistributedSymmetricMatrix& Q,
    my_inactive = MY_INACTIVE;
    mz_inactive = MZ_INACTIVE;
 
-   if (myVecSimpleLink != nullptr) {
+   if (myVecSimpleLink) {
       assert(np == -1);
       MYL_INACTIVE = myVecSimpleLink->length();
       myl_inactive = MYL_INACTIVE;
@@ -196,7 +196,7 @@ DistributedTreeCallbacks::initPresolvedData(const DistributedSymmetricMatrix& Q,
       myl_inactive = mylParent;
    }
 
-   if (mzVecSimpleLink != nullptr) {
+   if (mzVecSimpleLink) {
       assert(np == -1);
       MZL_INACTIVE = mzVecSimpleLink->length();
       mzl_inactive = MZL_INACTIVE;
@@ -473,11 +473,11 @@ DistributedSymmetricMatrix* DistributedTreeCallbacks::createQ() const {
 
    auto* Q = new DistributedSymmetricMatrix(N, data->n, data->nnzQ, commWrkrs);
 
-   data->fQ(data->user_data, data->id, dynamic_cast<SparseSymmetricMatrix*>(Q->diag)->krowM(), dynamic_cast<SparseSymmetricMatrix*>(Q->diag)->jcolM(),
-         dynamic_cast<SparseSymmetricMatrix*>(Q->diag)->M());
+   data->fQ(data->user_data, data->id, dynamic_cast<SparseSymmetricMatrix&>(*Q->diag).krowM(), dynamic_cast<SparseSymmetricMatrix&>(*Q->diag).jcolM(),
+         dynamic_cast<SparseSymmetricMatrix&>(*Q->diag).M());
 
    for (auto it : children) {
-      DistributedSymmetricMatrix* child = it->createQ();
+      std::shared_ptr<DistributedSymmetricMatrix> child{it->createQ()};
       Q->AddChild(child);
    }
    return Q;
@@ -519,8 +519,8 @@ DistributedTreeCallbacks::createMatrix(TREE_SIZE MY, TREE_SIZE MYL, DATA_INT m_A
       }
 
       //populate submatrix B
-      (data->*Amat)(data->user_data, data->id, dynamic_cast<SparseMatrix*>(A->Bmat)->krowM(), dynamic_cast<SparseMatrix*>(A->Bmat)->jcolM(),
-            dynamic_cast<SparseMatrix*>(A->Bmat)->M());
+      (data->*Amat)(data->user_data, data->id, dynamic_cast<SparseMatrix&>(*A->Bmat).krowM(), dynamic_cast<SparseMatrix&>(*A->Bmat).jcolM(),
+            dynamic_cast<SparseMatrix&>(*A->Bmat).M());
 
       if (print_tree_sizes_on_reading)
          printf("root  -- m%s=%d  m%sl=%d nx=%d   1st stg nx=%d nnzA=%d nnzB=%d, nnzBl=%d\n", prefix_for_print.c_str(), data->*m_ABmat,
@@ -541,10 +541,10 @@ DistributedTreeCallbacks::createMatrix(TREE_SIZE MY, TREE_SIZE MYL, DATA_INT m_A
       }
 
       //populate the submatrices A, B
-      (data->*Amat)(data->user_data, data->id, dynamic_cast<SparseMatrix*>(A->Amat)->krowM(), dynamic_cast<SparseMatrix*>(A->Amat)->jcolM(),
-            dynamic_cast<SparseMatrix*>(A->Amat)->M());
-      (data->*Bmat)(data->user_data, data->id, dynamic_cast<SparseMatrix*>(A->Bmat)->krowM(), dynamic_cast<SparseMatrix*>(A->Bmat)->jcolM(),
-            dynamic_cast<SparseMatrix*>(A->Bmat)->M());
+      (data->*Amat)(data->user_data, data->id, dynamic_cast<SparseMatrix&>(*A->Amat).krowM(), dynamic_cast<SparseMatrix&>(*A->Amat).jcolM(),
+            dynamic_cast<SparseMatrix&>(*A->Amat).M());
+      (data->*Bmat)(data->user_data, data->id, dynamic_cast<SparseMatrix&>(*A->Bmat).krowM(), dynamic_cast<SparseMatrix&>(*A->Bmat).jcolM(),
+            dynamic_cast<SparseMatrix&>(*A->Bmat).M());
 
       if (print_tree_sizes_on_reading)
          printf("  -- m%s=%d  m%sl=%d nx=%d   1st stg nx=%d nnzA=%d nnzB=%d, nnzBl=%d\n", prefix_for_print.c_str(), data->*m_ABmat,
@@ -553,12 +553,12 @@ DistributedTreeCallbacks::createMatrix(TREE_SIZE MY, TREE_SIZE MYL, DATA_INT m_A
 
    // populate Bl if existent
    if (data->*Blmat)
-      (data->*Blmat)(data->user_data, data->id, dynamic_cast<SparseMatrix*>(A->Blmat)->krowM(), dynamic_cast<SparseMatrix*>(A->Blmat)->jcolM(),
-            dynamic_cast<SparseMatrix*>(A->Blmat)->M());
+      (data->*Blmat)(data->user_data, data->id, dynamic_cast<SparseMatrix&>(*A->Blmat).krowM(), dynamic_cast<SparseMatrix&>(*A->Blmat).jcolM(),
+            dynamic_cast<SparseMatrix&>(*A->Blmat).M());
 
    for (auto it : children) {
-      DistributedMatrix* child = dynamic_cast<DistributedTreeCallbacks*>(it)->createMatrix(MY, MYL, m_ABmat, n_Mat, nnzAmat, fnnzAmat, Amat, nnzBmat,
-            fnnzBmat, Bmat, m_Blmat, nnzBlmat, fnnzBlmat, Blmat, prefix_for_print);
+      std::shared_ptr<DistributedMatrix> child{dynamic_cast<DistributedTreeCallbacks*>(it)->createMatrix(MY, MYL, m_ABmat, n_Mat, nnzAmat, fnnzAmat, Amat, nnzBmat,
+            fnnzBmat, Bmat, m_Blmat, nnzBlmat, fnnzBlmat, Blmat, prefix_for_print)};
       A->AddChild(child);
    }
    return A;
@@ -648,8 +648,8 @@ DistributedVector<double>* DistributedTreeCallbacks::createVector(DATA_INT n_vec
    auto* svec = new DistributedVector<double>(data->*n_vec, nlinking, commWrkrs);
 
    assert(svec->first);
-   double* elems = dynamic_cast<SimpleVector<double>*>(svec->first)->elements();
-   double* elems_link = (nlinking != -1) ? dynamic_cast<SimpleVector<double>*>(svec->last)->elements() : nullptr;
+   double* elems = dynamic_cast<SimpleVector<double>&>(*svec->first).elements();
+   double* elems_link = (nlinking != -1) ? dynamic_cast<SimpleVector<double>&>(*svec->last).elements() : nullptr;
 
    (data->*vec)(data->user_data, data->id, elems, data->*n_vec);
 
@@ -661,7 +661,7 @@ DistributedVector<double>* DistributedTreeCallbacks::createVector(DATA_INT n_vec
    }
 
    for (const DistributedTree* child_tree : children) {
-      DistributedVector<double>* child_vec = dynamic_cast<const DistributedTreeCallbacks*>(child_tree)->createVector(n_vec, vec, n_linking_vec, linking_vec);
+      std::shared_ptr<DistributedVector<double>> child_vec{dynamic_cast<const DistributedTreeCallbacks*>(child_tree)->createVector(n_vec, vec, n_linking_vec, linking_vec)};
       svec->AddChild(child_vec);
    }
 

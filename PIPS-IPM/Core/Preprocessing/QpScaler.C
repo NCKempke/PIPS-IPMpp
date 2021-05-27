@@ -43,7 +43,7 @@ double QpScaler::get_unscaled_objective(double objval) const {
 }
 
 Variables* QpScaler::get_unscaled_variables(const Variables& variables) const {
-   Variables* unscaled_variables = new Variables(variables);
+   auto* unscaled_variables = new Variables(variables);
    unscaleVariables(*unscaled_variables);
    return unscaled_variables;
 };

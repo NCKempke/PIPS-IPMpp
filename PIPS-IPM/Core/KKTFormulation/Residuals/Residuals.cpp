@@ -4,33 +4,40 @@
 #include "pipsdef.h"
 
 #include <iostream>
+#include <utility>
 
-Residuals::Residuals(const Residuals& residuals) : mResidualNorm{residuals.mResidualNorm}, mDualityGap{residuals.mDualityGap},
-      primal_objective{residuals.primal_objective}, dual_objective{residuals.dual_objective}, nx{residuals.nx}, my{residuals.my}, mz{residuals.mz},
-      nxupp{residuals.nxupp}, nxlow{residuals.nxlow}, mcupp{residuals.mcupp}, mclow{residuals.mclow} {
-   ixlow = SmartPointer<Vector<double> >(residuals.ixlow->cloneFull());
-   ixupp = SmartPointer<Vector<double> >(residuals.ixupp->cloneFull());
-   iclow = SmartPointer<Vector<double> >(residuals.iclow->cloneFull());
-   icupp = SmartPointer<Vector<double> >(residuals.icupp->cloneFull());
+Residuals::Residuals(std::unique_ptr<Vector<double>> rQ_, std::unique_ptr<Vector<double>> rA_,
+   std::unique_ptr<Vector<double>> rC_, std::unique_ptr<Vector<double>> rz_, std::unique_ptr<Vector<double>> rt_,
+   std::unique_ptr<Vector<double>> rlambda_, std::unique_ptr<Vector<double>> ru_, std::unique_ptr<Vector<double>> rpi_,
+   std::unique_ptr<Vector<double>> rv_, std::unique_ptr<Vector<double>> rgamma_, std::unique_ptr<Vector<double>> rw_,
+   std::unique_ptr<Vector<double>> rphi_, std::shared_ptr<Vector<double>> ixlow_,
+   std::shared_ptr<Vector<double>> ixupp_, std::shared_ptr<Vector<double>> iclow_,
+   std::shared_ptr<Vector<double>> icupp_) :
+   ixupp{std::move(ixupp_)},
+   nxupp{ixupp->number_nonzeros()},
+   ixlow{std::move(ixlow_)}, nxlow{ixlow->number_nonzeros()},
+   icupp{std::move(icupp_)}, mcupp{icupp->number_nonzeros()}, iclow{std::move(iclow_)}, mclow{iclow->number_nonzeros()},
+   lagrangian_gradient{std::move(rQ_)},
+   rA{std::move(rA_)}, rC{std::move(rC_)}, rz{std::move(rz_)}, rv{std::move(rv_)},
+   rw{std::move(rw_)},
+   rt{std::move(rt_)}, ru{std::move(ru_)}, rgamma{std::move(rgamma_)},
+   rphi{std::move(rphi_)},
+   rlambda{std::move(rlambda_)}, rpi{std::move(rpi_)} {
 
-   lagrangian_gradient = SmartPointer<Vector<double> >(residuals.lagrangian_gradient->cloneFull());
-   rA = SmartPointer<Vector<double> >(residuals.rA->cloneFull());
-   rC = SmartPointer<Vector<double> >(residuals.rC->cloneFull());
-
-   rz = SmartPointer<Vector<double> >(residuals.rz->cloneFull());
-
-   rt = SmartPointer<Vector<double> >(residuals.rt->cloneFull());
-   rlambda = SmartPointer<Vector<double> >(residuals.rlambda->cloneFull());
-
-   ru = SmartPointer<Vector<double> >(residuals.ru->cloneFull());
-   rpi = SmartPointer<Vector<double> >(residuals.rpi->cloneFull());
-
-   rv = SmartPointer<Vector<double> >(residuals.rv->cloneFull());
-   rgamma = SmartPointer<Vector<double> >(residuals.rgamma->cloneFull());
-
-   rw = SmartPointer<Vector<double> >(residuals.rw->cloneFull());
-   rphi = SmartPointer<Vector<double> >(residuals.rphi->cloneFull());
 }
+
+Residuals::Residuals(const Residuals& residuals) : mResidualNorm{residuals.mResidualNorm},
+   mDualityGap{residuals.mDualityGap},
+   primal_objective{residuals.primal_objective}, dual_objective{residuals.dual_objective}, nx{residuals.nx},
+   my{residuals.my}, mz{residuals.mz},
+   ixupp{residuals.ixupp}, nxupp{residuals.nxupp}, ixlow{residuals.ixlow}, nxlow{residuals.nxlow},
+   icupp{residuals.icupp}, mcupp{residuals.mcupp}, iclow{residuals.iclow}, mclow{residuals.mclow},
+   lagrangian_gradient{residuals.lagrangian_gradient->cloneFull()}, rA{residuals.rA->cloneFull()},
+   rC{residuals.rC->cloneFull()}, rz{residuals.rz->cloneFull()}, rv{residuals.rv->cloneFull()},
+   rw{residuals.rw->cloneFull()},
+   rt{residuals.rt->cloneFull()}, ru{residuals.ru->cloneFull()}, rgamma{residuals.rgamma->cloneFull()},
+   rphi{residuals.rphi->cloneFull()},
+   rlambda{residuals.rlambda->cloneFull()}, rpi{residuals.rpi->cloneFull()} {}
 
 double updateNormAndPrint(double norm, const Vector<double>& vec, bool print, std::string&& name) {
    const double infnorm = vec.inf_norm();
@@ -312,8 +319,6 @@ int Residuals::valid_non_zero_pattern() {
 void Residuals::copy(const Residuals& residuals) {
    mResidualNorm = residuals.mResidualNorm;
    mDualityGap = residuals.mDualityGap;
-   m = residuals.m;
-   n = residuals.n;
 
    nx = residuals.nx;
    my = residuals.my;
@@ -371,6 +376,7 @@ double Residuals::constraint_violation() {
 double Residuals::optimality_measure(double mu) {
    return this->lagrangian_gradient->inf_norm();// + mu;
 }
+
 double Residuals::feasibility_measure(double mu) {
    //double complementarity = 0.;
    // compute componentwise products of complementary variables

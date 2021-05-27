@@ -62,7 +62,7 @@ inline SimpleVector<T>& getSimpleVecFromColStochVec(const Vector<T>& ooqpvec, in
 }
 
 template<typename T>
-inline T& getSimpleVecFromRowStochVec(const SmartPointer<Vector<T> >& ooqpvec_handle, const INDEX& row) {
+inline T& getSimpleVecFromRowStochVec(const SmartPointer<Vector<T>>& ooqpvec_handle, const INDEX& row) {
    assert(row.isRow());
    const Vector<T>& ooqp_vec = *ooqpvec_handle;
    return getSimpleVecFromRowStochVec(ooqp_vec, row);
@@ -109,7 +109,7 @@ inline DistributedVector<U>* cloneStochVector(const DistributedVector<T>& svec) 
       clone = new DistributedVector<U>(svec.first->length(), svec.mpiComm);
 
    for (size_t it = 0; it < svec.children.size(); it++) {
-      clone->AddChild(cloneStochVector<T, U>(*svec.children[it]));
+      clone->AddChild(std::shared_ptr<DistributedVector<U>>(cloneStochVector<T, U>(*svec.children[it])));
    }
    return clone;
 }

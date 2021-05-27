@@ -34,7 +34,7 @@ private:
          int& n_cols_orig_free, int& n_cols_orig_free_removed, const SimpleVector<double>& ixlow_orig, const SimpleVector<double>& ixupp_orig,
          bool at_root_node) const;
 
-   void setPointersMatrices(SmartPointer<GeneralMatrix> mat, int node);
+   void setPointersMatrices(const GeneralMatrix& mat, int node);
    void setPointersMatrixBoundsActivities(SystemType system_type, int node);
    void setPointersVarBounds(int node);
    void setPointersObjective(int node);

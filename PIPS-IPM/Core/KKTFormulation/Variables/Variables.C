@@ -1,4 +1,5 @@
 #include <iostream>
+#include <utility>
 #include <SimpleVector.h>
 #include "Variables.h"
 #include "Vector.hpp"
@@ -7,25 +8,14 @@
 #include "Problem.h"
 #include "MpsReader.h"
 
-Variables::Variables(Vector<double>* x_in, Vector<double>* s_in, Vector<double>* y_in, Vector<double>* z_in, Vector<double>* v_in,
-      Vector<double>* gamma_in, Vector<double>* w_in, Vector<double>* phi_in, Vector<double>* t_in, Vector<double>* lambda_in, Vector<double>* u_in,
-      Vector<double>* pi_in, Vector<double>* ixlow_in, Vector<double>* ixupp_in, Vector<double>* iclow_in, Vector<double>* icupp_in) {
-   SpReferTo(primals, x_in);
-   SpReferTo(slacks, s_in);
-   SpReferTo(equality_duals, y_in);
-   SpReferTo(inequality_duals, z_in);
-   SpReferTo(primal_lower_bound_gap, v_in);
-   SpReferTo(primal_upper_bound_gap_dual, phi_in);
-   SpReferTo(primal_upper_bound_gap, w_in);
-   SpReferTo(primal_lower_bound_gap_dual, gamma_in);
-   SpReferTo(slack_lower_bound_gap, t_in);
-   SpReferTo(slack_lower_bound_gap_dual, lambda_in);
-   SpReferTo(slack_upper_bound_gap, u_in);
-   SpReferTo(slack_upper_bound_gap_dual, pi_in);
-   SpReferTo(ixlow, ixlow_in);
-   SpReferTo(ixupp, ixupp_in);
-   SpReferTo(iclow, iclow_in);
-   SpReferTo(icupp, icupp_in);
+Variables::Variables(std::unique_ptr<Vector<double>> x_in, std::unique_ptr<Vector<double>> s_in, std::unique_ptr<Vector<double>> y_in, std::unique_ptr<Vector<double>> z_in, std::unique_ptr<Vector<double>> v_in,
+   std::unique_ptr<Vector<double>> gamma_in, std::unique_ptr<Vector<double>> w_in, std::unique_ptr<Vector<double>> phi_in, std::unique_ptr<Vector<double>> t_in, std::unique_ptr<Vector<double>> lambda_in, std::unique_ptr<Vector<double>> u_in,
+   std::unique_ptr<Vector<double>> pi_in, std::shared_ptr<Vector<double>> ixlow_in, std::shared_ptr<Vector<double>> ixupp_in, std::shared_ptr<Vector<double>> iclow_in,
+   std::shared_ptr<Vector<double>> icupp_in) :
+      ixlow{std::move(ixlow_in)}, ixupp{std::move(ixupp_in)}, iclow{std::move(iclow_in)}, icupp{std::move(icupp_in)}, primals{std::move(x_in)}, slacks{std::move(s_in)},
+      equality_duals{std::move(y_in)}, inequality_duals{std::move(z_in)}, primal_lower_bound_gap{std::move(v_in)}, primal_lower_bound_gap_dual{std::move(gamma_in)},
+      primal_upper_bound_gap{std::move(w_in)}, primal_upper_bound_gap_dual{std::move(phi_in)}, slack_lower_bound_gap{std::move(t_in)},
+      slack_lower_bound_gap_dual{std::move(lambda_in)}, slack_upper_bound_gap{std::move(u_in)}, slack_upper_bound_gap_dual{std::move(pi_in)}{
 
    nx = primals->length();
    my = equality_duals->length();
@@ -56,40 +46,15 @@ Variables::Variables(Vector<double>* x_in, Vector<double>* s_in, Vector<double>*
    assert(mz == slack_upper_bound_gap_dual->length() || (0 == slack_upper_bound_gap_dual->length() && mcupp == 0));
 }
 
-Variables::Variables(const Variables& vars) {
-   ixlow = SmartPointer<Vector<double> >(vars.ixlow->cloneFull());
-   ixupp = SmartPointer<Vector<double> >(vars.ixupp->cloneFull());
-   iclow = SmartPointer<Vector<double> >(vars.iclow->cloneFull());
-   icupp = SmartPointer<Vector<double> >(vars.icupp->cloneFull());
-
-   nx = vars.nx;
-   my = vars.my;
-   mz = vars.mz;
-
-   nxlow = ixlow->number_nonzeros();
-   nxupp = ixupp->number_nonzeros();
-   mclow = iclow->number_nonzeros();
-   mcupp = icupp->number_nonzeros();
-
-   slacks = SmartPointer<Vector<double> >(vars.slacks->cloneFull());
-
-   slack_lower_bound_gap = SmartPointer<Vector<double> >(vars.slack_lower_bound_gap->cloneFull());
-   slack_lower_bound_gap_dual = SmartPointer<Vector<double> >(vars.slack_lower_bound_gap_dual->cloneFull());
-
-   slack_upper_bound_gap = SmartPointer<Vector<double> >(vars.slack_upper_bound_gap->cloneFull());
-   slack_upper_bound_gap_dual = SmartPointer<Vector<double> >(vars.slack_upper_bound_gap_dual->cloneFull());
-
-   primal_lower_bound_gap = SmartPointer<Vector<double> >(vars.primal_lower_bound_gap->cloneFull());
-   primal_lower_bound_gap_dual = SmartPointer<Vector<double> >(vars.primal_lower_bound_gap_dual->cloneFull());
-
-   primal_upper_bound_gap = SmartPointer<Vector<double> >(vars.primal_upper_bound_gap->cloneFull());
-   primal_upper_bound_gap_dual = SmartPointer<Vector<double> >(vars.primal_upper_bound_gap_dual->cloneFull());
-
-   primals = SmartPointer<Vector<double> >(vars.primals->cloneFull());
-   equality_duals = SmartPointer<Vector<double> >(vars.equality_duals->cloneFull());
-   inequality_duals = SmartPointer<Vector<double> >(vars.inequality_duals->cloneFull());
-   number_complementarity_pairs = mclow + mcupp + nxlow + nxupp;
-}
+Variables::Variables(const Variables& other)  :
+   number_complementarity_pairs{other.number_complementarity_pairs}, nx{other.nx}, nxupp{other.nxupp}, nxlow{other.nxlow}, my{other.my}, mz{other.mz}, mcupp{other.mcupp}, mclow{other.mclow},
+   ixlow{other.ixlow}, ixupp{other.ixupp}, iclow{other.iclow}, icupp{other.icupp},
+   primals{other.primals->cloneFull()}, slacks{other.slacks->cloneFull()}, equality_duals{other.equality_duals->cloneFull()}, inequality_duals{other.inequality_duals->cloneFull()},
+   primal_lower_bound_gap{other.primal_lower_bound_gap->cloneFull()}, primal_lower_bound_gap_dual{other.primal_lower_bound_gap_dual->cloneFull()},
+   primal_upper_bound_gap{other.primal_upper_bound_gap->cloneFull()}, primal_upper_bound_gap_dual{other.primal_upper_bound_gap_dual->cloneFull()},
+   slack_lower_bound_gap{other.slack_lower_bound_gap->cloneFull()}, slack_lower_bound_gap_dual{other.slack_lower_bound_gap_dual->cloneFull()},
+   slack_upper_bound_gap{other.slack_upper_bound_gap->cloneFull()}, slack_upper_bound_gap_dual{other.slack_upper_bound_gap_dual->cloneFull()}
+   {}
 
 double Variables::get_average_distance_to_bound_for_converged_vars(const Problem&, double tol) const {
    assert(0 < tol);
@@ -120,7 +85,7 @@ void Variables::push_slacks_from_bound(double tol, double amount) {
 }
 
 
-double Variables::mu() {
+double Variables::mu() const {
    double mu = 0.;
    if (number_complementarity_pairs == 0) {
       return 0.;
@@ -329,7 +294,7 @@ std::pair<double, double> Variables::stepbound_pd(const Variables& iterate) {
 }
 
 double
-Variables::find_blocking(const Variables& step_in, double& primalValue, double& primalStep, double& dualValue, double& dualStep, int& firstOrSecond) {
+Variables::find_blocking(const Variables& step_in, double& primalValue, double& primalStep, double& dualValue, double& dualStep, int& firstOrSecond) const {
    double alpha = 1.;
    firstOrSecond = 0;
 
@@ -351,7 +316,7 @@ Variables::find_blocking(const Variables& step_in, double& primalValue, double& 
 void
 Variables::find_blocking(const Variables& step_in, double& primalValue, double& primalStep, double& dualValue, double& dualStep, double& primalValue_d,
       double& primalStep_d, double& dualValue_d, double& dualStep_d, double& alphaPrimal, double& alphaDual, bool& primalBlocking,
-      bool& dualBlocking) {
+      bool& dualBlocking) const {
    alphaPrimal = 1.0, alphaDual = 1.0;
    primalBlocking = false, dualBlocking = false;
 
@@ -409,7 +374,7 @@ void Variables::push_to_interior(double alpha, double beta) {
    }
 }
 
-double Variables::violation() {
+double Variables::violation() const {
    double viol = 0.0, cmin = 0.0;
    int iblock;
 
@@ -617,15 +582,15 @@ int Variables::valid_non_zero_pattern() {
 
 void Variables::unscale_solution(Problem* problem) {
 // Modifying sx is equivalent to modifying x
-   SimpleVector<double>& sx = (SimpleVector<double>&) *this->primals;
+   auto& sx = (SimpleVector<double>&) *this->primals;
 
 // x = D * x'
    sx.componentMult(problem->scale());
 }
 
 void Variables::unscale_bounds(Problem* problem) {
-   SimpleVector<double>& sxlow = (SimpleVector<double>&) problem->xlowerBound();
-   SimpleVector<double>& sxupp = (SimpleVector<double>&) problem->xupperBound();
+   auto& sxlow = (SimpleVector<double>&) problem->xlowerBound();
+   auto& sxupp = (SimpleVector<double>&) problem->xupperBound();
 
 // l = D * l'
    sxlow.componentMult(problem->scale());
@@ -642,22 +607,22 @@ void Variables::print_solution(MpsReader* reader, Problem* problem, int& iErr) {
    problem->hessian_multiplication(1.0, g, 0.5, *primals);
    double objective = g.dotProductWith(*primals);
 
-   SimpleVector<double>& sx = (SimpleVector<double>&) *this->primals;
-   SimpleVector<double>& sxlow = (SimpleVector<double>&) problem->xlowerBound();
-   SimpleVector<double>& sixlow = (SimpleVector<double>&) problem->ixlowerBound();
-   SimpleVector<double>& sxupp = (SimpleVector<double>&) problem->xupperBound();
-   SimpleVector<double>& sixupp = (SimpleVector<double>&) problem->ixupperBound();
-   SimpleVector<double>& sgamma = (SimpleVector<double>&) *this->primal_lower_bound_gap_dual;
-   SimpleVector<double>& sphi = (SimpleVector<double>&) *this->primal_upper_bound_gap_dual;
-   SimpleVector<double>& sy = (SimpleVector<double>&) *this->equality_duals;
-   SimpleVector<double>& ss = (SimpleVector<double>&) *this->slacks;
-   SimpleVector<double>& slambda = (SimpleVector<double>&) *this->slack_lower_bound_gap_dual;
-   SimpleVector<double>& spi = (SimpleVector<double>&) *this->slack_upper_bound_gap_dual;
-   SimpleVector<double>& sz = (SimpleVector<double>&) *this->inequality_duals;
-   SimpleVector<double>& sclow = (SimpleVector<double>&) problem->slowerBound();
-   SimpleVector<double>& siclow = (SimpleVector<double>&) problem->islowerBound();
-   SimpleVector<double>& scupp = (SimpleVector<double>&) problem->supperBound();
-   SimpleVector<double>& sicupp = (SimpleVector<double>&) problem->isupperBound();
+   auto& sx = dynamic_cast<SimpleVector<double>&>(*this->primals);
+   auto& sxlow = dynamic_cast<SimpleVector<double>&>(problem->xlowerBound());
+   auto& sixlow = dynamic_cast<SimpleVector<double>&>(problem->ixlowerBound());
+   auto& sxupp = dynamic_cast<SimpleVector<double>&>(problem->xupperBound());
+   auto& sixupp = dynamic_cast<SimpleVector<double>&>(problem->ixupperBound());
+   auto& sgamma = dynamic_cast<SimpleVector<double>&>(*this->primal_lower_bound_gap_dual);
+   auto& sphi = dynamic_cast<SimpleVector<double>&>(*this->primal_upper_bound_gap_dual);
+   auto& sy = dynamic_cast<SimpleVector<double>&>(*this->equality_duals);
+   auto& ss = dynamic_cast<SimpleVector<double>&>(*this->slacks);
+   auto& slambda = dynamic_cast<SimpleVector<double>&>(*this->slack_lower_bound_gap_dual);
+   auto& spi = dynamic_cast<SimpleVector<double>&>(*this->slack_upper_bound_gap_dual);
+   auto& sz = dynamic_cast<SimpleVector<double>&>(*this->inequality_duals);
+   auto& sclow = dynamic_cast<SimpleVector<double>&>(problem->slowerBound());
+   auto& siclow = dynamic_cast<SimpleVector<double>&>(problem->islowerBound());
+   auto& scupp = dynamic_cast<SimpleVector<double>&>(problem->supperBound());
+   auto& sicupp = dynamic_cast<SimpleVector<double>&>(problem->isupperBound());
 
    char* cxupp = new char[nx];
    char* cxlow = new char[nx];
@@ -677,8 +642,8 @@ void Variables::print_solution(MpsReader* reader, Problem* problem, int& iErr) {
    }
    char* cclow, * ccupp;
    if (mz <= 0) {
-      cclow = 0;
-      ccupp = 0;
+      cclow = nullptr;
+      ccupp = nullptr;
    }
    else {
       cclow = new char[mz];
@@ -718,7 +683,7 @@ void Variables::print_solution(MpsReader* reader, Problem* problem, int& iErr) {
 // stored at this top level, we can't do much except print their
 // dimensions.
 
-void Variables::print() {
+void Variables::print() const {
    std::cout << " Complementary Variables = " << number_complementarity_pairs << std::endl;
    std::cout << "(Cannot tell you more at this level)" << std::endl;
 }

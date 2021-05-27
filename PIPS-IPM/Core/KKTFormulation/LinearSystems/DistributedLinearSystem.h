@@ -111,8 +111,8 @@ public:
 
    DistributedLinearSystem(DistributedFactory* factory, DistributedQP* prob, bool is_hierarchy_root = false);
 
-   DistributedLinearSystem(DistributedFactory* factory, DistributedQP* prob, Vector<double>* dd, Vector<double>* dq, Vector<double>* nomegaInv,
-         Vector<double>* primal_reg_, Vector<double>* dual_y_reg_, Vector<double>* dual_z_reg_, Vector<double>* rhs, bool create_iter_ref_vecs);
+   DistributedLinearSystem(DistributedFactory* factory, DistributedQP* prob, std::shared_ptr<Vector<double>> dd, std::shared_ptr<Vector<double>> dq, std::shared_ptr<Vector<double>> nomegaInv,
+         std::shared_ptr<Vector<double>> primal_reg_, std::shared_ptr<Vector<double>> dual_y_reg_, std::shared_ptr<Vector<double>> dual_z_reg_, std::shared_ptr<Vector<double>> rhs, bool create_iter_ref_vecs);
 
    ~DistributedLinearSystem() override = default;
 

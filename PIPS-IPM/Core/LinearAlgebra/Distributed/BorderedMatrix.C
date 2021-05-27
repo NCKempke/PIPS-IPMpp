@@ -19,9 +19,9 @@
 #include <cassert>
 #include "StripMatrix.h"
 
-BorderedMatrix::BorderedMatrix(DistributedMatrix* inner_matrix_, StripMatrix* border_left_, StripMatrix* border_bottom_,
-      SparseMatrix* bottom_left_block_, MPI_Comm mpi_comm_) : inner_matrix{inner_matrix_}, border_left{border_left_},
-      border_bottom{border_bottom_}, bottom_left_block{bottom_left_block_}, mpi_comm(mpi_comm_), distributed(mpi_comm == MPI_COMM_NULL),
+BorderedMatrix::BorderedMatrix(std::shared_ptr<DistributedMatrix> inner_matrix_, std::unique_ptr<StripMatrix> border_left_, std::unique_ptr<StripMatrix> border_bottom_,
+      std::unique_ptr<SparseMatrix> bottom_left_block_, MPI_Comm mpi_comm_) : inner_matrix{std::move(inner_matrix_)}, border_left{std::move(border_left_)},
+      border_bottom{std::move(border_bottom_)}, bottom_left_block{std::move(bottom_left_block_)}, mpi_comm(mpi_comm_), distributed(mpi_comm == MPI_COMM_NULL),
       rank(PIPS_MPIgetRank(mpi_comm)) {
    assert(inner_matrix);
    assert(border_left);
@@ -45,13 +45,6 @@ BorderedMatrix::BorderedMatrix(DistributedMatrix* inner_matrix_, StripMatrix* bo
 
    m += border_left->n_rows();
    n += border_bottom->n_columns();
-}
-
-BorderedMatrix::~BorderedMatrix() {
-   delete bottom_left_block;
-   delete border_bottom;
-   delete border_left;
-   delete inner_matrix;
 }
 
 int BorderedMatrix::is_a(int type) const {
@@ -152,11 +145,11 @@ void BorderedMatrix::getRowMinMaxVec(bool get_min, bool initialize_vec, const Ve
    auto& minmax = dynamic_cast<DistributedVector<double>&>(minmax_in);
    const DistributedVector<double>* col_scale = has_colscale ? dynamic_cast<const DistributedVector<double>*>(col_scale_in) : nullptr;
 
-   border_left->getRowMinMaxVec(get_min, initialize_vec, has_colscale ? col_scale->first : nullptr, *minmax.children[0]);
-   inner_matrix->getRowMinMaxVec(get_min, false, has_colscale ? col_scale->children[0] : nullptr, *minmax.children[0]);
+   border_left->getRowMinMaxVec(get_min, initialize_vec, has_colscale ? col_scale->first.get() : nullptr, *minmax.children[0]);
+   inner_matrix->getRowMinMaxVec(get_min, false, has_colscale ? col_scale->children[0].get() : nullptr, *minmax.children[0]);
 
-   bottom_left_block->getRowMinMaxVec(get_min, initialize_vec, has_colscale ? col_scale->first : nullptr, *minmax.last);
-   border_bottom->getRowMinMaxVec(get_min, false, has_colscale ? col_scale->children[0] : nullptr, *minmax.last);
+   bottom_left_block->getRowMinMaxVec(get_min, initialize_vec, has_colscale ? col_scale->first.get() : nullptr, *minmax.last);
+   border_bottom->getRowMinMaxVec(get_min, false, has_colscale ? col_scale->children[0].get() : nullptr, *minmax.last);
 }
 
 void BorderedMatrix::getColMinMaxVec(bool get_min, bool initialize_vec, const Vector<double>* row_scale_in, Vector<double>& minmax_in) const {
@@ -169,11 +162,11 @@ void BorderedMatrix::getColMinMaxVec(bool get_min, bool initialize_vec, const Ve
    auto& minmax = dynamic_cast<DistributedVector<double>&>(minmax_in);
    const DistributedVector<double>* row_scale = has_rowscale ? dynamic_cast<const DistributedVector<double>*>(row_scale_in) : nullptr;
 
-   border_left->getColMinMaxVec(get_min, initialize_vec, has_rowscale ? row_scale->children[0] : nullptr, *minmax.first);
-   bottom_left_block->getColMinMaxVec(get_min, false, has_rowscale ? row_scale->last : nullptr, *minmax.first);
+   border_left->getColMinMaxVec(get_min, initialize_vec, has_rowscale ? row_scale->children[0].get() : nullptr, *minmax.first);
+   bottom_left_block->getColMinMaxVec(get_min, false, has_rowscale ? row_scale->last.get() : nullptr, *minmax.first);
 
-   inner_matrix->getColMinMaxVec(get_min, initialize_vec, has_rowscale ? row_scale->children[0] : nullptr, *minmax.children[0]);
-   border_bottom->getColMinMaxVec(get_min, false, has_rowscale ? row_scale->last : nullptr, *minmax.children[0]);
+   inner_matrix->getColMinMaxVec(get_min, initialize_vec, has_rowscale ? row_scale->children[0].get() : nullptr, *minmax.children[0]);
+   border_bottom->getColMinMaxVec(get_min, false, has_rowscale ? row_scale->last.get() : nullptr, *minmax.children[0]);
 }
 
 void BorderedMatrix::addRowSums(Vector<double>& vec_) const {

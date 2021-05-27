@@ -2,7 +2,7 @@
 #define RESIDUALS_H
 
 #include "Vector.hpp"
-#include "SmartPointer.h"
+#include <memory>
 #include <iostream>
 #include <limits>
 
@@ -58,58 +58,65 @@ protected:
    long long my{-1};
    long long mz{-1};
 
+   std::shared_ptr<Vector<double>> ixupp;
    long long nxupp{-1};
-   SmartPointer<Vector<double> > ixupp;
 
+   std::shared_ptr<Vector<double>> ixlow;
    long long nxlow{-1};
-   SmartPointer<Vector<double> > ixlow;
 
+   std::shared_ptr<Vector<double>> icupp;
    long long mcupp{-1};
-   SmartPointer<Vector<double> > icupp;
 
+   std::shared_ptr<Vector<double>> iclow;
    long long mclow{-1};
-   SmartPointer<Vector<double> > iclow;
 
    Residuals() = default;
 
 public:
-   int m{-1}, n{-1};
+   std::unique_ptr<Vector<double>> lagrangian_gradient;
+   std::unique_ptr<Vector<double>> rA;
+   std::unique_ptr<Vector<double>> rC;
+   std::unique_ptr<Vector<double>> rz;
+   std::unique_ptr<Vector<double>> rv;
+   std::unique_ptr<Vector<double>> rw;
+   std::unique_ptr<Vector<double>> rt;
+   std::unique_ptr<Vector<double>> ru;
+   std::unique_ptr<Vector<double>> rgamma;
+   std::unique_ptr<Vector<double>> rphi;
+   std::unique_ptr<Vector<double>> rlambda;
+   std::unique_ptr<Vector<double>> rpi;
 
-   SmartPointer<Vector<double> > lagrangian_gradient;
-   SmartPointer<Vector<double> > rA;
-   SmartPointer<Vector<double> > rC;
-   SmartPointer<Vector<double> > rz;
-   SmartPointer<Vector<double> > rv;
-   SmartPointer<Vector<double> > rw;
-   SmartPointer<Vector<double> > rt;
-   SmartPointer<Vector<double> > ru;
-   SmartPointer<Vector<double> > rgamma;
-   SmartPointer<Vector<double> > rphi;
-   SmartPointer<Vector<double> > rlambda;
-   SmartPointer<Vector<double> > rpi;
+   Residuals(std::unique_ptr<Vector<double>> rQ_, std::unique_ptr<Vector<double>> rA_,
+      std::unique_ptr<Vector<double>> rC_, std::unique_ptr<Vector<double>> rz_, std::unique_ptr<Vector<double>> rt_,
+      std::unique_ptr<Vector<double>> rlambda_, std::unique_ptr<Vector<double>> ru_,
+      std::unique_ptr<Vector<double>> rpi_,
+      std::unique_ptr<Vector<double>> rv_, std::unique_ptr<Vector<double>> rgamma_, std::unique_ptr<Vector<double>> rw_,
+      std::unique_ptr<Vector<double>> rphi_, std::shared_ptr<Vector<double>> ixlow_,
+      std::shared_ptr<Vector<double>> ixupp_, std::shared_ptr<Vector<double>> iclow_,
+      std::shared_ptr<Vector<double>> icupp_);
 
    Residuals(const Residuals& residuals);
 
    /** The norm of the residuals, ommiting the complementarity conditions */
-   double residual_norm() const { return mResidualNorm; }
+   [[nodiscard]] double residual_norm() const { return mResidualNorm; }
 
    /** A quantity that measures progress toward feasibility. IN terms of the abstract problem formulation, this quantity is defined as
     *  @code
     * x' * Q * x + c' * x - b' * y - d' * z
     *  @endcode
     */
-   double duality_gap() const { return mDualityGap; };
+   [[nodiscard]] double duality_gap() const { return mDualityGap; };
 
-   double primalObjective() const { return primal_objective; };
+   [[nodiscard]] double primalObjective() const { return primal_objective; };
 
-   double dualObjective() const { return dual_objective; };
+   [[nodiscard]] double dualObjective() const { return dual_objective; };
 
    /** calculate residuals, their norms, and duality/complementarity gap, given a problem and variable set.  */
    void evaluate(Problem& problem, Variables& iterate_in, bool print_resids = false);
 
    /** Modify the "complementarity" component of the residuals, by
    * adding the pairwise products of the complementary variables plus
-   * a constant alpha to this term.  
+   * a constant alpha to this term.
    */
    void add_to_complementarity_residual(const Variables& variables, double alpha);
 
@@ -145,16 +152,18 @@ public:
 
    void writeToStream(std::ostream& out);
 
-   const long long& getNxupp() { return nxupp; };
+   [[nodiscard]] const long long& getNxupp() const { return nxupp; };
 
-   const long long& getNxlow() { return nxlow; };
+   [[nodiscard]] const long long& getNxlow() const { return nxlow; };
 
-   const long long& getMcupp() { return mcupp; };
+   [[nodiscard]] const long long& getMcupp() const { return mcupp; };
 
-   const long long& getMclow() { return mclow; };
+   [[nodiscard]] const long long& getMclow() const { return mclow; };
 
    double constraint_violation();
+
    double optimality_measure(double mu);
+
    double feasibility_measure(double mu);
 };
 

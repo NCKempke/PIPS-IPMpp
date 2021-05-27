@@ -32,7 +32,8 @@ static void biCGStabCommunicateStatus(int flag, int it) {
       gInnerBiCGFails++;
 }
 
-sLinsysRootAug::sLinsysRootAug(DistributedFactory* factory_, DistributedQP* prob_) : DistributedRootLinearSystem(factory_, prob_) {
+sLinsysRootAug::sLinsysRootAug(DistributedFactory* factory_, DistributedQP* prob_) : DistributedRootLinearSystem(
+   factory_, prob_) {
    if (pipsipmpp_options::get_bool_parameter("HIERARCHICAL"))
       assert(false && "should not end up here");
 
@@ -41,16 +42,21 @@ sLinsysRootAug::sLinsysRootAug(DistributedFactory* factory_, DistributedQP* prob
    createSolversAndKKts();
 
    if (apply_regularization) {
-      std::cout << "setting up root regularization : " << locnx << " " << locmy << " " << locmz << " " << locmyl << " " << locmzl << std::endl;
+      std::cout << "setting up root regularization : " << locnx << " " << locmy << " " << locmz << " " << locmyl << " "
+                << locmzl << std::endl;
       regularization_strategy = std::make_unique<RegularizationStrategy>(locnx, locmy + locmyl + locmzl);
    }
 
    redRhs = std::make_unique<SimpleVector<double>>(locnx + locmy + locmz + locmyl + locmzl);
 }
 
-sLinsysRootAug::sLinsysRootAug(DistributedFactory* factory_, DistributedQP* prob_, Vector<double>* dd_, Vector<double>* dq_,
-      Vector<double>* nomegaInv_, Vector<double>* regP, Vector<double>* regDy, Vector<double>* regDz, Vector<double>* rhs_, bool create_solvers)
-      : DistributedRootLinearSystem(factory_, prob_, dd_, dq_, nomegaInv_, regP, regDy, regDz, rhs_) {
+sLinsysRootAug::sLinsysRootAug(DistributedFactory* factory_, DistributedQP* prob_, std::shared_ptr<Vector<double>> dd_,
+   std::shared_ptr<Vector<double>> dq_,
+   std::shared_ptr<Vector<double>> nomegaInv_, std::shared_ptr<Vector<double>> regP,
+   std::shared_ptr<Vector<double>> regDy, std::shared_ptr<Vector<double>> regDz, std::shared_ptr<Vector<double>> rhs_,
+   bool create_solvers)
+   : DistributedRootLinearSystem(factory_, prob_, std::move(dd_), std::move(dq_), std::move(nomegaInv_),
+   std::move(regP), std::move(regDy), std::move(regDz), std::move(rhs_)) {
    assert(pipsipmpp_options::get_bool_parameter("HIERARCHICAL"));
    assert(locmyl >= 0 && locmzl >= 0);
    assert(computeBlockwiseSC);
@@ -61,7 +67,8 @@ sLinsysRootAug::sLinsysRootAug(DistributedFactory* factory_, DistributedQP* prob
    }
 
    if (apply_regularization) {
-      std::cout << "setting up root regularization : " << locnx << " " << locmy << " " << locmz << " " << locmyl << " " << locmzl << std::endl;
+      std::cout << "setting up root regularization : " << locnx << " " << locmy << " " << locmz << " " << locmyl << " "
+                << locmzl << std::endl;
       regularization_strategy = std::make_unique<RegularizationStrategy>(locnx, locmy + locmyl + locmzl);
    }
 
@@ -82,8 +89,7 @@ SymmetricMatrix* sLinsysRootAug::createKKT() const {
       assert(sparsekkt->size() == n);
 
       return sparsekkt;
-   }
-   else {
+   } else {
       return new DenseSymmetricMatrix(n);
    }
 }
@@ -95,26 +101,22 @@ void sLinsysRootAug::createSolversSparse(SolverType solver_type) {
 #ifdef WITH_MUMPS
       solver = std::make_unique<MumpsSolverRoot>(mpiComm, kkt_sp, allreduce_kkt);
 #endif
-   }
-   else if (solver_type == SolverType::SOLVER_PARDISO) {
+   } else if (solver_type == SolverType::SOLVER_PARDISO) {
 #ifdef WITH_PARDISO
       solver = std::make_unique<PardisoProjectIndefSolver>(kkt_sp, allreduce_kkt, mpiComm);
 #endif
-   }
-   else if (solver_type == SolverType::SOLVER_MKL_PARDISO) {
+   } else if (solver_type == SolverType::SOLVER_MKL_PARDISO) {
 #ifdef WITH_MKL_PARDISO
       solver = std::make_unique<PardisoMKLIndefSolver>(kkt_sp, allreduce_kkt, mpiComm);
 #endif
-   }
-   else if (solver_type == SolverType::SOLVER_MA57) {
+   } else if (solver_type == SolverType::SOLVER_MA57) {
 #ifdef WITH_MA57
-      solver = std::make_unique<Ma57SolverRoot>( kkt_sp, allreduce_kkt, mpiComm, "sLinsysRootAug" );
+      solver = std::make_unique<Ma57SolverRoot>(kkt_sp, allreduce_kkt, mpiComm, "sLinsysRootAug");
 #endif
-   }
-   else {
+   } else {
       assert(solver_type == SolverType::SOLVER_MA27);
 #ifdef WITH_MA27
-      solver = std::make_unique<Ma27SolverRoot>( kkt_sp, allreduce_kkt, mpiComm, "sLinsysRootAug" );
+      solver = std::make_unique<Ma27SolverRoot>(kkt_sp, allreduce_kkt, mpiComm, "sLinsysRootAug");
 #endif
    }
 }
@@ -174,8 +176,7 @@ void sLinsysRootAug::finalizeKKT() {
 
    if (usePrecondDist) {
       // don't do anything, already done previously
-   }
-   else {
+   } else {
       if (hasSparseKkt)
          finalizeKKTsparse();
       else
@@ -273,7 +274,8 @@ void sLinsysRootAug::finalizeKKTdist() {
    int local2linksStartIneq;
    int local2linksEndIneq;
 
-   data->getSCrangeMarkersMy(childStart, childEnd, local2linksStartEq, local2linksEndEq, local2linksStartIneq, local2linksEndIneq);
+   data->getSCrangeMarkersMy(childStart, childEnd, local2linksStartEq, local2linksEndEq, local2linksStartIneq,
+      local2linksEndIneq);
 
    const int n2linksRowsLocalEq = local2linksEndEq - local2linksStartEq;
 
@@ -315,11 +317,12 @@ void sLinsysRootAug::finalizeKKTdist() {
 
       if (myRank == 0) {
          const int n2linksRowsLocalIneq = local2linksEndIneq - local2linksStartIneq;
-         PIPSdebugMessage("rank %d GT border columns: %d-%d\n", myRank, borderstartIneq, borderstartIneq + bordersizeIneq);
+         PIPSdebugMessage("rank %d GT border columns: %d-%d\n", myRank, borderstartIneq,
+               borderstartIneq + bordersizeIneq);
 
          // add (shared) border part of Gt
          addLinkConsBlock0Matrix(Gt, locnx + locmy + locmyl, n2linksRowsLocalEq + n2linksRowsLocalIneq, borderstartIneq,
-               borderstartIneq + bordersizeIneq);
+            borderstartIneq + bordersizeIneq);
       }
 
       assert(zDiagLinkCons);
@@ -485,13 +488,15 @@ void sLinsysRootAug::Ltsolve(Vector<double>& x) {
 }
 
 /* gets called for computing the dense schur complement*/
-void sLinsysRootAug::LsolveHierarchyBorder(DenseMatrix& result, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border, bool two_link_border,
-      int begin_cols, int end_cols) {
+void sLinsysRootAug::LsolveHierarchyBorder(DenseMatrix& result, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border,
+   bool two_link_border,
+   int begin_cols, int end_cols) {
    LsolveHierarchyBorder(result, Br, Br_mod_border, true, two_link_border, begin_cols, end_cols);
 }
 
-void sLinsysRootAug::LtsolveHierarchyBorder(AbstractMatrix& res, const DenseMatrix& X0, BorderLinsys& Bl, BorderLinsys& Br,
-      std::vector<BorderMod>& br_mod_border, bool sym_res, bool sparse_res, int begin_cols, int end_cols) {
+void
+sLinsysRootAug::LtsolveHierarchyBorder(AbstractMatrix& res, const DenseMatrix& X0, BorderLinsys& Bl, BorderLinsys& Br,
+   std::vector<BorderMod>& br_mod_border, bool sym_res, bool sparse_res, int begin_cols, int end_cols) {
    if (Bl.isEmpty() || (Br.isEmpty() && br_mod_border.empty()))
       return;
 
@@ -559,12 +564,10 @@ void sLinsysRootAug::solveReducedLinkCons(SimpleVector<double>& b_vec) {
    if (innerSCSolve == 0) {
       // Option 1. - solve with the factors
       solver->solveSynchronized(rhs_short);
-   }
-   else if (innerSCSolve == 1) {
+   } else if (innerSCSolve == 1) {
       // Option 2 - solve with the factors and perform iter. ref.
       solveWithIterRef(rhs_short);
-   }
-   else {
+   } else {
       assert(innerSCSolve == 2);
       // Option 3 - use the factors as preconditioner and apply BiCGStab
       solveWithBiCGStab(rhs_short);
@@ -706,7 +709,8 @@ void sLinsysRootAug::solveReducedLinkConsBlocked(DenseMatrix& rhs_mat_transp, in
 
 /** Ht should be either Ft or Gt */
 void
-sLinsysRootAug::addLinkConsBlock0Matrix(const SparseMatrix& Ht, int nHtOffsetCols, int nKktOffsetCols, int startCol, int endCol) {
+sLinsysRootAug::addLinkConsBlock0Matrix(const SparseMatrix& Ht, int nHtOffsetCols, int nKktOffsetCols, int startCol,
+   int endCol) {
    assert(startCol >= 0 && startCol <= endCol && nKktOffsetCols >= 0 && nKktOffsetCols <= startCol);
 
    if (startCol == endCol)
@@ -815,7 +819,8 @@ sLinsysRootAug::addLinkConsBlock0Matrix(const SparseMatrix& Ht, int nHtOffsetCol
          }
       }
 
-      assert(pHt == krowHt[i + 1] || jcolHt[pHt] + nHtOffsetCols >= endCol); // asserts that no entry of Ht has been missed
+      assert(
+         pHt == krowHt[i + 1] || jcolHt[pHt] + nHtOffsetCols >= endCol); // asserts that no entry of Ht has been missed
    }
 }
 
@@ -842,9 +847,9 @@ void sLinsysRootAug::SCmult(double beta, SimpleVector<double>& rxy, double alpha
       const SparseSymmetricMatrix& Q = data->getLocalQ();
       Q.mult(1.0, &rxy[0], 1, alpha, &x[0], 1);
 
-    if (locmz > 0) {
-      auto* CtDC_sp = dynamic_cast<SparseSymmetricMatrix*>(CtDC.get());
-      assert(CtDC_sp);
+      if (locmz > 0) {
+         auto* CtDC_sp = dynamic_cast<SparseSymmetricMatrix*>(CtDC.get());
+         assert(CtDC_sp);
 
          CtDC_sp->mult(1.0, &rxy[0], 1, -alpha, &x[0], 1);
       }
@@ -877,8 +882,7 @@ void sLinsysRootAug::SCmult(double beta, SimpleVector<double>& rxy, double alpha
          for (int i = 0; i < zDiagLinkConsv.length(); i++)
             rxy[i + shift] += alpha * zDiagLinkConsv[i] * x[i + shift];
       }
-   }
-   else {
+   } else {
       //other processes set r to zero since they will get this portion from process 0
       rxy.setToZero();
    }
@@ -983,8 +987,7 @@ void sLinsysRootAug::solveWithIterRef(SimpleVector<double>& r) {
          const SparseMatrix& A = data->getLocalB();
          A.transMult(1.0, &rxy[0], 1, -1.0, &x[locnx], 1);
          A.mult(1.0, &rxy[locnx], 1, -1.0, &x[0], 1);
-      }
-      else {
+      } else {
          //other processes set r to zero since they will get this portion from process 0
          rxy.setToZero();
       }
@@ -1019,8 +1022,7 @@ void sLinsysRootAug::solveWithIterRef(SimpleVector<double>& r) {
 
       if (relResNorm < 1.0e-10) {
          break;
-      }
-      else {
+      } else {
          double prevRelResNorm = 1.0e10;
          if (!histResid.empty())
             prevRelResNorm = histResid[histResid.size() - 1];
@@ -1029,13 +1031,13 @@ void sLinsysRootAug::solveWithIterRef(SimpleVector<double>& r) {
          if (relResNorm > prevRelResNorm) {
             // diverging; restore iteration
             if (myRank == 0) {
-               std::cout << "1st stg - iter refinement diverges relResNorm=" << relResNorm << "  before was " << prevRelResNorm << "\n";
+               std::cout << "1st stg - iter refinement diverges relResNorm=" << relResNorm << "  before was "
+                         << prevRelResNorm << "\n";
                std::cout << "Restoring iterate.\n";
             }
             x.copyFrom(x_prev);
             break;
-         }
-         else {
+         } else {
             //check slow convergence for the last xxx iterates.
             // xxx is 1 for now
             //if(relResNorm>0.*prevRelResNorm) {
@@ -1053,7 +1055,8 @@ void sLinsysRootAug::solveWithIterRef(SimpleVector<double>& r) {
          }
          histResid.push_back(relResNorm);
          if (myRank == 0)
-            std::cout << "1st stg - sol does NOT  have enough accuracy (" << relResNorm << ") after " << refinSteps << " refinement steps\n";
+            std::cout << "1st stg - sol does NOT  have enough accuracy (" << relResNorm << ") after " << refinSteps
+                      << " refinement steps\n";
       }
       refinSteps++;
    } while (refinSteps <= maxRefinSteps);
@@ -1248,8 +1251,7 @@ void sLinsysRootAug::solveWithBiCGStab(SimpleVector<double>& b) {
             iter = 0.5+ii;
 #endif
             break;
-         }
-         else {
+         } else {
             if (stag >= maxstagsteps && moresteps == 0) {
                stag = 0;
             }
@@ -1332,8 +1334,7 @@ void sLinsysRootAug::solveWithBiCGStab(SimpleVector<double>& b) {
             iter = 1.0+ii;
 #endif
             break;
-         }
-         else {
+         } else {
             if (stag >= maxstagsteps && moresteps == 0) {
                stag = 0;
             }
@@ -1379,8 +1380,7 @@ void sLinsysRootAug::solveWithBiCGStab(SimpleVector<double>& b) {
              normr_act, relres, iter);
       }
 #endif
-   }
-   else {
+   } else {
       if (ii == maxit)
          flag = 10;//aaa
       //FAILURE -> return minimum resid-norm iterate
@@ -1395,8 +1395,7 @@ void sLinsysRootAug::solveWithBiCGStab(SimpleVector<double>& b) {
 #ifdef TIMING
          relres=normr/n2b;
 #endif
-      }
-      else {
+      } else {
 #ifdef TIMING
          iter=1.0+ii;
          relres = normr/n2b;
@@ -1413,7 +1412,8 @@ void sLinsysRootAug::solveWithBiCGStab(SimpleVector<double>& b) {
    }
 
    if (myRank == 0)
-      std::cout << "innerBICG: " << "ii=" << ii << " flag=" << flag << " normr=" << normr << " normr_act=" << normr_act << " tolb=" << tolb << "\n";
+      std::cout << "innerBICG: " << "ii=" << ii << " flag=" << flag << " normr=" << normr << " normr_act=" << normr_act
+                << " tolb=" << tolb << "\n";
 
    biCGStabCommunicateStatus(flag, ii);
 
@@ -1469,8 +1469,8 @@ void sLinsysRootAug::add_CtDC_to_sparse_schur_complement(const SymmetricMatrix& 
    }
 }
 
-void sLinsysRootAug::compute_CtDC_and_add_to_Schur_complement(SymmetricMatrix*& CtDC_loc, const Vector<double>& diagonal)
-{
+void
+sLinsysRootAug::compute_CtDC_and_add_to_Schur_complement(SymmetricMatrix*& CtDC_loc, const Vector<double>& diagonal) {
    assert(diagonal.all_of([](auto& v) { return v <= 0.0; }));
 
    const SparseMatrix& C = data->getLocalD();
@@ -1533,7 +1533,7 @@ void sLinsysRootAug::clear_CtDC_from_sparse_schur_complement(const SymmetricMatr
    }
 }
 
-void sLinsysRootAug::clear_CtDC_from_schur_complement(const SymmetricMatrix& CtDC_loc){
+void sLinsysRootAug::clear_CtDC_from_schur_complement(const SymmetricMatrix& CtDC_loc) {
    assert(CtDC_loc.size() == locnx);
 
    if (this->hasSparseKkt) {
@@ -1543,13 +1543,14 @@ void sLinsysRootAug::clear_CtDC_from_schur_complement(const SymmetricMatrix& CtD
    }
 }
 
-void sLinsysRootAug::add_regularization_local_kkt(double primal_regularization, double dual_equality_regularization, double dual_inequality_regularization){
+void sLinsysRootAug::add_regularization_local_kkt(double primal_regularization, double dual_equality_regularization,
+   double dual_inequality_regularization) {
    assert(apply_regularization);
    assert(primal_regularization_diagonal);
 
-   assert(dynamic_cast<const DistributedVector<double>*>(this->primal_regularization_diagonal));
-   assert(dynamic_cast<const DistributedVector<double>*>(this->dual_equality_regularization_diagonal));
-   assert(dynamic_cast<const DistributedVector<double>*>(this->dual_inequality_regularization_diagonal));
+   assert(dynamic_cast<const DistributedVector<double>*>(this->primal_regularization_diagonal.get()));
+   assert(dynamic_cast<const DistributedVector<double>*>(this->dual_equality_regularization_diagonal.get()));
+   assert(dynamic_cast<const DistributedVector<double>*>(this->dual_inequality_regularization_diagonal.get()));
 
 
    assert(primal_regularization >= 0);
@@ -1557,7 +1558,8 @@ void sLinsysRootAug::add_regularization_local_kkt(double primal_regularization, 
    assert(dual_equality_regularization >= 0);
 
    if (PIPS_MPIgetRank() == 0) {
-      std::cout << "regularizing with root " << primal_regularization << " " << dual_equality_regularization << " " << dual_inequality_regularization << std::endl;
+      std::cout << "regularizing with root " << primal_regularization << " " << dual_equality_regularization << " "
+                << dual_inequality_regularization << std::endl;
    }
 
    /* primal diagonal */
@@ -1659,7 +1661,7 @@ void sLinsysRootAug::finalizeKKTsparse() {
 
       SymmetricMatrix* CtDCptr = CtDC ? CtDC.get() : nullptr;
       compute_CtDC_and_add_to_Schur_complement(CtDCptr, *zDiag);
-      if (!CtDC){
+      if (!CtDC) {
          CtDC.reset(CtDCptr);
       }
    }
@@ -1724,8 +1726,7 @@ void sLinsysRootAug::finalizeKKTsparse() {
 
                MKkt[blockStart + shift] += MFt[p];
             }
-         }
-         else {
+         } else {
             const int blockStart = krowKkt[i + 1] - locmyl - locmzl;
             assert(blockStart >= krowKkt[i]);
 
@@ -1762,8 +1763,7 @@ void sLinsysRootAug::finalizeKKTsparse() {
 
                MKkt[blockStart + shift] += MGt[p];
             }
-         }
-         else {
+         } else {
             const int blockStart = krowKkt[i + 1] - locmzl;
 
             assert(blockStart >= krowKkt[i]);
@@ -1910,7 +1910,7 @@ void sLinsysRootAug::DsolveHierarchyBorder(DenseMatrix& rhs_mat_transp, int n_co
    // TODO
 #endif
 
-   const auto [m, n] = rhs_mat_transp.n_rows_columns();
+   const auto[m, n] = rhs_mat_transp.n_rows_columns();
 #ifndef NDEBUG
    assert(locmyl >= 0 && locmzl >= 0);
 
@@ -1928,7 +1928,8 @@ void sLinsysRootAug::DsolveHierarchyBorder(DenseMatrix& rhs_mat_transp, int n_co
    const int leftover = n_cols % size;
 
    const int n_rhs = (my_rank < leftover) ? n_blockrhs + 1 : n_blockrhs;
-   const int rhs_start = my_rank < leftover ? (n_blockrhs + 1) * my_rank : (n_blockrhs + 1) * leftover + (my_rank - leftover) * n_blockrhs;
+   const int rhs_start =
+      my_rank < leftover ? (n_blockrhs + 1) * my_rank : (n_blockrhs + 1) * leftover + (my_rank - leftover) * n_blockrhs;
 
    assert(rhs_start <= n_cols);
    assert(rhs_start + n_rhs <= n_cols);
@@ -1951,8 +1952,9 @@ void sLinsysRootAug::DsolveHierarchyBorder(DenseMatrix& rhs_mat_transp, int n_co
    }
 }
 
-void sLinsysRootAug::addBlTKiInvBrToRes(AbstractMatrix& result, BorderLinsys& Bl, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border, bool sym_res,
-      bool sparse_res) {
+void sLinsysRootAug::addBlTKiInvBrToRes(AbstractMatrix& result, BorderLinsys& Bl, BorderLinsys& Br,
+   std::vector<BorderMod>& Br_mod_border, bool sym_res,
+   bool sparse_res) {
    assert(!is_hierarchy_root);
 
    if (Bl.isEmpty() || (Br.isEmpty() && Br_mod_border.empty()))
@@ -1981,7 +1983,8 @@ void sLinsysRootAug::addBlTKiInvBrToRes(AbstractMatrix& result, BorderLinsys& Bl
       const int end_chunk = std::min(m_result, (i + 1) * m_buffer);
 
       assert(end_chunk - begin_chunk <= m_buffer);
-      addBlTKiInvBrToResBlockwise(result, Bl, Br, Br_mod_border, sym_res, sparse_res, *buffer_blocked_hierarchical, begin_chunk, end_chunk);
+      addBlTKiInvBrToResBlockwise(result, Bl, Br, Br_mod_border, sym_res, sparse_res, *buffer_blocked_hierarchical,
+         begin_chunk, end_chunk);
    }
 }
 
@@ -1990,8 +1993,9 @@ void sLinsysRootAug::addBlTKiInvBrToRes(AbstractMatrix& result, BorderLinsys& Bl
 
 /* if Bl^T is a two link border this needs to be done for at most the first and the last child of this communicator (all the other children are guaranteed 0) */
 /* compute res += [ Bl^T Ki^-1 (Br - sum_j Bmodj Xj) ]^T = (Br^T - SUM_j Xj^T Bmodj^T) Ki^-1 Bl */
-void sLinsysRootAug::addBlTKiInvBrToResBlockwise(AbstractMatrix& result, BorderLinsys& Bl, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border,
-      bool sym_res, bool sparse_res, DenseMatrix& buffer_b0, int begin_cols, int end_cols) {
+void sLinsysRootAug::addBlTKiInvBrToResBlockwise(AbstractMatrix& result, BorderLinsys& Bl, BorderLinsys& Br,
+   std::vector<BorderMod>& Br_mod_border,
+   bool sym_res, bool sparse_res, DenseMatrix& buffer_b0, int begin_cols, int end_cols) {
    /* only called on sLinsysRootBordered and sLinsysRootAugHierInner */
    buffer_b0.putZeros();
 
@@ -2004,8 +2008,7 @@ void sLinsysRootAug::addBlTKiInvBrToResBlockwise(AbstractMatrix& result, BorderL
    const bool two_link_border_left = !(Bl.has_RAC || Bl.use_local_RAC);
    const bool two_link_border_right = !(Br.has_RAC || Br.use_local_RAC);
 
-   if (two_link_border_right)
-      ;
+   if (two_link_border_right);
 
    /* compute Schur Complement right hand sides SUM_i Bi_{inner} Ki^-1 ( Bri - sum_j Bmodij Xij )
     * (keep in mind that in Bi_{this} and the SC we projected C0 Omega0 out) */

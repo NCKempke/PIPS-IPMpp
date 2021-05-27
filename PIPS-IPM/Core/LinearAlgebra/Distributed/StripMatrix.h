@@ -12,6 +12,7 @@
 #include "SparseMatrix.h"
 #include "DoubleMatrixTypes.h"
 
+#include <memory>
 #include "mpi.h"
 
 class DistributedTreeCallbacks;
@@ -20,9 +21,9 @@ class StripMatrix : public GeneralMatrix {
 public:
    // TODO : keep public? ...
    // like stoch gen matrix possibly infinite but we will only have one layer of children at all times...
-   GeneralMatrix* first{}; // never null
-   GeneralMatrix* last{}; // possibly null
-   std::vector<StripMatrix*> children;
+   std::unique_ptr<GeneralMatrix> first{}; // never null
+   std::unique_ptr<GeneralMatrix> last{}; // possibly null
+   std::vector<std::unique_ptr<StripMatrix>> children;
    bool is_vertical{false};
 
 protected:
@@ -32,19 +33,17 @@ protected:
    const bool distributed{false};
    const int rank{-1};
    long long nonzeros{0};
-
-   // will not delete its data when deleted
-   const bool is_view{false};
+   bool is_view{};
 public:
    StripMatrix() = default;
 
-   StripMatrix(bool is_vertical, GeneralMatrix* first, GeneralMatrix* last, MPI_Comm mpi_comm_, bool is_view = false);
+   StripMatrix(bool is_vertical, std::unique_ptr<GeneralMatrix> first, std::unique_ptr<GeneralMatrix> last, MPI_Comm mpi_comm_, bool is_view = false);
 
    ~StripMatrix() override;
 
    [[nodiscard]] MPI_Comm getComm() const { return mpi_comm; };
 
-   virtual void addChild(StripMatrix* child);
+   virtual void addChild(std::unique_ptr<StripMatrix> child);
 
    [[nodiscard]] virtual bool isEmpty() const;
    [[nodiscard]] int is_a(int matrix) const override;
@@ -138,7 +137,7 @@ public:
    StringGenDummyMatrix() = default;
    ~StringGenDummyMatrix() override = default;
 
-   void addChild(StripMatrix*) override {};
+   void addChild(std::unique_ptr<StripMatrix>) override {};
 
    [[nodiscard]] bool isEmpty() const override { return true; };
    [[nodiscard]] int is_a(int type) const override { return type == kStringGenDummyMatrix || type == kStringMatrix || type == kStripMatrix; };

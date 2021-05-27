@@ -10,10 +10,12 @@
  */
 
 #include <cstring>
+#include <memory>
 #include <iostream>
 #include <utility>
 
 #include "Vector.hpp"
+#include "../../Base/IotrRefCount.h"
 
 class DoubleLinearSolver;
 
@@ -60,7 +62,7 @@ public:
 /** Parent of all matrix classes
  * @ingroup AbstractLinearAlgebra
  */
-class AbstractMatrix : public IotrRefCount {
+class AbstractMatrix : public IotrRefCount, public std::enable_shared_from_this<AbstractMatrix> {
 public:
    AbstractMatrix() = default;
 
@@ -180,7 +182,7 @@ public:
       std::cout << this->n_rows() << " x " << this->n_columns() << " (rows x cols)\n";
    }
 
-   ~AbstractMatrix() override = default;
+   virtual ~AbstractMatrix() = default;
 };
 
 /** Parent of all Symmetric matrices. 
