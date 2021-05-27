@@ -157,6 +157,7 @@ public :
    std::queue<INDEX>& getSingletonRows() { return singleton_rows; };
    std::queue<INDEX>& getSingletonCols() { return singleton_cols; };
 
+   void delete_transposed();
    DistributedQP* finalize();
 
    /* reset originally free variables' bounds to +- inf iff their current bounds are still implied by the problem */
@@ -214,6 +215,8 @@ public :
    void removeFreeColumnSingletonInequalityRowSynced(const INDEX& row, const INDEX& col, double coeff);
 
    void tightenRowBoundsParallelRow(const INDEX& row_tightened, const INDEX& row_tightening, double clow_new, double cupp_new, double factor);
+
+   void transfrom_ineqalities_to_equalities();
 
    /* call whenever a single entry has been deleted from the matrix */
    void deleteEntryAtIndex(const INDEX& row, const INDEX& col, int col_index);
@@ -324,6 +327,10 @@ private:
    [[nodiscard]] SparseMatrix* getSparseGenMatrix(const INDEX& row, const INDEX& col) const;
 
    void checkBoundsInfeasible(const INDEX& col, double xlow_new, double xupp_new) const;
+
+   void transform_inequalities_into_equalities(int node);
+   void transform_root_inequalities_into_equalities();
+   void transform_node_inequalities_into_equalities(int node);
 public:
    void writeRowLocalToStreamDense(std::ostream& out, const INDEX& row) const;
    void printRowColStats() const;

@@ -510,7 +510,7 @@ bool SparseStorageDynamic::addColToRow(double coeff, int col, int row) {
       assert(i == end);
 
       /* extend storage if necessary */
-      if (rowptr[row].end == rowptr[row + 1].start)
+      if (end == rowptr[row + 1].start)
          rebuildSpareStructure(1);
 
       /* if our row has been empty before it will also be empty after compressing the storage values */
@@ -546,6 +546,52 @@ void SparseStorageDynamic::clearCol(int col) {
             --i;
          }
       }
+   }
+}
+
+void SparseStorageDynamic::append_matrix(const SparseStorageDynamic& other) {
+   this->n = std::max(this->n_columns(), other.n_columns());
+   const int n_values_other = other.getNVals();
+   this->extend_at_end_by_n_rows(other.n_rows());
+   this->extend_at_end_by_n_values(n_values_other);
+
+   const int row_offset = rowptr[m].end;
+   for (int row = 0; row <= other.n_rows(); ++row) {
+      assert(m + row < m_len);
+
+      rowptr[m + row].start = other.rowptr[m].start + row_offset;
+      rowptr[m + row].end = other.rowptr[m].end + row_offset;
+   }
+   this->m += other.n_rows();
+
+   std::copy(other.jcolM, other.jcolM + n_values_other, this->jcolM + row_offset);
+   std::copy(other.M, other.M + n_values_other, this->M + row_offset);
+
+   len_free -= n_values_other;
+}
+
+void SparseStorageDynamic::append_negative_identity_matrix() {
+   int col = this->n;
+
+   this->n += this->n_rows();
+
+   for (int row = 0; row < this->n_rows(); ++row) {
+      const int end_row = rowptr[row].end;
+
+      if(end_row == rowptr[row + 1].start) {
+         rebuildSpareStructure(1);
+      }
+
+      /* if our row has been empty before it will also be empty after compressing the storage values */
+      assert(rowptr[row].end < rowptr[row + 1].start);
+      assert(len_free > 0);
+
+      /* insert entry */
+      const int new_col_idx = rowptr[row].end;
+      ++rowptr[row].end;
+      jcolM[new_col_idx] = col;
+      M[new_col_idx] = -1;
+      --len_free;
    }
 }
 
@@ -620,15 +666,54 @@ void SparseStorageDynamic::scaleRow(int row, double factor) {
 #endif
 }
 
+void SparseStorageDynamic::extend_at_end_by_n_rows(int n_rows) {
+   int new_m_len = m_len + n_rows + 1;
+   auto* rowptr_tmp = new ROWPTRS[new_m_len];
+   std::copy(rowptr, rowptr + m_len + 1, rowptr_tmp);
+
+   std::swap(rowptr_tmp, rowptr);
+   std::swap(new_m_len, m_len);
+
+   assert(rowptr[m].start == rowptr[m].end);
+
+   delete[] rowptr_tmp;
+}
+
+void SparseStorageDynamic::extend_at_end_by_n_values(int n_values) {
+   int len_new = len + n_values;
+
+   assert(len_new > len);
+   len_free += len_new - len;
+
+   /* extend the storage */
+   int* jcolM_tmp = new int[len_new];
+   auto* M_tmp = new double[len_new];
+
+   if (len != 0) {
+      std::copy(jcolM, jcolM + len, jcolM_tmp);
+      std::copy(M, M + len, M_tmp);
+   }
+
+   std::swap(jcolM, jcolM_tmp);
+   std::swap(M, M_tmp);
+   std::swap(len, len_new);
+
+   delete[] jcolM_tmp;
+   delete[] M_tmp;
+
+#ifndef NDEBUG
+   assert(len_free == (len - std::accumulate(rowptr, rowptr + m, 0, [](const int& a, const ROWPTRS& rp) -> int { return a + (rp.end - rp.start); })));
+#endif
+
+   assert(len >= len_free);
+}
+
 /* doubles the size of rowptr */
 void SparseStorageDynamic::extendStorageRows() {
    assert(m == m_len);
 
    /* double size of old array */
-   int m_len_tmp = 2 * m_len;
-
-   if (m_len == 0)
-      m_len_tmp = 2;
+   int m_len_tmp = m_len == 0 ? 2 : 2 * m_len;
 
    /* extend the storage */
    auto* rowptr_tmp = new ROWPTRS[m_len_tmp + 1];
@@ -684,9 +769,7 @@ void SparseStorageDynamic::extendStorageValues() {
    delete[] M_tmp;
 
 #ifndef NDEBUG
-#ifndef PRE_CPP11
    assert(len_free == (len - std::accumulate(rowptr, rowptr + m, 0, [](const int& a, const ROWPTRS& rp) -> int { return a + (rp.end - rp.start); })));
-#endif
 #endif
 
    assert(len >= len_free);

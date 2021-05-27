@@ -44,9 +44,11 @@ private:
 
    /* doubles the size of rowptr */
    void extendStorageRows();
+   void extend_at_end_by_n_rows(int n_rows);
 
    /* compresses storage and doubles size of the col entry storage */
    void extendStorageValues();
+   void extend_at_end_by_n_values(int n_values);
 
    /* shifts all rows such that every row is again row + spareRatio length */
    void rebuildSpareStructure(int guaranteed_spare = 0);
@@ -101,6 +103,8 @@ public:
    void clearRow(int row);
    void clearCol(int col);
 
+   void append_matrix(const SparseStorageDynamic& other);
+   void append_negative_identity_matrix();
    void appendRow(const SparseStorageDynamic& storage, int row);
 
    double rowTimesVec(const double* vec, int length, int row) const;

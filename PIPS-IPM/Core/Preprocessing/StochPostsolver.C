@@ -412,6 +412,12 @@ void StochPostsolver::notifyParallelRowsBoundsTightened(const INDEX& row1, const
    finishNotify();
 }
 
+void StochPostsolver::notifyTransformedInequalitiesIntoEqualties() {
+
+   reductions.push_back(TRANSFORMED_INEQUALITIES_INTO_EQUALITIES);
+   finishNotify();
+}
+
 
 /* bounds got tightened by propagating a singleton row - not necessary to store whole row */
 void StochPostsolver::notifySingletonRowBoundsTightened(const INDEX& row, const INDEX& col, double xlow_old, double xupp_old, double xlow_new,
@@ -692,8 +698,8 @@ PostsolveStatus StochPostsolver::postsolve(const Variables& reduced_solution, Va
       postsolve_tol = std::numeric_limits<double>::max();
    }
 
-   const DistributedVariables& stoch_reduced_sol = dynamic_cast<const DistributedVariables&>(reduced_solution);
-   DistributedVariables& stoch_original_sol = dynamic_cast<DistributedVariables&>(original_solution);
+   const auto& stoch_reduced_sol = dynamic_cast<const DistributedVariables&>(reduced_solution);
+   auto& stoch_original_sol = dynamic_cast<DistributedVariables&>(original_solution);
 
    /* original variables are now reduced vars padded with zeros */
    setOriginalVarsFromReduced(stoch_reduced_sol, stoch_original_sol);
@@ -706,6 +712,11 @@ PostsolveStatus StochPostsolver::postsolve(const Variables& reduced_solution, Va
 
       switch (type) {
          case DELETED: {
+            break;
+         }
+         case TRANSFORMED_INEQUALITIES_INTO_EQUALITIES:
+         {
+            assert(false && "TODO : implement");
             break;
          }
          case REDUNDANT_SIDE: {

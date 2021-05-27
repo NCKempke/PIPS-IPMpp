@@ -111,6 +111,8 @@ public:
    ~SparseSymmetricMatrix() override = default;
 
    [[nodiscard]] std::unique_ptr<SymmetricMatrix> clone() const override;
+
+   void append_empty_diagonal(int n_values);
 };
 
 #endif

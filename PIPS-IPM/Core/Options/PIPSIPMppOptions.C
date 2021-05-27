@@ -335,6 +335,9 @@ namespace pipsipmpp_options {
       bool_options["PRESOLVE_WRITE_PRESOLVED_PROBLEM_MPS"] = false;
       /** should free variables' bounds be reset after presolve (given the row implying these bounds was not removed */
       bool_options["PRESOLVE_RESET_FREE_VARIABLES"] = false;
+      /** should inequalities be transformed into euqalities at the end of presolve */
+      bool_options["PRESOLVE_TRANSFROM_INEQUALITIES_INTO_EQUALITIES"] = false;
+
       /** verbosity */
       int_options["PRESOLVE_VERBOSITY"] = 1;
 

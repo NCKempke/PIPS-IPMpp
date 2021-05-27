@@ -168,11 +168,16 @@ void PresolveData::initAbsminAbsmaxInCols(DistributedVector<double>& absmin, Dis
    getSystemMatrix(INEQUALITY_SYSTEM).getColMinMaxVec(false, false, nullptr, absmax);
 }
 
+void PresolveData::delete_transposed() {
+   getSystemMatrix(EQUALITY_SYSTEM).deleteTransposed();
+   getSystemMatrix(INEQUALITY_SYSTEM).deleteTransposed();
+}
 DistributedQP* PresolveData::finalize() {
-
+   delete_transposed();
 #ifndef NDEBUG
-   if (distributed)
+   if (distributed) {
       PIPS_MPIlogicOrArrayInPlace(array_outdated_indicators, length_array_outdated_indicators);
+   }
    assert(!outdated_activities && !outdated_lhsrhs && !outdated_nnzs && !outdated_linking_var_bounds && !outdated_obj_vector &&
           !postsolve_linking_row_propagation_needed);
 #endif
@@ -184,8 +189,6 @@ DistributedQP* PresolveData::finalize() {
    // this removes all columns and rows that are now empty from the problem
    presProb->cleanUpPresolvedData(*nnzs_row_A, *nnzs_row_C, *nnzs_col);
 
-   getSystemMatrix(EQUALITY_SYSTEM).deleteTransposed();
-   getSystemMatrix(INEQUALITY_SYSTEM).deleteTransposed();
 
    return presProb;
 }
@@ -1453,6 +1456,21 @@ void PresolveData::syncPostsolveOfBoundsPropagatedByLinkingRows() {
    PIPS_MPIsumArrayInPlace(store_linking_row_boundTightening_C);
 
    postsolve_linking_row_propagation_needed = false;
+}
+
+void PresolveData::transfrom_ineqalities_to_equalities()
+{
+   assert(reductionsEmpty());
+   delete_transposed();
+
+   // TODO : check if there is inequalities..
+   if (postsolver) {
+      postsolver->notifyTransformedInequalitiesIntoEqualties();
+   }
+
+   for (int node = -1; node < nChildren; ++node) {
+      transform_inequalities_into_equalities(node);
+   }
 }
 
 /** tightening row1 bounds with row2 where row1 = factor * row2 */
@@ -3782,3 +3800,71 @@ int PresolveData::countEmptyRowsBDmat() const {
    return count;
 }
 
+void PresolveData::transform_inequalities_into_equalities(int node)
+{
+   if (node == -1) {
+      transform_root_inequalities_into_equalities();
+   } else {
+      transform_node_inequalities_into_equalities(node);
+   }
+}
+
+void PresolveData::transform_node_inequalities_into_equalities(int node) {
+   if(nodeIsDummy(node))
+      return;
+
+   /* take c_mat and d_mat and append them to a_mat and b_mat + add slack variables to the system with bounds = bounds of inequalities */
+   SparseMatrix& a_mat = *getSparseGenMatrixFromStochMat(getSystemMatrix(EQUALITY_SYSTEM), node, A_MAT);
+   SparseMatrix& b_mat = *getSparseGenMatrixFromStochMat(getSystemMatrix(EQUALITY_SYSTEM), node, B_MAT);
+   SparseMatrix& c_mat = *getSparseGenMatrixFromStochMat(getSystemMatrix(INEQUALITY_SYSTEM), node, A_MAT);
+   SparseMatrix& d_mat = *getSparseGenMatrixFromStochMat(getSystemMatrix(INEQUALITY_SYSTEM), node, B_MAT);
+
+   const int n_new_slack_variables = c_mat.n_rows();
+
+   d_mat.append_negative_identity_matrix();
+
+   a_mat.append_matrix(b_mat);
+   b_mat.append_matrix(d_mat);
+
+   /* extend the non_zeros vectors and recompute non_zeros in the equality matrix - set inequalities to zero */
+   SimpleVector<int>& nnzs_row_A = getSimpleVecFromRowStochVec(getNnzsRow(EQUALITY_SYSTEM), node, false);
+   SimpleVector<int>& nnzs_row_C = getSimpleVecFromRowStochVec(getNnzsRow(INEQUALITY_SYSTEM), node, false);
+   SimpleVector<int>& nnzs_col = getSimpleVecFromColStochVec(getNnzsCol(), node);
+
+   nnzs_row_C.addConstant(1);
+   nnzs_row_A.appendToBack(nnzs_row_C);
+   nnzs_row_C.setToZero();
+
+   nnzs_col.appendToBack(n_new_slack_variables, 1);
+
+   /* extend variable bounds and row bounds */
+   SimpleVector<double> bA = getSimpleVecFromRowStochVec(*presProb->bA, node, false);
+   bA.appendToBack(n_new_slack_variables, 0.0);
+
+   SimpleVector<double>& ixlow = getSimpleVecFromColStochVec(*presProb->ixlow, node);
+   SimpleVector<double>& ixupp = getSimpleVecFromColStochVec(*presProb->ixupp, node);
+   SimpleVector<double>& xlow = getSimpleVecFromColStochVec(*presProb->blx, node);
+   SimpleVector<double>& xupp = getSimpleVecFromColStochVec(*presProb->bux, node);
+
+   SimpleVector<double>& iclow = getSimpleVecFromRowStochVec(*presProb->iclow, node, false);
+   SimpleVector<double>& icupp = getSimpleVecFromRowStochVec(*presProb->icupp, node, false);
+   SimpleVector<double>& clow = getSimpleVecFromRowStochVec(*presProb->bl, node, false);
+   SimpleVector<double>& cupp = getSimpleVecFromRowStochVec(*presProb->bu, node, false);
+
+   ixlow.appendToBack(iclow);
+   xlow.appendToBack(clow);
+   ixupp.appendToBack(icupp);
+   xupp.appendToBack(cupp);
+
+   /* extend the objective and Q */
+   SimpleVector<double>& obj = getSimpleVecFromColStochVec(*presProb->g, node);
+   obj.appendToBack(n_new_slack_variables, 0.0);
+
+   SparseSymmetricMatrix& Q = getSparseSymmetricMatrixFromStochMat(dynamic_cast<DistributedSymmetricMatrix&>(*presProb->Q), node);
+   Q.append_empty_diagonal(n_new_slack_variables);
+}
+
+void PresolveData::transform_root_inequalities_into_equalities(){
+   return;
+   assert(false && "TODO: implement");
+}

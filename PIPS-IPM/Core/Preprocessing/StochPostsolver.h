@@ -68,6 +68,8 @@ public:
    void notifyParallelRowsBoundsTightened(const INDEX& row1, const INDEX& row2, double clow_old, double cupp_old, double clow_new, double cupp_new,
          double factor);
 
+   void notifyTransformedInequalitiesIntoEqualties();
+
    [[nodiscard]] bool wasColumnRemoved(const INDEX& col) const;
    [[nodiscard]] bool wasRowRemoved(const INDEX& row) const;
 
@@ -121,7 +123,8 @@ private:
       LINKING_INEQ_ROW_SYNC_EVENT = 16,
       LINKIN_EQ_ROW_SYNC_EVENT = 17,
       LINKING_VARS_SYNC_EVENT = 18,
-      BOUND_TIGHTENING_LINKING_ROW_SYNC_EVENT = 19
+      BOUND_TIGHTENING_LINKING_ROW_SYNC_EVENT = 19,
+      TRANSFORMED_INEQUALITIES_INTO_EQUALITIES = 20,
    };
 
    const unsigned int n_rows_original;

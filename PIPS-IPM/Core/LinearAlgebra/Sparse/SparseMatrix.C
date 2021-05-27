@@ -768,6 +768,22 @@ void SparseMatrix::permuteCols(const std::vector<unsigned int>& permvec) {
       m_Mt->mStorage->permuteRows(permvec);
 }
 
+void SparseMatrix::append_matrix(const SparseMatrix& other) {
+   assert(hasDynamicStorage());
+   assert(other.hasDynamicStorage());
+   assert(!hasTransposed());
+   assert(!other.hasTransposed());
+
+   mStorageDynamic->append_matrix(other.getStorageDynamic());
+}
+
+void SparseMatrix::append_negative_identity_matrix() {
+   assert(hasDynamicStorage());
+   assert(!hasTransposed());
+
+   mStorageDynamic->append_negative_identity_matrix();
+}
+
 int SparseMatrix::appendRow(const SparseMatrix& matrix_row, int row) {
    assert(hasDynamicStorage());
    assert(!hasTransposed());

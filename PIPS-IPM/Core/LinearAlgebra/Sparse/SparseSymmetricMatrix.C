@@ -272,3 +272,17 @@ std::unique_ptr<SparseMatrix> SparseSymmetricMatrix::shaveSymLeftBottom(int n_va
 
    return border;
 }
+
+void SparseSymmetricMatrix::append_empty_diagonal(int n_values) {
+   const int old_m = mStorage->m;
+
+   mStorage->m += n_values;
+   mStorage->n += n_values;
+
+   int* new_krowM = new int[mStorage->m + 1];
+   std::copy(mStorage->krowM, mStorage->krowM + old_m + 1, new_krowM);
+   std::fill(new_krowM + old_m + 1, new_krowM + mStorage->m + 2, mStorage->krowM[mStorage->m]);
+   std::swap(new_krowM, mStorage->krowM);
+   delete[] new_krowM;
+}
+
