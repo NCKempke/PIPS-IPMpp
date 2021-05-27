@@ -10,8 +10,7 @@
 
 #include <string>
 #include <map>
-
-#include "../Base/Singleton.h"
+#include "Singleton.h"
 
 /**
  * base class for options class.
