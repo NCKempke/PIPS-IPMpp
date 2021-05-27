@@ -43,11 +43,9 @@ scaler_type, PresolverType presolver_type, const std::string& settings) : comm(c
       const double t0_presolve = MPI_Wtime();
 
       if (postsolve)
-         postsolver.reset(preprocess_factory->makePostsolver(original_problem.get()));
+         postsolver.reset(preprocess_factory->make_postsolver(original_problem.get()));
 
-      presolver.reset(
-            preprocess_factory->makePresolver(factory->tree, original_problem.get(), presolver_type,
-                  postsolver.get()));
+      presolver.reset(preprocess_factory->make_presolver(factory->tree, original_problem.get(), presolver_type, postsolver.get()));
 
       presolved_problem.reset(dynamic_cast<DistributedQP*>(presolver->presolve()));
 
@@ -99,7 +97,7 @@ scaler_type, PresolverType presolver_type, const std::string& settings) : comm(c
    if( my_rank == 0 ) printf("resids created\n");
 #endif
 
-   scaler.reset(preprocess_factory->makeScaler(presolved_problem.get(), scaler_type));
+   scaler.reset(preprocess_factory->make_scaler(*presolved_problem, scaler_type));
 
 #ifdef TIMING
    if( my_rank == 0 ) printf("scaler created\n");

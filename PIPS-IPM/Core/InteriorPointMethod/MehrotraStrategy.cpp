@@ -988,7 +988,7 @@ std::pair<double, double> MehrotraStrategy::compute_unscaled_gap_and_residual_no
          residuals_unscaled.reset(scaler->get_unscaled_residuals(residuals));
       else {
          residuals_unscaled->copy(residuals);
-         scaler->unscaleResiduals(*residuals_unscaled);
+         scaler->unscale_residuals(*residuals_unscaled);
       }
 
       return std::make_pair(std::fabs(residuals_unscaled->duality_gap()), residuals_unscaled->residual_norm());

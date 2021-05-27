@@ -12,7 +12,7 @@
 #include <cmath>
 #include <memory>
 
-EquiStochScaler::EquiStochScaler(Problem* prob, bool bitshifting) : StochScaler(prob, bitshifting) {
+EquiStochScaler::EquiStochScaler(const Problem& problem, bool bitshifting) : StochScaler(problem, bitshifting) {
    if (PIPS_MPIgetRank() == 0 && scaling_output)
       std::cout << "Creating EquiStochScaler...\n";
 }

@@ -5,26 +5,40 @@
  *      Author: Daniel Rehfeldt
  */
 
-#ifndef PIPS_IPM_CORE_QPPREPROCESS_QPSCALER_H_
-#define PIPS_IPM_CORE_QPPREPROCESS_QPSCALER_H_
-
+#ifndef QPSCALER_H
+#define QPSCALER_H
 
 #include "Scaler.h"
 #include "Vector.hpp"
 #include "AbstractMatrix.h"
-
 #include <memory>
 
-/**  * @defgroup QpPreprocess
- *
- * QP scaler
- * @{
- */
-
 /**
- * Abstract base class for QP scalers.
+ * Abstract base class for scalers.
  */
 class QpScaler : public Scaler {
+public:
+
+   explicit QpScaler(const Problem& problem, bool bitshifting = false);
+   ~QpScaler() override = default;
+
+   /** scale */
+   void scale() override = 0;
+
+   [[nodiscard]] double get_unscaled_objective(double objval) const override;
+
+   [[nodiscard]] Variables* get_unscaled_variables(const Variables& variables) const override;
+   [[nodiscard]] Residuals* get_unscaled_residuals(const Residuals& residuals) const override;
+
+   void unscale_variables(Variables& variables) const override;
+   void unscale_residuals(Residuals& residuals) const override;
+
+   [[nodiscard]] Vector<double>* get_primal_unscaled(const Vector<double>& primal_solution) const override;
+   [[nodiscard]] Vector<double>* get_dual_eq_unscaled(const Vector<double>& dual_solution) const override;
+   [[nodiscard]] Vector<double>* get_dual_ineq_unscaled(const Vector<double>& dual_solution) const override;
+   [[nodiscard]] Vector<double>* get_dual_var_bounds_upp_unscaled(const Vector<double>& dual_solution) const override;
+   [[nodiscard]] Vector<double>* get_dual_var_bounds_low_unscaled(const Vector<double>& dual_solution) const override;
+
 protected:
    static void invertAndRound(bool round, Vector<double>& vector) {
       vector.safe_invert(1.0);
@@ -44,7 +58,6 @@ protected:
    std::unique_ptr<Vector<double>> vec_colscale{};
 
    // problem data
-   //std::shared_ptr<SymmetricMatrix> Q;
    std::shared_ptr<GeneralMatrix> A;
    std::shared_ptr<GeneralMatrix> C;
    std::shared_ptr<Vector<double>> obj;
@@ -58,7 +71,6 @@ protected:
    double factor_objscale;
 
    void applyScaling();
-
    virtual void doObjScaling() = 0;
 
    /** get maximum absolute row ratio and write maximum row entries into vectors */
@@ -74,30 +86,6 @@ protected:
    void printRowColRatio();
 
    void setScalingVecsToOne();
-public:
-
-   QpScaler(Problem* problem, bool bitshifting = false);
-   ~QpScaler() override = default;
-
-   /** scale */
-   void scale() override = 0;
-
-   double get_unscaled_objective(double objval) const override;
-
-   Variables* get_unscaled_variables(const Variables& variables) const override;
-   Residuals* get_unscaled_residuals(const Residuals& residuals) const override;
-
-   void unscaleVariables(Variables& vars) const override;
-   void unscaleResiduals(Residuals& resids) const override;
-
-   Vector<double>* getPrimalUnscaled(const Vector<double>& solprimal) const override;
-   Vector<double>* getDualEqUnscaled(const Vector<double>& soldual) const override;
-   Vector<double>* getDualIneqUnscaled(const Vector<double>& soldual) const override;
-   Vector<double>* getDualVarBoundsUppUnscaled(const Vector<double>& soldual) const override;
-   Vector<double>* getDualVarBoundsLowUnscaled(const Vector<double>& soldual) const override;
 };
 
-//@}
-
-
-#endif /* PIPS_IPM_CORE_QPPREPROCESS_QPSCALER_H_ */
+#endif /* QPSCALER_H */

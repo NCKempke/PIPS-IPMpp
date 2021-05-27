@@ -15,16 +15,16 @@
 #include "Residuals.h"
 #include "pipsdef.h"
 
-QpScaler::QpScaler(Problem* problem, bool bitshifting) : Scaler(problem, bitshifting),
+QpScaler::QpScaler(const Problem& problem, bool bitshifting) : Scaler(problem, bitshifting),
       scaling_output{pipsipmpp_options::get_bool_parameter("SCALER_OUTPUT")} {
-   A = problem->A;
-   C = problem->C;
-   obj = problem->g;
-   bA = problem->bA;
-   bux = problem->bux; // upper bound of x
-   blx = problem->blx; // lower bound of x
-   rhsC = problem->bu; // RHS of C
-   lhsC = problem->bl; // LHS of C
+   A = problem.A;
+   C = problem.C;
+   obj = problem.g;
+   bA = problem.bA;
+   bux = problem.bux; // upper bound of x
+   blx = problem.blx; // lower bound of x
+   rhsC = problem.bu; // RHS of C
+   lhsC = problem.bl; // LHS of C
    factor_objscale = 1.;
 }
 
@@ -40,22 +40,21 @@ double QpScaler::get_unscaled_objective(double objval) const {
 
 Variables* QpScaler::get_unscaled_variables(const Variables& variables) const {
    auto* unscaled_variables = new Variables(variables);
-   unscaleVariables(*unscaled_variables);
+   unscale_variables(*unscaled_variables);
    return unscaled_variables;
 };
 
 Residuals* QpScaler::get_unscaled_residuals(const Residuals& residuals) const {
    Residuals* unscaled_residuals = new Residuals(residuals);
-   unscaleResiduals(*unscaled_residuals);
+   this->unscale_residuals(*unscaled_residuals);
    return unscaled_residuals;
 };
 
-void QpScaler::unscaleVariables(Variables& variables) const {
+void QpScaler::unscale_variables(Variables& variables) const {
    if (!scaling_applied)
       return;
 
    // todo : Q
-   assert(problem);
    assert(vec_colscale);
    assert(vec_rowscaleA);
    assert(vec_rowscaleC);
@@ -74,11 +73,10 @@ void QpScaler::unscaleVariables(Variables& variables) const {
    variables.slack_upper_bound_gap_dual->componentMult(*vec_rowscaleC);
 }
 
-void QpScaler::unscaleResiduals(Residuals& residuals) const {
+void QpScaler::unscale_residuals(Residuals& residuals) const {
    if (!scaling_applied)
       return;
 
-   assert(problem);
    assert(vec_colscale);
    assert(vec_rowscaleA);
    assert(vec_rowscaleC);
@@ -106,9 +104,9 @@ void QpScaler::unscaleResiduals(Residuals& residuals) const {
    residuals.recompute_residual_norm();
 }
 
-Vector<double>* QpScaler::getPrimalUnscaled(const Vector<double>& solprimal) const {
-   assert(problem && vec_colscale);
-   Vector<double>* unscaledprimal = solprimal.cloneFull();
+Vector<double>* QpScaler::get_primal_unscaled(const Vector<double>& primal_solution) const {
+   assert(vec_colscale);
+   Vector<double>* unscaledprimal = primal_solution.cloneFull();
 
    // unscale primal
    if (scaling_applied)
@@ -117,9 +115,9 @@ Vector<double>* QpScaler::getPrimalUnscaled(const Vector<double>& solprimal) con
    return unscaledprimal;
 }
 
-Vector<double>* QpScaler::getDualEqUnscaled(const Vector<double>& soldual) const {
-   assert(problem && vec_rowscaleA);
-   Vector<double>* unscaleddual = soldual.cloneFull();
+Vector<double>* QpScaler::get_dual_eq_unscaled(const Vector<double>& dual_solution) const {
+   assert(vec_rowscaleA);
+   Vector<double>* unscaleddual = dual_solution.cloneFull();
 
    // unscale dual
    if (scaling_applied)
@@ -128,9 +126,9 @@ Vector<double>* QpScaler::getDualEqUnscaled(const Vector<double>& soldual) const
    return unscaleddual;
 }
 
-Vector<double>* QpScaler::getDualIneqUnscaled(const Vector<double>& soldual) const {
-   assert(problem && vec_rowscaleC);
-   Vector<double>* unscaleddual = soldual.cloneFull();
+Vector<double>* QpScaler::get_dual_ineq_unscaled(const Vector<double>& dual_solution) const {
+   assert(vec_rowscaleC);
+   Vector<double>* unscaleddual = dual_solution.cloneFull();
 
    // unscale dual
    if (scaling_applied)
@@ -139,9 +137,9 @@ Vector<double>* QpScaler::getDualIneqUnscaled(const Vector<double>& soldual) con
    return unscaleddual;
 }
 
-Vector<double>* QpScaler::getDualVarBoundsUppUnscaled(const Vector<double>& soldual) const {
-   assert(problem && vec_colscale);
-   Vector<double>* unscaleddual = soldual.cloneFull();
+Vector<double>* QpScaler::get_dual_var_bounds_upp_unscaled(const Vector<double>& dual_solution) const {
+   assert(vec_colscale);
+   Vector<double>* unscaleddual = dual_solution.cloneFull();
 
    // unscale primal
    if (scaling_applied)
@@ -150,9 +148,9 @@ Vector<double>* QpScaler::getDualVarBoundsUppUnscaled(const Vector<double>& sold
    return unscaleddual;
 }
 
-Vector<double>* QpScaler::getDualVarBoundsLowUnscaled(const Vector<double>& soldual) const {
-   assert(problem && vec_colscale);
-   Vector<double>* unscaleddual = soldual.cloneFull();
+Vector<double>* QpScaler::get_dual_var_bounds_low_unscaled(const Vector<double>& dual_solution) const {
+   assert(vec_colscale);
+   Vector<double>* unscaleddual = dual_solution.cloneFull();
 
    // unscale primal
    if (scaling_applied)
