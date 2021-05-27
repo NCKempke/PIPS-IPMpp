@@ -14,7 +14,7 @@
 #include <stdexcept>
 #include <iostream>
 
-StochPostsolver::StochPostsolver(const DistributedQP& original_problem) : QpPostsolver(original_problem),
+StochPostsolver::StochPostsolver(const DistributedQP& original_problem) : Postsolver(original_problem),
       postsolve_tol(pipsipmpp_options::get_double_parameter("POSTSOLVE_TOLERANCE")), INF_NEG(-pipsipmpp_options::get_double_parameter("PRESOLVE_INFINITY")),
       INF_POS(pipsipmpp_options::get_double_parameter("PRESOLVE_INFINITY")), n_rows_original(original_problem.my + original_problem.mz),
       n_cols_original(original_problem.nx), padding_origcol{cloneStochVector<double, int>(*original_problem.g)},

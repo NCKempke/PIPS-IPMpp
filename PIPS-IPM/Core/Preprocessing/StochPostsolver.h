@@ -11,7 +11,7 @@
 #include <vector>
 #include <memory>
 
-#include "QpPostsolver.h"
+#include "Postsolver.hpp"
 #include "DistributedVector.h"
 #include "DistributedQP.hpp"
 #include "DistributedVariables.h"
@@ -19,7 +19,7 @@
 #include "StochRowStorage.h"
 #include "StochColumnStorage.h"
 
-class StochPostsolver : public QpPostsolver {
+class StochPostsolver : public Postsolver {
 
 public:
    StochPostsolver(const DistributedQP& original_problem);
