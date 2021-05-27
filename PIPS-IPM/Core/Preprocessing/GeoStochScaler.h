@@ -5,23 +5,18 @@
  *      Author: Svenja Uslu
  */
 
-#ifndef PIPS_IPM_CORE_QPPREPROCESS_GEOSTOCHSCALER_H_
-#define PIPS_IPM_CORE_QPPREPROCESS_GEOSTOCHSCALER_H_
+#ifndef GEOSTOCHSCALER_H
+#define GEOSTOCHSCALER_H
 
 #include "StochScaler.h"
 #include "DistributedVector.h"
 
 class Problem;
 
-
 /**  * @defgroup QpPreprocess
  *
  * Geometric scaler
  * @{
- */
-
-/**
- * Derived class for Geometric scaler.
  */
 class GeoStochScaler : public StochScaler {
    bool equilibrate;
@@ -36,13 +31,11 @@ protected:
    void postEquiScale();
 public:
 
-   GeoStochScaler(Problem* prob, bool equiScaling, bool bitshifting = false);
+   GeoStochScaler(const Problem& problem, bool equiScaling, bool bitshifting = false);
    virtual ~GeoStochScaler() = default;
 
    /** scale */
    void scale() override;
 };
 
-//@}
-
-#endif /* PIPS_IPM_CORE_QPPREPROCESS_GEOSTOCHSCALER_H_ */
+#endif /* GEOSTOCHSCALER_H */

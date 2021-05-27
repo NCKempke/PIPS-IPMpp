@@ -7,7 +7,7 @@
 
 //#define PIPS_DEBUG
 #include <algorithm>
-#include "QpScaler.h"
+#include "Scaler.hpp"
 #include "PIPSIPMppOptions.h"
 #include "DistributedVector.h"
 #include "QP.hpp"
@@ -15,24 +15,21 @@
 #include "Residuals.h"
 #include "pipsdef.h"
 
-QpScaler::QpScaler(Problem* problem, bool bitshifting) : Scaler(problem, bitshifting),
+Scaler::Scaler(const Problem& problem, bool bitshifting, bool usesides) : do_bitshifting(bitshifting), with_sides(usesides),
+      dnorm_orig(problem.datanorm()),
       scaling_output{pipsipmpp_options::get_bool_parameter("SCALER_OUTPUT")} {
-   QP* qp = dynamic_cast<QP*>(problem);
-
-   Q = qp->Q;
-   A = qp->A;
-   C = qp->C;
-   obj = qp->g;
-   bA = qp->bA;
-   bux = qp->bux; // upper bound of x
-   blx = qp->blx; // lower bound of x
-   rhsC = qp->bu; // RHS of C
-   lhsC = qp->bl; // LHS of C
-
-   factor_objscale = 1.0;
+   A = problem.A;
+   C = problem.C;
+   obj = problem.g;
+   bA = problem.bA;
+   bux = problem.bux; // upper bound of x
+   blx = problem.blx; // lower bound of x
+   rhsC = problem.bu; // RHS of C
+   lhsC = problem.bl; // LHS of C
+   factor_objscale = 1.;
 }
 
-double QpScaler::get_unscaled_objective(double objval) const {
+double Scaler::get_unscaled_objective(double objval) const {
    assert(vec_colscale != nullptr);
    assert(factor_objscale > 0.0);
 
@@ -42,24 +39,23 @@ double QpScaler::get_unscaled_objective(double objval) const {
       return objval;
 }
 
-Variables* QpScaler::get_unscaled_variables(const Variables& variables) const {
+Variables* Scaler::get_unscaled_variables(const Variables& variables) const {
    auto* unscaled_variables = new Variables(variables);
-   unscaleVariables(*unscaled_variables);
+   unscale_variables(*unscaled_variables);
    return unscaled_variables;
 };
 
-Residuals* QpScaler::get_unscaled_residuals(const Residuals& residuals) const {
+Residuals* Scaler::get_unscaled_residuals(const Residuals& residuals) const {
    Residuals* unscaled_residuals = new Residuals(residuals);
-   unscaleResiduals(*unscaled_residuals);
+   this->unscale_residuals(*unscaled_residuals);
    return unscaled_residuals;
 };
 
-void QpScaler::unscaleVariables(Variables& variables) const {
+void Scaler::unscale_variables(Variables& variables) const {
    if (!scaling_applied)
       return;
 
    // todo : Q
-   assert(problem);
    assert(vec_colscale);
    assert(vec_rowscaleA);
    assert(vec_rowscaleC);
@@ -78,11 +74,10 @@ void QpScaler::unscaleVariables(Variables& variables) const {
    variables.slack_upper_bound_gap_dual->componentMult(*vec_rowscaleC);
 }
 
-void QpScaler::unscaleResiduals(Residuals& residuals) const {
+void Scaler::unscale_residuals(Residuals& residuals) const {
    if (!scaling_applied)
       return;
 
-   assert(problem);
    assert(vec_colscale);
    assert(vec_rowscaleA);
    assert(vec_rowscaleC);
@@ -110,9 +105,9 @@ void QpScaler::unscaleResiduals(Residuals& residuals) const {
    residuals.recompute_residual_norm();
 }
 
-Vector<double>* QpScaler::getPrimalUnscaled(const Vector<double>& solprimal) const {
-   assert(problem && vec_colscale);
-   Vector<double>* unscaledprimal = solprimal.cloneFull();
+Vector<double>* Scaler::get_primal_unscaled(const Vector<double>& primal_solution) const {
+   assert(vec_colscale);
+   Vector<double>* unscaledprimal = primal_solution.cloneFull();
 
    // unscale primal
    if (scaling_applied)
@@ -121,9 +116,9 @@ Vector<double>* QpScaler::getPrimalUnscaled(const Vector<double>& solprimal) con
    return unscaledprimal;
 }
 
-Vector<double>* QpScaler::getDualEqUnscaled(const Vector<double>& soldual) const {
-   assert(problem && vec_rowscaleA);
-   Vector<double>* unscaleddual = soldual.cloneFull();
+Vector<double>* Scaler::get_dual_eq_unscaled(const Vector<double>& dual_solution) const {
+   assert(vec_rowscaleA);
+   Vector<double>* unscaleddual = dual_solution.cloneFull();
 
    // unscale dual
    if (scaling_applied)
@@ -132,9 +127,9 @@ Vector<double>* QpScaler::getDualEqUnscaled(const Vector<double>& soldual) const
    return unscaleddual;
 }
 
-Vector<double>* QpScaler::getDualIneqUnscaled(const Vector<double>& soldual) const {
-   assert(problem && vec_rowscaleC);
-   Vector<double>* unscaleddual = soldual.cloneFull();
+Vector<double>* Scaler::get_dual_ineq_unscaled(const Vector<double>& dual_solution) const {
+   assert(vec_rowscaleC);
+   Vector<double>* unscaleddual = dual_solution.cloneFull();
 
    // unscale dual
    if (scaling_applied)
@@ -143,9 +138,9 @@ Vector<double>* QpScaler::getDualIneqUnscaled(const Vector<double>& soldual) con
    return unscaleddual;
 }
 
-Vector<double>* QpScaler::getDualVarBoundsUppUnscaled(const Vector<double>& soldual) const {
-   assert(problem && vec_colscale);
-   Vector<double>* unscaleddual = soldual.cloneFull();
+Vector<double>* Scaler::get_dual_var_bounds_upp_unscaled(const Vector<double>& dual_solution) const {
+   assert(vec_colscale);
+   Vector<double>* unscaleddual = dual_solution.cloneFull();
 
    // unscale primal
    if (scaling_applied)
@@ -154,9 +149,9 @@ Vector<double>* QpScaler::getDualVarBoundsUppUnscaled(const Vector<double>& sold
    return unscaleddual;
 }
 
-Vector<double>* QpScaler::getDualVarBoundsLowUnscaled(const Vector<double>& soldual) const {
-   assert(problem && vec_colscale);
-   Vector<double>* unscaleddual = soldual.cloneFull();
+Vector<double>* Scaler::get_dual_var_bounds_low_unscaled(const Vector<double>& dual_solution) const {
+   assert(vec_colscale);
+   Vector<double>* unscaleddual = dual_solution.cloneFull();
 
    // unscale primal
    if (scaling_applied)
@@ -166,7 +161,7 @@ Vector<double>* QpScaler::getDualVarBoundsLowUnscaled(const Vector<double>& sold
 }
 
 
-void QpScaler::applyScaling() {
+void Scaler::applyScaling() {
    PIPSdebugMessage("before scaling: \n "
                     "objnorm: %f \n Anorm:  %f \n Cnorm  %f \n bAnorm %f \n rhsCnorm %f \n lhsCnorm %f \n buxnorm %f \n blxnorm %f \n  ",
             obj->inf_norm(), A->inf_norm(), C->inf_norm(), bA->inf_norm(), rhsC->inf_norm(), lhsC->inf_norm(), bux->inf_norm(), blx->inf_norm());
@@ -196,7 +191,7 @@ void QpScaler::applyScaling() {
             obj->inf_norm(), A->inf_norm(), C->inf_norm(), bA->inf_norm(), rhsC->inf_norm(), lhsC->inf_norm(), bux->inf_norm(), blx->inf_norm());
 }
 
-double QpScaler::maxRowRatio(Vector<double>& maxvecA, Vector<double>& maxvecC, Vector<double>& minvecA, Vector<double>& minvecC,
+double Scaler::maxRowRatio(Vector<double>& maxvecA, Vector<double>& maxvecC, Vector<double>& minvecA, Vector<double>& minvecC,
       const Vector<double>* colScalevec) {
    A->getRowMinMaxVec(true, true, colScalevec, minvecA);
    A->getRowMinMaxVec(false, true, colScalevec, maxvecA);
@@ -259,7 +254,7 @@ double QpScaler::maxRowRatio(Vector<double>& maxvecA, Vector<double>& maxvecC, V
    return maxratio;
 }
 
-double QpScaler::maxColRatio(Vector<double>& maxvec, Vector<double>& minvec, const Vector<double>* rowScaleVecA, const Vector<double>* rowScaleVecC) {
+double Scaler::maxColRatio(Vector<double>& maxvec, Vector<double>& minvec, const Vector<double>* rowScaleVecA, const Vector<double>* rowScaleVecC) {
    A->getColMinMaxVec(true, true, rowScaleVecA, minvec);
    C->getColMinMaxVec(true, false, rowScaleVecC, minvec);
 
@@ -295,7 +290,7 @@ double QpScaler::maxColRatio(Vector<double>& maxvec, Vector<double>& minvec, con
    return maxratio;
 }
 
-void QpScaler::scaleObjVector(double scaling_factor) {
+void Scaler::scaleObjVector(double scaling_factor) {
    if (scaling_factor > 0.0)
       factor_objscale = 1.0 / scaling_factor;
    else
@@ -319,7 +314,7 @@ void QpScaler::scaleObjVector(double scaling_factor) {
    scaling_applied = true;
 }
 
-void QpScaler::printRowColRatio() {
+void Scaler::printRowColRatio() {
    if (scaling_output) {
       std::unique_ptr<DistributedVector<double>> xrowmaxA(dynamic_cast<DistributedVector<double>*>(bA->clone()));
       std::unique_ptr<DistributedVector<double>> xrowminA(dynamic_cast<DistributedVector<double>*>(bA->clone()));
@@ -338,7 +333,7 @@ void QpScaler::printRowColRatio() {
    }
 }
 
-void QpScaler::setScalingVecsToOne() {
+void Scaler::setScalingVecsToOne() {
    assert(vec_rowscaleA && vec_rowscaleC && vec_colscale);
    vec_rowscaleA->setToConstant(1.0);
    vec_rowscaleC->setToConstant(1.0);

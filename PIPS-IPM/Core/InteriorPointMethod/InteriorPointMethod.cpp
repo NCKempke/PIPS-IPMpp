@@ -12,9 +12,9 @@
 #include "Problem.h"
 #include "DistributedFactory.h"
 
-InteriorPointMethod::InteriorPointMethod(DistributedFactory& factory, Problem& problem, MehrotraHeuristic mehrotra_heuristic, const Scaler* scaler)
+InteriorPointMethod::InteriorPointMethod(DistributedFactory& factory, Problem& problem, MehrotraStrategyType mehrotra_strategy_type, const Scaler* scaler)
 : Solver(factory, problem),
-mehrotra_strategy(MehrotraFactory::create(factory, problem, mehrotra_heuristic, scaler)), filter_line_search() {}
+mehrotra_strategy(MehrotraFactory::create(factory, problem, mehrotra_strategy_type, scaler)) {}
 
 TerminationStatus InteriorPointMethod::solve(Problem& problem, Variables& iterate, Residuals& residuals) {
    // initialization of (x,y,z) and factorization routine.

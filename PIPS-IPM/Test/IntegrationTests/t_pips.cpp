@@ -51,11 +51,11 @@ public:
    std::string gams_path;
 
    void solveInstanceAndCheckResult(double expected_result, const std::string& path, size_t n_blocks,
-      PresolverType presolver_type, ScalerType scaler_type, MehrotraHeuristic primal_dual_type);
+      PresolverType presolver_type, ScalerType scaler_type, MehrotraStrategyType primal_dual_type);
 
    [[nodiscard]] std::pair<double, std::string>
    solveInstance(const std::string& path_instance, size_t n_blocks, PresolverType presolver, ScalerType scaler,
-      MehrotraHeuristic primal_dual_type) const;
+      MehrotraStrategyType primal_dual_type) const;
 };
 
 std::vector<Instance> getInstances() {
@@ -67,7 +67,7 @@ std::vector<Instance> getInstances() {
 
 std::pair<double, std::string>
 ScenarioTests::solveInstance(const std::string& path_instance, size_t n_blocks, PresolverType presolver,
-   ScalerType scaler, MehrotraHeuristic primal_dual_type) const {
+   ScalerType scaler, MehrotraStrategyType primal_dual_type) const {
    testing::internal::CaptureStdout();
 
    gmspips_reader reader(path_instance, gams_path, n_blocks);
@@ -90,7 +90,7 @@ ScenarioTests::solveInstance(const std::string& path_instance, size_t n_blocks, 
 };
 
 void ScenarioTests::solveInstanceAndCheckResult(double expected_result, const std::string& path, size_t n_blocks,
-   PresolverType presolver_type, ScalerType scaler_type, MehrotraHeuristic primal_dual_type) {
+   PresolverType presolver_type, ScalerType scaler_type, MehrotraStrategyType primal_dual_type) {
 
    ASSERT_GE(world_size, 1);
 
@@ -107,7 +107,7 @@ TEST_P(ScenarioTests, TestGamssmallPrimalDualStepScaleGeo) {
    const size_t& n_blocks(GetParam().n_blocks);
    const double& result(GetParam().result);
 
-   solveInstanceAndCheckResult(result, root + problem_paths, n_blocks, PresolverType::PRESOLVER_NONE, ScalerType::SCALER_GEO_STOCH, MehrotraHeuristic::PRIMAL_DUAL);
+   solveInstanceAndCheckResult(result, root + problem_paths, n_blocks, PresolverType::PRESOLVER_NONE, ScalerType::SCALER_GEO_STOCH, MehrotraStrategyType::PRIMAL_DUAL);
 };
 
 TEST_P(ScenarioTests, TestGamssmallPrimalDualStepScaleGeoPresolve) {
@@ -115,7 +115,7 @@ TEST_P(ScenarioTests, TestGamssmallPrimalDualStepScaleGeoPresolve) {
    const size_t& n_blocks(GetParam().n_blocks);
    const double& result(GetParam().result);
 
-   solveInstanceAndCheckResult(result, root + problem_paths, n_blocks, PresolverType::PRESOLVER_STOCH, ScalerType::SCALER_GEO_STOCH, MehrotraHeuristic::PRIMAL_DUAL);
+   solveInstanceAndCheckResult(result, root + problem_paths, n_blocks, PresolverType::PRESOLVER_STOCH, ScalerType::SCALER_GEO_STOCH, MehrotraStrategyType::PRIMAL_DUAL);
 };
 
 TEST_P(ScenarioTests, TestGamssmallPrimalDualStep) {
@@ -123,7 +123,7 @@ TEST_P(ScenarioTests, TestGamssmallPrimalDualStep) {
    const size_t& n_blocks(GetParam().n_blocks);
    const double& result(GetParam().result);
 
-   solveInstanceAndCheckResult(result, root + problem_paths, n_blocks, PresolverType::PRESOLVER_NONE, ScalerType::SCALER_NONE, MehrotraHeuristic::PRIMAL_DUAL);
+   solveInstanceAndCheckResult(result, root + problem_paths, n_blocks, PresolverType::PRESOLVER_NONE, ScalerType::SCALER_NONE, MehrotraStrategyType::PRIMAL_DUAL);
 };
 
 TEST_P(ScenarioTests, TestGamssmallPrimalDualStepPresolve) {
@@ -131,7 +131,7 @@ TEST_P(ScenarioTests, TestGamssmallPrimalDualStepPresolve) {
    const size_t& n_blocks(GetParam().n_blocks);
    const double& result(GetParam().result);
 
-   solveInstanceAndCheckResult(result, root + problem_paths, n_blocks, PresolverType::PRESOLVER_STOCH, ScalerType::SCALER_NONE, MehrotraHeuristic::PRIMAL_DUAL);
+   solveInstanceAndCheckResult(result, root + problem_paths, n_blocks, PresolverType::PRESOLVER_STOCH, ScalerType::SCALER_NONE, MehrotraStrategyType::PRIMAL_DUAL);
 };
 
 TEST_P(ScenarioTests, TestGamssmallNoSettings) {
@@ -139,7 +139,7 @@ TEST_P(ScenarioTests, TestGamssmallNoSettings) {
    const size_t& n_blocks(GetParam().n_blocks);
    const double& result(GetParam().result);
 
-   solveInstanceAndCheckResult(result, root + problem_paths, n_blocks, PresolverType::PRESOLVER_NONE, ScalerType::SCALER_NONE, MehrotraHeuristic::PRIMAL);
+   solveInstanceAndCheckResult(result, root + problem_paths, n_blocks, PresolverType::PRESOLVER_NONE, ScalerType::SCALER_NONE, MehrotraStrategyType::PRIMAL);
 };
 
 TEST_P(ScenarioTests, TestGamssmallPresolve) {
@@ -147,7 +147,7 @@ TEST_P(ScenarioTests, TestGamssmallPresolve) {
    const size_t& n_blocks(GetParam().n_blocks);
    const double& result(GetParam().result);
 
-   solveInstanceAndCheckResult(result, root + problem_paths, n_blocks, PresolverType::PRESOLVER_STOCH, ScalerType::SCALER_NONE, MehrotraHeuristic::PRIMAL);
+   solveInstanceAndCheckResult(result, root + problem_paths, n_blocks, PresolverType::PRESOLVER_STOCH, ScalerType::SCALER_NONE, MehrotraStrategyType::PRIMAL);
 };
 
 TEST_P(ScenarioTests, TestGamssmallScaleGeoPresolve) {
@@ -155,7 +155,7 @@ TEST_P(ScenarioTests, TestGamssmallScaleGeoPresolve) {
    const size_t& n_blocks(GetParam().n_blocks);
    const double& result(GetParam().result);
 
-   solveInstanceAndCheckResult(result, root + problem_paths, n_blocks, PresolverType::PRESOLVER_STOCH, ScalerType::SCALER_GEO_STOCH, MehrotraHeuristic::PRIMAL);
+   solveInstanceAndCheckResult(result, root + problem_paths, n_blocks, PresolverType::PRESOLVER_STOCH, ScalerType::SCALER_GEO_STOCH, MehrotraStrategyType::PRIMAL);
 };
 
 INSTANTIATE_TEST_SUITE_P(InstantiateTestsWithAllGamssmallInstances, ScenarioTests, ::testing::ValuesIn(getInstances()));

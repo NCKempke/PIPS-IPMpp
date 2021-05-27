@@ -3,7 +3,6 @@
 #include <SimpleVector.h>
 #include "Variables.h"
 #include "Vector.hpp"
-
 #include "Problem.h"
 #include "MpsReader.h"
 

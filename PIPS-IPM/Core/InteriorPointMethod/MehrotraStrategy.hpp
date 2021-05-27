@@ -10,6 +10,7 @@
 #include "TerminationStatus.h"
 #include "Observer.h"
 #include "MehrotraStrategyType.h"
+#include "FilterLineSearch.hpp"
 
 class Problem;
 
@@ -53,6 +54,7 @@ protected:
    unsigned int n_linesearch_points;
    std::unique_ptr<Variables> temp_step;
    Statistics statistics;
+   FilterLineSearch filter_line_search;
 
    std::unique_ptr<Residuals> residuals_unscaled;
    /** termination parameters */
@@ -198,7 +200,7 @@ protected:
 class MehrotraFactory {
 public:
    static std::unique_ptr<MehrotraStrategy>
-   create(DistributedFactory& factory, Problem& problem, MehrotraHeuristic mehrotra_heuristic, const Scaler* scaler = nullptr);
+   create(DistributedFactory& factory, Problem& problem, MehrotraStrategyType mehrotra_heuristic, const Scaler* scaler = nullptr);
 };
 
 

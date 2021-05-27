@@ -3,12 +3,13 @@
 //
 
 #include "PIPSIPMppInterface.hpp"
+#include "PreprocessType.h"
 #include "DistributedFactory.h"
 #include "DistributedQP.hpp"
 #include "DistributedResiduals.hpp"
 #include "DistributedVariables.h"
 #include "PreprocessFactory.h"
-#include "Scaler.h"
+#include "Scaler.hpp"
 #include "PIPSIPMppOptions.h"
 #include "InteriorPointMethod.hpp"
 #include "DistributedTreeCallbacks.h"
@@ -16,7 +17,7 @@
 #include <functional>
 #include <memory>
 
-PIPSIPMppInterface::PIPSIPMppInterface(DistributedInputTree* tree, MehrotraHeuristic mehrotra_heuristic, MPI_Comm comm, ScalerType
+PIPSIPMppInterface::PIPSIPMppInterface(DistributedInputTree* tree, MehrotraStrategyType mehrotra_heuristic, MPI_Comm comm, ScalerType
 scaler_type, PresolverType presolver_type, const std::string& settings) : comm(comm), my_rank(PIPS_MPIgetRank()) {
    factory = std::make_unique<DistributedFactory>(tree, comm);
    pipsipmpp_options::set_options(settings);
@@ -42,11 +43,9 @@ scaler_type, PresolverType presolver_type, const std::string& settings) : comm(c
       const double t0_presolve = MPI_Wtime();
 
       if (postsolve)
-         postsolver.reset(preprocess_factory->makePostsolver(original_problem.get()));
+         postsolver.reset(preprocess_factory->make_postsolver(original_problem.get()));
 
-      presolver.reset(
-            preprocess_factory->makePresolver(factory->tree, original_problem.get(), presolver_type,
-                  postsolver.get()));
+      presolver.reset(preprocess_factory->make_presolver(factory->tree, original_problem.get(), presolver_type, postsolver.get()));
 
       presolved_problem.reset(dynamic_cast<DistributedQP*>(presolver->presolve()));
 
@@ -98,7 +97,7 @@ scaler_type, PresolverType presolver_type, const std::string& settings) : comm(c
    if( my_rank == 0 ) printf("resids created\n");
 #endif
 
-   scaler.reset(preprocess_factory->makeScaler(presolved_problem.get(), scaler_type));
+   scaler.reset(preprocess_factory->make_scaler(*presolved_problem, scaler_type));
 
 #ifdef TIMING
    if( my_rank == 0 ) printf("scaler created\n");

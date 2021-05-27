@@ -8,7 +8,7 @@
 #ifndef PIPS_IPM_CORE_QPPREPROCESS_STOCHPRESOLVER_H_
 #define PIPS_IPM_CORE_QPPREPROCESS_STOCHPRESOLVER_H_
 
-#include "QpPresolver.h"
+#include "Presolver.hpp"
 #include "PresolveData.h"
 #include <vector>
 #include <memory>
@@ -26,7 +26,7 @@ class StochPresolverBase;
 /**
  * Derived class for QP presolvers.
  */
-class StochPresolver : public QpPresolver {
+class StochPresolver : public Presolver {
 private:
    const int my_rank = -1;
    /** limit for max rounds to apply all presolvers */

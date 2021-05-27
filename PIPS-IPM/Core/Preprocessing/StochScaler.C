@@ -11,24 +11,24 @@
 #include "DistributedResiduals.hpp"
 
 
-StochScaler::StochScaler(Problem* prob, bool bitshifting) : QpScaler(prob, bitshifting) {
+StochScaler::StochScaler(const Problem& problem, bool bitshifting) : Scaler(problem, bitshifting) {
 }
 
-Variables* StochScaler::get_unscaled_variables(const Variables& vars) const {
-   Variables* s_vars = new DistributedVariables(dynamic_cast<const DistributedVariables&>(vars));
+Variables* StochScaler::get_unscaled_variables(const Variables& variables) const {
+   Variables* s_vars = new DistributedVariables(dynamic_cast<const DistributedVariables&>(variables));
    assert(s_vars);
    assert(dynamic_cast<DistributedVariables*>(s_vars)->primals);
 
-   unscaleVariables(*s_vars);
+   unscale_variables(*s_vars);
 
    return s_vars;
 };
 
-Residuals* StochScaler::get_unscaled_residuals(const Residuals& resids) const {
-   DistributedResiduals* s_resids = new DistributedResiduals(dynamic_cast<const DistributedResiduals&>(resids));
+Residuals* StochScaler::get_unscaled_residuals(const Residuals& residuals) const {
+   DistributedResiduals* s_resids = new DistributedResiduals(dynamic_cast<const DistributedResiduals&>(residuals));
    assert(s_resids);
 
-   unscaleResiduals(*s_resids);
+   unscale_residuals(*s_resids);
 
    return s_resids;
 };

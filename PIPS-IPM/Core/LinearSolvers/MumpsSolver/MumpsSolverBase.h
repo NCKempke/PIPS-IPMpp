@@ -13,7 +13,6 @@
 #include "DoubleLinearSolver.h"
 #include "SparseSymmetricMatrix.h"
 #include "Vector.hpp"
-#include "SmartPointer.h"
 #include "pipsport.h"
 #include "dmumps_c.h"
 
