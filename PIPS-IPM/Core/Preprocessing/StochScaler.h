@@ -8,11 +8,11 @@
 #ifndef PIPS_IPM_CORE_QPPREPROCESS_STOCHSCALER_H_
 #define PIPS_IPM_CORE_QPPREPROCESS_STOCHSCALER_H_
 
-#include "QpScaler.h"
+#include "Scaler.hpp"
 
 class Problem;
 
-class StochScaler : public QpScaler {
+class StochScaler : public Scaler {
 public:
    StochScaler(const Problem& problem, bool bitshifting);
    ~StochScaler() override = default;

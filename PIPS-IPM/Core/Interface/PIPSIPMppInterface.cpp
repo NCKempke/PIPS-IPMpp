@@ -9,7 +9,7 @@
 #include "DistributedResiduals.hpp"
 #include "DistributedVariables.h"
 #include "PreprocessFactory.h"
-#include "Scaler.h"
+#include "Scaler.hpp"
 #include "PIPSIPMppOptions.h"
 #include "InteriorPointMethod.hpp"
 #include "DistributedTreeCallbacks.h"

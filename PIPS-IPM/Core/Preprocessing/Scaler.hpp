@@ -8,36 +8,47 @@
 #ifndef QPSCALER_H
 #define QPSCALER_H
 
-#include "Scaler.h"
+#include "Scaler.hpp"
 #include "Vector.hpp"
 #include "AbstractMatrix.h"
 #include <memory>
 
+template<typename T>
+class Vector;
+
+class Problem;
+
+class Variables;
+
+class Residuals;
+
 /**
  * Abstract base class for scalers.
  */
-class QpScaler : public Scaler {
+class Scaler {
 public:
 
-   explicit QpScaler(const Problem& problem, bool bitshifting = false);
-   ~QpScaler() override = default;
+   explicit Scaler(const Problem& problem, bool bitshifting = false, bool usesides = false);
+   virtual ~Scaler() = default;
 
+   /** return norm of unscaled problem */
+   double getDnormOrig() const { return dnorm_orig; }
    /** scale */
-   void scale() override = 0;
+   virtual void scale() = 0;
 
-   [[nodiscard]] double get_unscaled_objective(double objval) const override;
+   [[nodiscard]] double get_unscaled_objective(double objval) const;
 
-   [[nodiscard]] Variables* get_unscaled_variables(const Variables& variables) const override;
-   [[nodiscard]] Residuals* get_unscaled_residuals(const Residuals& residuals) const override;
+   [[nodiscard]] virtual Variables* get_unscaled_variables(const Variables& variables) const;
+   [[nodiscard]] virtual Residuals* get_unscaled_residuals(const Residuals& residuals) const;
 
-   void unscale_variables(Variables& variables) const override;
-   void unscale_residuals(Residuals& residuals) const override;
+   void unscale_variables(Variables& variables) const;
+   void unscale_residuals(Residuals& residuals) const;
 
-   [[nodiscard]] Vector<double>* get_primal_unscaled(const Vector<double>& primal_solution) const override;
-   [[nodiscard]] Vector<double>* get_dual_eq_unscaled(const Vector<double>& dual_solution) const override;
-   [[nodiscard]] Vector<double>* get_dual_ineq_unscaled(const Vector<double>& dual_solution) const override;
-   [[nodiscard]] Vector<double>* get_dual_var_bounds_upp_unscaled(const Vector<double>& dual_solution) const override;
-   [[nodiscard]] Vector<double>* get_dual_var_bounds_low_unscaled(const Vector<double>& dual_solution) const override;
+   [[nodiscard]] Vector<double>* get_primal_unscaled(const Vector<double>& primal_solution) const;
+   [[nodiscard]] Vector<double>* get_dual_eq_unscaled(const Vector<double>& dual_solution) const;
+   [[nodiscard]] Vector<double>* get_dual_ineq_unscaled(const Vector<double>& dual_solution) const;
+   [[nodiscard]] Vector<double>* get_dual_var_bounds_upp_unscaled(const Vector<double>& dual_solution) const;
+   [[nodiscard]] Vector<double>* get_dual_var_bounds_low_unscaled(const Vector<double>& dual_solution) const;
 
 protected:
    static void invertAndRound(bool round, Vector<double>& vector) {
@@ -46,6 +57,9 @@ protected:
          vector.roundToPow2();
    }
 
+   const bool do_bitshifting; // only scale by power of two factors?
+   const bool with_sides; // consider lhs/rhs?
+   const double dnorm_orig;
    const bool scaling_output{false};
 
    // has scaling been applied

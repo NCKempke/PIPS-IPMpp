@@ -11,7 +11,7 @@
 #include "DistributedResiduals.hpp"
 
 
-StochScaler::StochScaler(const Problem& problem, bool bitshifting) : QpScaler(problem, bitshifting) {
+StochScaler::StochScaler(const Problem& problem, bool bitshifting) : Scaler(problem, bitshifting) {
 }
 
 Variables* StochScaler::get_unscaled_variables(const Variables& variables) const {

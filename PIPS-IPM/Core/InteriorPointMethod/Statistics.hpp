@@ -2,7 +2,7 @@
 #define MONITOR_H
 
 #include "DistributedFactory.h"
-#include "Scaler.h"
+#include "Scaler.hpp"
 
 class Problem;
 
