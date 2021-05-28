@@ -3877,7 +3877,7 @@ void PresolveData::transform_node_inequalities_into_equalities(int node) {
 
 void PresolveData::transform_root_inequalities_into_equalities(){
 
-   
+
    return;
    assert(false && "TODO: implement");
 }

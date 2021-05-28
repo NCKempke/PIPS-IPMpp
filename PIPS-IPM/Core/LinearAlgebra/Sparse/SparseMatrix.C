@@ -613,13 +613,9 @@ void SparseMatrix::initStaticStorageFromDynamic(const Vector<int>& rowNnzVec, co
    const auto& rowNnzVecSimple = dynamic_cast<const SimpleVector<int>&>(rowNnzVec);
    const auto* colNnzVecSimple = dynamic_cast<const SimpleVector<int>*>(colNnzVec);
 
-   std::cout << mStorageDynamic->n_rows() << " " << rowNnzVec.length() << std::endl;
    assert(mStorageDynamic->n_rows() == rowNnzVec.length());
    if(colNnzVec)
-   {
-      std::cout << mStorageDynamic->n_columns() << " " << colNnzVec->length() << std::endl;
       assert(mStorageDynamic->n_columns() == colNnzVec->length());
-   }
 
    mStorageDynamic->restoreOrder();
    mStorage = mStorageDynamic->getStaticStorage(rowNnzVecSimple.elements(),
