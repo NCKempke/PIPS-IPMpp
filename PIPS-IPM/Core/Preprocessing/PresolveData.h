@@ -328,18 +328,17 @@ private:
 
    void checkBoundsInfeasible(const INDEX& col, double xlow_new, double xupp_new) const;
 
-
    void transform_inequalities_into_equalities(int node);
-   void transform_root_inequalities_into_equalities();
-   void transform_linking_inequalities_into_equalitites();
-   void transform_a0_block_inequalities_into_equalities();
-   void transform_node_inequalities_into_equalities(int node);
+   void transform_inequalities_into_equalities(int node, bool linking);
 
-   void append_bounds_inequalities_to_equalities_transformation(int node, int n_slack_variables);
+   void append_bounds_inequalities_to_equalities_transformation(int node, bool linking, int n_slack_variables);
    void append_new_slacks_to_objective_vector(int node, int n_new_slack_variables);
    void extend_q_matrix_by_new_variables(int node, int n_variables);
-   void adjust_nonzeros_after_inequalities_to_equalities_transformation(int node, const SimpleVector<int>& nonzero_pattern_slacks);
+   void adjust_nonzeros_after_inequalities_to_equalities_transformation(int node, bool linking, const SimpleVector<int>& nonzero_pattern_slacks);
    void transform_matrices_inequalities_into_equalities(int node, int n_new_slack_variables, const std::vector<int>& diagonal_for_identity);
+   void transform_linking_matrices_inequalities_into_equalities(int n_new_slack_variables, const std::vector<int>& diagonal_for_identity);
+   void extend_linking_variable_child_matrices_by(int n_new_slack_variables);
+   std::vector<int> get_slack_diagonal_for_inequality_equality_tranformation(int node, bool linking);
 
 public:
    void writeRowLocalToStreamDense(std::ostream& out, const INDEX& row) const;
