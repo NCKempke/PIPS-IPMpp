@@ -46,6 +46,7 @@ TerminationStatus InteriorPointMethod::solve(Problem& problem, Variables& iterat
    while (!termination) {
       if (iteration >= max_iterations - 1) {
          status = MAX_ITS_EXCEEDED;
+         termination = true;
       }
       else {
          residuals.evaluate(problem, iterate);
