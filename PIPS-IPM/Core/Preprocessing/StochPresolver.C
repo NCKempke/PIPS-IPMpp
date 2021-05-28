@@ -67,6 +67,8 @@ Problem* StochPresolver::presolve() {
    }
 
    if (transform_inequalities_to_equalities) {
+      if (my_rank == 0)
+         std::cout << "Transforming all inequality rows to equalities + slack variable\n";
       presolve_data.transfrom_ineqalities_to_equalities();
    }
 
