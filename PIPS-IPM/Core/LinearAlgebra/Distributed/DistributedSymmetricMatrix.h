@@ -31,7 +31,7 @@ private:
 
    // note: also used for dummy class!
    virtual void deleteEmptyRowsCols(const Vector<int>& nnzVec, const Vector<int>* linkParent);
-   virtual void writeToStreamDenseChild(std::stringstream& out, int offset) const;
+   virtual void write_to_streamDenseChild(std::stringstream& out, int offset) const;
 
 public:
    DistributedSymmetricMatrix(std::unique_ptr<SymmetricMatrix> diag, std::unique_ptr<GeneralMatrix> border, MPI_Comm mpiComm);
@@ -76,9 +76,9 @@ public:
    using AbstractMatrix::abminnormNonZero;
    [[nodiscard]] double abminnormNonZero(double tol) const override;
 
-   void writeToStream(std::ostream&) const override { assert(false && "Not implemented"); };
+   void write_to_stream(std::ostream&) const override { assert(false && "Not implemented"); };
 
-   void writeToStreamDense(std::ostream& out) const override;
+   void write_to_streamDense(std::ostream& out) const override;
 
    void getDiagonal(Vector<double>& vec) const override;
    void setToDiagonal(const Vector<double>& vec) override;
@@ -118,7 +118,7 @@ protected:
 class StochSymDummyMatrix : public DistributedSymmetricMatrix {
 
 private:
-   void writeToStreamDenseChild(std::stringstream&, int) const override {};
+   void write_to_streamDenseChild(std::stringstream&, int) const override {};
 
 public:
 
@@ -142,7 +142,7 @@ public:
    [[nodiscard]] double inf_norm() const override { return 0.0; }
    [[nodiscard]] double abminnormNonZero(double) const override { return std::numeric_limits<double>::infinity(); }
 
-   void writeToStreamDense(std::ostream&) const override {};
+   void write_to_streamDense(std::ostream&) const override {};
 
    void getDiagonal(Vector<double>&) const override {};
    void setToDiagonal(const Vector<double>&) override {};

@@ -14,7 +14,7 @@ FilterStrategy::FilterStrategy() : filter(), parameters({0.1, 0.999, 1e2, 1.25})
 
 void FilterStrategy::initialize(Residuals& initial_residuals) {
    /* set the filter upper bound */
-   double upper_bound = std::max(this->parameters.ubd, this->parameters.fact * initial_residuals.residual_norm());
+   double upper_bound = std::max(this->parameters.ubd, this->parameters.fact * initial_residuals.get_residual_norm());
    this->filter.upper_bound = upper_bound;
    return;
 }

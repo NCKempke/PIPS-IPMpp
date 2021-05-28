@@ -100,9 +100,9 @@ void sLinsysLeafMumps::buildSchurRightMatrix(SymmetricMatrix& SC) {
 
 #ifdef DEBUG_WRITE
       std::cout << "At" << std::endl;
-      A.getTranspose().writeToStreamDense(cout);
+      A.getTranspose().write_to_streamDense(cout);
       std::cout << "Ct" << std::endl;
-      C.getTranspose().writeToStreamDense(cout);
+      C.getTranspose().write_to_streamDense(cout);
 #endif
 
       for (int r = 0; r < nxParent; r++) {
@@ -124,7 +124,7 @@ void sLinsysLeafMumps::buildSchurRightMatrix(SymmetricMatrix& SC) {
 
 #ifdef DEBUG_WRITE
       std::cout << "F" << std::endl;
-      F.writeToStreamDense(cout);
+      F.write_to_streamDense(cout);
 #endif
 
       for (int r = 0; r < locmyl; r++) {
@@ -141,7 +141,7 @@ void sLinsysLeafMumps::buildSchurRightMatrix(SymmetricMatrix& SC) {
 
 #ifdef DEBUG_WRITE
       std::cout << "G" << std::endl;
-      G.writeToStreamDense(cout);
+      G.write_to_streamDense(cout);
 #endif
 
       for (int r = 0; r < locmzl; r++) {
@@ -157,7 +157,7 @@ void sLinsysLeafMumps::buildSchurRightMatrix(SymmetricMatrix& SC) {
 
 #ifdef DEBUG_WRITE
    std::cout << "\n CSC" << std::endl;
-   schurRightMatrix_csc->writeToStreamDense(cout);
+   schurRightMatrix_csc->write_to_streamDense(cout);
 
    if( schurRightNzColId )
       for( int i = 0; i < schurRightMatrix_csc->getStorageRef().m; i++ )
@@ -236,7 +236,7 @@ void sLinsysLeafMumps::addTermToSchurComplMumps(bool sparseSC, SymmetricMatrix& 
    sprintf(filename, "../A1_%d_%d.txt", myrank, iteration);
    myfile.open(filename);
    iteration++;
-   SC.writeToStream(myfile); // todo write out in each iteration with global counter and MPI rank!
+   SC.write_to_stream(myfile); // todo write out in each iteration with global counter and MPI rank!
    myfile.close();
 
    if( iteration >= 100)

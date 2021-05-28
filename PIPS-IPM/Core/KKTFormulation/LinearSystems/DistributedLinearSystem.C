@@ -1092,7 +1092,7 @@ void DistributedLinearSystem::addBiTLeftKiBiRightToResBlockedParallelSolvers(boo
       sprintf(filename, "../blocked_%d_%d.txt", myrank, iteration);
       myfile.open(filename);
       iteration++;
-      SC.writeToStream(myfile); // todo write out in each iteration with global counter and MPI rank!
+      SC.write_to_stream(myfile); // todo write out in each iteration with global counter and MPI rank!
       myfile.close();
 
       assert(0);

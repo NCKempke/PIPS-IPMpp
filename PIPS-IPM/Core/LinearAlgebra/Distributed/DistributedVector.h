@@ -84,7 +84,7 @@ public:
    void setNotIndicatedEntriesToVal(const T val, const Vector<T>& ind) override;
 
    void scalarMult(T num) override;
-   void writeToStream(std::ostream& out, int offset = 0) const override;
+   void write_to_stream(std::ostream& out, int offset = 0) const override;
    void writefToStream(std::ostream& out, const char format[]) const override;
 
    void scale(T alpha) override;
@@ -209,7 +209,7 @@ public:
    void setNotIndicatedEntriesToVal(T, const Vector<T>&) override {};
 
    void scalarMult(T) override {};
-   void writeToStream(std::ostream&, int) const override {};
+   void write_to_stream(std::ostream&, int) const override {};
    void writefToStream(std::ostream&, const char[]) const override {};
    void scale(T) override {};
 

@@ -80,7 +80,7 @@ TerminationStatus InteriorPointMethod::solve(Problem& problem, Variables& iterat
 
 std::pair<double, double> InteriorPointMethod::compute_unscaled_gap_and_residual_norm(const Residuals& residuals) {
    if (!scaler)
-      return std::make_pair(std::fabs(residuals.duality_gap()), residuals.residual_norm());
+      return std::make_pair(std::fabs(residuals.get_duality_gap()), residuals.get_residual_norm());
    else {
       if (!residuals_unscaled)
          residuals_unscaled.reset(scaler->get_unscaled_residuals(residuals));
@@ -89,7 +89,7 @@ std::pair<double, double> InteriorPointMethod::compute_unscaled_gap_and_residual
          scaler->unscale_residuals(*residuals_unscaled);
       }
 
-      return std::make_pair(std::fabs(residuals_unscaled->duality_gap()), residuals_unscaled->residual_norm());
+      return std::make_pair(std::fabs(residuals_unscaled->get_duality_gap()), residuals_unscaled->get_residual_norm());
    }
 }
 

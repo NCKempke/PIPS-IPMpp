@@ -57,7 +57,7 @@ void QP::datainput(MpsReader* reader, int& iErr) {
 
 void QP::print() {
    std::cout << "begin Q\n";
-   Q->writeToStream(std::cout);
+   Q->write_to_stream(std::cout);
    std::cout << "end Q\n";
    Problem::print();
 }

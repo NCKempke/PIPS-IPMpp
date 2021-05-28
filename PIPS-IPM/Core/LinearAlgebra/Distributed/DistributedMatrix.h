@@ -123,10 +123,10 @@ public:
 
    virtual void getLinkVarsNnz(std::vector<int>& vec) const;
 
-   void writeToStream(std::ostream&) const override { assert("Not implemented" && 0); };
-   virtual void writeToStreamDense(std::ostream& out, int offset) const;
-   virtual void writeToStreamDenseBordered(const StripMatrix& border, std::ostream& out, int offset) const;
-   void writeToStreamDense(std::ostream& out) const override { writeToStreamDense(out, 0); };
+   void write_to_stream(std::ostream&) const override { assert("Not implemented" && 0); };
+   virtual void write_to_streamDense(std::ostream& out, int offset) const;
+   virtual void write_to_streamDenseBordered(const StripMatrix& border, std::ostream& out, int offset) const;
+   void write_to_streamDense(std::ostream& out) const override { write_to_streamDense(out, 0); };
    void writeDashedLineToStream(std::ostream& out) const override { writeDashedLineToStream(out, 0); };
    virtual void writeDashedLineToStream(std::ostream& out, int offset) const;
 
@@ -202,8 +202,8 @@ public:
 
 
 protected:
-   virtual void writeToStreamDenseChild(std::ostream& out, int offset) const;
-   virtual void writeToStreamDenseBorderedChild(const StripMatrix& border_left, std::ostream& out, int offset) const;
+   virtual void write_to_streamDenseChild(std::ostream& out, int offset) const;
+   virtual void write_to_streamDenseBorderedChild(const StripMatrix& border_left, std::ostream& out, int offset) const;
 
    /* internal methods for linking cons and hierarchical structure */
    virtual void getRowMinMaxVecChild(bool getMin, bool initializeVec, const Vector<double>* colScaleVec_, Vector<double>& minmaxVec_,
@@ -274,17 +274,17 @@ public:
 
    void getLinkVarsNnz(std::vector<int>&) const override {};
 
-   void writeToStreamDense(std::ostream&) const override {};
-   void writeToStreamDense(std::ostream&, int) const override {};
-   void writeToStreamDenseBordered(const StripMatrix&, std::ostream&, int) const override {};
+   void write_to_streamDense(std::ostream&) const override {};
+   void write_to_streamDense(std::ostream&, int) const override {};
+   void write_to_streamDenseBordered(const StripMatrix&, std::ostream&, int) const override {};
    void writeDashedLineToStream(std::ostream&) const override {};
    void writeDashedLineToStream(std::ostream&, int) const override {};
 
    void writeMPSformatRows(std::ostream&, int, const Vector<double>*) const override {};
 
 protected:
-   void writeToStreamDenseChild(std::ostream&, int) const override {};
-   void writeToStreamDenseBorderedChild(const StripMatrix&, std::ostream&, int) const override {};
+   void write_to_streamDenseChild(std::ostream&, int) const override {};
+   void write_to_streamDenseBorderedChild(const StripMatrix&, std::ostream&, int) const override {};
 
 public:
    void initTransposedChild(bool) const override {};

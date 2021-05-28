@@ -355,7 +355,7 @@ void SimpleVector<T>::componentDiv(const Vector<T>& vec) {
 }
 
 template<typename T>
-void SimpleVector<T>::writeToStream(std::ostream& out, int offset) const {
+void SimpleVector<T>::write_to_stream(std::ostream& out, int offset) const {
    for (int i = 0; i < this->n; i++) {
       for (int j = 0; j < offset; ++j)
          out << "\t";

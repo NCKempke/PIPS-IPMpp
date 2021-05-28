@@ -116,8 +116,8 @@ public:
    void addNnzPerRow(int* vec) const { addNnzPerRow(vec, 0, m); };
    void addNnzPerRow(int* vec, int begin_rows, int end_rows) const;
 
-   void writeToStreamDense(std::ostream& out) const;
-   void writeToStreamDenseRow(std::ostream& out, int rowidx) const;
+   void write_to_streamDense(std::ostream& out) const;
+   void write_to_streamDenseRow(std::ostream& out, int rowidx) const;
 
    void restoreOrder();
 

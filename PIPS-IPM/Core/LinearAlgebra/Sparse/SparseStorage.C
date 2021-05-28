@@ -633,7 +633,7 @@ void SparseStorage::fromGetSpRow(int row, int col, double A[], int lenA, int jco
    nnz = ka;
 }
 
-void SparseStorage::writeToStream(std::ostream& out) const {
+void SparseStorage::write_to_stream(std::ostream& out) const {
    int i, k;
 
    for (i = 0; i < m; i++) {
@@ -667,7 +667,7 @@ void SparseStorage::writeNNZpatternToStreamDense(std::ostream& out) const {
    }
 }
 
-void SparseStorage::writeToStreamDense(std::ostream& out) const {
+void SparseStorage::write_to_streamDense(std::ostream& out) const {
    //todo: instead of \t, use length of longest value in M
 
    for (int i = 0; i < m; i++) {
@@ -692,7 +692,7 @@ void SparseStorage::writeToStreamDense(std::ostream& out) const {
    }
 }
 
-void SparseStorage::writeToStreamDenseRow(std::ostream& out, int rowidx) const {
+void SparseStorage::write_to_streamDenseRow(std::ostream& out, int rowidx) const {
    int j = 0; // Column j
    for (int k = krowM[rowidx]; k < krowM[rowidx + 1]; k++) {
       while (jcolM[k] > j) {

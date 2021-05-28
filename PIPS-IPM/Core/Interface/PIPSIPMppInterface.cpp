@@ -84,7 +84,7 @@ scaler_type, PresolverType presolver_type, const std::string& settings) : comm(c
       presolved_problem.reset(dynamic_cast<DistributedQP*>(factory->switchToHierarchicalData(presolved_problem.release())));
 
       if (pipsipmpp_options::get_bool_parameter("HIERARCHICAL_PRINT_HIER_DATA"))
-         presolved_problem->writeToStreamDense(std::cout);
+         presolved_problem->write_to_streamDense(std::cout);
    }
 
    variables.reset(dynamic_cast<DistributedVariables*>(factory->make_variables(*presolved_problem)));

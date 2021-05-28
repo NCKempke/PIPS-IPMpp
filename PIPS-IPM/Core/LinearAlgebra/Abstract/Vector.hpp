@@ -75,7 +75,7 @@ public:
     *
     *  Offsets are used to visualize the StochVector structure (if any)
     */
-   virtual void writeToStream(std::ostream& out, int offset = 0) const = 0;
+   virtual void write_to_stream(std::ostream& out, int offset = 0) const = 0;
 
    /** Write the components of this Vector<double> to a stream, subject to
     *  a format.

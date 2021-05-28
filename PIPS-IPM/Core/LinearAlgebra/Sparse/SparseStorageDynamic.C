@@ -365,7 +365,7 @@ void SparseStorageDynamic::addNnzPerRow(int* vec, int begin_rows, int end_rows) 
 #endif
 }
 
-void SparseStorageDynamic::writeToStreamDense(std::ostream& out) const {
+void SparseStorageDynamic::write_to_streamDense(std::ostream& out) const {
    int i, k;
    //todo: instead of \t, use length of longest value in M
 
@@ -389,7 +389,7 @@ void SparseStorageDynamic::writeToStreamDense(std::ostream& out) const {
    }
 }
 
-void SparseStorageDynamic::writeToStreamDenseRow(std::ostream& out, int rowidx) const {
+void SparseStorageDynamic::write_to_streamDenseRow(std::ostream& out, int rowidx) const {
    int j = 0; // Column j
 
    const int start = rowptr[rowidx].start;

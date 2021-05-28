@@ -547,11 +547,11 @@ MehrotraStrategy::calculate_alpha_pd_weight_candidate(Variables& iterate, Variab
 
 double MehrotraStrategy::compute_probing_factor(Problem& problem, Variables& iterate, Residuals& residuals, Variables& step) {
    const double mu_last = iterate.mu();
-   const double resids_norm_last = residuals.residual_norm();
+   const double resids_norm_last = residuals.get_residual_norm();
    this->compute_probing_step(*temp_step, iterate, step);
    residuals.evaluate(problem, *temp_step, false);
    const double mu_probing = temp_step->mu();
-   const double resids_norm_probing = residuals.residual_norm();
+   const double resids_norm_probing = residuals.get_residual_norm();
 
    const double factor = compute_step_factor_probing(resids_norm_last, resids_norm_probing, mu_last, mu_probing);
    return factor;
@@ -691,7 +691,7 @@ void MehrotraStrategy::set_BiCGStab_tolerance(int iteration) const {
 }
 
 void MehrotraStrategy::check_numerical_troubles(Residuals* residuals, bool& numerical_troubles, bool& small_corr) const {
-   if (!bicgstab_converged && bigcstab_norm_res_rel * 1e2 * dnorm > residuals->residual_norm()) {
+   if (!bicgstab_converged && bigcstab_norm_res_rel * 1e2 * dnorm > residuals->get_residual_norm()) {
       PIPSdebugMessage("Step computation in BiCGStab failed");
       numerical_troubles = true;
       if (additional_correctors_small_comp_pairs && !small_corr) {

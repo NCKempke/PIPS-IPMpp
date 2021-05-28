@@ -143,7 +143,7 @@ public:
 
    int getNGlobalINEQConss() const { return n_global_ineq_linking_conss; };
 
-   virtual void writeToStreamDense(std::ostream& out) const;
+   virtual void write_to_streamDense(std::ostream& out) const;
 
    virtual DistributedQP* cloneFull(bool switchToDynamicStorage = false) const;
 

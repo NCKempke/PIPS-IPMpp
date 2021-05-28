@@ -49,8 +49,8 @@ class Variables;
 
 class Residuals {
 protected:
-   double mResidualNorm{std::numeric_limits<double>::infinity()};
-   double mDualityGap{std::numeric_limits<double>::infinity()};
+   double residual_norm{std::numeric_limits<double>::infinity()};
+   double duality_gap{std::numeric_limits<double>::infinity()};
    double primal_objective{std::numeric_limits<double>::infinity()};
    double dual_objective{std::numeric_limits<double>::infinity()};
 
@@ -98,21 +98,21 @@ public:
    Residuals(const Residuals& residuals);
 
    /** The norm of the residuals, ommiting the complementarity conditions */
-   [[nodiscard]] double residual_norm() const { return mResidualNorm; }
+   [[nodiscard]] double get_residual_norm() const { return residual_norm; }
 
    /** A quantity that measures progress toward feasibility. IN terms of the abstract problem formulation, this quantity is defined as
     *  @code
     * x' * Q * x + c' * x - b' * y - d' * z
     *  @endcode
     */
-   [[nodiscard]] double duality_gap() const { return mDualityGap; };
+   [[nodiscard]] double get_duality_gap() const { return duality_gap; };
 
-   [[nodiscard]] double primalObjective() const { return primal_objective; };
+   [[nodiscard]] double get_primal_objective() const { return primal_objective; };
 
-   [[nodiscard]] double dualObjective() const { return dual_objective; };
+   [[nodiscard]] double get_dual_objective() const { return dual_objective; };
 
    /** calculate residuals, their norms, and duality/complementarity gap, given a problem and variable set.  */
-   void evaluate(Problem& problem, Variables& iterate_in, bool print_resids = false);
+   void evaluate(Problem& problem, Variables& iterate_in, bool print_residuals = false);
 
    /** Modify the "complementarity" component of the residuals, by
    * adding the pairwise products of the complementary variables plus
@@ -150,7 +150,7 @@ public:
 
    int valid_non_zero_pattern();
 
-   void writeToStream(std::ostream& out);
+   void write_to_stream(std::ostream& out);
 
    [[nodiscard]] const long long& getNxupp() const { return nxupp; };
 

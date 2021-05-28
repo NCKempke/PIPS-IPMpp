@@ -1115,45 +1115,45 @@ DistributedQP::DistributedQP(const DistributedTree* tree_, std::shared_ptr<Vecto
       createChildren();
 }
 
-void DistributedQP::writeToStreamDense(std::ostream& out) const {
+void DistributedQP::write_to_streamDense(std::ostream& out) const {
    const int myRank = PIPS_MPIgetRank(MPI_COMM_WORLD);
 
    if (myRank == 0)
       out << "A:\n";
-   (*A).writeToStreamDense(out);
+   (*A).write_to_streamDense(out);
    if (myRank == 0)
       out << "C:\n";
-   (*C).writeToStreamDense(out);
+   (*C).write_to_streamDense(out);
    if (myRank == 0)
       out << "obj:\n";
-   (*g).writeToStream(out);
+   (*g).write_to_stream(out);
    if (myRank == 0)
       out << "bA:\n";
-   (*bA).writeToStream(out);
+   (*bA).write_to_stream(out);
    if (myRank == 0)
       out << "xupp:\n";
-   (*bux).writeToStream(out);
+   (*bux).write_to_stream(out);
    if (myRank == 0)
       out << "ixupp:\n";
-   (*ixupp).writeToStream(out);
+   (*ixupp).write_to_stream(out);
    if (myRank == 0)
       out << "xlow:\n";
-   (*blx).writeToStream(out);
+   (*blx).write_to_stream(out);
    if (myRank == 0)
       out << "ixlow:\n";
-   (*ixlow).writeToStream(out);
+   (*ixlow).write_to_stream(out);
    if (myRank == 0)
       out << "cupp:\n";
-   (*bu).writeToStream(out);
+   (*bu).write_to_stream(out);
    if (myRank == 0)
       out << "icupp:\n";
-   (*icupp).writeToStream(out);
+   (*icupp).write_to_stream(out);
    if (myRank == 0)
       out << "clow:\n";
-   (*bl).writeToStream(out);
+   (*bl).write_to_stream(out);
    if (myRank == 0)
       out << "iclow:\n";
-   (*iclow).writeToStream(out);
+   (*iclow).write_to_stream(out);
 }
 
 DistributedQP* DistributedQP::cloneFull(bool switchToDynamicStorage) const {
@@ -1757,8 +1757,7 @@ DistributedQP::getResidsUnperm(const DistributedResiduals& resids, const Distrib
    auto* unperm_resids = new DistributedResiduals(resids);
 
    if (is_hierarchy_root)
-      unperm_resids->collapseHierarchicalStructure(*this, stochNode, unpermData.ixlow, unpermData.ixupp,
-         unpermData.iclow, unpermData.icupp);
+      unperm_resids->collapse_hierarchical_structure(*this, stochNode, unpermData.ixlow, unpermData.ixupp, unpermData.iclow, unpermData.icupp);
 
    const Permutation perm_inv_link_vars = this->getLinkVarsPermInv();
    const Permutation perm_inv_link_cons_eq = this->getLinkConsEqPermInv();
@@ -1768,13 +1767,13 @@ DistributedQP::getResidsUnperm(const DistributedResiduals& resids, const Distrib
    const bool do_not_permut_bounds = is_hierarchy_root;
 
    if (!perm_inv_link_vars.empty())
-      unperm_resids->permuteVec0Entries(perm_inv_link_vars, do_not_permut_bounds);
+      unperm_resids->permute_vec_0_entries(perm_inv_link_vars, do_not_permut_bounds);
 
    if (!perm_inv_link_cons_eq.empty())
-      unperm_resids->permuteEqLinkingEntries(perm_inv_link_cons_eq);
+      unperm_resids->permute_eq_linking_entries(perm_inv_link_cons_eq);
 
    if (!perm_inv_link_cons_ineq.empty())
-      unperm_resids->permuteIneqLinkingEntries(perm_inv_link_cons_ineq, do_not_permut_bounds);
+      unperm_resids->permute_ineq_linking_entries(perm_inv_link_cons_ineq, do_not_permut_bounds);
 
    return unperm_resids;
 }

@@ -177,23 +177,23 @@ double SparseSymmetricMatrix::abminnormNonZero(double tol) const {
       return std::numeric_limits<double>::infinity();
 }
 
-void SparseSymmetricMatrix::writeToStream(std::ostream& out) const {
-   mStorage->writeToStream(out);
+void SparseSymmetricMatrix::write_to_stream(std::ostream& out) const {
+   mStorage->write_to_stream(out);
 }
 
 void SparseSymmetricMatrix::writeNNZpatternToStreamDense(std::ostream& out) const {
    mStorage->writeNNZpatternToStreamDense(out);
 }
 
-void SparseSymmetricMatrix::writeToStreamDense(std::ostream& out) const {
-   mStorage->writeToStreamDense(out);
+void SparseSymmetricMatrix::write_to_streamDense(std::ostream& out) const {
+   mStorage->write_to_streamDense(out);
 }
 
 
-void SparseSymmetricMatrix::writeToStreamDenseRow(std::ostream& out, int row) const {
+void SparseSymmetricMatrix::write_to_streamDenseRow(std::ostream& out, int row) const {
    if (mStorage->n > 0) {
       assert(row < mStorage->m);
-      mStorage->writeToStreamDenseRow(out, row);
+      mStorage->write_to_streamDenseRow(out, row);
    }
 }
 

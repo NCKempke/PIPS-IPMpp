@@ -108,29 +108,29 @@ void SparseMatrix::putSparseTriple(const int irow[], int len, const int jcol[], 
 }
 
 
-void SparseMatrix::writeToStream(std::ostream& out) const {
-   mStorage->writeToStream(out);
+void SparseMatrix::write_to_stream(std::ostream& out) const {
+   mStorage->write_to_stream(out);
 }
 
-void SparseMatrix::writeToStreamDense(std::ostream& out) const {
+void SparseMatrix::write_to_streamDense(std::ostream& out) const {
    assert(mStorage);
    if (mStorageDynamic != nullptr)
-      mStorageDynamic->writeToStreamDense(out);
+      mStorageDynamic->write_to_streamDense(out);
    else
-      mStorage->writeToStreamDense(out);
+      mStorage->write_to_streamDense(out);
 
 }
 
-void SparseMatrix::writeToStreamDenseRow(std::ostream& out, int rowidx) const {
+void SparseMatrix::write_to_streamDenseRow(std::ostream& out, int rowidx) const {
    if (mStorageDynamic != nullptr) {
       if (mStorageDynamic->n_columns() > 0) {
          assert(rowidx < mStorageDynamic->n_rows());
-         mStorageDynamic->writeToStreamDenseRow(out, rowidx);
+         mStorageDynamic->write_to_streamDenseRow(out, rowidx);
       }
    } else {
       if (mStorage->n > 0) {
          assert(rowidx < mStorage->m);
-         mStorage->writeToStreamDenseRow(out, rowidx);
+         mStorage->write_to_streamDenseRow(out, rowidx);
       }
    }
 }

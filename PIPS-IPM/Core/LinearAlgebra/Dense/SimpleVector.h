@@ -79,7 +79,7 @@ public:
    bool componentNotEqual(const T val, const T tol) const override;
    void setNotIndicatedEntriesToVal(const T val, const Vector<T>& ind) override;
 
-   void writeToStream(std::ostream& out, int offset = 0) const override;
+   void write_to_stream(std::ostream& out, int offset = 0) const override;
    void writefToStream(std::ostream& out, const char format[]) const override;
 
    void scale(T alpha) override;

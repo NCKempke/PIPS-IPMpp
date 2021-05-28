@@ -102,10 +102,10 @@ public:
    void diagonal_set_to_constant_from(int from, int length, double value) override;
    void diagonal_add_constant_from(int from, int length, double value) override;
 
-   virtual void writeToStream(std::ostream& out) const;
+   virtual void write_to_stream(std::ostream& out) const;
    void writeNNZpatternToStreamDense(std::ostream& out) const;
-   virtual void writeToStreamDense(std::ostream& out) const;
-   virtual void writeToStreamDenseRow(std::ostream& out, int rowidx) const;
+   virtual void write_to_streamDense(std::ostream& out) const;
+   virtual void write_to_streamDenseRow(std::ostream& out, int rowidx) const;
 
    virtual void symmetrize(int& info);
    [[nodiscard]] double inf_norm() const override;

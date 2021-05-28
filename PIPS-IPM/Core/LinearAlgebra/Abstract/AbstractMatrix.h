@@ -120,11 +120,11 @@ public:
    [[nodiscard]] virtual double abminnormNonZero(double tol) const = 0;
 
    /** Write this element to a C++ stream */
-   virtual void writeToStream(std::ostream& out) const = 0;
+   virtual void write_to_stream(std::ostream& out) const = 0;
 
-   virtual void writeToStreamDense(std::ostream& out) const = 0;
+   virtual void write_to_streamDense(std::ostream& out) const = 0;
 
-   virtual void writeToStreamDenseRow(std::ostream&, int) const { assert(false && "not implemented"); };
+   virtual void write_to_streamDenseRow(std::ostream&, int) const { assert(false && "not implemented"); };
 
    virtual void writeDashedLineToStream(std::ostream&) const { assert(false && "not implemented"); };
 

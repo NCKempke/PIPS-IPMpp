@@ -362,13 +362,13 @@ void DistributedMatrix::getLinkVarsNnzChild(std::vector<int>& vec) const {
    dynamic_cast<const SparseMatrix&>(*Amat).getLinkVarsNnz(vec);
 }
 
-void DistributedMatrix::writeToStreamDenseBorderedChild(const StripMatrix& border_left, std::ostream& out,
+void DistributedMatrix::write_to_streamDenseBorderedChild(const StripMatrix& border_left, std::ostream& out,
    int offset) const {
    assert(border_left.children.size() == this->children.size());
 
    if (Bmat->is_a(kDistributedMatrix)) {
       assert(border_left.first->is_a(kStripMatrix));
-      dynamic_cast<DistributedMatrix&>(*Bmat).writeToStreamDenseBordered(dynamic_cast<StripMatrix&>(*border_left.first),
+      dynamic_cast<DistributedMatrix&>(*Bmat).write_to_streamDenseBordered(dynamic_cast<StripMatrix&>(*border_left.first),
          out, offset);
    }
       /// Border.mat | Amat | offset | Bmat ///
@@ -382,13 +382,13 @@ void DistributedMatrix::writeToStreamDenseBorderedChild(const StripMatrix& borde
       assert(mB == Amat->n_rows() && Amat->n_rows() == border_left.first->n_rows());
 
       for (int row = 0; row < mB; ++row) {
-         border_left.first->writeToStreamDenseRow(out, row);
+         border_left.first->write_to_streamDenseRow(out, row);
          out << "|\t";
-         Amat->writeToStreamDenseRow(out, row);
+         Amat->write_to_streamDenseRow(out, row);
 
          for (int i = 0; i < offset; ++i)
             out << "\t";
-         Bmat->writeToStreamDenseRow(out, row);
+         Bmat->write_to_streamDenseRow(out, row);
          out << "\n";
       }
    }
@@ -396,7 +396,7 @@ void DistributedMatrix::writeToStreamDenseBorderedChild(const StripMatrix& borde
 
 
 void
-DistributedMatrix::writeToStreamDenseBordered(const StripMatrix& border_left, std::ostream& out, int offset) const {
+DistributedMatrix::write_to_streamDenseBordered(const StripMatrix& border_left, std::ostream& out, int offset) const {
    assert(border_left.children.size() == this->children.size());
    assert(hasSparseMatrices());
    assert(!children.empty());
@@ -416,9 +416,9 @@ DistributedMatrix::writeToStreamDenseBordered(const StripMatrix& border_left, st
    /// Border.mat | Bmat ///
    if (my_rank == 0) {
       for (int i = 0; i < mBmat; ++i) {
-         dynamic_cast<const SparseMatrix&>(*border_left.first).writeToStreamDenseRow(out, i);
+         dynamic_cast<const SparseMatrix&>(*border_left.first).write_to_streamDenseRow(out, i);
          out << "|\t";
-         dynamic_cast<const SparseMatrix&>(*this->Bmat).writeToStreamDenseRow(out, i);
+         dynamic_cast<const SparseMatrix&>(*this->Bmat).write_to_streamDenseRow(out, i);
          out << "\n";
       }
    }
@@ -433,7 +433,7 @@ DistributedMatrix::writeToStreamDenseBordered(const StripMatrix& border_left, st
       MPI_Barrier(mpiComm);
       const StripMatrix& border_child = *border_left.children[it];
 
-      children[it]->writeToStreamDenseBorderedChild(border_child, child_stream, offset);
+      children[it]->write_to_streamDenseBorderedChild(border_child, child_stream, offset);
       offset += static_cast<int>(PIPS_MPIgetSum(children[it]->n_columns(), mpiComm));
 
       MPI_Barrier(mpiComm);
@@ -456,15 +456,15 @@ DistributedMatrix::writeToStreamDenseBordered(const StripMatrix& border_left, st
          std::ostringstream link_row_stream;
 
          if (my_rank == 0) {
-            dynamic_cast<const SparseMatrix&>(*border_left.last).writeToStreamDenseRow(link_row_stream, r);
+            dynamic_cast<const SparseMatrix&>(*border_left.last).write_to_streamDenseRow(link_row_stream, r);
             link_row_stream << "|\t";
-            dynamic_cast<const SparseMatrix&>(*this->Blmat).writeToStreamDenseRow(link_row_stream, r);
+            dynamic_cast<const SparseMatrix&>(*this->Blmat).write_to_streamDenseRow(link_row_stream, r);
             for (int i = 0; i < original_offset; ++i)
                link_row_stream << "\t";
          }
 
          for (const auto& it : children)
-            it->Blmat->writeToStreamDenseRow(link_row_stream, r);
+            it->Blmat->write_to_streamDenseRow(link_row_stream, r);
 
          const std::string children_link_row = link_row_stream.str();
          const std::string link_row = PIPS_MPIallgatherString(children_link_row, mpiComm);
@@ -518,7 +518,7 @@ void DistributedMatrix::writeDashedLineToStream(std::ostream& out, int offset) c
 
 }
 
-void DistributedMatrix::writeToStreamDense(std::ostream& out, int offset) const {
+void DistributedMatrix::write_to_streamDense(std::ostream& out, int offset) const {
    assert(hasSparseMatrices());
    assert(!children.empty());
 
@@ -535,7 +535,7 @@ void DistributedMatrix::writeToStreamDense(std::ostream& out, int offset) const 
       for (int i = 0; i < Bmat->n_rows(); ++i) {
          for (int j = 0; j < offset; ++j)
             out << "\t";
-         dynamic_cast<const SparseMatrix&>(*this->Bmat).writeToStreamDenseRow(out, i);
+         dynamic_cast<const SparseMatrix&>(*this->Bmat).write_to_streamDenseRow(out, i);
          out << "\n";
       }
    }
@@ -548,7 +548,7 @@ void DistributedMatrix::writeToStreamDense(std::ostream& out, int offset) const 
 
    for (const auto& it : children) {
       MPI_Barrier(mpiComm);
-      it->writeToStreamDenseChild(child_stream, offset);
+      it->write_to_streamDenseChild(child_stream, offset);
       offset += static_cast<int>(PIPS_MPIgetSum(it->n_rows(), mpiComm));
 
       MPI_Barrier(mpiComm);
@@ -568,13 +568,13 @@ void DistributedMatrix::writeToStreamDense(std::ostream& out, int offset) const 
          std::ostringstream link_row_stream;
 
          if (my_rank == 0) {
-            dynamic_cast<const SparseMatrix&>(*this->Blmat).writeToStreamDenseRow(link_row_stream, r);
+            dynamic_cast<const SparseMatrix&>(*this->Blmat).write_to_streamDenseRow(link_row_stream, r);
             for (int i = 0; i < original_offset; ++i)
                link_row_stream << "\t";
          }
 
          for (const auto& it : children)
-            it->Blmat->writeToStreamDenseRow(link_row_stream, r);
+            it->Blmat->write_to_streamDenseRow(link_row_stream, r);
 
          const std::string children_link_row = link_row_stream.str();
          const std::string link_row = PIPS_MPIallgatherString(children_link_row, mpiComm);
@@ -591,9 +591,9 @@ void DistributedMatrix::writeToStreamDense(std::ostream& out, int offset) const 
 }
 
 /** writes child matrix blocks, offset indicates the offset between A and B block. */
-void DistributedMatrix::writeToStreamDenseChild(std::ostream& out, int offset) const {
+void DistributedMatrix::write_to_streamDenseChild(std::ostream& out, int offset) const {
    if (Bmat->is_a(kDistributedMatrix))
-      dynamic_cast<DistributedMatrix&>(*Bmat).writeToStreamDense(out, offset);
+      dynamic_cast<DistributedMatrix&>(*Bmat).write_to_streamDense(out, offset);
       /// Border.mat | Amat | offset | Bmat ///
    else {
       assert(hasSparseMatrices());
@@ -601,10 +601,10 @@ void DistributedMatrix::writeToStreamDenseChild(std::ostream& out, int offset) c
       assert(Bmat->n_rows() == Amat->n_rows());
 
       for (int row = 0; row < Bmat->n_rows(); ++row) {
-         Amat->writeToStreamDenseRow(out, row);
+         Amat->write_to_streamDenseRow(out, row);
          for (int i = 0; i < offset; ++i)
             out << "\t";
-         Bmat->writeToStreamDenseRow(out, row);
+         Bmat->write_to_streamDenseRow(out, row);
          out << "\n";
       }
    }

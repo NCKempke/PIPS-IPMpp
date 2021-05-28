@@ -1064,7 +1064,7 @@ void DistributedVector<T>::scalarMult(T num) {
 }
 
 template<typename T>
-void DistributedVector<T>::writeToStream(std::ostream& out, int offset) const {
+void DistributedVector<T>::write_to_stream(std::ostream& out, int offset) const {
    const int my_rank = PIPS_MPIgetRank(mpiComm);
    const int world_size = PIPS_MPIgetSize(mpiComm);
 
@@ -1075,7 +1075,7 @@ void DistributedVector<T>::writeToStream(std::ostream& out, int offset) const {
       sout << "\t";
    sout << "--first--\n";
    if (first)
-      first->writeToStream(sout, offset + 1);
+      first->write_to_stream(sout, offset + 1);
    for (int i = 0; i < offset; ++i)
       sout << "\t";
    sout << "-------\n";
@@ -1086,7 +1086,7 @@ void DistributedVector<T>::writeToStream(std::ostream& out, int offset) const {
    }
 
    for (size_t it = 0; it < children.size(); it++)
-      children[it]->writeToStream(sout, offset + 1);
+      children[it]->write_to_stream(sout, offset + 1);
 
    const std::string my_row_part = sout.str();
    const std::string full_row = PIPS_MPIallgatherString(my_row_part, mpiComm);
@@ -1103,7 +1103,7 @@ void DistributedVector<T>::writeToStream(std::ostream& out, int offset) const {
       sout << "--last--\n";
 
       if (last)
-         last->writeToStream(sout, offset + 1);
+         last->write_to_stream(sout, offset + 1);
 
       for (int i = 0; i < offset; ++i)
          sout << "\t";

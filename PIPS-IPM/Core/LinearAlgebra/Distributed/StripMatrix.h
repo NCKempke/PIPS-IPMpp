@@ -56,8 +56,8 @@ public:
    [[nodiscard]] double inf_norm() const override;
    void scalarMult(double num) override;
 
-   void writeToStreamDense(std::ostream&) const override;
-   void writeToStreamDenseRow(std::ostream& out, int row) const override;
+   void write_to_streamDense(std::ostream&) const override;
+   void write_to_streamDenseRow(std::ostream& out, int row) const override;
    void writeDashedLineToStream(std::ostream& out) const override;
 
    void getRowMinMaxVec(bool getMin, bool initializeVec, const Vector<double>* colScaleVec, Vector<double>& minmaxVec) const override;
@@ -97,7 +97,7 @@ public:
    void matTransDMultMat(const Vector<double>&, SymmetricMatrix**) const override { assert("not implemented" && 0); };
    void matTransDinvMultMat(const Vector<double>&, SymmetricMatrix**) const override { assert("not implemented" && 0); };
    void symmetricScale(const Vector<double>&) override { assert("not implemented" && 0); };
-   void writeToStream(std::ostream&) const override { assert("not implemented" && 0); };
+   void write_to_stream(std::ostream&) const override { assert("not implemented" && 0); };
    void atPutSubmatrix(int, int, const AbstractMatrix&, int, int, int, int) override { assert("not implemented" && 0); };
    void atPutDense(int, int, const double*, int, int, int) override { assert("not implemented" && 0); };
    void atPutSpRow(int, const double[], int, const int[], int&) override { assert("not implemented" && 0); };
@@ -145,8 +145,8 @@ public:
    void transMult(double, Vector<double>&, double, const Vector<double>&) const override {};
    [[nodiscard]] double inf_norm() const override { return -std::numeric_limits<double>::infinity(); };
    void scalarMult(double) override {};
-   void writeToStream(std::ostream&) const override {};
-   void writeToStreamDenseRow(std::ostream&, int) const override {};
+   void write_to_stream(std::ostream&) const override {};
+   void write_to_streamDenseRow(std::ostream&, int) const override {};
    void writeDashedLineToStream(std::ostream&) const override {};
 
    void getRowMinMaxVec(bool, bool, const Vector<double>*, Vector<double>&) const override {};
