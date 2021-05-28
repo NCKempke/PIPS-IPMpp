@@ -227,7 +227,10 @@ void PrimalDualMehrotraStrategy::corrector_predictor(Problem& problem, Variables
 
    // figure out step lengths that produce a sufficient decrease
    auto[initial_primal_step_length, initial_dual_step_length] = this->get_step_lengths();
-   std::cout << "Step has length: " << step.inf_norm() << "\n";
+
+   const double step_inf_norm = step.inf_norm();
+   if (PIPS_MPIgetRank() == 0)
+      std::cout << "Step has length: " << step_inf_norm << "\n";
    this->filter_line_search.compute_acceptable_iterate(problem, iterate, step, residuals, initial_primal_step_length, initial_dual_step_length);
    // actually take the step and calculate the new mu
    //this->take_step(iterate, step);
