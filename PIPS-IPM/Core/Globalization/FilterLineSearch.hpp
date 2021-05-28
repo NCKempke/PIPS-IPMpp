@@ -27,6 +27,7 @@ public:
    /* ratio of step length update in ]0, 1[ */
    double backtracking_ratio;
    int number_iterations;
+   bool verbose{false};
 
    void initialize(Residuals& initial_residuals);
    double predicted_reduction(Problem& problem, Variables& direction, Variables& trial_iterate, double step_length);

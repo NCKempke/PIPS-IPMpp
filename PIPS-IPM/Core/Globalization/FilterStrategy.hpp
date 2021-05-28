@@ -35,6 +35,7 @@ public:
 
    Filter filter;
    FilterStrategyParameters parameters; /*!< Set of parameters */
+   double verbose{false};
 
    void initialize(Residuals& initial_residuals);
    bool check_acceptance(Variables& current_iterate, Residuals& current_residuals, Variables& trial_iterate, Residuals& trial_residuals,

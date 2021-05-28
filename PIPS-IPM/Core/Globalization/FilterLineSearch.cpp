@@ -22,7 +22,7 @@ void FilterLineSearch::initialize(Residuals& initial_residuals) {
 double FilterLineSearch::predicted_reduction(Problem& problem, Variables& direction, Variables& trial_iterate, double step_length) {
    // compute the directional derivative,
    double directional_derivative = trial_iterate.mu(); //problem.directionalDerivative(direction, mu);
-   std::cout << "Directional derivative = " << directional_derivative << "\n";
+   if (verbose) std::cout << "Directional derivative = " << directional_derivative << "\n";
 
    // scale it with the step length and return the (positive) predicted reduction
    return -step_length * directional_derivative;
@@ -35,7 +35,7 @@ void FilterLineSearch::compute_acceptable_iterate(Problem& problem, Variables& c
 
    while (!this->termination_(is_accepted)) {
       this->number_iterations++;
-      std::cout << "Line search current step lengths: " << primal_step_length << ", " << dual_step_length << "\n";
+      if (verbose) std::cout << "Line search current step lengths: " << primal_step_length << ", " << dual_step_length << "\n";
       // compute the trial iterate
       Variables trial_iterate(current_iterate);
       trial_iterate.saxpy_pd(direction, primal_step_length, dual_step_length);
@@ -58,7 +58,7 @@ void FilterLineSearch::compute_acceptable_iterate(Problem& problem, Variables& c
          /* decrease the step length */
          primal_step_length *= this->backtracking_ratio;
          dual_step_length *= this->backtracking_ratio;
-         std::cout << "Trial iterate rejected, decreasing the step length to " << primal_step_length << ", " << dual_step_length << "\n";
+         if (verbose) std::cout << "Trial iterate rejected, decreasing the step length to " << primal_step_length << ", " << dual_step_length << "\n";
       }
    }
    if (!is_accepted) {

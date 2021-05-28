@@ -66,8 +66,7 @@ public:
    std::unique_ptr<Vector<double>> slack_upper_bound_gap;
    std::unique_ptr<Vector<double>> slack_upper_bound_gap_dual;
 
-   /** constructor in which the data and variable pointers are set to
-       point to the given arguments */
+   /** constructor in which the data and variable pointers are set to point to the given arguments */
    Variables(std::unique_ptr<Vector<double>> x_in, std::unique_ptr<Vector<double>> s_in, std::unique_ptr<Vector<double>> y_in, std::unique_ptr<Vector<double>> z_in, std::unique_ptr<Vector<double>> v_in,
       std::unique_ptr<Vector<double>> gamma_in, std::unique_ptr<Vector<double>> w_in, std::unique_ptr<Vector<double>> phi_in, std::unique_ptr<Vector<double>> t_in, std::unique_ptr<Vector<double>> lambda_in, std::unique_ptr<Vector<double>> u_in,
       std::unique_ptr<Vector<double>> pi_in, std::shared_ptr<Vector<double>> ixlow_in, std::shared_ptr<Vector<double>> ixupp_in, std::shared_ptr<Vector<double>> iclow_in,
