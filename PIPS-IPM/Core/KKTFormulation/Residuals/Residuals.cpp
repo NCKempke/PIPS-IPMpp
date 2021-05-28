@@ -23,11 +23,10 @@ Residuals::Residuals(std::unique_ptr<Vector<double>> rQ_, std::unique_ptr<Vector
    rt{std::move(rt_)}, ru{std::move(ru_)}, rgamma{std::move(rgamma_)},
    rphi{std::move(rphi_)},
    rlambda{std::move(rlambda_)}, rpi{std::move(rpi_)} {
-
 }
 
-Residuals::Residuals(const Residuals& residuals) : mResidualNorm{residuals.mResidualNorm},
-   mDualityGap{residuals.mDualityGap},
+Residuals::Residuals(const Residuals& residuals) : residual_norm{residuals.residual_norm},
+   duality_gap{residuals.duality_gap},
    primal_objective{residuals.primal_objective}, dual_objective{residuals.dual_objective}, nx{residuals.nx},
    my{residuals.my}, mz{residuals.mz},
    ixupp{residuals.ixupp}, nxupp{residuals.nxupp}, ixlow{residuals.ixlow}, nxlow{residuals.nxlow},
@@ -39,7 +38,7 @@ Residuals::Residuals(const Residuals& residuals) : mResidualNorm{residuals.mResi
    rphi{residuals.rphi->cloneFull()},
    rlambda{residuals.rlambda->cloneFull()}, rpi{residuals.rpi->cloneFull()} {}
 
-double updateNormAndPrint(double norm, const Vector<double>& vec, bool print, std::string&& name) {
+double compute_inf_norm(const Vector<double>& vec, bool print, std::string&& name) {
    const double infnorm = vec.inf_norm();
 
    if (print) {
@@ -49,26 +48,25 @@ double updateNormAndPrint(double norm, const Vector<double>& vec, bool print, st
          std::cout << name << " inf_norm = " << infnorm << " | two_norm = " << twonorm << "\n";
    }
 
-   return std::max(norm, infnorm);
+   return infnorm;
 }
 
-void Residuals::evaluate(Problem& problem, Variables& iterate, bool print_resids) {
+void Residuals::evaluate(Problem& problem, Variables& iterate, bool print_residuals) {
 #ifdef TIMING
    print_resids = true;
 #endif
    const int myRank = PIPS_MPIgetRank();
 
-   double norm = 0.0, gap = 0.0;
-   this->primal_objective = 0.0;
-   this->dual_objective = 0.0;
-
+   this->residual_norm = 0.0;
+   this->duality_gap = 0.0;
    this->primal_objective = problem.objective_value(iterate);
+   this->dual_objective = 0.0;
 
    /*** rQ = Qx + g - A^T y - C^T z - gamma + phi ***/
    problem.objective_gradient(iterate, *this->lagrangian_gradient); // Qx + g
 
    // contribution calculate x^T (g + Qx) to duality gap */
-   gap = this->lagrangian_gradient->dotProductWith(*iterate.primals);
+   this->duality_gap = this->lagrangian_gradient->dotProductWith(*iterate.primals);
 
    problem.ATransmult(1.0, *this->lagrangian_gradient, -1.0, *iterate.equality_duals);
    problem.CTransmult(1.0, *this->lagrangian_gradient, -1.0, *iterate.inequality_duals);
@@ -80,24 +78,23 @@ void Residuals::evaluate(Problem& problem, Variables& iterate, bool print_resids
    if (nxupp > 0)
       this->lagrangian_gradient->axpy(1.0, *iterate.primal_upper_bound_gap_dual);
 
-   norm = updateNormAndPrint(norm, *this->lagrangian_gradient, print_resids, "rQ");
+   this->residual_norm = std::max(this->residual_norm, compute_inf_norm(*this->lagrangian_gradient, print_residuals, "rQ"));
 
    /*** rA = Ax - b ***/
    problem.getbA(*this->equality_residuals);
    problem.Amult(-1.0, *this->equality_residuals, 1.0, *iterate.primals);
-
-   norm = updateNormAndPrint(norm, *this->equality_residuals, print_resids, "rA");
+   this->residual_norm = std::max(this->residual_norm, compute_inf_norm(*this->equality_residuals, print_residuals, "rA"));
 
    // contribution -d^T y to duality gap
    const double ba_y = problem.bA->dotProductWith(*iterate.equality_duals);
-   gap -= ba_y;
+   this->duality_gap -= ba_y;
    this->dual_objective += ba_y;
 
    /*** rC = Cx - s ***/
    this->inequality_residuals->copyFrom(*iterate.slacks);
    problem.Cmult(-1.0, *this->inequality_residuals, 1.0, *iterate.primals);
 
-   norm = updateNormAndPrint(norm, *this->inequality_residuals, print_resids, "rC");
+   this->residual_norm = std::max(this->residual_norm, compute_inf_norm(*this->inequality_residuals, print_residuals, "rC"));
 
    /*** rz = z - lambda + pi ***/
    this->inequality_dual_residuals->copyFrom(*iterate.inequality_duals);
@@ -107,7 +104,7 @@ void Residuals::evaluate(Problem& problem, Variables& iterate, bool print_resids
    if (mcupp > 0)
       this->inequality_dual_residuals->axpy(1.0, *iterate.slack_upper_bound_gap_dual);
 
-   norm = updateNormAndPrint(norm, *this->inequality_dual_residuals, print_resids, "rz");
+   this->residual_norm = std::max(this->residual_norm, compute_inf_norm(*this->inequality_dual_residuals, print_residuals, "rz"));
 
    if (mclow > 0) {
       /*** rt = s - d - t ***/
@@ -118,10 +115,9 @@ void Residuals::evaluate(Problem& problem, Variables& iterate, bool print_resids
 
       // contribution - d^T lambda to duality gap
       const double bl_lambda = problem.bl->dotProductWith(*iterate.slack_lower_bound_gap_dual);
-      gap -= bl_lambda;
-      dual_objective += bl_lambda;
-
-      norm = updateNormAndPrint(norm, *this->rt, print_resids, "rt");
+      this->duality_gap -= bl_lambda;
+      this->dual_objective += bl_lambda;
+      this->residual_norm = std::max(this->residual_norm, compute_inf_norm(*this->rt, print_residuals, "rt"));
    }
 
    if (mcupp > 0) {
@@ -133,10 +129,9 @@ void Residuals::evaluate(Problem& problem, Variables& iterate, bool print_resids
 
       // contribution - f^T pi to duality gap
       const double bu_pi = problem.bu->dotProductWith(*iterate.slack_upper_bound_gap_dual);
-      gap += bu_pi;
-      dual_objective -= bu_pi;
-
-      norm = updateNormAndPrint(norm, *this->ru, print_resids, "ru");
+      this->duality_gap += bu_pi;
+      this->dual_objective -= bu_pi;
+      this->residual_norm = std::max(this->residual_norm, compute_inf_norm(*this->ru, print_residuals, "ru"));
    }
 
    if (nxlow > 0) {
@@ -146,12 +141,11 @@ void Residuals::evaluate(Problem& problem, Variables& iterate, bool print_resids
       this->rv->selectNonZeros(*ixlow);
       this->rv->axpy(-1.0, *iterate.primal_lower_bound_gap);
 
-      norm = updateNormAndPrint(norm, *this->rv, print_resids, "rv");
+      this->residual_norm = std::max(this->residual_norm, compute_inf_norm(*this->rv, print_residuals, "rv"));
       // contribution - lx^T gamma to duality gap
       const double blx_gamma = problem.blx->dotProductWith(*iterate.primal_lower_bound_gap_dual);
-      gap -= blx_gamma;
-      dual_objective += blx_gamma;
-
+      this->duality_gap -= blx_gamma;
+      this->dual_objective += blx_gamma;
    }
 
    if (nxupp > 0) {
@@ -161,67 +155,64 @@ void Residuals::evaluate(Problem& problem, Variables& iterate, bool print_resids
       this->rw->selectNonZeros(*ixupp);
       this->rw->axpy(1.0, *iterate.primal_upper_bound_gap);
 
-      norm = updateNormAndPrint(norm, *this->rw, print_resids, "rw");
+      this->residual_norm = std::max(this->residual_norm, compute_inf_norm(*this->rw, print_residuals, "rw"));
 
       // contribution + bu^T phi to duality gap
       const double bux_phi = problem.bux->dotProductWith(*iterate.primal_upper_bound_gap_dual);
-      gap += bux_phi;
-      dual_objective -= bux_phi;
+      this->duality_gap += bux_phi;
+      this->dual_objective -= bux_phi;
    }
 
-   mDualityGap = gap;
-   mResidualNorm = norm;
-
-   if (print_resids && myRank == 0) {
-      std::cout << "Norm residuals: " << mResidualNorm << "\tduality gap: " << mDualityGap << "\n";
+   if (print_residuals && myRank == 0) {
+      std::cout << "Norm residuals: " << this->residual_norm << "\tduality gap: " << this->duality_gap << "\n";
    }
 }
 
 double Residuals::recompute_residual_norm() {
-   mResidualNorm = 0.0;
+   residual_norm = 0.0;
 
    double componentNorm = 0.0;
    componentNorm = lagrangian_gradient->inf_norm();
 
-   if (componentNorm > mResidualNorm)
-      mResidualNorm = componentNorm;
+   if (componentNorm > residual_norm)
+      residual_norm = componentNorm;
 
    componentNorm = equality_residuals->inf_norm();
-   if (componentNorm > mResidualNorm)
-      mResidualNorm = componentNorm;
+   if (componentNorm > residual_norm)
+      residual_norm = componentNorm;
 
    componentNorm = inequality_residuals->inf_norm();
-   if (componentNorm > mResidualNorm)
-      mResidualNorm = componentNorm;
+   if (componentNorm > residual_norm)
+      residual_norm = componentNorm;
 
    if (mclow > 0) {
       componentNorm = rt->inf_norm();
-      if (componentNorm > mResidualNorm)
-         mResidualNorm = componentNorm;
+      if (componentNorm > residual_norm)
+         residual_norm = componentNorm;
    }
 
    if (mcupp > 0) {
       componentNorm = ru->inf_norm();
-      if (componentNorm > mResidualNorm)
-         mResidualNorm = componentNorm;
+      if (componentNorm > residual_norm)
+         residual_norm = componentNorm;
    }
 
    componentNorm = inequality_dual_residuals->inf_norm();
-   if (componentNorm > mResidualNorm)
-      mResidualNorm = componentNorm;
+   if (componentNorm > residual_norm)
+      residual_norm = componentNorm;
 
    if (nxlow > 0) {
       componentNorm = rv->inf_norm();
-      if (componentNorm > mResidualNorm)
-         mResidualNorm = componentNorm;
+      if (componentNorm > residual_norm)
+         residual_norm = componentNorm;
    }
 
    if (nxupp > 0) {
       componentNorm = rw->inf_norm();
-      if (componentNorm > mResidualNorm)
-         mResidualNorm = componentNorm;
+      if (componentNorm > residual_norm)
+         residual_norm = componentNorm;
    }
-   return mResidualNorm;
+   return residual_norm;
 }
 
 void Residuals::add_to_complementarity_residual(const Variables& variables, double alpha) {
@@ -317,8 +308,8 @@ int Residuals::valid_non_zero_pattern() {
 }
 
 void Residuals::copy(const Residuals& residuals) {
-   mResidualNorm = residuals.mResidualNorm;
-   mDualityGap = residuals.mDualityGap;
+   residual_norm = residuals.residual_norm;
+   duality_gap = residuals.duality_gap;
 
    nx = residuals.nx;
    my = residuals.my;
@@ -351,21 +342,21 @@ void Residuals::copy(const Residuals& residuals) {
    rpi->copyFrom(*residuals.rpi);
 }
 
-void Residuals::writeToStream(std::ostream& out) {
+void Residuals::write_to_stream(std::ostream& out) {
    /*
    printf("--------------rQ\n");
-   rQ->writeToStream(out);printf("---------------------------\n");
+   rQ->write_to_stream(out);printf("---------------------------\n");
 
    printf("rA\n");
-   rA->writeToStream(out);printf("---------------------------\n");
+   rA->write_to_stream(out);printf("---------------------------\n");
    */
    printf("rC\n");
-   inequality_residuals->writeToStream(out);
+   inequality_residuals->write_to_stream(out);
    printf("---------------------------\n");
 
 
    printf("rz\n");
-   inequality_dual_residuals->writeToStream(out);
+   inequality_dual_residuals->write_to_stream(out);
    printf("---------------------------\n");
 }
 

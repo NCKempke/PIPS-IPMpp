@@ -123,7 +123,7 @@ double DenseSymmetricMatrix::abminnormNonZero(double tol) const {
    return mStorage->abminnormNonZero(tol);
 }
 
-void DenseSymmetricMatrix::writeToStream(std::ostream& out) const {
+void DenseSymmetricMatrix::write_to_stream(std::ostream& out) const {
    for (int i = 0; i < mStorage->m; i++) {
       for (int j = 0; j < mStorage->n; j++)
          out << mStorage->M[i][j] << "\t";
@@ -132,8 +132,8 @@ void DenseSymmetricMatrix::writeToStream(std::ostream& out) const {
    }
 }
 
-void DenseSymmetricMatrix::writeToStreamDense(std::ostream& out) const {
-   writeToStream(out);
+void DenseSymmetricMatrix::write_to_streamDense(std::ostream& out) const {
+   write_to_stream(out);
 }
 
 void DenseSymmetricMatrix::fromGetDense(int row, int col, double* A, int lda, int rowExtent, int colExtent) const {

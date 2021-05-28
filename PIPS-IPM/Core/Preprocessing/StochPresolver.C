@@ -58,7 +58,7 @@ Problem* StochPresolver::presolve() {
    assert(original_problem.isRootNodeInSync());
    assert(presolve_data.getPresProb().isRootNodeInSync());
    if (print_problem)
-      original_problem.writeToStreamDense(std::cout);
+      original_problem.write_to_streamDense(std::cout);
 
    run_presolve_loop();
 
@@ -99,7 +99,7 @@ Problem* StochPresolver::presolve() {
    assert(finalPreDistributedQP->isRootNodeInSync());
 
    if (print_problem)
-      finalPreDistributedQP->writeToStreamDense(std::cout);
+      finalPreDistributedQP->write_to_streamDense(std::cout);
 
    if (write_presolved_problem) {
       this->write_presolved_problem_to_file();

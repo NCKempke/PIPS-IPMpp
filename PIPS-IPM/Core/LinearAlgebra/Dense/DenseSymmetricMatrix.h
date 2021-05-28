@@ -38,8 +38,8 @@ public:
 
    [[nodiscard]] double inf_norm() const override;
    [[nodiscard]] double abminnormNonZero(double tol) const override;
-   void writeToStream(std::ostream& out) const override;
-   void writeToStreamDense(std::ostream& out) const override;
+   void write_to_stream(std::ostream& out) const override;
+   void write_to_streamDense(std::ostream& out) const override;
 
    void fromGetDense(int row, int col, double* A, int lda, int rowExtent, int colExtent) const override;
 

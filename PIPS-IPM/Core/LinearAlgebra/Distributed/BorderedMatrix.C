@@ -252,12 +252,12 @@ bool BorderedMatrix::hasVecStructureForBorderedMat(const Vector<T>& vec, bool ro
    return true;
 }
 
-void BorderedMatrix::writeToStreamDense(std::ostream& out) const {
+void BorderedMatrix::write_to_streamDense(std::ostream& out) const {
    const int my_rank = PIPS_MPIgetRank(mpi_comm);
    const int size = PIPS_MPIgetSize(mpi_comm);
    const bool iAmDistrib = (size != 0);
 
-   inner_matrix->writeToStreamDenseBordered(*border_left, out,0);
+   inner_matrix->write_to_streamDenseBordered(*border_left, out,0);
 
    const auto mL = this->bottom_left_block->n_rows();
    if (mL > 0) {
@@ -270,10 +270,10 @@ void BorderedMatrix::writeToStreamDense(std::ostream& out) const {
 
          // process Zero collects all the information and then prints it.
          if (my_rank == 0) {
-            bottom_left_block->writeToStreamDenseRow(out, r);
+            bottom_left_block->write_to_streamDenseRow(out, r);
             out << "|\t";
          }
-         border_bottom->writeToStreamDenseRow(out, r);
+         border_bottom->write_to_streamDenseRow(out, r);
 
          if (my_rank == 0)
             out << "\n";

@@ -30,20 +30,18 @@ public:
 
    ~DistributedResiduals() override = default;
 
-   void permuteVec0Entries(const std::vector<unsigned int>& perm, bool resids_only = false);
+   void permute_vec_0_entries(const std::vector<unsigned int>& perm, bool resids_only = false);
 
-   void permuteEqLinkingEntries(const std::vector<unsigned int>& perm);
+   void permute_eq_linking_entries(const std::vector<unsigned int>& perm);
 
-   void permuteIneqLinkingEntries(const std::vector<unsigned int>& perm, bool resids_only = false);
+   void permute_ineq_linking_entries(const std::vector<unsigned int>& perm, bool resids_only = false);
 
-   [[nodiscard]] bool isRootNodeInSync() const;
+   [[nodiscard]] bool is_root_node_in_sync() const;
 
-   void collapseHierarchicalStructure(const DistributedQP& data_hier, const DistributedTree* tree_hier,
+   void collapse_hierarchical_structure(const DistributedQP& data_hier, const DistributedTree* tree_hier,
       std::shared_ptr<Vector<double>> ixlow_,
       std::shared_ptr<Vector<double>> ixupp_, std::shared_ptr<Vector<double>> iclow_,
       std::shared_ptr<Vector<double>> icupp_);
-
-protected:
 };
 
 #endif

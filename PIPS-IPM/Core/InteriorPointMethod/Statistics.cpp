@@ -29,8 +29,8 @@ Statistics::print(const Problem* problem, const Variables* variables, const Resi
       unscaled_residuals = scaler->get_unscaled_residuals(*residuals);
    }
 
-   const double residual_norm = unscaled_residuals->residual_norm();
-   const double duality_gap = unscaled_residuals->duality_gap();
+   const double residual_norm = unscaled_residuals->get_residual_norm();
+   const double duality_gap = unscaled_residuals->get_duality_gap();
 
    if (scaler)
       delete unscaled_residuals;

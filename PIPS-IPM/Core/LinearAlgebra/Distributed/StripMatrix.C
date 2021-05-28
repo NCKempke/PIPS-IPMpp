@@ -669,21 +669,21 @@ std::unique_ptr<GeneralMatrix> StripMatrix::shaveBottom(int n_rows) {
    return border;
 }
 
-void StripMatrix::writeToStreamDense(std::ostream& out) const {
+void StripMatrix::write_to_streamDense(std::ostream& out) const {
    assert(!is_vertical);
    for (int i = 0; i < m; ++i) {
-      writeToStreamDenseRow(out, i);
+      write_to_streamDenseRow(out, i);
       out << "\n";
    }
 }
 
-void StripMatrix::writeToStreamDenseRow(std::ostream& out, int row) const {
+void StripMatrix::write_to_streamDenseRow(std::ostream& out, int row) const {
    assert(!is_vertical);
 
    const int my_rank = PIPS_MPIgetRank(mpi_comm);
 
    std::ostringstream row_stream{};
-   first->writeToStreamDenseRow(row_stream, row);
+   first->write_to_streamDenseRow(row_stream, row);
 
    if (my_rank != 0) {
       row_stream.str("");
@@ -691,7 +691,7 @@ void StripMatrix::writeToStreamDenseRow(std::ostream& out, int row) const {
    }
 
    for (auto& child : children)
-      child->writeToStreamDenseRow(row_stream, row);
+      child->write_to_streamDenseRow(row_stream, row);
 
    const std::string my_row_part = row_stream.str();
    const std::string full_row = PIPS_MPIallgatherString(my_row_part, mpi_comm);
@@ -700,7 +700,7 @@ void StripMatrix::writeToStreamDenseRow(std::ostream& out, int row) const {
       out << full_row;
 
    if (last && my_rank == 0)
-      last->writeToStreamDenseRow(out, row);
+      last->write_to_streamDenseRow(out, row);
 }
 
 void StripMatrix::writeDashedLineToStream(std::ostream& out) const {

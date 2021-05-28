@@ -57,7 +57,7 @@ public:
       assert(false && "TODO: implement");
       return 0.0;
    };
-   void writeToStreamDense(std::ostream&) const override { assert("Not implemented" && 0); };
+   void write_to_streamDense(std::ostream&) const override { assert("Not implemented" && 0); };
    void symAtPutSpRow(int, const double[], int, const int[], int&) override { assert("Not implemented" && 0); };
    void symAtPutSubmatrix(int, int, const AbstractMatrix&, int, int, int, int) override { assert("Not implemented" && 0); };
    void atPutDiagonal(int, const Vector<double>&) override { assert("Not implemented" && 0); };
@@ -69,7 +69,7 @@ public:
    void symmetricScale(const Vector<double>&) override { assert("Not implemented" && 0); };
    void columnScale(const Vector<double>&) override { assert("Not implemented" && 0); };
    void rowScale(const Vector<double>&) override { assert("Not implemented" && 0); };
-   void writeToStream(std::ostream&) const override { assert("Not implemented" && 0); };
+   void write_to_stream(std::ostream&) const override { assert("Not implemented" && 0); };
    void putSparseTriple(const int[], int, const int[], const double[], int&) override { assert("Not implemented" && 0); };
 
    // TODO could be more general..

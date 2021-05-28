@@ -67,8 +67,8 @@ public:
    [[nodiscard]] double inf_norm() const override;
    [[nodiscard]] double abminnormNonZero(double tol) const override;
 
-   void writeToStream(std::ostream& out) const override;
-   void writeToStreamDense(std::ostream& out) const override;
+   void write_to_stream(std::ostream& out) const override;
+   void write_to_streamDense(std::ostream& out) const override;
 
    void atPutDiagonal(int idiag, const Vector<double>& v) override;
    void atAddDiagonal(int idiag, const Vector<double>& v) override;

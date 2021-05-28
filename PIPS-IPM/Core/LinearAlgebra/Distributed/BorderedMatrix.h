@@ -83,7 +83,7 @@ public:
    void getColMinMaxVec(bool getMin, bool initializeVec, const Vector<double>* rowScaleVec,
       Vector<double>& minmaxVec) const override;
 
-   void writeToStreamDense(std::ostream& out) const override;
+   void write_to_streamDense(std::ostream& out) const override;
 
    void addRowSums(Vector<double>& vec) const override;
 
@@ -97,7 +97,7 @@ public:
       return 0.0;
    };
 
-   void writeToStream(std::ostream&) const override { assert(0 && "not implemented"); }; // TODO : implement maybe?
+   void write_to_stream(std::ostream&) const override { assert(0 && "not implemented"); }; // TODO : implement maybe?
 
    void getDiagonal(Vector<double>&) const override {
       assert(0 && "not implemented");

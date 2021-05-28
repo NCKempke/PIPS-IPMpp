@@ -16,7 +16,7 @@ DistributedResiduals::DistributedResiduals(std::unique_ptr<Vector<double>> rQ_, 
    std::move(icupp_)) {}
 
 void
-DistributedResiduals::collapseHierarchicalStructure(const DistributedQP& data_hier, const DistributedTree* tree_hier,
+DistributedResiduals::collapse_hierarchical_structure(const DistributedQP& data_hier, const DistributedTree* tree_hier,
    std::shared_ptr<Vector<double>> ixlow_,
    std::shared_ptr<Vector<double>> ixupp_, std::shared_ptr<Vector<double>> iclow_,
    std::shared_ptr<Vector<double>> icupp_) {
@@ -80,7 +80,7 @@ DistributedResiduals::collapseHierarchicalStructure(const DistributedQP& data_hi
    icupp = std::move(icupp_);
 }
 
-void DistributedResiduals::permuteVec0Entries(const std::vector<unsigned int>& perm, bool resids_only) {
+void DistributedResiduals::permute_vec_0_entries(const std::vector<unsigned int>& perm, bool resids_only) {
    if (!resids_only) {
       dynamic_cast<DistributedVector<double>&>(*ixlow).permuteVec0Entries(perm);
       dynamic_cast<DistributedVector<double>&>(*ixupp).permuteVec0Entries(perm);
@@ -99,11 +99,11 @@ void DistributedResiduals::permuteVec0Entries(const std::vector<unsigned int>& p
    }
 }
 
-void DistributedResiduals::permuteEqLinkingEntries(const std::vector<unsigned int>& perm) {
+void DistributedResiduals::permute_eq_linking_entries(const std::vector<unsigned int>& perm) {
    dynamic_cast<DistributedVector<double>&>(*equality_residuals).permuteLinkingEntries(perm);
 }
 
-void DistributedResiduals::permuteIneqLinkingEntries(const std::vector<unsigned int>& perm, bool resids_only) {
+void DistributedResiduals::permute_ineq_linking_entries(const std::vector<unsigned int>& perm, bool resids_only) {
    if (!resids_only) {
       dynamic_cast<DistributedVector<double>&>(*iclow).permuteLinkingEntries(perm);
       dynamic_cast<DistributedVector<double>&>(*icupp).permuteLinkingEntries(perm);
@@ -123,7 +123,7 @@ void DistributedResiduals::permuteIneqLinkingEntries(const std::vector<unsigned 
    }
 }
 
-bool DistributedResiduals::isRootNodeInSync() const {
+bool DistributedResiduals::is_root_node_in_sync() const {
    bool in_sync = true;
    const int my_rank = PIPS_MPIgetRank(MPI_COMM_WORLD);
    if (!dynamic_cast<const DistributedVector<double>&>(*lagrangian_gradient).isRootNodeInSync()) {

@@ -109,9 +109,9 @@ public:
    [[nodiscard]] double inf_norm() const override;
    [[nodiscard]] double abminnormNonZero(double tol) const override;
 
-   void writeToStream(std::ostream& out) const override;
-   void writeToStreamDense(std::ostream& out) const override;
-   void writeToStreamDenseRow(std::ostream& out, int rowidx) const override;
+   void write_to_stream(std::ostream& out) const override;
+   void write_to_streamDense(std::ostream& out) const override;
+   void write_to_streamDenseRow(std::ostream& out, int rowidx) const override;
    void writeDashedLineToStream(std::ostream& out) const override;
 
    /** Make the elements in this matrix symmetric. The elements of interest

@@ -2537,7 +2537,7 @@ void qpgenSolve(PbData& data, int printx) {
 
    if (printx) {
       cout << "The x-solution is:\n";
-      vars->x->writeToStream(cout);
+      vars->x->write_to_stream(cout);
    }
 
    cout << " " << NX << " variables, " << MY << " equality constraints, " << MZ << " inequality constraints.\n";

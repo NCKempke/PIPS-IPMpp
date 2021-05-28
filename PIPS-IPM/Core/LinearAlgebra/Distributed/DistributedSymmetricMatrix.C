@@ -184,7 +184,7 @@ double DistributedSymmetricMatrix::abminnormNonZero(double tol) const {
    return min;
 }
 
-void DistributedSymmetricMatrix::writeToStreamDense(std::ostream& out) const {
+void DistributedSymmetricMatrix::write_to_streamDense(std::ostream& out) const {
    const int rank = PIPS_MPIgetRank(mpiComm);
    const int world_size = PIPS_MPIgetSize(mpiComm);
 
@@ -202,10 +202,10 @@ void DistributedSymmetricMatrix::writeToStreamDense(std::ostream& out) const {
    if (iAmDistrib && rank > 0)  // receive offset from previous process
       MPI_Recv(&offset, 1, MPI_INT, (rank - 1), 0, mpiComm, MPI_STATUS_IGNORE);
    else  //  !iAmDistrib || (iAmDistrib && rank == 0)
-      this->diag->writeToStreamDense(sout);
+      this->diag->write_to_streamDense(sout);
 
    for (const auto& it : children) {
-      it->writeToStreamDenseChild(sout, offset);
+      it->write_to_streamDenseChild(sout, offset);
       offset += static_cast<int>(it->diag->size());
    }
 
@@ -238,20 +238,20 @@ void DistributedSymmetricMatrix::writeToStreamDense(std::ostream& out) const {
    std::cout << " done\n";
 }
 
-void DistributedSymmetricMatrix::writeToStreamDenseChild(std::stringstream& out, int offset) const {
+void DistributedSymmetricMatrix::write_to_streamDenseChild(std::stringstream& out, int offset) const {
    if (diag->is_a(kSparseSymMatrix)) {
       for (int r = 0; r < diag->size(); r++) {
          if (border)
-            border->writeToStreamDenseRow(out, r);
+            border->write_to_streamDenseRow(out, r);
 
          for (int i = 0; i < offset; i++)
             out << '\t';
 
-         dynamic_cast<const SparseSymmetricMatrix&>(*diag).writeToStreamDenseRow(out, r);
+         dynamic_cast<const SparseSymmetricMatrix&>(*diag).write_to_streamDenseRow(out, r);
          out << "\n";
       }
    } else
-      dynamic_cast<const DistributedSymmetricMatrix&>(*diag).writeToStreamDense(out);
+      dynamic_cast<const DistributedSymmetricMatrix&>(*diag).write_to_streamDense(out);
 }
 
 

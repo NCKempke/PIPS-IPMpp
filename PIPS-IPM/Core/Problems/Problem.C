@@ -145,44 +145,44 @@ double Problem::datanorm() const {
 
 void Problem::print() {
    std::cout << "begin c\n";
-   g->writeToStream(std::cout);
+   g->write_to_stream(std::cout);
    std::cout << "end c\n";
 
    std::cout << "begin xlow\n";
-   blx->writeToStream(std::cout);
+   blx->write_to_stream(std::cout);
    std::cout << "end xlow\n";
    std::cout << "begin ixlow\n";
-   ixlow->writeToStream(std::cout);
+   ixlow->write_to_stream(std::cout);
    std::cout << "end ixlow\n";
 
    std::cout << "begin xupp\n";
-   bux->writeToStream(std::cout);
+   bux->write_to_stream(std::cout);
    std::cout << "end xupp\n";
    std::cout << "begin ixupp\n";
-   ixupp->writeToStream(std::cout);
+   ixupp->write_to_stream(std::cout);
    std::cout << "end ixupp\n";
    std::cout << "begin A\n";
 
-   A->writeToStream(std::cout);
+   A->write_to_stream(std::cout);
    std::cout << "end A\n";
    std::cout << "begin b\n";
-   bA->writeToStream(std::cout);
+   bA->write_to_stream(std::cout);
    std::cout << "end b\n";
    std::cout << "begin C\n";
-   C->writeToStream(std::cout);
+   C->write_to_stream(std::cout);
    std::cout << "end C\n";
 
    std::cout << "begin clow\n";
-   bl->writeToStream(std::cout);
+   bl->write_to_stream(std::cout);
    std::cout << "end clow\n";
    std::cout << "begin iclow\n";
-   iclow->writeToStream(std::cout);
+   iclow->write_to_stream(std::cout);
    std::cout << "end iclow\n";
 
    std::cout << "begin cupp\n";
-   bu->writeToStream(std::cout);
+   bu->write_to_stream(std::cout);
    std::cout << "end cupp\n";
    std::cout << "begin icupp\n";
-   icupp->writeToStream(std::cout);
+   icupp->write_to_stream(std::cout);
    std::cout << "end icupp\n";
 }

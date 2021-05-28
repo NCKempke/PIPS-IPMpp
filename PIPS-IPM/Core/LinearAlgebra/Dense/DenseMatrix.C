@@ -147,7 +147,7 @@ double DenseMatrix::abminnormNonZero(double tol) const {
    return mStorage->abminnormNonZero(tol);
 }
 
-void DenseMatrix::writeToStream(std::ostream& out) const {
+void DenseMatrix::write_to_stream(std::ostream& out) const {
    for (int i = 0; i < mStorage->m; i++) {
       for (int j = 0; j < mStorage->n; j++)
          out << mStorage->M[i][j] << "\t";
@@ -156,8 +156,8 @@ void DenseMatrix::writeToStream(std::ostream& out) const {
    }
 }
 
-void DenseMatrix::writeToStreamDense(std::ostream& out) const {
-   writeToStream(out);
+void DenseMatrix::write_to_streamDense(std::ostream& out) const {
+   write_to_stream(out);
 }
 
 void DenseMatrix::fromGetDense(int row, int col, double* A, int lda, int rowExtent, int colExtent) const {

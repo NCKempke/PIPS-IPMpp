@@ -14,7 +14,7 @@ FilterStrategy::FilterStrategy() : filter(), parameters({0.1, 0.999, 1e2, 1.25})
 
 void FilterStrategy::initialize(Residuals& initial_residuals) {
    /* set the filter upper bound */
-   double upper_bound = std::max(this->parameters.ubd, this->parameters.fact * initial_residuals.residual_norm());
+   double upper_bound = std::max(this->parameters.ubd, this->parameters.fact * initial_residuals.get_residual_norm());
    this->filter.upper_bound = upper_bound;
    return;
 }
@@ -30,27 +30,27 @@ bool FilterStrategy::check_acceptance(Variables& current_iterate, Residuals& cur
    double trial_mu = trial_iterate.mu();
    const double trial_feasibility = trial_residuals.feasibility_measure(trial_mu);
    const double trial_optimality = trial_residuals.optimality_measure(trial_mu);
-   std::cout << "Current mu: " << current_mu << "\n";
-   std::cout << "Trial mu: " << trial_mu << "\n";
+   if (verbose) std::cout << "Current mu: " << current_mu << "\n";
+   if (verbose) std::cout << "Trial mu: " << trial_mu << "\n";
 
-   std::cout << "Filter strategy: feasibility " << trial_feasibility << " vs " << current_feasibility << "\n";
-   std::cout << "Filter strategy: objective " << trial_optimality << " vs " << current_optimality << "\n";
+   if (verbose) std::cout << "Filter strategy: feasibility " << trial_feasibility << " vs " << current_feasibility << "\n";
+   if (verbose) std::cout << "Filter strategy: objective " << trial_optimality << " vs " << current_optimality << "\n";
 
    bool accept = false;
    /* check acceptance */
    bool filter_acceptable = this->filter.accept(trial_feasibility, trial_optimality);
    if (filter_acceptable) {
-      std::cout << "Filter acceptable\n";
+      if (verbose) std::cout << "Filter acceptable\n";
       // check acceptance wrt current x (h,f)
       filter_acceptable = this->filter.improves_current_iterate(current_feasibility, current_optimality, trial_feasibility, trial_optimality);
       if (filter_acceptable) {
-         std::cout << "Current-iterate acceptable\n";
+         if (verbose) std::cout << "Current-iterate acceptable\n";
          double actual_reduction = this->filter.compute_actual_reduction(current_optimality, current_feasibility, trial_optimality);
-         std::cout << "Filter predicted reduction: " << predicted_reduction << "\n";
-         std::cout << "Filter actual reduction: " << actual_reduction << "\n";
+         if (verbose) std::cout << "Filter predicted reduction: " << predicted_reduction << "\n";
+         if (verbose) std::cout << "Filter actual reduction: " << actual_reduction << "\n";
 
-         std::cout << "Switching condition: " << predicted_reduction << " >= " << this->parameters.Delta * std::pow(current_feasibility, 2) << " ?\n";
-         std::cout << "Armijo condition: " << actual_reduction << " >= "
+         if (verbose) std::cout << "Switching condition: " << predicted_reduction << " >= " << this->parameters.Delta * std::pow(current_feasibility, 2) << " ?\n";
+         if (verbose) std::cout << "Armijo condition: " << actual_reduction << " >= "
                    << this->parameters.Sigma * step_length * std::max(0., predicted_reduction - 1e-9) << " ?\n";
 
          /* switching condition: predicted reduction is not promising, accept */
@@ -63,7 +63,7 @@ bool FilterStrategy::check_acceptance(Variables& current_iterate, Residuals& cur
             accept = true;
          }
          else {
-            std::cout << "Armijo condition not satisfied\n";
+            if (verbose) std::cout << "Armijo condition not satisfied\n";
          }
       }
    }
