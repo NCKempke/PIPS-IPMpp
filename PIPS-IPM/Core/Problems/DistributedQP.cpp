@@ -2613,6 +2613,7 @@ DistributedQP::cleanUpPresolvedData(const DistributedVector<int>& rowNnzVecA, co
    auto& Q_stoch = dynamic_cast<DistributedSymmetricMatrix&>(*Q);
    // todo only works if Q is empty - not existent
    Q_stoch.deleteEmptyRowsCols(colNnzVec);
+   Q_stoch.recomputeSize();
 
    // clean up equality system
    auto& A_stoch = dynamic_cast<DistributedMatrix&>(*A);

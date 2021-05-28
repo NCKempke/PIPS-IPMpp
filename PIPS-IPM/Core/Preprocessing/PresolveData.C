@@ -3810,21 +3810,30 @@ void PresolveData::transform_inequalities_into_equalities(int node)
 }
 
 void PresolveData::transform_node_inequalities_into_equalities(int node) {
+   assert(0 <= node && node < nChildren);
    if(nodeIsDummy(node))
       return;
 
    /* take c_mat and d_mat and append them to a_mat and b_mat + add slack variables to the system with bounds = bounds of inequalities */
    SparseMatrix& a_mat = *getSparseGenMatrixFromStochMat(getSystemMatrix(EQUALITY_SYSTEM), node, A_MAT);
    SparseMatrix& b_mat = *getSparseGenMatrixFromStochMat(getSystemMatrix(EQUALITY_SYSTEM), node, B_MAT);
+   SparseMatrix& bl_mat = *getSparseGenMatrixFromStochMat(getSystemMatrix(EQUALITY_SYSTEM), node, BL_MAT);
    SparseMatrix& c_mat = *getSparseGenMatrixFromStochMat(getSystemMatrix(INEQUALITY_SYSTEM), node, A_MAT);
    SparseMatrix& d_mat = *getSparseGenMatrixFromStochMat(getSystemMatrix(INEQUALITY_SYSTEM), node, B_MAT);
+   SparseMatrix& dl_mat = *getSparseGenMatrixFromStochMat(getSystemMatrix(INEQUALITY_SYSTEM), node, BL_MAT);
 
    const int n_new_slack_variables = c_mat.n_rows();
 
-   d_mat.append_negative_identity_matrix();
+   d_mat.append_negative_identity_matrix_columns();
+   dl_mat.append_empty_columns(n_new_slack_variables);
 
-   a_mat.append_matrix(b_mat);
-   b_mat.append_matrix(d_mat);
+   assert(a_mat.n_columns() == c_mat.n_columns());
+   a_mat.append_matrix_rows(c_mat);
+   b_mat.append_matrix_rows(d_mat);
+   bl_mat.append_empty_columns(n_new_slack_variables);
+
+   c_mat.clear_matrix();
+   d_mat.clear_matrix();
 
    /* extend the non_zeros vectors and recompute non_zeros in the equality matrix - set inequalities to zero */
    SimpleVector<int>& nnzs_row_A = getSimpleVecFromRowStochVec(getNnzsRow(EQUALITY_SYSTEM), node, false);
@@ -3838,7 +3847,7 @@ void PresolveData::transform_node_inequalities_into_equalities(int node) {
    nnzs_col.appendToBack(n_new_slack_variables, 1);
 
    /* extend variable bounds and row bounds */
-   SimpleVector<double> bA = getSimpleVecFromRowStochVec(*presProb->bA, node, false);
+   SimpleVector<double>& bA = getSimpleVecFromRowStochVec(*presProb->bA, node, false);
    bA.appendToBack(n_new_slack_variables, 0.0);
 
    SimpleVector<double>& ixlow = getSimpleVecFromColStochVec(*presProb->ixlow, node);
@@ -3856,15 +3865,19 @@ void PresolveData::transform_node_inequalities_into_equalities(int node) {
    ixupp.appendToBack(icupp);
    xupp.appendToBack(cupp);
 
-   /* extend the objective and Q */
+   /* extend the objective and Q_diag */
    SimpleVector<double>& obj = getSimpleVecFromColStochVec(*presProb->g, node);
    obj.appendToBack(n_new_slack_variables, 0.0);
 
-   SparseSymmetricMatrix& Q = getSparseSymmetricMatrixFromStochMat(dynamic_cast<DistributedSymmetricMatrix&>(*presProb->Q), node);
-   Q.append_empty_diagonal(n_new_slack_variables);
+   SparseSymmetricMatrix& Q_diag = getSparseSymmetricDiagFromStochMat(dynamic_cast<DistributedSymmetricMatrix&>(*presProb->Q), node);
+   SparseMatrix& Q_border = getSparseBorderFromStochMat(dynamic_cast<DistributedSymmetricMatrix&>(*presProb->Q), node);
+   Q_diag.append_empty_diagonal(n_new_slack_variables);
+   Q_border.append_empty_rows(n_new_slack_variables);
 }
 
 void PresolveData::transform_root_inequalities_into_equalities(){
+
+   
    return;
    assert(false && "TODO: implement");
 }

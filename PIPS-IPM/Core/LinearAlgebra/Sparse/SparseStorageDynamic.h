@@ -103,8 +103,11 @@ public:
    void clearRow(int row);
    void clearCol(int col);
 
-   void append_matrix(const SparseStorageDynamic& other);
-   void append_negative_identity_matrix();
+   void clear_matrix();
+   void append_matrix_rows(const SparseStorageDynamic& other);
+   void append_empty_columns(int n_columns);
+   void append_empty_rows(int n_rows);
+   void append_negative_identity_matrix_columns();
    void appendRow(const SparseStorageDynamic& storage, int row);
 
    double rowTimesVec(const double* vec, int length, int row) const;

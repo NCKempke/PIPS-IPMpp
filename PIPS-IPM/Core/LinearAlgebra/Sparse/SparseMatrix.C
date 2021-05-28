@@ -613,6 +613,14 @@ void SparseMatrix::initStaticStorageFromDynamic(const Vector<int>& rowNnzVec, co
    const auto& rowNnzVecSimple = dynamic_cast<const SimpleVector<int>&>(rowNnzVec);
    const auto* colNnzVecSimple = dynamic_cast<const SimpleVector<int>*>(colNnzVec);
 
+   std::cout << mStorageDynamic->n_rows() << " " << rowNnzVec.length() << std::endl;
+   assert(mStorageDynamic->n_rows() == rowNnzVec.length());
+   if(colNnzVec)
+   {
+      std::cout << mStorageDynamic->n_columns() << " " << colNnzVec->length() << std::endl;
+      assert(mStorageDynamic->n_columns() == colNnzVec->length());
+   }
+
    mStorageDynamic->restoreOrder();
    mStorage = mStorageDynamic->getStaticStorage(rowNnzVecSimple.elements(),
       (colNnzVecSimple == nullptr) ? nullptr : colNnzVecSimple->elements());
@@ -768,20 +776,53 @@ void SparseMatrix::permuteCols(const std::vector<unsigned int>& permvec) {
       m_Mt->mStorage->permuteRows(permvec);
 }
 
-void SparseMatrix::append_matrix(const SparseMatrix& other) {
+void SparseMatrix::clear_matrix() {
+   assert(hasDynamicStorage());
+   assert(!hasTransposed());
+
+   mStorageDynamic->clear_matrix();
+}
+
+void SparseMatrix::append_matrix_rows(const SparseMatrix& other) {
    assert(hasDynamicStorage());
    assert(other.hasDynamicStorage());
    assert(!hasTransposed());
    assert(!other.hasTransposed());
 
-   mStorageDynamic->append_matrix(other.getStorageDynamic());
+   mStorageDynamic->append_matrix_rows(other.getStorageDynamic());
 }
 
-void SparseMatrix::append_negative_identity_matrix() {
+void SparseMatrix::append_empty_rows(int n_rows) {
+   assert(!hasTransposed());
+
+   if (hasDynamicStorage()) {
+      mStorageDynamic->append_empty_rows(n_rows);
+   } else {
+      const int old_m = mStorage->m;
+
+      // TODO : move to storage + split into add rows add cols
+      mStorage->m += n_rows;
+
+      int* new_krowM = new int[mStorage->m + 1];
+      std::copy(mStorage->krowM, mStorage->krowM + old_m + 1, new_krowM);
+      std::fill(new_krowM + old_m, new_krowM + mStorage->m + 1, mStorage->krowM[old_m]);
+      std::swap(new_krowM, mStorage->krowM);
+      delete[] new_krowM;
+   }
+}
+
+void SparseMatrix::append_empty_columns(int n_columns) {
    assert(hasDynamicStorage());
    assert(!hasTransposed());
 
-   mStorageDynamic->append_negative_identity_matrix();
+   mStorageDynamic->append_empty_columns(n_columns);
+}
+
+void SparseMatrix::append_negative_identity_matrix_columns() {
+   assert(hasDynamicStorage());
+   assert(!hasTransposed());
+
+   mStorageDynamic->append_negative_identity_matrix_columns();
 }
 
 int SparseMatrix::appendRow(const SparseMatrix& matrix_row, int row) {

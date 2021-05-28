@@ -236,8 +236,11 @@ public:
 
    void freeDynamicStorage();
 
-   void append_matrix(const SparseMatrix& other);
-   void append_negative_identity_matrix();
+   void clear_matrix();
+   void append_matrix_rows(const SparseMatrix& other);
+   void append_negative_identity_matrix_columns();
+   void append_empty_columns(int n_columns);
+   void append_empty_rows(int n_columns);
 
    int appendRow(const SparseMatrix& matrix_row, int row);
    int appendCol(const SparseMatrix& matrix_col, int col);

@@ -14,6 +14,7 @@
 #include <vector>
 
 SparseMatrix* getSparseGenMatrixFromStochMat(const DistributedMatrix& sMat, int smat_node, BlockType block_type);
-SparseSymmetricMatrix& getSparseSymmetricMatrixFromStochMat(const DistributedSymmetricMatrix& sMat, int smat_node);
+SparseSymmetricMatrix& getSparseSymmetricDiagFromStochMat(const DistributedSymmetricMatrix& sMat, int smat_node);
+SparseMatrix& getSparseBorderFromStochMat(const DistributedSymmetricMatrix& sMat, int smat_node);
 
 #endif /* DISTRIBUTEDMATRIXUTILITIES_H */

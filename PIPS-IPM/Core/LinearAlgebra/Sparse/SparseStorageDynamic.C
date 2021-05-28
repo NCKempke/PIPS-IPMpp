@@ -165,8 +165,8 @@ std::unique_ptr<SparseStorage> SparseStorageDynamic::getStaticStorage(const int*
    // empty?
    if (n <= 0) {
       assert(len == 0);
-      assert(colNnz == nullptr);
-      assert(rowNnz != nullptr);
+      assert(!colNnz);
+      assert(rowNnz);
 
       for (int r = 0; r < m; r++)
          if (rowNnz[r] != 0.0)
@@ -175,14 +175,11 @@ std::unique_ptr<SparseStorage> SparseStorageDynamic::getStaticStorage(const int*
       return std::make_unique<SparseStorage>(m_static, n, len);
    }
 
-   assert(rowNnz != nullptr && colNnz != nullptr);
+   assert(rowNnz);
+   assert(colNnz);
 
    // get m, n, len for new storage
-
-   bool* cols = new bool[n];
-
-   for (int i = 0; i < n; i++)
-      cols[i] = false;
+   std::vector<bool> cols(n, false);
 
    int n_static = 0;
    int len_static = 0;
@@ -263,7 +260,6 @@ std::unique_ptr<SparseStorage> SparseStorageDynamic::getStaticStorage(const int*
          krowM_static[rowcount++] = nnz_static_old;
    }
 
-   delete[] cols;
    delete[] colsmap;
 
    assert(nnz_static == len_static);
@@ -549,7 +545,15 @@ void SparseStorageDynamic::clearCol(int col) {
    }
 }
 
-void SparseStorageDynamic::append_matrix(const SparseStorageDynamic& other) {
+void SparseStorageDynamic::clear_matrix() {
+   len_free = len;
+
+   std::fill(rowptr, rowptr + m + 1, ROWPTRS{0,0});
+   std::fill(M, M + len, 0.0);
+   std::fill(jcolM, jcolM + len, 0);
+}
+
+void SparseStorageDynamic::append_matrix_rows(const SparseStorageDynamic& other) {
    this->n = std::max(this->n_columns(), other.n_columns());
    const int n_values_other = other.getNVals();
    this->extend_at_end_by_n_rows(other.n_rows());
@@ -570,10 +574,23 @@ void SparseStorageDynamic::append_matrix(const SparseStorageDynamic& other) {
    len_free -= n_values_other;
 }
 
-void SparseStorageDynamic::append_negative_identity_matrix() {
+void SparseStorageDynamic::append_empty_columns(int n_columns){
+   this->n += n_columns;
+}
+
+void SparseStorageDynamic::append_empty_rows(int n_rows) {
+   extend_at_end_by_n_rows(n_rows);
+   assert(m <= m_len);
+
+   assert(rowptr[m].start == rowptr[m].end);
+   std::fill(rowptr + m + 1, rowptr + m + n_rows + 1, rowptr[m]);
+   this->m += n_rows;
+}
+
+void SparseStorageDynamic::append_negative_identity_matrix_columns() {
    int col = this->n;
 
-   this->n += this->n_rows();
+   append_empty_columns(this->n_rows());
 
    for (int row = 0; row < this->n_rows(); ++row) {
       const int end_row = rowptr[row].end;

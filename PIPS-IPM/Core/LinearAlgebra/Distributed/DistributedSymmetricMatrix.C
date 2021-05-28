@@ -34,7 +34,7 @@ DistributedSymmetricMatrix::DistributedSymmetricMatrix(long long global_n, int l
 
 void DistributedSymmetricMatrix::AddChild(std::shared_ptr<DistributedSymmetricMatrix> child) {
    child->parent = this;
-   assert(this->border == nullptr);
+   assert(!this->border);
 
    if (!child->border)
       child->border = std::make_unique<SparseMatrix>(static_cast<int>(child->diag->size()), static_cast<int>(this->diag->size()), 0);
@@ -54,6 +54,7 @@ std::unique_ptr<SymmetricMatrix> DistributedSymmetricMatrix::clone() const {
       clone->n += child->n;
    }
 
+   std::cout << size() << " " << clone->size() << std::endl;
    assert(size() == clone->size());
    return clone;
 }

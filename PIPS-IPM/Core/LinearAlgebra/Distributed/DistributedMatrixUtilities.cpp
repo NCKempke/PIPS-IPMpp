@@ -31,15 +31,28 @@ SparseMatrix* getSparseGenMatrixFromStochMat(const DistributedMatrix& sMat, int 
    return nullptr;
 }
 
-SparseSymmetricMatrix& getSparseSymmetricMatrixFromStochMat(const DistributedSymmetricMatrix& sMat, int smat_node)
+SparseSymmetricMatrix& getSparseSymmetricDiagFromStochMat(const DistributedSymmetricMatrix& sMat, int smat_node)
 {
    if (smat_node == -1) {
       assert(sMat.diag);
+      assert(!sMat.border);
       return dynamic_cast<SparseSymmetricMatrix&>(*sMat.diag);
    } else {
       assert(0 <= smat_node && smat_node <= static_cast<int>(sMat.children.size()));
       assert(sMat.children[smat_node]);
+
       assert(sMat.children[smat_node]->diag);
-      return dynamic_cast<SparseSymmetricMatrix&>(*sMat.children[smat_node]);
+      return dynamic_cast<SparseSymmetricMatrix&>(*sMat.children[smat_node]->diag);
    }
 }
+
+
+SparseMatrix& getSparseBorderFromStochMat(const DistributedSymmetricMatrix& sMat, int smat_node)
+{
+   assert(0 <= smat_node && smat_node <= static_cast<int>(sMat.children.size()));
+   assert(sMat.children[smat_node]);
+
+   assert(sMat.children[smat_node]->border);
+   return dynamic_cast<SparseMatrix&>(*sMat.children[smat_node]->border);
+}
+

@@ -281,7 +281,7 @@ void SparseSymmetricMatrix::append_empty_diagonal(int n_values) {
 
    int* new_krowM = new int[mStorage->m + 1];
    std::copy(mStorage->krowM, mStorage->krowM + old_m + 1, new_krowM);
-   std::fill(new_krowM + old_m + 1, new_krowM + mStorage->m + 2, mStorage->krowM[mStorage->m]);
+   std::fill(new_krowM + old_m, new_krowM + mStorage->m + 1, mStorage->krowM[old_m]);
    std::swap(new_krowM, mStorage->krowM);
    delete[] new_krowM;
 }
