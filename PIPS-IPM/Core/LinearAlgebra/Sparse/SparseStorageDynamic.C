@@ -438,7 +438,10 @@ void SparseStorageDynamic::restoreOrder() {
       std::vector<std::pair<int, double> > pairVector;
 
       for (int j = start; j < end; j++)
+      {
+         assert(j < len);
          pairVector.emplace_back(jcolM[j], M[j]);
+      }
 
       std::sort(pairVector.begin(), pairVector.end(), first_is_smaller());
       for (int j = start; j < end; j++) {
@@ -555,18 +558,20 @@ void SparseStorageDynamic::clear_matrix() {
 
 void SparseStorageDynamic::append_matrix_rows(const SparseStorageDynamic& other) {
    this->n = std::max(this->n_columns(), other.n_columns());
-   const int n_values_other = other.getNVals();
+   const int n_values_other = other.len;
    this->extend_at_end_by_n_rows(other.n_rows());
-   this->extend_at_end_by_n_values(n_values_other);
+   this->extend_at_end_by_n_values(n_values_other + 1);
 
    const int row_offset = rowptr[m].end;
    for (int row = 0; row <= other.n_rows(); ++row) {
       assert(m + row < m_len);
 
-      rowptr[m + row].start = other.rowptr[m].start + row_offset;
-      rowptr[m + row].end = other.rowptr[m].end + row_offset;
+      rowptr[m + row].start = other.rowptr[row].start + row_offset;
+      rowptr[m + row].end = other.rowptr[row].end + row_offset;
+      assert(rowptr[m + row].end < len);
    }
    this->m += other.n_rows();
+   assert(rowptr[m].start == rowptr[m].end);
 
    std::copy(other.jcolM, other.jcolM + n_values_other, this->jcolM + row_offset);
    std::copy(other.M, other.M + n_values_other, this->M + row_offset);
@@ -587,9 +592,9 @@ void SparseStorageDynamic::append_empty_rows(int n_rows) {
    this->m += n_rows;
 }
 
-void SparseStorageDynamic::append_negative_identity_matrix_columns() {
+void SparseStorageDynamic::append_diagonal_matrix_columns(const std::vector<int>& diagonal) {
+   assert(static_cast<size_t>(this->n_rows()) == diagonal.size());
    int col = this->n;
-
    append_empty_columns(this->n_rows());
 
    for (int row = 0; row < this->n_rows(); ++row) {
@@ -606,8 +611,10 @@ void SparseStorageDynamic::append_negative_identity_matrix_columns() {
       /* insert entry */
       const int new_col_idx = rowptr[row].end;
       ++rowptr[row].end;
-      jcolM[new_col_idx] = col;
-      M[new_col_idx] = -1;
+      assert(rowptr[row].end < len);
+      assert(col + row < this->n_columns());
+      jcolM[new_col_idx] = col + row;
+      M[new_col_idx] = diagonal[row];
       --len_free;
    }
 }
@@ -801,7 +808,7 @@ void SparseStorageDynamic::rebuildSpareStructure(int guaranteed_spare) {
 
    assert((len - len_free) * spareRatio + m * guaranteed_spare < std::numeric_limits<int>::max());
 
-   const int size_for_spare = static_cast<int>((len - len_free) * (1.0 + spareRatio)) + m * guaranteed_spare;
+   const int size_for_spare = static_cast<int>((len - len_free) * (1.0 + spareRatio)) + m * guaranteed_spare + 1;
 
    while (size_for_spare > len_free)
       extendStorageValues();

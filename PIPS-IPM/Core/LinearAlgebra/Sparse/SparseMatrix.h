@@ -238,7 +238,7 @@ public:
 
    void clear_matrix();
    void append_matrix_rows(const SparseMatrix& other);
-   void append_negative_identity_matrix_columns();
+   void append_diagonal_matrix_columns(const std::vector<int>& diagonal);
    void append_empty_columns(int n_columns);
    void append_empty_rows(int n_columns);
 

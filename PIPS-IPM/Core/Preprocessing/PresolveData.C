@@ -3824,7 +3824,14 @@ void PresolveData::transform_node_inequalities_into_equalities(int node) {
 
    const int n_new_slack_variables = c_mat.n_rows();
 
-   d_mat.append_negative_identity_matrix_columns();
+   std::vector<int> diagonal_for_identity(n_new_slack_variables, 0);
+   for (int i = 0; i < d_mat.n_rows(); ++i) {
+      if (!wasRowRemoved(INDEX(ROW, node, i, false, INEQUALITY_SYSTEM))) {
+         diagonal_for_identity[i] = -1;
+      }
+   }
+
+   d_mat.append_diagonal_matrix_columns(diagonal_for_identity);
    dl_mat.append_empty_columns(n_new_slack_variables);
 
    assert(a_mat.n_columns() == c_mat.n_columns());
@@ -3840,11 +3847,13 @@ void PresolveData::transform_node_inequalities_into_equalities(int node) {
    SimpleVector<int>& nnzs_row_C = getSimpleVecFromRowStochVec(getNnzsRow(INEQUALITY_SYSTEM), node, false);
    SimpleVector<int>& nnzs_col = getSimpleVecFromColStochVec(getNnzsCol(), node);
 
-   nnzs_row_C.addConstant(1);
+   std::transform(diagonal_for_identity.begin(), diagonal_for_identity.end(), diagonal_for_identity.begin(), static_cast<double (*)(double)>(&std::abs));
+   SimpleVector<int> nonzero_pattern_slacks(diagonal_for_identity.data(), diagonal_for_identity.size());
+   nnzs_row_C.add_constant(1, nonzero_pattern_slacks);
    nnzs_row_A.appendToBack(nnzs_row_C);
    nnzs_row_C.setToZero();
 
-   nnzs_col.appendToBack(n_new_slack_variables, 1);
+   nnzs_col.appendToBack(nonzero_pattern_slacks);
 
    /* extend variable bounds and row bounds */
    SimpleVector<double>& bA = getSimpleVecFromRowStochVec(*presProb->bA, node, false);

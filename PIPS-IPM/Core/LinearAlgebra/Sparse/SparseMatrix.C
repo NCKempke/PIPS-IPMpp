@@ -814,11 +814,12 @@ void SparseMatrix::append_empty_columns(int n_columns) {
    mStorageDynamic->append_empty_columns(n_columns);
 }
 
-void SparseMatrix::append_negative_identity_matrix_columns() {
+void SparseMatrix::append_diagonal_matrix_columns(const std::vector<int>& diagonal) {
    assert(hasDynamicStorage());
    assert(!hasTransposed());
 
-   mStorageDynamic->append_negative_identity_matrix_columns();
+   assert(static_cast<size_t>(this->n_rows()) == diagonal.size());
+   mStorageDynamic->append_diagonal_matrix_columns(diagonal);
 }
 
 int SparseMatrix::appendRow(const SparseMatrix& matrix_row, int row) {

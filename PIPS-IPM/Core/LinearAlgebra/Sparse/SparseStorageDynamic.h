@@ -107,7 +107,7 @@ public:
    void append_matrix_rows(const SparseStorageDynamic& other);
    void append_empty_columns(int n_columns);
    void append_empty_rows(int n_rows);
-   void append_negative_identity_matrix_columns();
+   void append_diagonal_matrix_columns(const std::vector<int>& diagonal);
    void appendRow(const SparseStorageDynamic& storage, int row);
 
    double rowTimesVec(const double* vec, int length, int row) const;
