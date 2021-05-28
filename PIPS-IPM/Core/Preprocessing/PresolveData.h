@@ -334,6 +334,13 @@ private:
    void transform_linking_inequalities_into_equalitites();
    void transform_a0_block_inequalities_into_equalities();
    void transform_node_inequalities_into_equalities(int node);
+
+   void append_bounds_inequalities_to_equalities_transformation(int node, int n_slack_variables);
+   void append_new_slacks_to_objective_vector(int node, int n_new_slack_variables);
+   void extend_q_matrix_by_new_variables(int node, int n_variables);
+   void adjust_nonzeros_after_inequalities_to_equalities_transformation(int node, const SimpleVector<int>& nonzero_pattern_slacks);
+   void transform_matrices_inequalities_into_equalities(int node, int n_new_slack_variables, const std::vector<int>& diagonal_for_identity);
+
 public:
    void writeRowLocalToStreamDense(std::ostream& out, const INDEX& row) const;
    void printRowColStats() const;
