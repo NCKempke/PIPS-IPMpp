@@ -102,6 +102,7 @@ private:
    const double INF_NEG;
    const double INF_POS;
 
+   bool transformed_inequalities_to_equalities{false};
 
    enum ReductionType {
       FIXED_COLUMN = 0,
@@ -124,7 +125,6 @@ private:
       LINKIN_EQ_ROW_SYNC_EVENT = 17,
       LINKING_VARS_SYNC_EVENT = 18,
       BOUND_TIGHTENING_LINKING_ROW_SYNC_EVENT = 19,
-      TRANSFORMED_INEQUALITIES_INTO_EQUALITIES = 20,
    };
 
    const unsigned int n_rows_original;
@@ -233,6 +233,19 @@ private:
    template<typename T>
    void setOriginalValuesFromReduced(SimpleVector<T>& original_vector, const SimpleVector<T>& reduced_vector,
          const SimpleVector<int>& padding_original) const;
+
+   template<typename T>
+   void set_original_ineq_eq_tranformed_values_from_reduced(DistributedVector<T>& original_first, DistributedVector<T>& original_last,
+      const DistributedVector<T>& reduced, const DistributedVector<int>& padding_original_first, const DistributedVector<int>& padding_original_last, bool mixed_row_column) const;
+
+   template<typename T>
+   void set_original_ineq_eq_tranformed_values_from_reduced(SimpleVector<T>& original_first, SimpleVector<T>& original_last,
+      const SimpleVector<T>& reduced, const SimpleVector<int>& padding_original_first, const SimpleVector<int>& padding_original_last) const;
+
+   template<typename T>
+   void set_original_ineq_eq_tranformed_values_from_reduced(SimpleVector<T>& original_first, SimpleVector<T>& original_second, SimpleVector<T>& original_third,
+      const SimpleVector<T>& reduced, const SimpleVector<int>& padding_original_first, const SimpleVector<int>& padding_original_second, const SimpleVector<int>& padding_original_third) const;
+
 };
 
 

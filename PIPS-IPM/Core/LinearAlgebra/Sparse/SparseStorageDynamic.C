@@ -611,7 +611,7 @@ void SparseStorageDynamic::append_diagonal_matrix_columns(const std::vector<int>
       /* insert entry */
       const int new_col_idx = rowptr[row].end;
       ++rowptr[row].end;
-      assert(rowptr[row].end < len);
+      assert(rowptr[row].end <= len);
       assert(col + row < this->n_columns());
       jcolM[new_col_idx] = col + row;
       M[new_col_idx] = diagonal[row];
