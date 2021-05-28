@@ -608,7 +608,7 @@ void SparseMatrix::getColMinMaxVec(bool getMin, bool initializeVec, const Vector
 }
 
 void SparseMatrix::initStaticStorageFromDynamic(const Vector<int>& rowNnzVec, const Vector<int>* colNnzVec) {
-   assert(mStorageDynamic != nullptr);
+   assert(mStorageDynamic);
 
    const auto& rowNnzVecSimple = dynamic_cast<const SimpleVector<int>&>(rowNnzVec);
    const auto* colNnzVecSimple = dynamic_cast<const SimpleVector<int>*>(colNnzVec);
@@ -808,10 +808,13 @@ void SparseMatrix::append_empty_rows(int n_rows) {
 }
 
 void SparseMatrix::append_empty_columns(int n_columns) {
-   assert(hasDynamicStorage());
    assert(!hasTransposed());
 
-   mStorageDynamic->append_empty_columns(n_columns);
+   if (hasDynamicStorage()) {
+      mStorageDynamic->append_empty_columns(n_columns);
+   } else {
+      mStorage->n += n_columns;
+   }
 }
 
 void SparseMatrix::append_diagonal_matrix_columns(const std::vector<int>& diagonal) {

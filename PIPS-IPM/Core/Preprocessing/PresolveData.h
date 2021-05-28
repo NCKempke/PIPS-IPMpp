@@ -328,8 +328,11 @@ private:
 
    void checkBoundsInfeasible(const INDEX& col, double xlow_new, double xupp_new) const;
 
+
    void transform_inequalities_into_equalities(int node);
    void transform_root_inequalities_into_equalities();
+   void transform_linking_inequalities_into_equalitites();
+   void transform_a0_block_inequalities_into_equalities();
    void transform_node_inequalities_into_equalities(int node);
 public:
    void writeRowLocalToStreamDense(std::ostream& out, const INDEX& row) const;

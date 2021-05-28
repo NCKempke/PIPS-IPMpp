@@ -54,7 +54,6 @@ std::unique_ptr<SymmetricMatrix> DistributedSymmetricMatrix::clone() const {
       clone->n += child->n;
    }
 
-   std::cout << size() << " " << clone->size() << std::endl;
    assert(size() == clone->size());
    return clone;
 }

@@ -3884,9 +3884,95 @@ void PresolveData::transform_node_inequalities_into_equalities(int node) {
    Q_border.append_empty_rows(n_new_slack_variables);
 }
 
-void PresolveData::transform_root_inequalities_into_equalities(){
+void PresolveData::transform_root_inequalities_into_equalities() {
 
+   transform_a0_block_inequalities_into_equalities();
 
-   return;
-   assert(false && "TODO: implement");
+   transform_linking_inequalities_into_equalitites();
+}
+
+void PresolveData::transform_a0_block_inequalities_into_equalities() {
+   const int root_node = -1;
+   /* take d_mat and d_mat and append them to b_mat and b_mat + add slack variables to the system with bounds = bounds of inequalities */
+   SparseMatrix& b_mat = *getSparseGenMatrixFromStochMat(getSystemMatrix(EQUALITY_SYSTEM), root_node, B_MAT);
+   SparseMatrix& d_mat = *getSparseGenMatrixFromStochMat(getSystemMatrix(INEQUALITY_SYSTEM), root_node, B_MAT);
+
+   const int n_new_slack_variables = d_mat.n_rows();
+
+   std::vector<int> diagonal_for_identity(n_new_slack_variables, 0);
+   for (int i = 0; i < d_mat.n_rows(); ++i) {
+      if (!wasRowRemoved(INDEX(ROW, root_node, i, false, INEQUALITY_SYSTEM))) {
+         diagonal_for_identity[i] = -1;
+      }
+   }
+
+   d_mat.append_diagonal_matrix_columns(diagonal_for_identity);
+
+   for (int node = 0; node < nChildren; ++node) {
+      if (!nodeIsDummy(node)) {
+         getSparseGenMatrixFromStochMat(getSystemMatrix(EQUALITY_SYSTEM), node, A_MAT)->append_empty_columns(n_new_slack_variables);
+         getSparseGenMatrixFromStochMat(getSystemMatrix(INEQUALITY_SYSTEM), node, A_MAT)->append_empty_columns(n_new_slack_variables);
+      }
+   }
+//   dynamic_cast<SparseMatrix&>(*getSystemMatrix(EQUALITY_SYSTEM).Amat).append_empty_columns(n_new_slack_variables);
+//std::cout << getSystemMatrix(EQUALITY_SYSTEM).Amat->n_rows() << " before " << std::endl;
+   dynamic_cast<SparseMatrix&>(*getSystemMatrix(EQUALITY_SYSTEM).Amat).append_empty_rows(n_new_slack_variables);
+//   std::cout << getSystemMatrix(EQUALITY_SYSTEM).Amat->n_rows() << " after " << std::endl;
+//   dynamic_cast<SparseMatrix&>(*getSystemMatrix(INEQUALITY_SYSTEM).Amat).append_empty_columns(n_new_slack_variables);
+//   dynamic_cast<SparseMatrix&>(*getSystemMatrix(INEQUALITY_SYSTEM).Amat).append_empty_rows(n_new_slack_variables);
+
+   getSparseGenMatrixFromStochMat(getSystemMatrix(EQUALITY_SYSTEM), root_node, BL_MAT)->append_empty_columns(n_new_slack_variables);
+   getSparseGenMatrixFromStochMat(getSystemMatrix(INEQUALITY_SYSTEM), root_node, BL_MAT)->append_empty_columns(n_new_slack_variables);
+
+   b_mat.append_matrix_rows(d_mat);
+   d_mat.clear_matrix();
+
+   /* extend the non_zeros vectors and recompute non_zeros in the equality matrix - set inequalities to zero */
+   SimpleVector<int>& nnzs_row_A = getSimpleVecFromRowStochVec(getNnzsRow(EQUALITY_SYSTEM), root_node, false);
+   SimpleVector<int>& nnzs_row_C = getSimpleVecFromRowStochVec(getNnzsRow(INEQUALITY_SYSTEM), root_node, false);
+   SimpleVector<int>& nnzs_col = getSimpleVecFromColStochVec(getNnzsCol(), root_node);
+
+   std::transform(diagonal_for_identity.begin(), diagonal_for_identity.end(), diagonal_for_identity.begin(), static_cast<double (*)(double)>(&std::abs));
+   SimpleVector<int> nonzero_pattern_slacks(diagonal_for_identity.data(), diagonal_for_identity.size());
+
+   nnzs_row_C.add_constant(1, nonzero_pattern_slacks);
+   nnzs_row_A.appendToBack(nnzs_row_C);
+   nnzs_row_C.setToZero();
+
+   nnzs_col.appendToBack(nonzero_pattern_slacks);
+
+   /* extend variable bounds and row bounds */
+   SimpleVector<double>& bA = getSimpleVecFromRowStochVec(*presProb->bA, root_node, false);
+   bA.appendToBack(n_new_slack_variables, 0.0);
+
+   SimpleVector<double>& ixlow = getSimpleVecFromColStochVec(*presProb->ixlow, root_node);
+   SimpleVector<double>& ixupp = getSimpleVecFromColStochVec(*presProb->ixupp, root_node);
+   SimpleVector<double>& xlow = getSimpleVecFromColStochVec(*presProb->blx, root_node);
+   SimpleVector<double>& xupp = getSimpleVecFromColStochVec(*presProb->bux, root_node);
+
+   SimpleVector<double>& iclow = getSimpleVecFromRowStochVec(*presProb->iclow, root_node, false);
+   SimpleVector<double>& icupp = getSimpleVecFromRowStochVec(*presProb->icupp, root_node, false);
+   SimpleVector<double>& clow = getSimpleVecFromRowStochVec(*presProb->bl, root_node, false);
+   SimpleVector<double>& cupp = getSimpleVecFromRowStochVec(*presProb->bu, root_node, false);
+
+   ixlow.appendToBack(iclow);
+   xlow.appendToBack(clow);
+   ixupp.appendToBack(icupp);
+   xupp.appendToBack(cupp);
+
+   /* extend the objective and Q_diag */
+   SimpleVector<double>& obj = getSimpleVecFromColStochVec(*presProb->g, root_node);
+   obj.appendToBack(n_new_slack_variables, 0.0);
+
+   SparseSymmetricMatrix& Q_diag = getSparseSymmetricDiagFromStochMat(dynamic_cast<DistributedSymmetricMatrix&>(*presProb->Q), root_node);
+   Q_diag.append_empty_diagonal(n_new_slack_variables);
+
+   for (int i = 0; i < nChildren; ++i ) {
+      SparseMatrix& border = getSparseBorderFromStochMat(dynamic_cast<DistributedSymmetricMatrix&>(*presProb->Q), i);
+      border.append_empty_columns(n_new_slack_variables);
+   }
+}
+
+void PresolveData::transform_linking_inequalities_into_equalitites() {
+
 }
