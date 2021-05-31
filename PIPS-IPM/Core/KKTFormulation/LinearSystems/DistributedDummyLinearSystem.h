@@ -48,8 +48,6 @@ public:
    LniTransMultHierarchyBorder(AbstractMatrix&, const DenseMatrix&, BorderLinsys&, BorderLinsys&, std::vector<BorderMod>&, bool, bool, bool, int,
          int, int) override {};
 
-   void deleteChildren() override {};
-
    [[nodiscard]] bool isDummy() const override { return true; };
 
    void addBorderTimesRhsToB0(DistributedVector<double>&, SimpleVector<double>&, BorderLinsys&) override {};

@@ -168,8 +168,6 @@ void DistributedLeafLinearSystem::Ltsolve2(DistributedVector<double>& x, SimpleV
 #endif
 }
 
-void DistributedLeafLinearSystem::deleteChildren() {}
-
 /** sum up right hand side for (current) scenario i and add it to right hand side of scenario 0 */
 void DistributedLeafLinearSystem::addLniziLinkCons(Vector<double>& z0_, Vector<double>& zi_, bool /*use_local_RAC*/) {
    auto& z0 = dynamic_cast<SimpleVector<double>&>(z0_);
@@ -177,7 +175,7 @@ void DistributedLeafLinearSystem::addLniziLinkCons(Vector<double>& z0_, Vector<d
 
    solver->solve(zi);
 
-   int nx0 = data->hasRAC() ? data->getLocalA().n_columns() : 0;
+   const int nx0 = data->hasRAC() ? data->getLocalA().n_columns() : 0;
 
    SimpleVector<double> z01(&z0[0], nx0);
    SimpleVector<double> zi1(&zi[0], locnx);
@@ -252,41 +250,6 @@ DistributedLeafLinearSystem::addTermToSchurComplBlocked(bool sparseSC, Symmetric
 
    addBiTLeftKiBiRightToResBlockedParallelSolvers(sparseSC, sc_is_sym, *border_left_transp, *border_right, SC, 0,
       SC.size(), 0, SC.size());
-}
-
-void
-DistributedLeafLinearSystem::mySymAtPutSubmatrix(SymmetricMatrix& kkt_, const GeneralMatrix& B_, int locnx, int locmy,
-   int) {
-   auto& kkt = dynamic_cast<SparseSymmetricMatrix&>(kkt_);
-   auto& B = dynamic_cast<const SparseMatrix&>(B_);
-
-   int* jcolK = kkt.jcolM();
-   const int* jcolB = B.jcolM(); //int* jcolD = D.jcolM();
-   int* krowK = kkt.krowM();
-   const int* krowB = B.krowM(); //int* krowD =  D.krowM();
-   double* MK = kkt.M();
-   const double* MB = B.M();
-
-   for (int i = 0; i < locmy; i++) {
-      int itK = krowK[i + locnx];
-      int j = krowB[i];
-
-      for (; j < krowB[i + 1]; j++) {
-
-         if (jcolB[j] < i + locnx) {
-            jcolK[itK] = jcolB[j];
-            MK[itK] = MB[j];
-            itK++;
-         }
-      }
-      jcolK[itK] = i + locnx;
-      MK[itK] = 0.0;
-      itK++;
-
-      assert(j == krowB[i + 1]);
-
-      krowK[i + locnx + 1] = itK;
-   }
 }
 
 /* compute result += B_inner^T K^-1 Br */

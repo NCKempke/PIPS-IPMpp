@@ -28,8 +28,6 @@ class DistributedRootLinearSystem : public DistributedLinearSystem {
 protected:
    void createChildren();
 
-   void deleteChildren() override;
-
 private:
    void init();
 

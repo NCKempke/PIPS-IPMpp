@@ -138,8 +138,6 @@ public:
 
    void solveCompressed(Vector<double>& rhs) override;
 
-   virtual void deleteChildren() = 0;
-
    [[nodiscard]] virtual bool isDummy() const { return false; };
 
 protected:

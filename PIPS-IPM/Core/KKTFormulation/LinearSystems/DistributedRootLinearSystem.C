@@ -770,14 +770,6 @@ void DistributedRootLinearSystem::createChildren() {
    }
 }
 
-void DistributedRootLinearSystem::deleteChildren() {
-   for (auto& it : children) {
-      it->deleteChildren();
-      delete it;
-   }
-   children.clear();
-}
-
 void DistributedRootLinearSystem::initProperChildrenRange() {
    assert(!children.empty());
 
