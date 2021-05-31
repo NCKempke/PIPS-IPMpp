@@ -448,7 +448,7 @@ DistributedMatrix::write_to_streamDenseBordered(const StripMatrix& border_left, 
    const auto mlink = this->Blmat->n_rows();
    if (mlink > 0) {
       assert(border_left.last);
-      assert(border_left.n_rows() == mlink);
+      assert(border_left.last->n_rows() == mlink);
 
       // for each row r do:
       for (int r = 0; r < mlink; r++) {

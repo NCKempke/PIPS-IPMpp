@@ -102,8 +102,8 @@ protected:
    void countTwoLinksForChildTrees(const std::vector<int>& two_links_start_in_child_A, const std::vector<int>& two_links_start_in_child_C,
          std::vector<unsigned int>& two_links_children_eq, std::vector<unsigned int>& two_links_children_ineq, unsigned int& two_links_root_eq,
          unsigned int& two_links_root_ineq) const;
-   void adjustActiveMylBy(int adjustment);
-   void adjustActiveMzlBy(int adjustment);
+
+   void adjust_active_size_by(int DistributedTreeCallbacks::* active_size_to_adjust, long long DistributedTree::* glob_size_to_adjust, int adjustment);
    std::pair<int, int>
    adjustSizesAfterSplit(const std::vector<unsigned int>& two_links_children_eq, const std::vector<unsigned int>& two_links_children_ineq);
 

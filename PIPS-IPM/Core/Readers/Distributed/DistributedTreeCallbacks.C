@@ -426,6 +426,8 @@ void DistributedTreeCallbacks::assertTreeStructureIsMyNodeSubRoot() const {
    assert(MYL == myl_active + sub_root->MYL);
    assert(MZL == mzl_active + sub_root->MZL);
    assert(nx_active == sub_root->N);
+
+   std::cout << my_active << " " << sub_root->MY << std::endl;
    assert(my_active == sub_root->MY);
    assert(mz_active == sub_root->MZ);
 }
@@ -782,16 +784,15 @@ DistributedTree* DistributedTreeCallbacks::shaveDenseBorder(int nx_to_shave, int
 
    /* we move all of A0 to the border layer - else we have structural rank deficiency in the schur complement later */
 //   top_layer->my_active = this->my_active;
-//   this->my_active = 0;
-
+//   this->adjust_active_size_by(&DistributedTreeCallbacks::my_active, &DistributedTree::MY, -this->my_active);
    top_layer->my_active = -1;
    top_layer->mz_active = -1;
 
    top_layer->myl_active = myl_to_shave;
-   this->adjustActiveMylBy(-myl_to_shave);
+   this->adjust_active_size_by(&DistributedTreeCallbacks::myl_active, &DistributedTree::MYL, -myl_to_shave);
 
    top_layer->mzl_active = mzl_to_shave;
-   this->adjustActiveMzlBy(-mzl_to_shave);
+   this->adjust_active_size_by(&DistributedTreeCallbacks::mzl_active, &DistributedTree::MZL, -mzl_to_shave);
 
    for (auto& child : children)
       dynamic_cast<DistributedTreeCallbacks*>(child)->np = nx_active;
@@ -997,44 +998,26 @@ DistributedTreeCallbacks::countTwoLinksForChildTrees(const std::vector<int>& two
    assert(leaf == n_leafs);
 }
 
-void DistributedTreeCallbacks::adjustActiveMylBy(int adjustment) {
+void DistributedTreeCallbacks::adjust_active_size_by(int DistributedTreeCallbacks::* active_size_to_adjust, long long DistributedTree::* glob_size_to_adjust, int adjustment)
+{
    assert(isInVector(rankMe, myProcs));
 
-   myl_active += adjustment;
-   MYL += adjustment;
+   this->*active_size_to_adjust += adjustment;
+   this->*glob_size_to_adjust += adjustment;
 
-   assert(myl_active >= 0);
-   assert(MYL >= 0);
+   assert(this->*active_size_to_adjust >= 0);
+   assert(this->*glob_size_to_adjust >= 0);
 
    for (DistributedTree* child_ : children) {
       auto* child = dynamic_cast<DistributedTreeCallbacks*>(child_);
-
       assert(child->children.empty());
 
       if (isInVector(rankMe, child->myProcs)) {
-         child->myl_active += adjustment;
-         child->MYL += adjustment;
+         child->*active_size_to_adjust += adjustment;
+         child->*glob_size_to_adjust += adjustment;
       }
-      assert(child->myl_active >= 0);
-      assert(child->MYL >= 0);
-   }
-}
-
-void DistributedTreeCallbacks::adjustActiveMzlBy(int adjustment) {
-   assert(isInVector(rankMe, myProcs));
-   mzl_active += adjustment;
-   MZL += adjustment;
-
-   for (auto& child_ : children) {
-      auto* child = dynamic_cast<DistributedTreeCallbacks*>(child_);
-      assert(child->children.empty());
-
-      if (isInVector(rankMe, child->myProcs)) {
-         child->mzl_active += adjustment;
-         child->MZL += adjustment;
-      }
-      assert(child->mzl_active >= 0);
-      assert(child->MZL >= 0);
+      assert(child->*active_size_to_adjust >= 0);
+      assert(child->*glob_size_to_adjust >= 0);
    }
 }
 
@@ -1080,13 +1063,17 @@ std::pair<int, int> DistributedTreeCallbacks::adjustSizesAfterSplit(const std::v
 
          inner_leaf.MYL = myl_active + two_links_children_eq[i];
          inner_leaf.myl_active = myl_active;
-         if (MYL >= 0)
-            sub_root.adjustActiveMylBy(-myl_active - static_cast<int>(sum_two_links_children_eq - two_links_children_eq[i]));
+         if (MYL >= 0) {
+            sub_root.adjust_active_size_by(&DistributedTreeCallbacks::myl_active, &DistributedTree::MYL,
+               -myl_active - static_cast<int>(sum_two_links_children_eq - two_links_children_eq[i]));
+         }
 
          inner_leaf.MZL = mzl_active + two_links_children_ineq[i];
          inner_leaf.mzl_active = mzl_active;
-         if (MZL >= 0)
-            sub_root.adjustActiveMzlBy(-mzl_active - static_cast<int>(sum_two_links_children_ineq - two_links_children_ineq[i]));
+         if (MZL >= 0) {
+            sub_root.adjust_active_size_by(&DistributedTreeCallbacks::mzl_active, &DistributedTree::MZL,
+               -mzl_active - static_cast<int>(sum_two_links_children_ineq - two_links_children_ineq[i]));
+         }
 
          inner_leaf.np = nx_active;
 
