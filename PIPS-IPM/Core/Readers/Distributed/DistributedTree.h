@@ -80,58 +80,56 @@ public:
    void stopMonitors();
    void stopNodeMonitors();
    bool balanceLoad();
-   bool balanceLoadPrecond();
 
    void getSyncInfo(int myRank, int& syncNeeded, int& sendOrRecv, int& toFromCPU);
 
-   virtual DistributedSymmetricMatrix* createQ() const = 0;
-   virtual DistributedVector<double>* createc() const = 0;
+   [[nodiscard]] virtual DistributedSymmetricMatrix* createQ() const = 0;
+   [[nodiscard]] virtual DistributedVector<double>* createc() const = 0;
 
-   virtual DistributedVector<double>* createxlow() const = 0;
-   virtual DistributedVector<double>* createixlow() const = 0;
-   virtual DistributedVector<double>* createxupp() const = 0;
-   virtual DistributedVector<double>* createixupp() const = 0;
+   [[nodiscard]] virtual DistributedVector<double>* createxlow() const = 0;
+   [[nodiscard]] virtual DistributedVector<double>* createixlow() const = 0;
+   [[nodiscard]] virtual DistributedVector<double>* createxupp() const = 0;
+   [[nodiscard]] virtual DistributedVector<double>* createixupp() const = 0;
 
-   virtual DistributedMatrix* createA() const = 0;
-   virtual DistributedVector<double>* createb() const = 0;
+   [[nodiscard]] virtual DistributedMatrix* createA() const = 0;
+   [[nodiscard]] virtual DistributedVector<double>* createb() const = 0;
 
+   [[nodiscard]] virtual DistributedMatrix* createC() const = 0;
+   [[nodiscard]] virtual DistributedVector<double>* createclow() const = 0;
+   [[nodiscard]] virtual DistributedVector<double>* createiclow() const = 0;
+   [[nodiscard]] virtual DistributedVector<double>* createcupp() const = 0;
+   [[nodiscard]] virtual DistributedVector<double>* createicupp() const = 0;
 
-   virtual DistributedMatrix* createC() const = 0;
-   virtual DistributedVector<double>* createclow() const = 0;
-   virtual DistributedVector<double>* createiclow() const = 0;
-   virtual DistributedVector<double>* createcupp() const = 0;
-   virtual DistributedVector<double>* createicupp() const = 0;
+   [[nodiscard]] DistributedVector<double>* new_primal_vector(bool empty = false) const;
+   [[nodiscard]] DistributedVector<double>* newDualYVector(bool empty = false) const;
+   [[nodiscard]] DistributedVector<double>* newDualZVector(bool empty = false) const;
 
-   DistributedVector<double>* new_primal_vector(bool empty = false) const;
-   DistributedVector<double>* newDualYVector(bool empty = false) const;
-   DistributedVector<double>* newDualZVector(bool empty = false) const;
+   [[nodiscard]] DistributedVector<double>* newRhs() const;
 
-   DistributedVector<double>* newRhs() const;
+   [[nodiscard]] const DistributedTree* getSubRoot() const { return sub_root; };
+   [[nodiscard]] const std::vector<DistributedTree*>& getChildren() const { return children; };
+   [[nodiscard]] unsigned int nChildren() const { return children.size(); }
+   [[nodiscard]] MPI_Comm getCommWorkers() const { return commWrkrs; };
 
-   const DistributedTree* getSubRoot() const { return sub_root; };
-   const std::vector<DistributedTree*>& getChildren() const { return children; };
-   unsigned int nChildren() const { return children.size(); }
-   MPI_Comm getCommWorkers() const { return commWrkrs; };
-
-   virtual int nx() const = 0;
-   virtual int my() const = 0;
-   virtual int myl() const;
-   virtual int mzl() const;
-   virtual int mz() const = 0;
-   virtual int id() const = 0;
+   [[nodiscard]] virtual int nx() const = 0;
+   [[nodiscard]] virtual int my() const = 0;
+   [[nodiscard]] virtual int myl() const;
+   [[nodiscard]] virtual int mzl() const;
+   [[nodiscard]] virtual int mz() const = 0;
+   [[nodiscard]] virtual int id() const = 0;
 
    //returns the global load, i.e. statistic based on the NNZs and
    //dimensions of the node (and subnodes) subproblem before any iteration or the CPU
    //time of this node and its subnodes  after the first iteration.
-   double processLoad() const;
+   [[nodiscard]] double processLoad() const;
 
-   bool isHierarchicalRoot() const { return is_hierarchical_root; };
+   [[nodiscard]] bool isHierarchicalRoot() const { return is_hierarchical_root; };
 
    void setHierarchicalInnerRoot() { is_hierarchical_inner_root = true; };
-   bool isHierarchicalInnerRoot() const { return is_hierarchical_inner_root; };
+   [[nodiscard]] bool isHierarchicalInnerRoot() const { return is_hierarchical_inner_root; };
 
    void setHierarchicalInnerLeaf() { is_hierarchical_inner_leaf = true; };
-   bool isHierarchicalInnerLeaf() const { return is_hierarchical_inner_leaf; };
+   [[nodiscard]] bool isHierarchicalInnerLeaf() const { return is_hierarchical_inner_leaf; };
 
    /* shave tree and add an additional top layer */
    virtual DistributedTree* shaveDenseBorder(int nx_to_shave, int myl_to_shave, int mzl_to_shave) = 0;
@@ -144,7 +142,6 @@ public:
    void printProcessTree() const;
 protected:
    void appendPrintTreeLayer(std::vector<std::string>& layer_outputs, unsigned int level) const;
-   void assignProcesses(MPI_Comm, std::vector<int>&);
 
    DistributedTree() = default;
 

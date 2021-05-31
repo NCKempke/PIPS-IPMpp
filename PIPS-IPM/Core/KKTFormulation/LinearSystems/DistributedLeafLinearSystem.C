@@ -162,7 +162,6 @@ void DistributedLeafLinearSystem::Ltsolve2(DistributedVector<double>& x, SimpleV
 
    //b_i -= Lni^T x0
    LniTransMult(bi, -1.0, xp);
-   //  solver->Ltsolve(bi); -> empty
 #ifdef TIMING
    stochNode->resMon.recLtsolveTmChildren_stop();
 #endif
