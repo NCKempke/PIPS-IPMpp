@@ -10,6 +10,7 @@
 Ma57SolverRoot::Ma57SolverRoot(SparseSymmetricMatrix& sgm, bool solve_in_parallel, MPI_Comm mpiComm, std::string name) : Ma57Solver(sgm, std::move(name)),
       solve_in_parallel(solve_in_parallel), comm(mpiComm) {
    assert(mpiComm != MPI_COMM_NULL);
+   print = print && PIPS_MPIgetRank(mpiComm) == 0;
 }
 
 void Ma57SolverRoot::matrixRebuild(const AbstractMatrix& matrixNew) {

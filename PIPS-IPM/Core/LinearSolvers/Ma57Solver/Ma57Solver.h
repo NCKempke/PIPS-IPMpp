@@ -64,6 +64,7 @@ protected:
    const int n_iterative_refinement = 2;
 
    const int ooqp_print_level_warnings = 1000;
+   bool print{false};
 
    /** the Threshold Pivoting parameter may need to be increased during
     * the algorithm if poor precision is obtained from the linear
