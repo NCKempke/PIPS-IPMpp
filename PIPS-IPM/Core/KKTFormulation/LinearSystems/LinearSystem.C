@@ -34,9 +34,6 @@ LinearSystem::LinearSystem(DistributedFactory* factory_, const Problem& problem,
 
    assert(factory_);
 
-   nx = problem.nx;
-   my = problem.my;
-   mz = problem.mz;
    ixlow = problem.ixlow;
    ixupp = problem.ixupp;
    iclow = problem.iclow;

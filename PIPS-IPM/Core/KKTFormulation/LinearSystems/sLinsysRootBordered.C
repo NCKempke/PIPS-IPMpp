@@ -197,7 +197,6 @@ void sLinsysRootBordered::Ltsolve(Vector<double>& x) {
 /* create kkt used to store Schur Complement of border layer */
 SymmetricMatrix* sLinsysRootBordered::createKKT() {
    assert(stochNode->mz() == -1);
-   //assert(locmy >= 0);
    const int n = locnx + locmyl + locmzl;
 
    if (PIPS_MPIgetRank(mpiComm) == 0)

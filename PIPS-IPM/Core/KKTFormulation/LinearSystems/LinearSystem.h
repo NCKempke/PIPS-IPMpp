@@ -96,11 +96,6 @@ protected:
 
    LinearSystem(DistributedFactory* factory_, const Problem& problem, bool create_iter_ref_vecs);
 
-   /** dimensions of the vectors */
-   long long nx{0};
-   long long my{0};
-   long long mz{0};
-
    /** dq = diag(Q); dd = dq - gamma/ v + phi/w */
    std::shared_ptr<Vector<double>> primal_diagonal{};
    std::shared_ptr<Vector<double>> dq{};
