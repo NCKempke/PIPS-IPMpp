@@ -298,19 +298,19 @@ DistributedRootLinearSystem::finalizeZ0Hierarchical(DenseMatrix& buffer, BorderL
 /* result -= [ Br0^T X0 ]^T = X0^T Br0
  *
  * compute result -= Br0^T X0
- *         [  0  A0T C0T F0VT G0VT ]
- * Br0^T = [ F0C  0   0   0    0   ]
- *         [ G0C  0   0   0    0   ]
+ *         [  0  C0T F0VT G0VT ]
+ *         [ A00  0   0    0   ]
+ * Br0^T = [ F0C  0   0    0   ]
+ *         [ G0C  0   0    0   ]
  *
  * result and X0 are stored in transposed form
  *
  * result -= X0 Br0 instead
  *
- * Br0 = [  0  F0CT G0CT ]
- *       [  A   0    0   ]
- *       [  C   0    0   ]
- *       [ F0V  0    0   ]
- *       [ G0V  0    0   ]
+ * Br0 = [  0  A00T F0CT G0CT ]
+ *       [  C    0   0    0   ]
+ *       [ F0V   0   0    0   ]
+ *       [ G0V   0   0    0   ]
  *
  */
 void DistributedRootLinearSystem::finalizeInnerSchurComplementContribution(AbstractMatrix& result, DenseMatrix& X0,
@@ -324,8 +324,8 @@ void DistributedRootLinearSystem::finalizeInnerSchurComplementContribution(Abstr
    if (!has_RAC && !Br.use_local_RAC)
       return;
 
-   SparseMatrix* F0cons_border = has_RAC ? dynamic_cast<SparseMatrix*>(Br.F.first.get()) : nullptr;
-   SparseMatrix* G0cons_border = has_RAC ? dynamic_cast<SparseMatrix*>(Br.G.first.get()) : nullptr;
+   const SparseMatrix* F0cons_border = has_RAC ? dynamic_cast<SparseMatrix*>(Br.F.first.get()) : nullptr;
+   const SparseMatrix* G0cons_border = has_RAC ? dynamic_cast<SparseMatrix*>(Br.G.first.get()) : nullptr;
 
    SparseMatrix* A0_border = has_RAC ? dynamic_cast<SparseMatrix*>(Br.A.first.get()) : nullptr;
    SparseMatrix* C0_border = has_RAC ? dynamic_cast<SparseMatrix*>(Br.C.first.get()) : nullptr;

@@ -1237,7 +1237,7 @@ DistributedTree* DistributedTreeCallbacks::switchToHierarchicalTree(DistributedQ
       assert(myl_to_shave <= myl_active);
       assert(mzl_to_shave <= mzl_active);
 
-      auto* top_layer = dynamic_cast<DistributedTreeCallbacks*>( shaveDenseBorder(nx_to_shave, myl_to_shave, mzl_to_shave));
+      auto* top_layer = dynamic_cast<DistributedTreeCallbacks*>(shaveDenseBorder(nx_to_shave, myl_to_shave, mzl_to_shave));
       data_to_split = data_to_split->shaveDenseBorder(top_layer);
 
       if (PIPS_MPIgetRank() == 0)
