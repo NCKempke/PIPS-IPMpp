@@ -146,8 +146,9 @@ void Ma57Solver::solve(Vector<double>& rhs_in) {
 
       done = checkErrorsAndReact();
 
+      const double resid_norm = resid_loc.inf_norm();
       // TODO: when performing iterative refinement MA57 does not compute the final residuals so these computations should be off
-      if (resid_loc.inf_norm() < precision * (1 + rhsnorm) || resid_loc.inf_norm() < precision)
+      if (resid_norm < precision * (1 + rhsnorm) || resid_norm < precision)
          done = true;
       else {
          if (job == 0) {
