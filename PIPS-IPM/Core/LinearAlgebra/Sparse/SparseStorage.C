@@ -833,8 +833,10 @@ void SparseStorage::mult(double beta, double y[], int incy, double alpha, const 
 }
 
 void SparseStorage::multSym(double beta, double y[], int incy, double alpha, const double x[], int incx) const {
-   for (int i = 0; i < m; i++)
-      y[i * incy] *= beta;
+   if (beta != 1.0) {
+      for (int i = 0; i < m; i++)
+         y[i * incy] *= beta;
+   }
 
    for (int i = 0; i < n; i++) {
       for (int k = krowM[i]; k < krowM[i + 1]; k++) {
