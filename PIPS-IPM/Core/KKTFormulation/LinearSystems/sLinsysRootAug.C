@@ -845,13 +845,13 @@ void sLinsysRootAug::SCmult(double beta, SimpleVector<double>& rxy, double alpha
       //only this proc subtracts from rxy
       rxy.scalarMult(beta);
       const SparseSymmetricMatrix& Q = data->getLocalQ();
-      Q.mult(1.0, &rxy[0], 1, alpha, &x[0], 1);
+      Q.getStorage().mult(1.0, &rxy[0], alpha, &x[0]);
 
       if (locmz > 0) {
          auto* CtDC_sp = dynamic_cast<SparseSymmetricMatrix*>(CtDC.get());
          assert(CtDC_sp);
 
-         CtDC_sp->mult(1.0, &rxy[0], 1, -alpha, &x[0], 1);
+         CtDC_sp->getStorage().multSym(1.0, &rxy[0], -alpha, &x[0]);
       }
 
       auto& xDiagv = dynamic_cast<SimpleVector<double>&>(*xDiag);
@@ -860,21 +860,21 @@ void sLinsysRootAug::SCmult(double beta, SimpleVector<double>& rxy, double alpha
          rxy[i] += alpha * xDiagv[i] * x[i];
 
       const SparseMatrix& A = data->getLocalB();
-      A.transMult(1.0, &rxy[0], 1, alpha, &x[locnx], 1);
-      A.mult(1.0, &rxy[locnx], 1, alpha, &x[0], 1);
+      A.getStorage().transMult(1.0, &rxy[0], alpha, &x[locnx]);
+      A.getStorage().mult(1.0, &rxy[locnx], alpha, &x[0]);
 
       assert(locmyl >= 0 && locmzl >= 0);
 
       if (locmyl > 0) {
          const SparseMatrix& F = data->getLocalF();
-         F.transMult(1.0, &rxy[0], 1, alpha, &x[locnx + locmy], 1);
-         F.mult(1.0, &rxy[locnx + locmy], 1, alpha, &x[0], 1);
+         F.getStorage().transMult(1.0, &rxy[0], alpha, &x[locnx + locmy]);
+         F.getStorage().mult(1.0, &rxy[locnx + locmy], alpha, &x[0]);
       }
 
       if (locmzl > 0) {
          const SparseMatrix& G = data->getLocalG();
-         G.transMult(1.0, &rxy[0], 1, alpha, &x[locnx + locmy + locmyl], 1);
-         G.mult(1.0, &rxy[locnx + locmy + locmyl], 1, alpha, &x[0], 1);
+         G.getStorage().transMult(1.0, &rxy[0], alpha, &x[locnx + locmy + locmyl]);
+         G.getStorage().mult(1.0, &rxy[locnx + locmy + locmyl], alpha, &x[0]);
 
          auto& zDiagLinkConsv = dynamic_cast<SimpleVector<double>&>(*zDiagLinkCons);
          assert(zDiagLinkConsv.length() == locmzl);
@@ -974,10 +974,10 @@ void sLinsysRootAug::solveWithIterRef(SimpleVector<double>& r) {
          rxy.copyFrom(r);
          if (locmz > 0) {
             auto* CtDC_sp = dynamic_cast<SparseSymmetricMatrix*>(CtDC.get());
-            CtDC_sp->mult(1.0, &rxy[0], 1, 1.0, &x[0], 1);
+            CtDC_sp->getStorage().multSym(1.0, &rxy[0], 1.0, &x[0]);
          }
          const SparseSymmetricMatrix& Q = data->getLocalQ();
-         Q.mult(1.0, &rxy[0], 1, -1.0, &x[0], 1);
+         Q.getStorage().mult(1.0, &rxy[0], -1.0, &x[0]);
 
          auto& xDiagv = dynamic_cast<SimpleVector<double>&>(*xDiag);
          assert(xDiagv.length() == locnx);
@@ -985,8 +985,8 @@ void sLinsysRootAug::solveWithIterRef(SimpleVector<double>& r) {
             rxy[i] -= xDiagv[i] * x[i];
 
          const SparseMatrix& A = data->getLocalB();
-         A.transMult(1.0, &rxy[0], 1, -1.0, &x[locnx], 1);
-         A.mult(1.0, &rxy[locnx], 1, -1.0, &x[0], 1);
+         A.getStorage().transMult(1.0, &rxy[0], -1.0, &x[locnx]);
+         A.getStorage().mult(1.0, &rxy[locnx], -1.0, &x[0]);
       } else {
          //other processes set r to zero since they will get this portion from process 0
          rxy.setToZero();
@@ -997,8 +997,8 @@ void sLinsysRootAug::solveWithIterRef(SimpleVector<double>& r) {
 #endif
       // now children add [0 A^T C^T ]*inv(KKT)*[0;A;C] x
       SimpleVector<double> xx(&x[0], locnx);
-      for (size_t it = 0; it < children.size(); it++) {
-         children[it]->addTermToSchurResidual(rxy, xx);
+      for (auto & it : children) {
+         it->addTermToSchurResidual(rxy, xx);
       }
 #ifdef TIMING
       tchild_total +=  (MPI_Wtime()-taux);

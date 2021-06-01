@@ -115,6 +115,10 @@ void Ma57Solver::solve(Vector<double>& rhs_in) {
    assert(rinfo.size() >= static_cast<unsigned int>((my_id + 1) * 20 ));
    assert(x.size() >= static_cast<unsigned int>((my_id + 1) * n ));
    assert(resid.size() >= static_cast<unsigned int>((my_id + 1) * n ));
+   assert(irowM.size() >= static_cast<size_t>(nnz));
+   assert(jcolM.size() >= static_cast<size_t>(nnz));
+   assert(fact.size() >= static_cast<size_t>(lfact));
+   assert(ifact.size() >= static_cast<size_t>(lifact));
 
    double* dworkn_loc = dworkn.data() + my_id * n * 4;
    int* iworkn_loc = iworkn.data() + my_id * n;
@@ -127,13 +131,9 @@ void Ma57Solver::solve(Vector<double>& rhs_in) {
 
    auto& rhs = dynamic_cast<SimpleVector<double>&>(rhs_in);
 
-   /* job 1 : perform one step of iterative refinement */
+   /* job = 0 -> solve + calculate residual + no iterative refinement */
    int job = 0;
-
-   if (freshFactor)
-      icntl_loc[8] = 1; // No iterative refinement
-   else
-      icntl_loc[8] = n_iterative_refinement; // Iterative refinement
+   icntl_loc[8] = 1; // No iterative refinement
 
    const double rhsnorm = rhs.inf_norm();
 
@@ -146,35 +146,37 @@ void Ma57Solver::solve(Vector<double>& rhs_in) {
 
       done = checkErrorsAndReact();
 
-      if (resid_loc.inf_norm() < precision * (1 + rhsnorm) || resid_loc.inf_norm() < precision)
+      const double resid_norm = resid_loc.inf_norm();
+      // TODO: when performing iterative refinement MA57 does not compute the final residuals so these computations should be off
+      if (resid_norm < precision * (1 + rhsnorm) || resid_norm < precision)
          done = true;
       else {
-         if (thresholdPivoting() < threshold_pivoting_max) {
-            // refactor with a higher Threshold Pivoting parameter
-            setThresholdPivoting(std::min(thresholdPivoting() * threshold_pivoting_factor, threshold_pivoting_max));
-
-            if (print)
-               std::cout << "WARNING MA57 " << name << ": Setting ThresholdPivoting parameter to "
-                         << thresholdPivoting()
-                         << " for future factorizations\n";
-         }
-
-         if (freshFactor) {
+         if (job == 0) {
+            /* switch to iterative refinement */
             job = 2; // set to iterative refinement
-            icntl_loc[8] = 10;
+            icntl_loc[8] = 10; // do at most 10 iterative refinement steps
 
             freshFactor = false;
             done = false;
-         } else {
-            if (print) {
-               if (thresholdPivoting() == threshold_pivoting_max)
+
+         } else if (job == 2) {
+            if (thresholdPivoting() < threshold_pivoting_max) {
+               // refactorize with a higher Threshold Pivoting parameter
+               setThresholdPivoting(std::min(thresholdPivoting() * threshold_pivoting_factor, threshold_pivoting_max));
+
+               if (print) {
+                  std::cout << "WARNING MA57 " << name << ": Setting ThresholdPivoting parameter to "
+                            << thresholdPivoting()
+                     << " for future factorizations\n";
+               }
+            } else {
+               assert(thresholdPivoting() == threshold_pivoting_max);
+               if (print) {
                   std::cout << "WARNING MA57 " << name
-                            << ": Unprecise solution but ThresholdPivoting is already at its max\n";
-               else
-                  std::cout << "WARNING MA57 " << name << ": Setting ThresholdPivoting to " << thresholdPivoting()
-                            << " - refactorization suggested\n";
+                     << ": Unprecise solution but ThresholdPivoting is already at its max\n";
+               }
+               done = true;
             }
-            done = true;
          }
       }
    }
@@ -375,7 +377,7 @@ bool Ma57Solver::checkErrorsAndReact() {
       case 3: {
          if (print)
             std::cout << "WARNING MA57 " << name
-                      << ": out of range etries and duplicates detected .. ignoring/summing them up\n";
+                      << ": out of range entries and duplicates detected .. ignoring/summing them up\n";
       }
          break;
       case 4: {

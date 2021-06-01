@@ -1943,7 +1943,7 @@ void DistributedQP::activateLinkStructureExploitation() {
    }
 
 
-   if (!pipsipmpp_options::get_bool_parameter("HIERARCHICAL")) {
+   if (!pipsipmpp_options::get_bool_parameter("SCHUR_COMPLEMENT_FORCE_SPARSE_COMPUTATIONS") && !pipsipmpp_options::get_bool_parameter("HIERARCHICAL")) {
       if (ratio < minStructuredLinksRatio) {
          if (myrank == 0)
             std::cout << "not enough linking structure found ( required ratio : " << minStructuredLinksRatio << ")\n";

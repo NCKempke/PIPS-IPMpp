@@ -81,15 +81,10 @@ public:
    void setToDiagonal(const Vector<double>& vec) override;
 
    void mult(double beta, Vector<double>& y, double alpha, const Vector<double>& x) const override;
-   void mult(double beta, double y[], int incy, double alpha, const double x[], int incx) const;
-
    void multMatSymUpper(double beta, SymmetricMatrix& y, double alpha, const double x[], int yrowstart, int ycolstart) const;
 
-   void transmultMatSymUpper(double beta, SymmetricMatrix& y, double alpha, const double x[], int yrowstart, int ycolstart) const;
-
    void transMult(double beta, Vector<double>& y, double alpha, const Vector<double>& x) const override;
-   void transMult(double beta, Vector<double>& y_in, int incy, double alpha, const Vector<double>& x_in, int incx) const;
-   void transMult(double beta, double y_in[], int incy, double alpha, const double x_in[], int incx) const;
+   void transmultMatSymUpper(double beta, SymmetricMatrix& y, double alpha, const double x[], int yrowstart, int ycolstart) const;
 
    /** y = beta * y + this^T diag(d)^-1 x */
    void transMultD(double beta, Vector<double>& y, double alpha, const Vector<double>& x, const Vector<double>& d) const;

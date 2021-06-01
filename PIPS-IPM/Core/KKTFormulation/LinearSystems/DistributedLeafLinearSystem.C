@@ -585,14 +585,14 @@ void DistributedLeafLinearSystem::addBorderX0ToRhs(SimpleVector<double>& rhs, co
 
       double* rhsi2 = &rhs[mRi];
       double* rhsi3 = &rhs[mRi + mAi];
-      border.R.mult(1.0, rhsi1, 1, -1.0, x1, 1);
-      border.A.mult(1.0, rhsi2, 1, -1.0, x1, 1);
-      border.C.mult(1.0, rhsi3, 1, -1.0, x1, 1);
+      border.R.getStorage().mult(1.0, rhsi1, -1.0, x1);
+      border.A.getStorage().mult(1.0, rhsi2, -1.0, x1);
+      border.C.getStorage().mult(1.0, rhsi3, -1.0, x1);
    }
 
    const double* x2 = &x0[nb0 - mFi - mGi];
    const double* x3 = &x0[nb0 - mGi];
 
-   border.F.transMult(1.0, rhsi1, 1, -1.0, x2, 1);
-   border.G.transMult(1.0, rhsi1, 1, -1.0, x3, 1);
+   border.F.getStorage().transMult(1.0, rhsi1, -1.0, x2);
+   border.G.getStorage().transMult(1.0, rhsi1, -1.0, x3);
 }

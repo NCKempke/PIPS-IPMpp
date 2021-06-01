@@ -573,33 +573,33 @@ void DistributedLinearSystem::addTermToSchurResidual(SimpleVector<double>& res, 
    int N = locnx + locmy + locmz;
    SimpleVector<double> y(N);
 
-   R.mult(0.0, &y[0], 1, 1.0, &x[0], 1);
-   A.mult(0.0, &y[locnx], 1, 1.0, &x[0], 1);
-   C.mult(0.0, &y[locnx + locmy], 1, 1.0, &x[0], 1);
+   R.getStorage().mult(0.0, &y[0], 1.0, &x[0]);
+   A.getStorage().mult(0.0, &y[locnx], 1.0, &x[0]);
+   C.getStorage().mult(0.0, &y[locnx + locmy], 1.0, &x[0]);
 
    if (locmyl > 0) {
       assert(res.length() == x.length());
-      F.transMult(1.0, &y[0], 1, 1.0, &x[x.length() - locmyl - locmzl], 1);
+      F.getStorage().transMult(1.0, &y[0], 1.0, &x[x.length() - locmyl - locmzl]);
    }
 
    if (locmzl > 0) {
       assert(res.length() == x.length());
-      G.transMult(1.0, &y[0], 1, 1.0, &x[x.length() - locmzl], 1);
+      G.getStorage().transMult(1.0, &y[0], 1.0, &x[x.length() - locmzl]);
    }
 
    //cout << "4 - y norm:" << y.twonorm() << endl;
    //printf("%g  %g  %g  %g\n", y[locnx+locmy+0], y[locnx+locmy+1], y[locnx+locmy+2], y[locnx+locmy+3]);
    solver->solve(y);
 
-   R.transMult(1.0, &res[0], 1, 1.0, &y[0], 1);
-   A.transMult(1.0, &res[0], 1, 1.0, &y[locnx], 1);
-   C.transMult(1.0, &res[0], 1, 1.0, &y[locnx + locmy], 1);
+   R.getStorage().transMult(1.0, &res[0], 1.0, &y[0]);
+   A.getStorage().transMult(1.0, &res[0], 1.0, &y[locnx]);
+   C.getStorage().transMult(1.0, &res[0], 1.0, &y[locnx + locmy]);
 
    if (locmyl > 0)
-      F.mult(1.0, &res[res.length() - locmyl - locmzl], 1, 1.0, &y[0], 1);
+      F.getStorage().mult(1.0, &res[res.length() - locmyl - locmzl], 1.0, &y[0]);
 
    if (locmzl > 0)
-      G.mult(1.0, &res[res.length() - locmzl], 1, 1.0, &y[0], 1);
+      G.getStorage().mult(1.0, &res[res.length() - locmzl], 1.0, &y[0]);
 }
 
 void DistributedLinearSystem::addTermToDenseSchurCompl(DenseSymmetricMatrix& SC) {
@@ -669,21 +669,21 @@ void DistributedLinearSystem::addTermToDenseSchurCompl(DenseSymmetricMatrix& SC)
       //now do colSC = Gi * inv(H_i)* it-th col of Gi^t
 
       // SC+=R*x
-      R.transMult(1.0, &SC[it][0], 1, -1.0, &col[0], 1);
+      R.getStorage().transMult(1.0, &SC[it][0], -1.0, &col[0]);
 
       // SC+=At*y
-      A.transMult(1.0, &SC[it][0], 1, -1.0, &col[locnx], 1);
+      A.getStorage().transMult(1.0, &SC[it][0], -1.0, &col[locnx]);
 
       // SC+=Ct*z
-      C.transMult(1.0, &SC[it][0], 1, -1.0, &col[locnx + locmy], 1);
+      C.getStorage().transMult(1.0, &SC[it][0], -1.0, &col[locnx + locmy]);
 
       // do we have linking equality constraints? If so, set SC+=F*x
       if (withMyl)
-         F.mult(1.0, &SC[it][nxMyP], 1, -1.0, &col[0], 1);
+         F.getStorage().mult(1.0, &SC[it][nxMyP], -1.0, &col[0]);
 
       // do we have linking inequality constraints? If so, set SC+=G*x
       if (withMzl)
-         G.mult(1.0, &SC[it][nxMyMzP], 1, -1.0, &col[0], 1);
+         G.getStorage().mult(1.0, &SC[it][nxMyMzP], -1.0, &col[0]);
    }
 
    // do we have linking equality constraints?
@@ -707,17 +707,17 @@ void DistributedLinearSystem::addTermToDenseSchurCompl(DenseSymmetricMatrix& SC)
 
          solver->solve(col);
 
-         R.transMult(1.0, &SC[it + nxMyP][0], 1, -1.0, &col[0], 1);
-         A.transMult(1.0, &SC[it + nxMyP][0], 1, -1.0, &col[locnx], 1);
-         C.transMult(1.0, &SC[it + nxMyP][0], 1, -1.0, &col[locnx + locmy], 1);
+         R.getStorage().transMult(1.0, &SC[it + nxMyP][0], -1.0, &col[0]);
+         A.getStorage().transMult(1.0, &SC[it + nxMyP][0], -1.0, &col[locnx]);
+         C.getStorage().transMult(1.0, &SC[it + nxMyP][0], -1.0, &col[locnx + locmy]);
 
          // here we have colGi = inv(H_i)* (it + locnx + locmy)-th col of Gi^t
          // now do colSC = Gi * inv(H_i)* (it + locnx + locmy)-th col of Gi^t
 
-         F.mult(1.0, &SC[it + nxMyP][nxMyP], 1, -1.0, &col[0], 1);
+         F.getStorage().mult(1.0, &SC[it + nxMyP][nxMyP], -1.0, &col[0]);
 
          if (withMzl)
-            G.mult(1.0, &SC[it + nxMyP][nxMyMzP], 1, -1.0, &col[0], 1);
+            G.getStorage().mult(1.0, &SC[it + nxMyP][nxMyMzP], -1.0, &col[0]);
       }
    }
 
@@ -741,17 +741,17 @@ void DistributedLinearSystem::addTermToDenseSchurCompl(DenseSymmetricMatrix& SC)
 
          solver->solve(col);
 
-         R.transMult(1.0, &SC[it + nxMyMzP][0], 1, -1.0, &col[0], 1);
-         A.transMult(1.0, &SC[it + nxMyMzP][0], 1, -1.0, &col[locnx], 1);
-         C.transMult(1.0, &SC[it + nxMyMzP][0], 1, -1.0, &col[locnx + locmy], 1);
+         R.getStorage().transMult(1.0, &SC[it + nxMyMzP][0], -1.0, &col[0]);
+         A.getStorage().transMult(1.0, &SC[it + nxMyMzP][0], -1.0, &col[locnx]);
+         C.getStorage().transMult(1.0, &SC[it + nxMyMzP][0], -1.0, &col[locnx + locmy]);
 
          // here we have colGi = inv(H_i)* (it + locnx + locmy + locmyl)-th col of Gi^t
          // now do colSC = Gi * inv(H_i)* (it + locnx + locmy + locmyl)-th col of Gi^t
 
          if (withMyl)
-            F.mult(1.0, &SC[it + nxMyMzP][nxMyP], 1, -1.0, &col[0], 1);
+            F.getStorage().mult(1.0, &SC[it + nxMyMzP][nxMyP], -1.0, &col[0]);
 
-         G.mult(1.0, &SC[it + nxMyMzP][nxMyMzP], 1, -1.0, &col[0], 1);
+         G.getStorage().mult(1.0, &SC[it + nxMyMzP][nxMyMzP], -1.0, &col[0]);
       }
    }
 }
@@ -1223,15 +1223,15 @@ DistributedLinearSystem::addLeftBorderTimesDenseColsToResTranspDense(const Borde
       if (with_RAC) {
          const auto nR = Bl.R.n_columns();
          const auto nA = Bl.A.n_columns();
-         Bl.R.mult(1.0, &res[row_res][0], 1, -1.0, &col[0], 1);
-         Bl.A.mult(1.0, &res[row_res][0], 1, -1.0, &col[nR], 1);
-         Bl.C.mult(1.0, &res[row_res][0], 1, -1.0, &col[nR + nA], 1);
+         Bl.R.getStorage().mult(1.0, &res[row_res][0], -1.0, &col[0]);
+         Bl.A.getStorage().mult(1.0, &res[row_res][0], -1.0, &col[nR]);
+         Bl.C.getStorage().mult(1.0, &res[row_res][0], -1.0, &col[nR + nA]);
       }
 
       if (with_F)
-         Bl.F.mult(1.0, &res[row_res][n_cols_res - mF - mG], 1, -1.0, &col[0], 1);
+         Bl.F.getStorage().mult(1.0, &res[row_res][n_cols_res - mF - mG], -1.0, &col[0]);
       if (with_G)
-         Bl.G.mult(1.0, &res[row_res][n_cols_res - mG], 1, -1.0, &col[0], 1);
+         Bl.G.getStorage().mult(1.0, &res[row_res][n_cols_res - mG], -1.0, &col[0]);
    }
 }
 

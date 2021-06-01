@@ -22,7 +22,7 @@ protected:
    const SparseStorage* mStorageSparse{};
 
    constexpr static double precondDiagDomBound = 0.0001;
-   constexpr static int pivotPerturbationExpDefault = 8;
+   constexpr static int pivotPerturbationExpDefault = 8; // was 8
    constexpr static int nIterativeRefinsDefault = 8;
    constexpr static bool highAccuracyDefault = true;
    constexpr static bool useSparseRhsDefault = true;
