@@ -115,6 +115,10 @@ void Ma57Solver::solve(Vector<double>& rhs_in) {
    assert(rinfo.size() >= static_cast<unsigned int>((my_id + 1) * 20 ));
    assert(x.size() >= static_cast<unsigned int>((my_id + 1) * n ));
    assert(resid.size() >= static_cast<unsigned int>((my_id + 1) * n ));
+   assert(irowM.size() >= static_cast<size_t>(nnz));
+   assert(jcolM.size() >= static_cast<size_t>(nnz));
+   assert(fact.size() >= static_cast<size_t>(lfact));
+   assert(ifact.size() >= static_cast<size_t>(lifact));
 
    double* dworkn_loc = dworkn.data() + my_id * n * 4;
    int* iworkn_loc = iworkn.data() + my_id * n;
