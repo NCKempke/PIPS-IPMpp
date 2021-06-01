@@ -191,7 +191,7 @@ void Ma27Solver::solve(Vector<double>& rhs_in) {
 
       residual_loc.copyFrom(rhs);
       /* calculate residual and possibly new rhs */
-      mat_storage->multSym(1.0, residual_loc.elements(), 1, -1.0, iter_loc.elements(), 1);
+      mat_storage->multSym(1.0, residual_loc.elements(), -1.0, iter_loc.elements());
 
       /* res = res - A * drhs where A * drhs_out = drhs_in */
       rnorm = residual_loc.two_norm();

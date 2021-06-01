@@ -493,20 +493,20 @@ DistributedRootLinearSystem::finalizeInnerSchurComplementContributionDense(Abstr
       const double* const col = X0[i];
 
       if (A0_border)
-         A0_border->transMult(1.0, &SC[row][0], 1, -1.0, &col[nF0C], 1);
+         A0_border->getStorage().transMult(1.0, &SC[row][0], -1.0, &col[nF0C]);
 
       if (C0_border)
-         C0_border->transMult(1.0, &SC[row][0], 1, -1.0, &col[nF0C + mA0], 1);
+         C0_border->getStorage().transMult(1.0, &SC[row][0], -1.0, &col[nF0C + mA0]);
 
-      F0vec_border->transMult(1.0, &SC[row][0], 1, -1.0, &col[nF0C + mA0 + mC0], 1);
+      F0vec_border->getStorage().transMult(1.0, &SC[row][0], -1.0, &col[nF0C + mA0 + mC0]);
 
-      G0vec_border->transMult(1.0, &SC[row][0], 1, -1.0, &col[nF0C + mA0 + mC0 + mF0V], 1);
+      G0vec_border->getStorage().transMult(1.0, &SC[row][0], -1.0, &col[nF0C + mA0 + mC0 + mF0V]);
 
       if (F0cons_border)
-         F0cons_border->mult(1.0, &SC[row][nA0], 1, -1.0, &col[0], 1);
+         F0cons_border->getStorage().mult(1.0, &SC[row][nA0], -1.0, &col[0]);
 
       if (G0cons_border)
-         G0cons_border->mult(1.0, &SC[row][nA0 + mF0C], 1, -1.0, &col[0], 1);
+         G0cons_border->getStorage().mult(1.0, &SC[row][nA0 + mF0C], -1.0, &col[0]);
    }
 }
 
@@ -637,13 +637,13 @@ void DistributedRootLinearSystem::addBorderX0ToRhs(DistributedVector<double>& rh
    const double* x02 = &x0[nA0];
    const double* x03 = &x0[nA0 + mF0C];
 
-   A0_border.mult(1.0, rhs02, 1, -1.0, x01, 1);
-   C0_border.mult(1.0, rhs03, 1, -1.0, x01, 1);
-   F0vec_border.mult(1.0, rhs04, 1, -1.0, x01, 1);
-   G0vec_border.mult(1.0, rhs05, 1, -1.0, x01, 1);
+   A0_border.getStorage().mult(1.0, rhs02, -1.0, x01);
+   C0_border.getStorage().mult(1.0, rhs03, -1.0, x01);
+   F0vec_border.getStorage().mult(1.0, rhs04, -1.0, x01);
+   G0vec_border.getStorage().mult(1.0, rhs05, -1.0, x01);
 
-   F0cons_border.transMult(1.0, rhs01, 1, -1.0, x02, 1);
-   G0cons_border.transMult(1.0, rhs01, 1, -1.0, x03, 1);
+   F0cons_border.getStorage().transMult(1.0, rhs01, -1.0, x02);
+   G0cons_border.getStorage().transMult(1.0, rhs01, -1.0, x03);
 }
 
 void DistributedRootLinearSystem::addBorderTimesRhsToB0(DistributedVector<double>& rhs, SimpleVector<double>& b0,

@@ -129,41 +129,23 @@ long long SparseSymmetricMatrix::n_columns() const {
 }
 
 void SparseSymmetricMatrix::mult(double beta, Vector<double>& y_in, double alpha, const Vector<double>& x_in) const {
+   assert(x_in.length() == mStorage->n && y_in.length() == mStorage->m);
+
    const auto& x = dynamic_cast<const SimpleVector<double>&>(x_in);
    auto& y = dynamic_cast<SimpleVector<double>&>(y_in);
 
-   assert(x.length() == mStorage->n && y.length() == mStorage->m);
+   mStorage->multSym(beta, y.elements(), alpha, x.elements());
 
-   const double* xv = nullptr;
-   double* yv = nullptr;
-   if (x.length() > 0)
-      xv = &x[0];
-   if (y.length() > 0)
-      yv = &y[0];
-
-   this->mult(beta, yv, 1, alpha, xv, 1);
 }
 
 void
 SparseSymmetricMatrix::transMult(double beta, Vector<double>& y_in, double alpha, const Vector<double>& x_in) const {
+   assert(x_in.length() == mStorage->n && y_in.length() == mStorage->m);
+
    const auto& x = dynamic_cast<const SimpleVector<double>&>(x_in);
    auto& y = dynamic_cast<SimpleVector<double>&>(y_in);
 
-   assert(x.length() == mStorage->n && y.length() == mStorage->m);
-
-   const double* xv = nullptr;
-   double* yv = nullptr;
-   if (x.length() > 0)
-      xv = &x[0];
-   if (y.length() > 0)
-      yv = &y[0];
-
-   this->mult(beta, yv, 1, alpha, xv, 1);
-}
-
-void
-SparseSymmetricMatrix::transMult(double beta, double y[], int incy, double alpha, const double x[], int incx) const {
-   this->mult(beta, y, incy, alpha, x, incx);
+   mStorage->multSym(beta, y.elements(), alpha, x.elements());
 }
 
 double SparseSymmetricMatrix::inf_norm() const {
@@ -195,10 +177,6 @@ void SparseSymmetricMatrix::write_to_streamDenseRow(std::ostream& out, int row) 
       assert(row < mStorage->m);
       mStorage->write_to_streamDenseRow(out, row);
    }
-}
-
-void SparseSymmetricMatrix::mult(double beta, double y[], int incy, double alpha, const double x[], int incx) const {
-   mStorage->multSym(beta, y, incy, alpha, x, incx);
 }
 
 void SparseSymmetricMatrix::atPutDiagonal(int idiag, const Vector<double>& v) {
