@@ -2155,118 +2155,32 @@ Permutation DistributedQP::getLinkConsIneqPermInv() const {
 }
 
 int DistributedQP::getLocalnx() const {
-   assert(!is_hierarchy_root);
-
-   long long nx{0};
-
-   const auto& Ast = dynamic_cast<const DistributedMatrix&>(*A);
-   if (is_hierarchy_inner_leaf)
-      assert(Ast.Bmat->is_a(kDistributedMatrix));
-   else
-      nx = Ast.Bmat->n_columns();
-
-   return nx;
+   return stochNode->nx();
 }
 
 int DistributedQP::getLocalmy() const {
-   assert(!is_hierarchy_root);
-
-   long long my{0};
-   const auto& Ast = dynamic_cast<const DistributedMatrix&>(*A);
-
-   if (is_hierarchy_inner_leaf)
-      assert(Ast.Bmat->is_a(kDistributedMatrix));
-   else
-      my = Ast.Bmat->n_rows();
-
-   return my;
+   return stochNode->my();
 }
 
 int DistributedQP::getLocalmyl() const {
-   long long myl{0};
-   const auto& Ast = dynamic_cast<const DistributedMatrix&>(*A);
-
-   if (is_hierarchy_root) {
-      assert(0 && "TODO : implement");
-//      const BorderedGenMatrix& Abd = dynamic_cast<const BorderedGenMatrix&>(*A);
-//      Abd.Blmat->getSize(myl, nxl);
-   } else if (is_hierarchy_inner_leaf && stochNode->getCommWorkers() != MPI_COMM_NULL) {
-      assert(Ast.Bmat->is_a(kDistributedMatrix));
-      myl = dynamic_cast<DistributedMatrix&>(*Ast.Bmat).Blmat->n_rows();
-   } else
-      myl = Ast.Blmat->n_rows();
-
-   return myl;
+   return stochNode->myl();
 }
 
 int DistributedQP::getLocalmz() const {
-   long long mz{0};
-   const auto& Cst = dynamic_cast<const DistributedMatrix&>(*C);
-
-   if (is_hierarchy_root)
-      assert(0 && "TODO : implement");
-   else if (is_hierarchy_inner_leaf && stochNode->getCommWorkers() != MPI_COMM_NULL)
-      assert(Cst.Bmat->is_a(kDistributedMatrix));
-   else
-      mz = Cst.Bmat->n_rows();
-
-   return mz;
+   return stochNode->mz();
 }
 
 int DistributedQP::getLocalmzl() const {
-   const auto& Cst = dynamic_cast<const DistributedMatrix&>(*C);
-   long long mzl{0};
-
-   if (is_hierarchy_root) {
-      assert(0 && "TODO : implement");
-   } else if (is_hierarchy_inner_leaf && stochNode->getCommWorkers() != MPI_COMM_NULL) {
-      assert(Cst.Bmat->is_a(kDistributedMatrix));
-      mzl = dynamic_cast<DistributedMatrix&>(*Cst.Bmat).Blmat->n_rows();
-   } else
-      mzl = Cst.Blmat->n_rows();
-
-   return mzl;
+   return stochNode->mzl();
 }
 
 int DistributedQP::getLocalSizes(int& nx, int& my, int& mz, int& myl, int& mzl) const {
-   if (is_hierarchy_root) {
-      const auto& Abd = dynamic_cast<const BorderedMatrix&>(*A);
-      assert(Abd.border_left->first);
-      assert(Abd.border_left->last);
+   nx = stochNode->nx();
+   my = stochNode->my();
+   mz = stochNode->mz();
+   mzl = stochNode->mzl();
+   myl = stochNode->myl();
 
-      nx = Abd.border_left->first->n_columns();
-      my = Abd.border_left->first->n_rows();
-      myl = Abd.bottom_left_block->n_rows();
-
-      const auto& Cbd = dynamic_cast<const BorderedMatrix&>(*C);
-      assert(Cbd.border_left->first);
-      assert(Cbd.border_left->last);
-      mz = Cbd.border_left->first->n_rows();
-      mzl = Cbd.bottom_left_block->n_rows();
-   } else if (is_hierarchy_inner_leaf && stochNode->getCommWorkers() != MPI_COMM_NULL) {
-      const auto& Ast = dynamic_cast<const DistributedMatrix&>(*A);
-      const auto& Cst = dynamic_cast<const DistributedMatrix&>(*C);
-
-      assert(Ast.Bmat->is_a(kDistributedMatrix));
-      assert(Cst.Bmat->is_a(kDistributedMatrix));
-
-      nx = 0;
-      my = 0;
-      myl = dynamic_cast<const DistributedMatrix&>(*Ast.Bmat).Blmat->n_rows();
-
-      mz = 0;
-      mzl = dynamic_cast<const DistributedMatrix&>(*Cst.Bmat).Blmat->n_rows();
-   } else {
-      const auto& Ast = dynamic_cast<const DistributedMatrix&>(*A);
-
-      nx = Ast.Bmat->n_columns();
-      my = Ast.Bmat->n_rows();
-      myl = Ast.Blmat->n_rows();
-
-      const auto& Cst = dynamic_cast<const DistributedMatrix&>(*C);
-      mz = Cst.Bmat->n_rows();
-      mzl = Cst.Blmat->n_rows();
-   }
    return 0;
 }
 

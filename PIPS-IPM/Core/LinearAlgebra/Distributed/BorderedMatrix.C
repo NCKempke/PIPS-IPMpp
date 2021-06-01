@@ -59,15 +59,11 @@ void BorderedMatrix::mult(double beta, Vector<double>& y_in, double alpha, const
    const auto& x = dynamic_cast<const DistributedVector<double>&>(x_in);
    auto& y = dynamic_cast<DistributedVector<double>&>(y_in);
 
-   transform_dual_vector_for_matrix(y);
-
    border_left->mult(beta, *y.children[0], alpha, *x.first);
    inner_matrix->mult(1.0, *y.children[0], alpha, *x.children[0]);
 
    bottom_left_block->mult(beta, *y.last, alpha, *x.first);
    border_bottom->mult(1.0, *y.last, alpha, *x.children[0]);
-
-   reset_transformed_vector(y);
 }
 
 /** y = beta * y + alpha * this^T * x */
@@ -79,15 +75,11 @@ void BorderedMatrix::transMult(double beta, Vector<double>& y_in, double alpha, 
    const auto& x = dynamic_cast<const DistributedVector<double>&>(x_in);
    auto& y = dynamic_cast<DistributedVector<double>&>(y_in);
 
-   transform_dual_vector_for_matrix(x);
-
    border_left->transMult(beta, *y.first, alpha, *x.children[0]);
    bottom_left_block->transMult(1.0, *y.first, alpha, *x.last);
 
    inner_matrix->transMult(beta, *y.children[0], alpha, *x.children[0]);
    border_bottom->transMult(1.0, *y.children[0], alpha, *x.last);
-
-   reset_transformed_vector(x);
 }
 
 double BorderedMatrix::inf_norm() const {
@@ -118,15 +110,11 @@ void BorderedMatrix::rowScale(const Vector<double>& vec) {
 
    const auto& svec = dynamic_cast<const DistributedVector<double>&>(vec);
 
-   transform_dual_vector_for_matrix(svec);
-
    border_left->rowScale(*svec.children[0]);
    inner_matrix->rowScale(*svec.children[0]);
 
    bottom_left_block->rowScale(*svec.last);
    border_bottom->rowScale(*svec.last);
-
-   reset_transformed_vector(svec);
 }
 
 void BorderedMatrix::scalarMult(double num) {
@@ -156,7 +144,6 @@ void BorderedMatrix::getRowMinMaxVec(bool get_min, bool initialize_vec, const Ve
       assert(hasVecStructureForBorderedMat(*col_scale_in, true));
 
    auto& minmax = dynamic_cast<DistributedVector<double>&>(minmax_in);
-   transform_dual_vector_for_matrix(minmax);
 
    const DistributedVector<double>* col_scale = has_colscale ? dynamic_cast<const DistributedVector<double>*>(col_scale_in) : nullptr;
 
@@ -165,45 +152,33 @@ void BorderedMatrix::getRowMinMaxVec(bool get_min, bool initialize_vec, const Ve
 
    bottom_left_block->getRowMinMaxVec(get_min, initialize_vec, has_colscale ? col_scale->first.get() : nullptr, *minmax.last);
    border_bottom->getRowMinMaxVec(get_min, false, has_colscale ? col_scale->children[0].get() : nullptr, *minmax.last);
-
-   reset_transformed_vector(minmax);
 }
 
 void BorderedMatrix::getColMinMaxVec(bool get_min, bool initialize_vec, const Vector<double>* row_scale_in, Vector<double>& minmax_in) const {
    assert(hasVecStructureForBorderedMat(minmax_in, true));
 
    const bool has_rowscale = (row_scale_in != nullptr);
-   if (has_rowscale)
-      assert(hasVecStructureForBorderedMat(*row_scale_in, false));
 
    auto& minmax = dynamic_cast<DistributedVector<double>&>(minmax_in);
    const DistributedVector<double>* row_scale = has_rowscale ? dynamic_cast<const DistributedVector<double>*>(row_scale_in) : nullptr;
-   if (row_scale)
-      transform_dual_vector_for_matrix(*row_scale);
 
    border_left->getColMinMaxVec(get_min, initialize_vec, has_rowscale ? row_scale->children[0].get() : nullptr, *minmax.first);
    bottom_left_block->getColMinMaxVec(get_min, false, has_rowscale ? row_scale->last.get() : nullptr, *minmax.first);
 
    inner_matrix->getColMinMaxVec(get_min, initialize_vec, has_rowscale ? row_scale->children[0].get() : nullptr, *minmax.children[0]);
    border_bottom->getColMinMaxVec(get_min, false, has_rowscale ? row_scale->last.get() : nullptr, *minmax.children[0]);
-
-   if (row_scale)
-      reset_transformed_vector(*row_scale);
 }
 
 void BorderedMatrix::addRowSums(Vector<double>& vec_) const {
    assert(hasVecStructureForBorderedMat(vec_, false));
 
    auto& vec = dynamic_cast<DistributedVector<double>&>(vec_);
-   transform_dual_vector_for_matrix(vec);
 
    border_left->addRowSums(*vec.children[0]);
    inner_matrix->addRowSums(*vec.children[0]);
 
    bottom_left_block->addRowSums(*vec.last);
    border_bottom->addRowSums(*vec.last);
-
-   reset_transformed_vector(vec);
 }
 
 void BorderedMatrix::addColSums(Vector<double>& vec_) const {
@@ -243,7 +218,7 @@ bool BorderedMatrix::hasVecStructureForBorderedMat(const Vector<T>& vec, bool ro
       }
    }
    else {
-      if (vecs.first && vecs.children[0]->first) {
+      if (vecs.first) {
          std::cout << "col-first but root.first and children[0]->first!\n";
          return false;
       }
@@ -251,7 +226,6 @@ bool BorderedMatrix::hasVecStructureForBorderedMat(const Vector<T>& vec, bool ro
          std::cout << "col-first but NO root.last\n";
          return false;
       }
-
    }
 
    if (row_vec && vecs.length() != n) {
@@ -309,23 +283,3 @@ void BorderedMatrix::write_to_streamDense(std::ostream& out) const {
    if (iAmDistrib)
       MPI_Barrier(mpi_comm);
 }
-
-
-template<typename T>
-void BorderedMatrix::transform_dual_vector_for_matrix(const DistributedVector<T>& vec) const
-{
-   if (vec.first) {
-      assert(!vec.children[0]->first);
-      vec.children[0]->first = vec.first;
-   }
-}
-
-template<typename T>
-void BorderedMatrix::reset_transformed_vector(const DistributedVector<T>& vec) const
-{
-   if (vec.first) {
-      assert(vec.first == vec.children[0]->first);
-      vec.children[0]->first = nullptr;
-   }
-}
-

@@ -89,7 +89,6 @@ LinearSystem::LinearSystem(DistributedFactory* factory_, const Problem& problem)
    nomegaInv.reset(factory->make_inequalities_dual_vector());
    rhs.reset(factory->make_right_hand_side());
 
-
    primal_regularization_diagonal.reset(factory->make_primal_vector());
    dual_equality_regularization_diagonal.reset(factory->make_equalities_dual_vector());
    dual_inequality_regularization_diagonal.reset(factory->make_inequalities_dual_vector());

@@ -159,7 +159,7 @@ DistributedVector<double>* DistributedTree::newDualYVector(bool empty) const {
    const int yl = (np == -1) ? myl() : -1;
 
    if (!sub_root) {
-      y = new DistributedVector<double>(empty ? std::min(0, my()) : my(), empty ? std::min(yl, 0) : yl, commWrkrs);
+         y = new DistributedVector<double>(empty ? std::min(0, my()) : my(), empty ? std::min(yl, 0) : yl, commWrkrs);
 
       for (auto it : children) {
          std::shared_ptr<DistributedVector<double>> child{it->newDualYVector(empty)};

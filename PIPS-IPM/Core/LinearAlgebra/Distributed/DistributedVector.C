@@ -45,7 +45,7 @@ DistributedVector<T>::DistributedVector(int n_, int nl_, MPI_Comm mpiComm_)
 template<typename T>
 void DistributedVector<T>::AddChild(std::shared_ptr<DistributedVector<T>> child) {
    child->parent = this;
-   if (child->first->isKindOf(kStochVector))
+   if (child->first && child->first->isKindOf(kStochVector))
       dynamic_cast<DistributedVector<T>*>(child->first.get())->parent = this;
 
    children.push_back(child);

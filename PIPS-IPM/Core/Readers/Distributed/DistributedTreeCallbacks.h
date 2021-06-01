@@ -73,8 +73,8 @@ public:
 
    DistributedTree* switchToHierarchicalTree(DistributedQP*& data_to_split) override;
 
-   const std::vector<unsigned int>& getMapBlockSubTrees() const { return map_node_sub_root; };
-   std::vector<MPI_Comm> getChildComms() const;
+   [[nodiscard]] const std::vector<unsigned int>& getMapBlockSubTrees() const { return map_node_sub_root; };
+   [[nodiscard]] std::vector<MPI_Comm> getChildComms() const;
 
    void assertTreeStructureCorrect() const;
 

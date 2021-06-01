@@ -427,7 +427,6 @@ void DistributedTreeCallbacks::assertTreeStructureIsMyNodeSubRoot() const {
    assert(MZL == mzl_active + sub_root->MZL);
    assert(nx_active == sub_root->N);
 
-   std::cout << my_active << " " << sub_root->MY << std::endl;
    assert(my_active == sub_root->MY);
    assert(mz_active == sub_root->MZ);
 }
@@ -785,7 +784,7 @@ DistributedTree* DistributedTreeCallbacks::shaveDenseBorder(int nx_to_shave, int
    /* we move all of A0 to the border layer - else we have structural rank deficiency in the schur complement later */
 //   top_layer->my_active = this->my_active;
 //   this->adjust_active_size_by(&DistributedTreeCallbacks::my_active, &DistributedTree::MY, -this->my_active);
-   top_layer->my_active = -1;
+      top_layer->my_active = -1;
    top_layer->mz_active = -1;
 
    top_layer->myl_active = myl_to_shave;

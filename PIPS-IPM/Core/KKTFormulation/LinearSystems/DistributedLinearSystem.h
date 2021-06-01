@@ -185,8 +185,7 @@ public:
    virtual void addLniziLinkCons(Vector<double>& /*z0*/, Vector<double>& /*zi*/, bool /*use_local_RAC*/) {
       assert(false && "not implemented here");
    };
-
-
+   
    /* put BiT into res */
    virtual void putBiTBorder(DenseMatrix& res, const BorderBiBlock& BiT, int begin_rows, int end_rows) const;
 
@@ -210,8 +209,6 @@ public:
    computeInnerSystemRightHandSide(DistributedVector<double>& /*rhs_inner*/, const SimpleVector<double>& /*b0*/, bool /*use_local_RAC*/) {
       assert(false && "not implemented here");
    };
-
-public:
 
    /* add you part of the border times rhs to b0 */
    virtual void addBorderTimesRhsToB0(DistributedVector<double>& /*rhs*/, SimpleVector<double>& /*b0*/, BorderLinsys& /*border*/ ) {

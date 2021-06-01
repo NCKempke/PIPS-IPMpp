@@ -145,13 +145,6 @@ public:
 
    void atPutSpRow(int, const double*, int, const int*, int&) override { assert(0 && "not implemented"); };
 private:
-
-   template<typename T>
-   void transform_dual_vector_for_matrix(const DistributedVector<T>& vec) const;
-
-   template<typename T>
-   void reset_transformed_vector(const DistributedVector<T>& vec) const;
-
    template<typename T>
    bool hasVecStructureForBorderedMat(const Vector<T>& vec, bool row_vec) const;
 };
