@@ -786,6 +786,7 @@ DistributedTree* DistributedTreeCallbacks::shaveDenseBorder(int nx_to_shave, int
       top_layer->my_active = this->my_active;
       this->MY -= this->my_active;
       this->my_active = -1;
+      this->was_a0_moved_to_border = true;
    } else {
       top_layer->my_active = -1;
    }

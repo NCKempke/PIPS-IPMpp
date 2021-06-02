@@ -140,7 +140,10 @@ public:
    virtual DistributedTree* switchToHierarchicalTree(DistributedQP*& data) = 0;
 
    void printProcessTree() const;
+   bool was_A0_moved_to_border() const { return was_a0_moved_to_border; };
 protected:
+   bool was_a0_moved_to_border{false};
+
    void appendPrintTreeLayer(std::vector<std::string>& layer_outputs, unsigned int level) const;
 
    DistributedTree() = default;

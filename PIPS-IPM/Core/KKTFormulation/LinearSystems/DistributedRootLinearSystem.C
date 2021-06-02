@@ -290,17 +290,21 @@ void sLinsysRoot::afterFactor()
  * buffer += [  F0C    0     0     0      0   ] myl_border
  *           [  G0C    0     0     0      0   ] mzl_border
  *
- * [  0 F0C^T  G0C^T ]^T
- * [ A0   0     0    ]
- * [ C0   0     0    ]
- * [ F0V  0     0    ]   + buffer
- * [ G0V  0     0    ]
+ * A00 can only be present when stochNode->was_A0_moved_to_border()
+ * A0 is only present when the same is false
+ *
+ * [  0  [A00]T F0CT  G0CT ]^T
+ * [ [A0]  0     0     0   ]
+ * [ C0    0     0     0   ]
+ * [ F0V   0     0     0   ]   + buffer
+ * [ G0V   0     0     0   ]
  */
 // TODO : move to aug..
 void
 DistributedRootLinearSystem::finalizeZ0Hierarchical(DenseMatrix& buffer, BorderLinsys& Br,
    std::vector<BorderMod>& Br_mod_border, int begin_rows, int end_rows) {
    assert(0 <= begin_rows && begin_rows <= end_rows);
+
    // TODO : parallelize over MPI procs?
    finalizeDenseBorderModBlocked(Br_mod_border, buffer, begin_rows, end_rows);
 
@@ -314,19 +318,23 @@ DistributedRootLinearSystem::finalizeZ0Hierarchical(DenseMatrix& buffer, BorderL
 
    bool has_RAC = Br.has_RAC;
 
-   SparseMatrix* F0cons_border = has_RAC ? dynamic_cast<SparseMatrix*>(Br.F.first.get()) : nullptr;
-   SparseMatrix* G0cons_border = has_RAC ? dynamic_cast<SparseMatrix*>(Br.G.first.get()) : nullptr;
+   const SparseMatrix* F0cons_border = has_RAC ? dynamic_cast<const SparseMatrix*>(Br.F.first.get()) : nullptr;
+   const SparseMatrix* G0cons_border = has_RAC ? dynamic_cast<const SparseMatrix*>(Br.G.first.get()) : nullptr;
 
-   SparseMatrix* A0_border = has_RAC ? dynamic_cast<SparseMatrix*>(Br.A.first.get()) : nullptr;
-   SparseMatrix* C0_border = has_RAC ? dynamic_cast<SparseMatrix*>(Br.C.first.get()) : nullptr;
+   const SparseMatrix* A0_border = (has_RAC && !stochNode->was_A0_moved_to_border()) ? dynamic_cast<SparseMatrix*>(Br.A.first.get()) : nullptr;
 
-   const SparseMatrix* F0vec_border = has_RAC ? dynamic_cast<SparseMatrix*>(Br.A.last.get()) : &data->getLocalF();
-   const SparseMatrix* G0vec_border = has_RAC ? dynamic_cast<SparseMatrix*>(Br.C.last.get()) : &data->getLocalG();
+   const SparseMatrix* A00_border = (has_RAC && stochNode->was_A0_moved_to_border()) ? &data->getLocalA() : nullptr;
+   const SparseMatrix* C0_border = has_RAC ? dynamic_cast<const SparseMatrix*>(Br.C.first.get()) : nullptr;
+
+   const SparseMatrix* F0vec_border = has_RAC ? dynamic_cast<const SparseMatrix*>(Br.A.last.get()) : &data->getLocalF();
+   const SparseMatrix* G0vec_border = has_RAC ? dynamic_cast<const SparseMatrix*>(Br.C.last.get()) : &data->getLocalG();
 
    if (has_RAC)
       assert(F0cons_border && G0cons_border && A0_border && C0_border);
    assert(F0vec_border);
    assert(G0vec_border);
+
+   int mA00 = A00_border ? A00_border->n_rows() : 0;
 
    int mA0{0};
    int nA0{0};
@@ -348,20 +356,22 @@ DistributedRootLinearSystem::finalizeZ0Hierarchical(DenseMatrix& buffer, BorderL
    long long nC0 = C0_border ? C0_border->n_columns() : 0;
    long long nG0C = G0cons_border ? G0cons_border->n_columns() : 0;
    long long nG0V = G0vec_border->n_columns();
+   long long nA00 = A00_border ? A00_border->n_columns() : 0;
 
    assert(nA0 == nC0);
    assert(nF0V == nG0V);
 
+   if (A00_border)
+      assert(nA00 == nF0C);
    if (has_RAC)
       assert(nA0 == nF0V);
 
    assert(nF0C == nG0C);
-   if (mA0 != 0)
-      assert(nF0C + mA0 + mC0 + mF0V + mG0V == buffer.n_columns());
+   assert(nF0C + mA0 + mC0 + mF0V + mG0V == buffer.n_columns());
 
    if (!sc_compute_blockwise_hierarchical) {
       if (has_RAC)
-         assert(buffer.n_rows() >= nF0V + mF0C + mG0C);
+         assert(buffer.n_rows() >= nF0V + mA00 + mF0C + mG0C);
       else
          assert(buffer.n_rows() >= nF0V);
    }
@@ -388,10 +398,23 @@ DistributedRootLinearSystem::finalizeZ0Hierarchical(DenseMatrix& buffer, BorderL
          buffer.addMatAt(G0vec_border->getTranspose(), begin_rows, end_f0vblock, 0, nF0C + mA0 + mC0 + mF0V);
    }
 
+   /* A00 */
+   {
+      const int start_A00_block = nA0;
+      const int end_A00_block = nA0 + mA00;
+
+      if (mA00 > 0 && begin_rows < end_A00_block && start_A00_block <= end_rows) {
+         const int start_A00_mat = std::max(begin_rows, start_A00_block) - start_A00_block;
+         const int end_A00_mat = std::min(end_rows, end_A00_block) - start_A00_block;
+         assert(0 <= start_A00_mat && start_A00_mat <= end_A00_mat);
+         buffer.addMatAt(*A00_border, start_A00_mat, end_A00_mat, std::max(0, start_A00_block - begin_rows), 0);
+      }
+   }
+
    /* F0C */
    {
-      const int start_F0C_block = nA0;
-      const int end_F0C_block = nA0 + mF0C;
+      const int start_F0C_block = nA0 + mA00;
+      const int end_F0C_block = nA0 + mA00 + mF0C;
 
       if (mF0C > 0 && begin_rows < end_F0C_block && start_F0C_block <= end_rows) {
          const int start_F0C_mat = std::max(begin_rows, start_F0C_block) - start_F0C_block;
@@ -403,8 +426,8 @@ DistributedRootLinearSystem::finalizeZ0Hierarchical(DenseMatrix& buffer, BorderL
 
    /* G0C */
    {
-      const int start_G0C_block = nA0 + mF0C;
-      const int end_G0C_block = nA0 + mF0C + mG0C;
+      const int start_G0C_block = nA0 + mA00 + mF0C;
+      const int end_G0C_block = nA0 + mA00 + mF0C + mG0C;
 
       if (mG0C > 0 && begin_rows < end_G0C_block && start_G0C_block <= end_rows) {
          const int start_G0C_mat = std::max(begin_rows, start_G0C_block) - start_G0C_block;
