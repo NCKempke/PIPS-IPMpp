@@ -29,9 +29,6 @@ sLinsysRootAugHierInner::sLinsysRootAugHierInner(DistributedFactory* factory, Di
 
 void sLinsysRootAugHierInner::assembleLocalKKT() {
    for (size_t c = 0; c < children.size(); ++c) {
-#ifdef STOCH_TESTING
-      g_scenNum = c;
-#endif
       if (children[c]->mpiComm == MPI_COMM_NULL)
          continue;
 
@@ -248,6 +245,7 @@ void sLinsysRootAugHierInner::addTermToSchurComplBlocked(bool sparseSC, Symmetri
    assert(data->getLocalFBorder().n_columns() == data->getLocalGBorder().n_columns());
    assert(dynamic_cast<const DistributedMatrix&>(*data->A).Blmat->is_a(kStripMatrix));
    assert(dynamic_cast<const DistributedMatrix&>(*data->C).Blmat->is_a(kStripMatrix));
+   assert(n_empty_rows_inner_border + data->getLocalFBorder().n_rows() + data->getLocalGBorder().n_rows() == SC.size());
 
    BorderLinsys Bl(n_empty_rows_inner_border, data->getLocalFBorder(), data->getLocalGBorder(), use_local_RAC);
    BorderLinsys Br(n_empty_rows_inner_border, data->getLocalFBorder(), data->getLocalGBorder(), use_local_RAC);

@@ -651,14 +651,9 @@ std::unique_ptr<SparseSymmetricMatrix> DistributedQP::createSchurCompSymbSparseU
 
    krowM[0] = 0;
 
-   // get B_0^T (resp. A_0^T)
-   const SparseMatrix& Btrans = getLocalB().getTranspose();
-   const int* startRowBtrans = Btrans.krowM();
-   const int* colidxBtrans = Btrans.jcolM();
-
 #ifndef NDEBUG
    if (!is_hierarchy_inner_leaf) {
-      const auto[bm, bn] = Btrans.n_rows_columns();
+      const auto[bm, bn] = getLocalB().getTranspose().n_rows_columns();
       assert(bm == nx0 && (bn == my0 || my0 == 0));
    } else {
       assert(nx0 == 0);
@@ -671,9 +666,14 @@ std::unique_ptr<SparseSymmetricMatrix> DistributedQP::createSchurCompSymbSparseU
 
    assert(nx0NonZero >= 0);
 
-   // dense square block, B_0^T, and dense border blocks todo: add space for CDCt
+   // dense square block, B_0^T, and dense border blocks
    for (int i = 0; i < nx0NonZero; ++i) {
-      const int blength = startRowBtrans[i + 1] - startRowBtrans[i];
+      // get B_0^T (resp. A_0^T)
+      const SparseMatrix& Btrans = getLocalB().getTranspose();
+      const int* startRowBtrans = Btrans.krowM();
+      const int* colidxBtrans = Btrans.jcolM();
+
+      const int blength = my0 > 0 ? startRowBtrans[i + 1] - startRowBtrans[i] : 0;
       assert(blength >= 0);
 
       krowM[i + 1] = krowM[i] + (nx0 - i) + blength + myl + mzl;
@@ -682,7 +682,9 @@ std::unique_ptr<SparseSymmetricMatrix> DistributedQP::createSchurCompSymbSparseU
       appendRowDense(i, nx0, nnzcount, jcolM);
 
       /* B0^T */
-      appendRowSparse(startRowBtrans[i], startRowBtrans[i + 1], nx0, colidxBtrans, nnzcount, jcolM);
+      if (my0 > 0) {
+         appendRowSparse(startRowBtrans[i], startRowBtrans[i + 1], nx0, colidxBtrans, nnzcount, jcolM);
+      }
 
       /* dense sum X1^T Fi^T and X1^T Gi^T */
       appendRowDense(nx0 + my0, nx0 + my0 + myl + mzl, nnzcount, jcolM);
@@ -694,7 +696,14 @@ std::unique_ptr<SparseSymmetricMatrix> DistributedQP::createSchurCompSymbSparseU
    for (int i = nx0NonZero; i < nx0; ++i) {
       appendRowDense(i, nx0, nnzcount, jcolM);
 
-      appendRowSparse(startRowBtrans[i], startRowBtrans[i + 1], nx0, colidxBtrans, nnzcount, jcolM);
+      if (my0 > 0) {
+         // get B_0^T (resp. A_0^T)
+         const SparseMatrix& Btrans = getLocalB().getTranspose();
+         const int* startRowBtrans = Btrans.krowM();
+         const int* colidxBtrans = Btrans.jcolM();
+
+         appendRowSparse(startRowBtrans[i], startRowBtrans[i + 1], nx0, colidxBtrans, nnzcount, jcolM);
+      }
 
       if (myl > 0) {
          const SparseMatrix& Ft = getLocalF().getTranspose();
@@ -2300,7 +2309,8 @@ int DistributedQP::getSchurCompMaxNnz() const {
    nnz += nnzTriangular(n0);
 
    // add B_0 (or A_0, depending on notation)
-   nnz += getLocalB().numberOfNonZeros();
+   if (my > 0)
+      nnz += getLocalB().numberOfNonZeros();
 
    // add borders
    /* X1iT FiT */

@@ -74,11 +74,12 @@ DistributedRootLinearSystem::DistributedRootLinearSystem(DistributedFactory* fac
 void DistributedRootLinearSystem::print_solver_regularization_and_sc_info(const std::string&& name) const {
    if (hasSparseKkt) {
       std::cout << name << ": sparse Schur complement (dim " <<  kkt->size() << "): max non-zeros: " << data->getSchurCompMaxNnz() << "\n";
+      std::cout << name << ": linear solver: " << sparse_solver_type << "\n";
    } else {
       std::cout << name << ": dense Schur complement (dim " <<  kkt->size() << "): max non-zeros: " << kkt->size() * kkt->size() << "\n";
+      std::cout << name << ": linear solver: " << pipsipmpp_options::get_solver_dense() << "\n";
    }
 
-   std::cout << name << ": linear solver: " << (hasSparseKkt ? solver_type : pipsipmpp_options::get_solver_dense()) << "\n";
 
    if (regularization_strategy) {
       std::cout << "setting up root regularization : " << locnx << " " << locmy << " " << locmz << " " << locmyl << " "
@@ -115,27 +116,27 @@ void DistributedRootLinearSystem::createSolverAndSchurComplement(bool sub_root) 
 
 
 void DistributedRootLinearSystem::createSparseSolver(bool sub_root) {
-   solver_type = sub_root ? pipsipmpp_options::get_solver_sub_root() : pipsipmpp_options::get_solver_root();
+   sparse_solver_type = sub_root ? pipsipmpp_options::get_solver_sub_root() : pipsipmpp_options::get_solver_root();
    auto& kkt_sp = dynamic_cast<SparseSymmetricMatrix&>(*kkt);
 
-   if (solver_type == SolverType::SOLVER_MUMPS) {
+   if (sparse_solver_type == SolverType::SOLVER_MUMPS) {
 #ifdef WITH_MUMPS
       solver = std::make_unique<MumpsSolverRoot>(mpiComm, kkt_sp, allreduce_kkt);
 #endif
-   } else if (solver_type == SolverType::SOLVER_PARDISO) {
+   } else if (sparse_solver_type == SolverType::SOLVER_PARDISO) {
 #ifdef WITH_PARDISO
       solver = std::make_unique<PardisoProjectIndefSolver>(kkt_sp, allreduce_kkt, mpiComm);
 #endif
-   } else if (solver_type == SolverType::SOLVER_MKL_PARDISO) {
+   } else if (sparse_solver_type == SolverType::SOLVER_MKL_PARDISO) {
 #ifdef WITH_MKL_PARDISO
       solver = std::make_unique<PardisoMKLIndefSolver>(kkt_sp, allreduce_kkt, mpiComm);
 #endif
-   } else if (solver_type == SolverType::SOLVER_MA57) {
+   } else if (sparse_solver_type == SolverType::SOLVER_MA57) {
 #ifdef WITH_MA57
       solver = std::make_unique<Ma57SolverRoot>(kkt_sp, allreduce_kkt, mpiComm, "sLinsysRootAug");
 #endif
    } else {
-      assert(solver_type == SolverType::SOLVER_MA27);
+      assert(sparse_solver_type == SolverType::SOLVER_MA27);
 #ifdef WITH_MA27
       solver = std::make_unique<Ma27SolverRoot>(kkt_sp, allreduce_kkt, mpiComm, "sLinsysRootAug");
 #endif

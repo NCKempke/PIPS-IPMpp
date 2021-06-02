@@ -262,9 +262,6 @@ void sLinsysRootAug::assembleLocalKKT() {
       assert(!is_layer_only_twolinks);
 
    for (size_t c = 0; c < children.size(); ++c) {
-#ifdef STOCH_TESTING
-      g_scenNum = c;
-#endif
       if (children[c]->mpiComm == MPI_COMM_NULL)
          continue;
 

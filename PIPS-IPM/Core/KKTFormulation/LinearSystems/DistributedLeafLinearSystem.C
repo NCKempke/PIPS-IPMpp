@@ -15,7 +15,7 @@ DistributedLeafLinearSystem::DistributedLeafLinearSystem(DistributedFactory* fac
    prob, std::move(dd_), std::move(dq_), std::move(nomegaInv_), std::move(primal_reg_), std::move(dual_y_reg_), std::move(dual_z_reg_), std::move(rhs_), false) {
 
    create_kkt();
-   solver_type = pipsipmpp_options::get_solver_leaf();
+   sparse_solver_type = pipsipmpp_options::get_solver_leaf();
    solver = DistributedFactory::make_leaf_solver(kkt.get());
 
    if (apply_regularization) {
@@ -33,7 +33,7 @@ DistributedLeafLinearSystem::DistributedLeafLinearSystem(DistributedFactory* fac
       data->getLocalNnz(nnzQ, nnzB, nnzD);
 
       std::cout << "DistributedLeafLinearSystem: sparse Schur complement (dim " <<  kkt->size() << "): max non-zeros: " << nnzQ + nnzB * 2 + nnzD * 2 << "\n";
-      std::cout << "DistributedLeafLinearSystem: linear solver: " << solver_type << "\n";
+      std::cout << "DistributedLeafLinearSystem: linear solver: " << sparse_solver_type << "\n";
       if (apply_regularization) {
          std::cout << "setting up root regularization : " << locnx << " " << locmy << " " << locmz << " " << locmyl << " "
             << locmzl << std::endl;
@@ -321,7 +321,6 @@ void DistributedLeafLinearSystem::addLeftBorderKiInvBrToRes(AbstractMatrix& resu
       else
          BriT = std::make_unique<BorderBiBlock>(Br.n_empty_rows, dynamic_cast<SparseMatrix&>(*Br.F.first),
             dynamic_cast<SparseMatrix&>(*Br.G.first), false);
-
 
       // TODO : return early if all Bordermods and Br were empty
       if (!BriT->isEmpty())
