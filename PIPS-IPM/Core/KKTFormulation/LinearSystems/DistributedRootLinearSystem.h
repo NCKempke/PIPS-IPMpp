@@ -28,6 +28,8 @@ class DistributedRootLinearSystem : public DistributedLinearSystem {
 protected:
    void createChildren();
 
+   void print_solver_regularization_and_sc_info(const std::string&& name) const;
+
 private:
    void init();
 
@@ -39,7 +41,7 @@ public:
    DistributedRootLinearSystem(DistributedFactory* factory, DistributedQP* prob_, std::shared_ptr<Vector<double>> dd_,
       std::shared_ptr<Vector<double>> dq_, std::shared_ptr<Vector<double>> nomegaInv_,
       std::shared_ptr<Vector<double>> primal_reg_, std::shared_ptr<Vector<double>> dual_y_reg_,
-      std::shared_ptr<Vector<double>> dual_z_reg_, std::shared_ptr<Vector<double>> rhs_);
+      std::shared_ptr<Vector<double>> dual_z_reg_, std::shared_ptr<Vector<double>> rhs_, bool create_sub_root_solver);
 
    void factor2() override;
 
@@ -115,24 +117,29 @@ public:
 
    // all_reduces specified submatrix (in chunks)
    static void
-   submatrixAllReduce(DenseSymmetricMatrix* A, int startRow, int startCol, int nRows, int nCols, MPI_Comm comm);
+   submatrixAllReduce(DenseSymmetricMatrix& A, int startRow, int startCol, int nRows, int nCols, MPI_Comm comm);
 
    void allreduceMatrix(AbstractMatrix& mat, bool is_sparse, bool is_sym, MPI_Comm comm);
 
    static void
-   submatrixAllReduceFull(DenseSymmetricMatrix* A, int startRow, int startCol, int nRows, int nCols, MPI_Comm comm);
+   submatrixAllReduceFull(DenseSymmetricMatrix& A, int startRow, int startCol, int nRows, int nCols, MPI_Comm comm);
 
-   static void submatrixAllReduceFull(DenseMatrix* A, int startRow, int startCol, int nRows, int nCols, MPI_Comm comm);
+   static void submatrixAllReduceFull(DenseMatrix& A, int startRow, int startCol, int nRows, int nCols, MPI_Comm comm);
 
    // all_reduces specified submatrix as a while
    static void submatrixAllReduceFull(double** A, int startRow, int startCol, int nRows, int nCols, MPI_Comm comm);
 
    // all_reducees lower half (including diagonal) of specified submatrix
-   static void submatrixAllReduceDiagLower(DenseSymmetricMatrix* A, int substart, int subsize, MPI_Comm comm);
+   static void submatrixAllReduceDiagLower(DenseSymmetricMatrix& A, int substart, int subsize, MPI_Comm comm);
 
    SCsparsifier precondSC;
 
 protected: //buffers
+
+   void createSolverAndSchurComplement(bool sub_root);
+   void createSparseSolver(bool sub_root);
+   void createDenseSolver();
+   [[nodiscard]] virtual std::unique_ptr<SymmetricMatrix> createKKT() const;
 
    SparseSymmetricMatrix* kktDist{};
 

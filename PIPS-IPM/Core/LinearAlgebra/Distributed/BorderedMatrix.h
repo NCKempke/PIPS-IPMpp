@@ -35,12 +35,12 @@ class DistributedVector;
 // TODO : make more general ? K B B' and C can be any matrices in theory..
 class BorderedMatrix : public GeneralMatrix {
 public:
-   std::shared_ptr<DistributedMatrix> const inner_matrix{};
-   std::unique_ptr<StripMatrix> const border_left{};
-   std::unique_ptr<StripMatrix> const border_bottom{};
+   std::shared_ptr<DistributedMatrix> inner_matrix{};
+   std::unique_ptr<StripMatrix> border_left{};
+   std::unique_ptr<StripMatrix> border_bottom{};
 
    // TODO: is SparseGenMatrix appropriate? What does this block look like -> it has parts of the diagonals in it for inequality linking constraints and nothing else?
-   std::unique_ptr<GeneralMatrix> const bottom_left_block{};
+   std::unique_ptr<GeneralMatrix> bottom_left_block{};
 
 protected:
 
@@ -57,6 +57,8 @@ public:
       MPI_Comm mpi_comm_);
 
    ~BorderedMatrix() override = default;
+
+   MPI_Comm get_mpi_comm() const { return mpi_comm; };
 
    [[nodiscard]] int is_a(int matrixType) const override;
 

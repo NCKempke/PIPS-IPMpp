@@ -2024,6 +2024,16 @@ n_links_in_root
       AddChild(child);
 }
 
+template <typename T>
+void DistributedVector<T>::move_first_to_parent() {
+   assert(parent);
+   assert(!parent->first);
+   assert(this->first);
+
+   this->n -= this->first->length();
+   std::swap(this->first, parent->first);
+}
+
 template<typename T>
 DistributedVector<T>* DistributedVector<T>::raiseBorder(int n_first_to_shave, int n_last_to_shave) {
    assert(!parent);

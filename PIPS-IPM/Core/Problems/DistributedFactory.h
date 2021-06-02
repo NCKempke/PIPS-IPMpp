@@ -95,7 +95,7 @@ public:
       std::shared_ptr<Vector<double>> dual_inequality_regularization,
       std::shared_ptr<Vector<double>> rhs);
 
-   static DoubleLinearSolver* make_leaf_solver(const AbstractMatrix* kkt);
+   static std::unique_ptr<DoubleLinearSolver> make_leaf_solver(const AbstractMatrix* kkt);
 
    DistributedTree* tree{};
 

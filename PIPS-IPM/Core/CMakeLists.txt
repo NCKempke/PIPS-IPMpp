@@ -25,7 +25,7 @@ add_library(pips-ipmpp STATIC
         Utilities/pipschecks.C
         Utilities/hash.C
         Utilities/sort.cpp
-        LinearAlgebra/Distributed/DistributedMatrixUtilities.cpp)
+        LinearAlgebra/Distributed/DistributedMatrixUtilities.cpp LinearAlgebra/Distributed/BorderedMatrixLiftedA0wrapper.h LinearAlgebra/Distributed/BordededMatrixLiftedA0wrapper.cpp)
 
 target_include_directories(pips-ipmpp
     PRIVATE

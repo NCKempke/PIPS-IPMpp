@@ -96,6 +96,7 @@ public:
 
    /** adds matrix to this starting at row_0 col_0 - matrix must lie completely either in lower or upper triangular part */
    void add_matrix_at(const DenseMatrix& matrix, int row_0, int col_0);
+   void add_matrix_at_without_diag(const SparseSymmetricMatrix& matrix, int row_0, int col_0);
    void add_matrix_at(const SparseMatrix& matrix, int row_0, int col_0);
 
 };

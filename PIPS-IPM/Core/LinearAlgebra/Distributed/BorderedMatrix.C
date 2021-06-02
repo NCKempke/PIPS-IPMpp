@@ -158,6 +158,8 @@ void BorderedMatrix::getColMinMaxVec(bool get_min, bool initialize_vec, const Ve
    assert(hasVecStructureForBorderedMat(minmax_in, true));
 
    const bool has_rowscale = (row_scale_in != nullptr);
+   if (has_rowscale)
+      assert(hasVecStructureForBorderedMat(*row_scale_in, false));
 
    auto& minmax = dynamic_cast<DistributedVector<double>&>(minmax_in);
    const DistributedVector<double>* row_scale = has_rowscale ? dynamic_cast<const DistributedVector<double>*>(row_scale_in) : nullptr;
@@ -218,8 +220,8 @@ bool BorderedMatrix::hasVecStructureForBorderedMat(const Vector<T>& vec, bool ro
       }
    }
    else {
-      if (vecs.first) {
-         std::cout << "col-first but root.first and children[0]->first!\n";
+      if (vecs.first && vecs.first != vecs.children[0]->first) {
+         std::cout << "col-first but root.first!\n";
          return false;
       }
       if (vecs.last == nullptr) {

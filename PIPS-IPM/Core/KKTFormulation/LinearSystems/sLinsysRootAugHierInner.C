@@ -16,30 +16,15 @@ sLinsysRootAugHierInner::sLinsysRootAugHierInner(DistributedFactory* factory, Di
    dynamic_cast<DistributedVector<double>&>(*dq_).first,
    dynamic_cast<DistributedVector<double>&>(*nomegaInv_).first, dynamic_cast<DistributedVector<double>&>(*regP_).first,
    dynamic_cast<DistributedVector<double>&>(*regDy_).first, dynamic_cast<DistributedVector<double>&>(*regDz_).first,
-   rhs_, false) {
-   assert(locnx == 0);
-   assert(locmy == 0);
-   assert(locmz == 0);
-
-   createSolversAndKKts();
-}
-
-void sLinsysRootAugHierInner::createSolversAndKKts() {
+   rhs_, true) {
+   assert(locnx == 0 && locmy == 0 && locmz == 0);
    assert(hasSparseKkt);
 
-   const SolverType solver_sub_root = pipsipmpp_options::get_solver_sub_root();
-
    static bool printed = false;
-   if (!printed && PIPS_MPIgetRank() == 0)
-      std::cout << "sLinsysRootAugHierInner: using " << solver_sub_root << "\n";
-
-   kkt.reset(createKKT());
-
-   if (!printed && PIPS_MPIgetRank() == 0)
-      std::cout << "sLinsysRootAugHierInner: getSchurCompMaxNnz " << data->getSchurCompMaxNnz() << "\n";
-   printed = true;
-
-   createSolversSparse(solver_sub_root);
+   if (!printed && PIPS_MPIgetRank() == 0) {
+      print_solver_regularization_and_sc_info("sLinsysRootAugHierInner");
+      printed = true;
+   }
 }
 
 void sLinsysRootAugHierInner::assembleLocalKKT() {

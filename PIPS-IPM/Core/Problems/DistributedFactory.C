@@ -77,7 +77,7 @@ DistributedFactory::~DistributedFactory() {
    delete tree;
 }
 
-DoubleLinearSolver* DistributedFactory::make_leaf_solver(const AbstractMatrix* kkt_) {
+std::unique_ptr<DoubleLinearSolver> DistributedFactory::make_leaf_solver(const AbstractMatrix* kkt_) {
    const auto& kkt = dynamic_cast<const SparseSymmetricMatrix&>(*kkt_);
 
    const SolverType leaf_solver = pipsipmpp_options::get_solver_leaf();
@@ -85,15 +85,15 @@ DoubleLinearSolver* DistributedFactory::make_leaf_solver(const AbstractMatrix* k
    if (!pipsipmpp_options::get_bool_parameter("SC_COMPUTE_BLOCKWISE")) {
       if (leaf_solver == SolverType::SOLVER_MUMPS) {
 #ifdef WITH_MUMPS
-         return new MumpsSolverLeaf(kkt);
+         return std::make_unique<MumpsSolverLeaf>(kkt);
 #endif
       } else if (leaf_solver == SolverType::SOLVER_PARDISO) {
 #ifdef WITH_PARDISO
-         return new PardisoProjectSchurSolver(kkt);
+         return std::make_unique<PardisoProjectSchurSolver>(kkt);
 #endif
       } else if (leaf_solver == SolverType::SOLVER_MKL_PARDISO) {
 #ifdef WITH_MKL_PARDISO
-         return new PardisoMKLSchurSolver(kkt);
+         return std::make_unique<PardisoMKLSchurSolver>(kkt);
 #endif
       }
 
@@ -101,23 +101,23 @@ DoubleLinearSolver* DistributedFactory::make_leaf_solver(const AbstractMatrix* k
    } else {
       if (leaf_solver == SolverType::SOLVER_PARDISO) {
 #ifdef WITH_PARDISO
-         return new PardisoProjectSolver(kkt);
+         return std::make_unique<PardisoProjectSolver>(kkt);
 #endif
       } else if (leaf_solver == SolverType::SOLVER_MKL_PARDISO) {
 #ifdef WITH_MKL_PARDISO
-         return new PardisoMKLSolver(kkt);
+         return std::make_unique<PardisoMKLSolver>(kkt);
 #endif
       } else if (leaf_solver == SolverType::SOLVER_MA57) {
 #ifdef WITH_MA57
-         return new Ma57Solver(kkt);
+         return std::make_unique<Ma57Solver>(kkt);
 #endif
       } else if (leaf_solver == SolverType::SOLVER_MA27) {
 #ifdef WITH_MA27
-         return new Ma27Solver(kkt);
+         return std::make_unique<Ma27Solver>(kkt);
 #endif
       } else if (leaf_solver == SolverType::SOLVER_MUMPS) {
 #ifdef WITH_MUMPS
-         return new MumpsSolverLeaf(kkt);
+         return std::make_unique<MumpsSolverLeaf>(kkt);
 #endif
       }
 
@@ -354,6 +354,7 @@ DistributedFactory::make_linear_system_root(DistributedQP* prob, std::shared_ptr
    std::shared_ptr<Vector<double>> primal_regularization, std::shared_ptr<Vector<double>> dual_equality_regularization,
    std::shared_ptr<Vector<double>> dual_inequality_regularization,
    std::shared_ptr<Vector<double>> rhs) {
+
    if (prob->isHierarchyInnerLeaf())
       return new sLinsysRootAugHierInner(this, prob, std::move(primal_diagonal), std::move(dq), std::move(nomegaInv),
          std::move(primal_regularization),
@@ -363,7 +364,7 @@ DistributedFactory::make_linear_system_root(DistributedQP* prob, std::shared_ptr
       return new sLinsysRootAug(this, prob, std::move(primal_diagonal), std::move(dq), std::move(nomegaInv),
          std::move(primal_regularization),
          std::move(dual_equality_regularization),
-         std::move(dual_inequality_regularization), rhs, true);
+         std::move(dual_inequality_regularization), rhs, false);
 }
 
 std::unique_ptr<DistributedRootLinearSystem>

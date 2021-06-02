@@ -56,9 +56,9 @@ public:
 
    [[nodiscard]] int getLocalmzl() const;
 
-   int getLocalSizes(int& nx, int& my, int& mz, int& myl, int& mzl) const;
+   void getLocalSizes(int& nx, int& my, int& mz, int& myl, int& mzl) const;
 
-   int getLocalNnz(int& nnzQ, int& nnzB, int& nnzD);
+   void getLocalNnz(int& nnzQ, int& nnzB, int& nnzD) const;
 
    [[nodiscard]] int getN0LinkVars() const { return n0LinkVars; }
 
@@ -70,10 +70,10 @@ public:
 
    [[nodiscard]] bool exploitingLinkStructure() const { return useLinkStructure; };
 
-   SparseSymmetricMatrix* createSchurCompSymbSparseUpper() const;
+   std::unique_ptr<SparseSymmetricMatrix> createSchurCompSymbSparseUpper() const;
 
    // distributed version
-   SparseSymmetricMatrix* createSchurCompSymbSparseUpperDist(int blocksStart, int blocksEnd) const;
+   std::unique_ptr<SparseSymmetricMatrix> createSchurCompSymbSparseUpperDist(int blocksStart, int blocksEnd) const;
 
    const SparseSymmetricMatrix& getLocalQ() const;
 

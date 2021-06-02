@@ -358,6 +358,23 @@ void DenseSymmetricMatrix::add_matrix_at(const DenseMatrix& matrix, int row_0, i
    }
 }
 
+void DenseSymmetricMatrix::add_matrix_at_without_diag(const SparseSymmetricMatrix& matrix, int row_0, int col_0) {
+   const int* krowQ = matrix.krowM();
+   const int* jcolQ = matrix.jcolM();
+   const double* dQ = matrix.M();
+   for (int i = 0; i < matrix.n_rows(); i++) {
+      const int pend = krowQ[i + 1];
+      for (int p = krowQ[i]; p < pend; p++) {
+         const int j = jcolQ[p];
+         if (i == j)
+            continue;
+         double val = dQ[p];
+         (*this)[i][j] += val;
+         (*this)[j][i] += val;
+      }
+   }
+}
+
 void DenseSymmetricMatrix::add_matrix_at(const SparseMatrix& matrix, int row_0, int col_0)
 {
    const auto m_matrix = matrix.n_rows();

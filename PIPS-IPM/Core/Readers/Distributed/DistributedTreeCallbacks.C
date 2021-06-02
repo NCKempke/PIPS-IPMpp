@@ -782,9 +782,13 @@ DistributedTree* DistributedTreeCallbacks::shaveDenseBorder(int nx_to_shave, int
    this->nx_active -= nx_to_shave;
 
    /* we move all of A0 to the border layer - else we have structural rank deficiency in the schur complement later */
-//   top_layer->my_active = this->my_active;
-//   this->adjust_active_size_by(&DistributedTreeCallbacks::my_active, &DistributedTree::MY, -this->my_active);
+   if (pipsipmpp_options::get_bool_parameter("HIERARCHICAL_MOVE_A0_TO_DENSE_LAYER")) {
+      top_layer->my_active = this->my_active;
+      this->MY -= this->my_active;
+      this->my_active = -1;
+   } else {
       top_layer->my_active = -1;
+   }
    top_layer->mz_active = -1;
 
    top_layer->myl_active = myl_to_shave;

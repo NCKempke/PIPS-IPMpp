@@ -3,9 +3,6 @@
    See license and copyright information in the documentation */
 
 #include "sLinsysRootAug.h"
-#include "DeSymIndefSolver.h"
-#include "DeSymIndefSolver2.h"
-#include "DeSymPSDSolver.h"
 #include "DistributedQP.hpp"
 #include "BorderedSymmetricMatrix.h"
 #include "PIPSIPMppOptions.h"
@@ -32,19 +29,15 @@ static void biCGStabCommunicateStatus(int flag, int it) {
       gInnerBiCGFails++;
 }
 
-sLinsysRootAug::sLinsysRootAug(DistributedFactory* factory_, DistributedQP* prob_) : DistributedRootLinearSystem(
-   factory_, prob_) {
-   if (pipsipmpp_options::get_bool_parameter("HIERARCHICAL"))
-      assert(false && "should not end up here");
+sLinsysRootAug::sLinsysRootAug(DistributedFactory* factory_, DistributedQP* prob_, bool is_hierarchy_root) : DistributedRootLinearSystem(
+   factory_, prob_, is_hierarchy_root) {
 
-   assert(locmyl >= 0 && locmzl >= 0);
-
-   createSolversAndKKts();
-
-   if (apply_regularization) {
-      std::cout << "setting up root regularization : " << locnx << " " << locmy << " " << locmz << " " << locmyl << " "
-                << locmzl << std::endl;
-      regularization_strategy = std::make_unique<RegularizationStrategy>(locnx, locmy + locmyl + locmzl);
+   if (!is_hierarchy_root) {
+      static bool printed = false;
+      if (!printed && PIPS_MPIgetRank() == 0) {
+         print_solver_regularization_and_sc_info("sLinsysRootAug");
+         printed = true;
+      }
    }
 
    redRhs = std::make_unique<SimpleVector<double>>(locnx + locmy + locmz + locmyl + locmzl);
@@ -54,123 +47,24 @@ sLinsysRootAug::sLinsysRootAug(DistributedFactory* factory_, DistributedQP* prob
    std::shared_ptr<Vector<double>> dq_,
    std::shared_ptr<Vector<double>> nomegaInv_, std::shared_ptr<Vector<double>> regP,
    std::shared_ptr<Vector<double>> regDy, std::shared_ptr<Vector<double>> regDz, std::shared_ptr<Vector<double>> rhs_,
-   bool create_solvers)
+   bool create_sub_root_solver)
    : DistributedRootLinearSystem(factory_, prob_, std::move(dd_), std::move(dq_), std::move(nomegaInv_),
-   std::move(regP), std::move(regDy), std::move(regDz), std::move(rhs_)) {
+   std::move(regP), std::move(regDy), std::move(regDz), std::move(rhs_), create_sub_root_solver) {
    assert(pipsipmpp_options::get_bool_parameter("HIERARCHICAL"));
-   assert(locmyl >= 0 && locmzl >= 0);
    assert(computeBlockwiseSC);
-
-
-   if (create_solvers) {
-      createSolversAndKKts();
-   }
-
-   if (apply_regularization) {
-      std::cout << "setting up root regularization : " << locnx << " " << locmy << " " << locmz << " " << locmyl << " "
-                << locmzl << std::endl;
-      regularization_strategy = std::make_unique<RegularizationStrategy>(locnx, locmy + locmyl + locmzl);
-   }
 
    redRhs = std::make_unique<SimpleVector<double>>(locnx + locmy + locmz + locmyl + locmzl);
 }
 
-SymmetricMatrix* sLinsysRootAug::createKKT() const {
-   const int n = locnx + locmy + locmyl + locmzl;
-
-   if (hasSparseKkt) {
-      SparseSymmetricMatrix* sparsekkt;
-
-      if (usePrecondDist)
-         sparsekkt = data->createSchurCompSymbSparseUpperDist(childrenProperStart, childrenProperEnd);
-      else
-         sparsekkt = data->createSchurCompSymbSparseUpper();
-
-      assert(sparsekkt->size() == n);
-
-      return sparsekkt;
-   } else {
-      return new DenseSymmetricMatrix(n);
-   }
-}
-
-void sLinsysRootAug::createSolversSparse(SolverType solver_type) {
-   auto& kkt_sp = dynamic_cast<SparseSymmetricMatrix&>(*kkt);
-
-   if (solver_type == SolverType::SOLVER_MUMPS) {
-#ifdef WITH_MUMPS
-      solver = std::make_unique<MumpsSolverRoot>(mpiComm, kkt_sp, allreduce_kkt);
-#endif
-   } else if (solver_type == SolverType::SOLVER_PARDISO) {
-#ifdef WITH_PARDISO
-      solver = std::make_unique<PardisoProjectIndefSolver>(kkt_sp, allreduce_kkt, mpiComm);
-#endif
-   } else if (solver_type == SolverType::SOLVER_MKL_PARDISO) {
-#ifdef WITH_MKL_PARDISO
-      solver = std::make_unique<PardisoMKLIndefSolver>(kkt_sp, allreduce_kkt, mpiComm);
-#endif
-   } else if (solver_type == SolverType::SOLVER_MA57) {
-#ifdef WITH_MA57
-      solver = std::make_unique<Ma57SolverRoot>(kkt_sp, allreduce_kkt, mpiComm, "sLinsysRootAug");
-#endif
-   } else {
-      assert(solver_type == SolverType::SOLVER_MA27);
-#ifdef WITH_MA27
-      solver = std::make_unique<Ma27SolverRoot>(kkt_sp, allreduce_kkt, mpiComm, "sLinsysRootAug");
-#endif
-   }
-}
-
-void sLinsysRootAug::createSolversDense() {
-   const SolverTypeDense solver_type = pipsipmpp_options::get_solver_dense();
-   const auto& kktmat = dynamic_cast<const DenseSymmetricMatrix&>(*kkt);
-
-   if (solver_type == SolverTypeDense::SOLVER_DENSE_SYM_INDEF)
-      solver = std::make_unique<DeSymIndefSolver>(kktmat);
-   else if (solver_type == SolverTypeDense::SOLVER_DENSE_SYM_INDEF_SADDLE_POINT)
-      solver = std::make_unique<DeSymIndefSolver2>(kktmat, locnx);
-   else {
-      assert(solver_type == SolverTypeDense::SOLVER_DENSE_SYM_PSD);
-      solver = std::make_unique<DeSymPSDSolver>(kktmat);
-   }
-}
-
-void sLinsysRootAug::createSolversAndKKts() {
-   const SolverType solver_root = pipsipmpp_options::get_solver_root();
-
-   static bool printed = false;
-   if (!printed && PIPS_MPIgetRank() == 0) {
-      if (hasSparseKkt)
-         std::cout << "sLinsysRootAug: using " << solver_root << "\n";
-      else
-         std::cout << "sLinsysRootAug: using " << pipsipmpp_options::get_solver_dense() << "\n";
-   }
-
-   kkt.reset(createKKT());
-
-   if (!printed && PIPS_MPIgetRank() == 0) {
-      if (hasSparseKkt)
-         std::cout << "sLinsysRootAug: getSchurCompMaxNnz " << data->getSchurCompMaxNnz() << "\n";
-      else {
-         const int n = locnx + locmy + locmyl + locmzl;
-         std::cout << "sLinsysRootAug: getSchurCompMaxNnz " << n * n << "\n";
-      }
-   }
-   printed = true;
-
-
-   if (hasSparseKkt)
-      createSolversSparse(solver_root);
-   else
-      createSolversDense();
-}
-
-#ifdef TIMING
-static double t_start, troot_total, taux, tchild_total, tcomm_total;
-#endif
-
-
+/* Add corner block
+ * [ Q0 A0T C0T F0T G0T  ]
+ * [ A0  0   0   0   0   ]
+ * [ C0  0  Om0  0   0   ]
+ * [ F0  0   0   0   0   ]
+ * [ G0  0   0   0 OmN+1 ]
+ */
 void sLinsysRootAug::finalizeKKT() {
+
    stochNode->resMon.recFactTmLocal_start();
    stochNode->resMon.recSchurMultLocal_start();
 
@@ -1811,46 +1705,25 @@ void sLinsysRootAug::finalizeKKTsparse() {
 }
 
 void sLinsysRootAug::finalizeKKTdense() {
-   auto* const kktd = dynamic_cast<DenseSymmetricMatrix*>(kkt.get());
-
-   //alias for internal buffer of kkt
-   double** const dKkt = kktd->Mat();
-
-   //////////////////////////////////////////////////////
-   // compute Q+diag(xdiag) - C' * diag(zDiag) * C
-   // and update the KKT
-   //////////////////////////////////////////////////////
-
+   auto& schur_complement = dynamic_cast<DenseSymmetricMatrix&>(*kkt);
 
    /////////////////////////////////////////////////////////////
-   // update the KKT with Q (DO NOT PUT DIAG)
+   // update the schur complement with Q (DO NOT PUT DIAG)
    /////////////////////////////////////////////////////////////
-   const SparseSymmetricMatrix& Q = data->getLocalQ();
-   const int* krowQ = Q.krowM();
-   const int* jcolQ = Q.jcolM();
-   const double* dQ = Q.M();
-   for (int i = 0; i < locnx; i++) {
-      const int pend = krowQ[i + 1];
-      for (int p = krowQ[i]; p < pend; p++) {
-         const int j = jcolQ[p];
-         if (i == j)
-            continue;
-         double val = dQ[p];
-         dKkt[i][j] += val;
-         dKkt[j][i] += val;
+   // update the schur complement with the diagonals
+   // xDiag is in fact diag(Q)+X^{-1}S
+   /////////////////////////////////////////////////////////////
+   if (locnx > 0) {
+      const auto& Q = data->getLocalQ();
+      assert(Q.krowM()[Q.size()] == 0 && "Currently only empty Q supported!!");
+      schur_complement.add_matrix_at_without_diag(Q, 0, 0);
 
-         assert(0 && "non-empty Q currently not supported");
-      }
+      schur_complement.atAddDiagonal(0, *xDiag);
    }
 
    /////////////////////////////////////////////////////////////
-   // update the KKT with the diagonals
-   // xDiag is in fact diag(Q)+X^{-1}S
-   /////////////////////////////////////////////////////////////
-   kktd->atAddDiagonal(0, *xDiag);
-
-   /////////////////////////////////////////////////////////////
-   // update the KKT with   - C' * diag(zDiag) *C
+   // eliminate C from the schur complement
+   // update with   - C' * diag(zDiag) *C
    /////////////////////////////////////////////////////////////
    if (locmz > 0) {
       assert(zDiag);
@@ -1864,26 +1737,26 @@ void sLinsysRootAug::finalizeKKTdense() {
    }
 
    /////////////////////////////////////////////////////////////
-   // update the KKT with A
+   // update the schur complement with A
    /////////////////////////////////////////////////////////////
    if (locmy > 0) {
-      kktd->add_matrix_at(data->getLocalB(), locnx, 0); // yes, B
+      schur_complement.add_matrix_at(data->getLocalB(), locnx, 0); // yes, B
    }
 
    /////////////////////////////////////////////////////////////
-   // update the KKT with F
+   // update the schur complement with F
    /////////////////////////////////////////////////////////////
    if (locmyl > 0) {
-      kktd->add_matrix_at(data->getLocalF(), locnx + locmy, 0);
+      schur_complement.add_matrix_at(data->getLocalF(), locnx + locmy, 0);
    }
 
    /////////////////////////////////////////////////////////////
-   // update the KKT with G and put z diagonal
+   // update the schur complement with G and put z diagonal
    /////////////////////////////////////////////////////////////
    if (locmzl > 0) {
       assert(zDiagLinkCons);
-      kktd->add_matrix_at(data->getLocalG(), locnx + locmy + locmyl, 0);
-      kktd->atAddDiagonal(locnx + locmy + locmyl, *zDiagLinkCons);
+      schur_complement.add_matrix_at(data->getLocalG(), locnx + locmy + locmyl, 0);
+      schur_complement.atAddDiagonal(locnx + locmy + locmyl, *zDiagLinkCons);
    }
 
 #ifdef DUMPKKT
@@ -1948,7 +1821,7 @@ void sLinsysRootAug::DsolveHierarchyBorder(DenseMatrix& rhs_mat_transp, int n_co
    if (iAmDistrib) {
       // TODO only allreduce relevant part
       // TODO is allreduce even worth it here? Every proc could also compute all its rhs - add if n_rhs big
-      submatrixAllReduceFull(&rhs_mat_transp, 0, 0, m, n, mpiComm);
+      submatrixAllReduceFull(rhs_mat_transp, 0, 0, m, n, mpiComm);
    }
 }
 

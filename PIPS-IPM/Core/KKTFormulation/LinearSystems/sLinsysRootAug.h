@@ -5,32 +5,6 @@
 #ifndef SAUGLINSYS
 #define SAUGLINSYS
 
-#ifdef WITH_PARDISO
-
-#include "PardisoProjectIndefSolver.h"
-
-#endif
-
-#ifdef WITH_MKL_PARDISO
-#include "PardisoMKLIndefSolver.h"
-#endif
-
-#ifdef WITH_MA57
-
-#include "Ma57SolverRoot.h"
-
-#endif
-
-#ifdef WITH_MA27
-
-#include "Ma27SolverRoot.h"
-
-#endif
-
-#ifdef WITH_MUMPS
-#include "MumpsSolverRoot.h"
-#endif
-
 #include "DistributedRootLinearSystem.h"
 #include <memory>
 
@@ -42,9 +16,9 @@ class DistributedQP;
 class sLinsysRootAug : public DistributedRootLinearSystem {
 
 public:
-   sLinsysRootAug(DistributedFactory* factory_, DistributedQP* prob_);
+   sLinsysRootAug(DistributedFactory* factory_, DistributedQP* prob_, bool is_hierarchy_root = false);
    sLinsysRootAug(DistributedFactory* factory, DistributedQP* prob_, std::shared_ptr<Vector<double>> dd_, std::shared_ptr<Vector<double>> dq_, std::shared_ptr<Vector<double>> nomegaInv_,
-         std::shared_ptr<Vector<double>> regP, std::shared_ptr<Vector<double>> regDy, std::shared_ptr<Vector<double>> regDz, std::shared_ptr<Vector<double>> rhs_, bool creat_solvers);
+         std::shared_ptr<Vector<double>> regP, std::shared_ptr<Vector<double>> regDy, std::shared_ptr<Vector<double>> regDz, std::shared_ptr<Vector<double>> rhs_, bool create_sub_root_solver);
    ~sLinsysRootAug() override = default;
 
    void finalizeKKT() override;
@@ -66,10 +40,6 @@ public:
    add_regularization_local_kkt(double primal_regularization, double dual_equality_regularization, double dual_inequality_regularization) override;
 
 protected:
-   SymmetricMatrix* createKKT() const;
-   void createSolversSparse(SolverType solver);
-   void createSolversDense();
-
    void assembleLocalKKT() override;
    void solveReducedLinkCons(SimpleVector<double>& b);
    void solveReducedLinkConsBlocked(DenseMatrix& rhs_mat_transp, int rhs_start, int n_rhs);
@@ -79,7 +49,6 @@ protected:
          bool sparse_res, DenseMatrix& buffer_b0, int begin_cols, int end_cols);
 
 private:
-   void createSolversAndKKts();
    void finalizeKKTdense();
    void finalizeKKTsparse();
    void solveWithIterRef(SimpleVector<double>& b);

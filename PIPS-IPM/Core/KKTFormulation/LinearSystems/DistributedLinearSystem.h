@@ -14,6 +14,7 @@
 #include "SimpleVector.h"
 #include "DistributedVector.h"
 #include "StripMatrix.h"
+#include "PIPSIPMppOptions.h"
 
 #include <vector>
 #include <memory>
@@ -166,6 +167,7 @@ protected:
    /* symmetric Schur Complement / whole KKT system in lower triangular from */
    std::unique_ptr<SymmetricMatrix> kkt{};
    std::unique_ptr<DoubleLinearSolver> solver{};
+   SolverType solver_type;
 
    const int blocksize_hierarchical{20};
    const bool sc_compute_blockwise_hierarchical{false};

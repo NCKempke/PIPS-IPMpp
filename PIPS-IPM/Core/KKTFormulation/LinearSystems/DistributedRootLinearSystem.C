@@ -10,6 +10,31 @@
 #include "DistributedDummyLinearSystem.h"
 #include "DistributedLeafLinearSystem.h"
 #include "PIPSIPMppOptions.h"
+#include "DeSymIndefSolver.h"
+#include "DeSymIndefSolver2.h"
+#include "DeSymPSDSolver.h"
+
+
+#ifdef WITH_PARDISO
+#include "PardisoProjectIndefSolver.h"
+#endif
+
+#ifdef WITH_MKL_PARDISO
+#include "PardisoMKLIndefSolver.h"
+#endif
+
+#ifdef WITH_MA57
+#include "Ma57SolverRoot.h"
+#endif
+
+#ifdef WITH_MA27
+#include "Ma27SolverRoot.h"
+#endif
+
+#ifdef WITH_MUMPS
+#include "MumpsSolverRoot.h"
+#endif
+
 
 /*********************************************************************/
 /************************** ROOT *************************************/
@@ -24,15 +49,41 @@ DistributedRootLinearSystem::DistributedRootLinearSystem(DistributedFactory* fac
    if (pipsipmpp_options::get_bool_parameter("HIERARCHICAL"))
       assert(is_hierarchy_root);
    init();
+   createSolverAndSchurComplement(false);
+
+   if (apply_regularization) {
+      regularization_strategy = std::make_unique<RegularizationStrategy>(locnx, locmy + locmyl + locmzl);
+   }
 }
 
 DistributedRootLinearSystem::DistributedRootLinearSystem(DistributedFactory* factory_, DistributedQP* prob_,
    std::shared_ptr<Vector<double>> dd_, std::shared_ptr<Vector<double>> dq_, std::shared_ptr<Vector<double>> nomegaInv_,
    std::shared_ptr<Vector<double>> primal_reg_, std::shared_ptr<Vector<double>> dual_y_reg_,
-   std::shared_ptr<Vector<double>> dual_z_reg_, std::shared_ptr<Vector<double>> rhs_) : DistributedLinearSystem(
+   std::shared_ptr<Vector<double>> dual_z_reg_, std::shared_ptr<Vector<double>> rhs_, bool create_sub_root_solver) : DistributedLinearSystem(
    factory_,
    prob_, std::move(dd_), std::move(dq_), std::move(nomegaInv_), std::move(primal_reg_), std::move(dual_y_reg_), std::move(dual_z_reg_), std::move(rhs_), true) {
    init();
+   createSolverAndSchurComplement(create_sub_root_solver);
+
+   if (apply_regularization) {
+      regularization_strategy = std::make_unique<RegularizationStrategy>(locnx, locmy + locmyl + locmzl);
+   }
+
+}
+
+void DistributedRootLinearSystem::print_solver_regularization_and_sc_info(const std::string&& name) const {
+   if (hasSparseKkt) {
+      std::cout << name << ": sparse Schur complement (dim " <<  kkt->size() << "): max non-zeros: " << data->getSchurCompMaxNnz() << "\n";
+   } else {
+      std::cout << name << ": dense Schur complement (dim " <<  kkt->size() << "): max non-zeros: " << kkt->size() * kkt->size() << "\n";
+   }
+
+   std::cout << name << ": linear solver: " << (hasSparseKkt ? solver_type : pipsipmpp_options::get_solver_dense()) << "\n";
+
+   if (regularization_strategy) {
+      std::cout << "setting up root regularization : " << locnx << " " << locmy << " " << locmz << " " << locmyl << " "
+                << locmzl << "\n";
+   }
 }
 
 void DistributedRootLinearSystem::init() {
@@ -52,6 +103,74 @@ void DistributedRootLinearSystem::init() {
 
    initProperChildrenRange();
 }
+
+void DistributedRootLinearSystem::createSolverAndSchurComplement(bool sub_root) {
+   kkt = createKKT();
+
+   if (hasSparseKkt)
+      createSparseSolver(sub_root);
+   else
+      createDenseSolver();
+}
+
+
+void DistributedRootLinearSystem::createSparseSolver(bool sub_root) {
+   solver_type = sub_root ? pipsipmpp_options::get_solver_sub_root() : pipsipmpp_options::get_solver_root();
+   auto& kkt_sp = dynamic_cast<SparseSymmetricMatrix&>(*kkt);
+
+   if (solver_type == SolverType::SOLVER_MUMPS) {
+#ifdef WITH_MUMPS
+      solver = std::make_unique<MumpsSolverRoot>(mpiComm, kkt_sp, allreduce_kkt);
+#endif
+   } else if (solver_type == SolverType::SOLVER_PARDISO) {
+#ifdef WITH_PARDISO
+      solver = std::make_unique<PardisoProjectIndefSolver>(kkt_sp, allreduce_kkt, mpiComm);
+#endif
+   } else if (solver_type == SolverType::SOLVER_MKL_PARDISO) {
+#ifdef WITH_MKL_PARDISO
+      solver = std::make_unique<PardisoMKLIndefSolver>(kkt_sp, allreduce_kkt, mpiComm);
+#endif
+   } else if (solver_type == SolverType::SOLVER_MA57) {
+#ifdef WITH_MA57
+      solver = std::make_unique<Ma57SolverRoot>(kkt_sp, allreduce_kkt, mpiComm, "sLinsysRootAug");
+#endif
+   } else {
+      assert(solver_type == SolverType::SOLVER_MA27);
+#ifdef WITH_MA27
+      solver = std::make_unique<Ma27SolverRoot>(kkt_sp, allreduce_kkt, mpiComm, "sLinsysRootAug");
+#endif
+   }
+}
+
+void DistributedRootLinearSystem::createDenseSolver() {
+   const SolverTypeDense solver_type = pipsipmpp_options::get_solver_dense();
+   const auto& kktmat = dynamic_cast<const DenseSymmetricMatrix&>(*kkt);
+
+   if (solver_type == SolverTypeDense::SOLVER_DENSE_SYM_INDEF)
+      solver = std::make_unique<DeSymIndefSolver>(kktmat);
+   else if (solver_type == SolverTypeDense::SOLVER_DENSE_SYM_INDEF_SADDLE_POINT)
+      solver = std::make_unique<DeSymIndefSolver2>(kktmat, locnx);
+   else {
+      assert(solver_type == SolverTypeDense::SOLVER_DENSE_SYM_PSD);
+      solver = std::make_unique<DeSymPSDSolver>(kktmat);
+   }
+}
+
+
+std::unique_ptr<SymmetricMatrix> DistributedRootLinearSystem::createKKT() const {
+   const int n = locnx + locmy + locmyl + locmzl;
+
+   if (hasSparseKkt) {
+      if (usePrecondDist) {
+         return data->createSchurCompSymbSparseUpperDist(childrenProperStart, childrenProperEnd);
+      } else {
+         return data->createSchurCompSymbSparseUpper();
+      }
+   } else {
+      return std::make_unique<DenseSymmetricMatrix>(n);
+   }
+}
+
 
 DistributedRootLinearSystem::~DistributedRootLinearSystem() {
    for (auto& c : children)
@@ -872,23 +991,24 @@ void DistributedRootLinearSystem::reduceKKT() {
 
 /* collects (reduces) lower left part of dense global symmetric Schur complement */
 void DistributedRootLinearSystem::reduceKKTdense() {
-   auto* const kktd = dynamic_cast<DenseSymmetricMatrix*>(kkt.get());
+   auto& schur_complement = dynamic_cast<DenseSymmetricMatrix&>(*kkt);
+   assert(schur_complement.size() == locnx + locmy + locmyl + locmzl);
 
    // parallel communication
    if (iAmDistrib) {
-      if (locnx > 0)
-         submatrixAllReduceDiagLower(kktd, 0, locnx, mpiComm);
+      if (locnx > 0) {
+         submatrixAllReduceDiagLower(schur_complement, 0, locnx, mpiComm);
+      }
 
       if (locmyl > 0 || locmzl > 0) {
          const int locNxMy = locnx + locmy;
-         assert(kktd->size() == locnx + locmy + locmyl + locmzl);
 
          // reduce lower left part
          if (locnx > 0)
-            submatrixAllReduceFull(kktd, locNxMy, 0, locmyl + locmzl, locnx, mpiComm);
+            submatrixAllReduceFull(schur_complement, locNxMy, 0, locmyl + locmzl, locnx, mpiComm);
 
          // reduce lower diagonal linking part
-         submatrixAllReduceDiagLower(kktd, locNxMy, locmyl + locmzl, mpiComm);
+         submatrixAllReduceDiagLower(schur_complement, locNxMy, locmyl + locmzl, mpiComm);
       }
    }
 }
@@ -1557,10 +1677,10 @@ void DistributedRootLinearSystem::addTermToSchurCompl(size_t childindex, bool us
    }
 }
 
-void DistributedRootLinearSystem::submatrixAllReduce(DenseSymmetricMatrix* A, int startRow, int startCol, int nRows,
+void DistributedRootLinearSystem::submatrixAllReduce(DenseSymmetricMatrix& A, int startRow, int startCol, int nRows,
    int nCols, MPI_Comm comm) {
-   double** M = A->mStorage->M;
-   int n = A->mStorage->n;
+   double** M = A.mStorage->M;
+   int n = A.mStorage->n;
 
    assert(nRows > 0);
    assert(nCols > 0);
@@ -1640,27 +1760,27 @@ void DistributedRootLinearSystem::allreduceMatrix(AbstractMatrix& mat, bool is_s
    } else {
       // TODO : these seem to be not proper handling of the symmetric dense schur complement - need ot check maths first
       if (is_sym)
-         submatrixAllReduceFull(&dynamic_cast<DenseSymmetricMatrix&>(mat), 0, 0, m, n, comm);
+         submatrixAllReduceFull(dynamic_cast<DenseSymmetricMatrix&>(mat), 0, 0, m, n, comm);
       else
-         submatrixAllReduceFull(&dynamic_cast<DenseMatrix&>(mat), 0, 0, m, n, comm);
+         submatrixAllReduceFull(dynamic_cast<DenseMatrix&>(mat), 0, 0, m, n, comm);
    }
 }
 
-void DistributedRootLinearSystem::submatrixAllReduceFull(DenseSymmetricMatrix* A, int startRow, int startCol, int nRows,
+void DistributedRootLinearSystem::submatrixAllReduceFull(DenseSymmetricMatrix& A, int startRow, int startCol, int nRows,
    int nCols, MPI_Comm comm) {
-   assert(A->n_rows() >= startRow + nRows);
-   assert(A->n_columns() >= startCol + nCols);
+   assert(A.n_rows() >= startRow + nRows);
+   assert(A.n_columns() >= startCol + nCols);
 
-   submatrixAllReduceFull(A->mStorage->M, startRow, startCol, nRows, nCols, comm);
+   submatrixAllReduceFull(A.mStorage->M, startRow, startCol, nRows, nCols, comm);
 }
 
 void
-DistributedRootLinearSystem::submatrixAllReduceFull(DenseMatrix* A, int startRow, int startCol, int nRows, int nCols,
+DistributedRootLinearSystem::submatrixAllReduceFull(DenseMatrix& A, int startRow, int startCol, int nRows, int nCols,
    MPI_Comm comm) {
-   assert(A->n_rows() >= startRow + nRows);
-   assert(A->n_columns() >= startCol + nCols);
+   assert(A.n_rows() >= startRow + nRows);
+   assert(A.n_columns() >= startCol + nCols);
 
-   submatrixAllReduceFull(A->mStorage->M, startRow, startCol, nRows, nCols, comm);
+   submatrixAllReduceFull(A.mStorage->M, startRow, startCol, nRows, nCols, comm);
 }
 
 void DistributedRootLinearSystem::submatrixAllReduceFull(double** A, int startRow, int startCol, int nRows, int nCols,
@@ -1710,9 +1830,9 @@ void DistributedRootLinearSystem::submatrixAllReduceFull(double** A, int startRo
 }
 
 
-void DistributedRootLinearSystem::submatrixAllReduceDiagLower(DenseSymmetricMatrix* A, int substart, int subsize,
+void DistributedRootLinearSystem::submatrixAllReduceDiagLower(DenseSymmetricMatrix& A, int substart, int subsize,
    MPI_Comm comm) {
-   double** const M = A->mStorage->M;
+   double** const M = A.mStorage->M;
 
    assert(subsize >= 0);
    assert(substart >= 0);
@@ -1721,7 +1841,7 @@ void DistributedRootLinearSystem::submatrixAllReduceDiagLower(DenseSymmetricMatr
       return;
 
    const int subend = substart + subsize;
-   assert(A->mStorage->n >= subend);
+   assert(A.mStorage->n >= subend);
 
    // number of elements in lower matrix triangle (including diagonal)
    const int buffersize = (subsize * subsize + subsize) / 2;

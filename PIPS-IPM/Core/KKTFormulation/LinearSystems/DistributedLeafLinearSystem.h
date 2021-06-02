@@ -69,6 +69,8 @@ public:
       bool sparse_res, bool sym_res, bool, int begin_cols, int end_cols, int n_empty_rows_inner_border) override;
 
 protected:
+   void create_kkt();
+
    void add_regularization_diagonal(int offset, double regularization, Vector<double>& regularization_vector);
 
    void addBorderTimesRhsToB0(DistributedVector<double>& rhs, SimpleVector<double>& b0, BorderLinsys& border) override;

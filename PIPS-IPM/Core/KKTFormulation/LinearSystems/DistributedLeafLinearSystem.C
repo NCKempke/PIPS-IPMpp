@@ -13,65 +13,63 @@ DistributedLeafLinearSystem::DistributedLeafLinearSystem(DistributedFactory* fac
    std::shared_ptr<Vector<double>> dual_z_reg_, std::shared_ptr<Vector<double>> rhs_) : DistributedLinearSystem(
    factory_,
    prob, std::move(dd_), std::move(dq_), std::move(nomegaInv_), std::move(primal_reg_), std::move(dual_y_reg_), std::move(dual_z_reg_), std::move(rhs_), false) {
-#ifdef TIMING
-   const int myRank = PIPS_MPIgetRank(mpiComm);
-   const double t0 = MPI_Wtime();
-#endif
 
-   prob->getLocalSizes(locnx, locmy, locmz, locmyl, locmzl);
-   const int n = locnx + locmy + locmz;
-
-   int nnzQ, nnzB, nnzD;
-   prob->getLocalNnz(nnzQ, nnzB, nnzD);
+   create_kkt();
+   solver_type = pipsipmpp_options::get_solver_leaf();
+   solver = DistributedFactory::make_leaf_solver(kkt.get());
 
    if (apply_regularization) {
       regularization_strategy = std::make_unique<RegularizationStrategy>(static_cast<unsigned int>(locnx),
          static_cast<unsigned int>(locmy + locmz));
    }
-#ifdef TIMING
-   if( myRank == 0 )
-      std::cout << "Rank 0: building local Schur matrix ..." << std::endl;
-#endif
-
-   /* allocate and copy lower triangular:
-    *
-    * [ Qq BiT DiT ]
-    * [ Bi  0   0  ]
-    * [ Di  0   0  ]
-    *
-    * where  Qq = Q + V^-1 Gamma + W^-1 Phi (so we estimate its nnzs as n_1 + nnzQ)
-    */
-
-   auto* kkt_sp = new SparseSymmetricMatrix(n, n + nnzQ + nnzB + nnzD);
-
-   SimpleVector<double> v(n);
-   v.setToZero();
-   kkt_sp->setToDiagonal(v);
-
-   kkt_sp->symAtPutSubmatrix(0, 0, prob->getLocalQ(), 0, 0, locnx, locnx);
-
-   // TODO this logic or is flawed - requires Bi to exist..
-   if (locmz > 0) {
-      kkt_sp->symAtPutSubmatrix(locnx, 0, prob->getLocalB(), 0, 0, locmy, locnx);
-      kkt_sp->symAtPutSubmatrix(locnx + locmy, 0, prob->getLocalD(), 0, 0, locmz, locnx);
-   } else
-      kkt_sp->symAtPutSubmatrix(locnx, 0, prob->getLocalB(), 0, 0, locmy, locnx);
-//      mySymAtPutSubmatrix(*kkt_sp, data->getLocalB(), locnx, locmy, locmz);
-
-#ifdef TIMING
-   if( myRank == 0 ) std::cout << "Rank 0: finished " << std::endl;
-#endif
-
-   kkt.reset(kkt_sp);
-   solver.reset(DistributedFactory::make_leaf_solver(kkt_sp));
-
-#ifdef TIMING
-   const double t1 = MPI_Wtime() - t0;
-   if (myRank == 0) printf("Rank 0: new sLinsysLeaf took %f sec\n",t1);
-#endif
 
    assert(this->primal_diagonal);
    mpiComm = (dynamic_cast<DistributedVector<double>&>(*this->primal_diagonal)).mpiComm;
+
+   static bool printed = false;
+   if( !printed && PIPS_MPIgetRank() == 0) {
+
+      int nnzQ, nnzB, nnzD;
+      data->getLocalNnz(nnzQ, nnzB, nnzD);
+
+      std::cout << "DistributedLeafLinearSystem: sparse Schur complement (dim " <<  kkt->size() << "): max non-zeros: " << nnzQ + nnzB * 2 + nnzD * 2 << "\n";
+      std::cout << "DistributedLeafLinearSystem: linear solver: " << solver_type << "\n";
+      if (apply_regularization) {
+         std::cout << "setting up root regularization : " << locnx << " " << locmy << " " << locmz << " " << locmyl << " "
+            << locmzl << std::endl;
+      }
+      printed = true;
+   }
+}
+
+/* allocate and copy lower triangular:
+ *
+ * [ Qq BiT DiT ]
+ * [ Bi  0   0  ]
+ * [ Di  0   0  ]
+ *
+ * where  Qq = Q + V^-1 Gamma + W^-1 Phi (so we estimate its nnzs as n_1 + nnzQ)
+ */
+void DistributedLeafLinearSystem::create_kkt() {
+   const int n = locnx + locmy + locmz;
+
+   int nnzQ, nnzB, nnzD;
+   data->getLocalNnz(nnzQ, nnzB, nnzD);
+
+   kkt = std::make_unique<SparseSymmetricMatrix>(n, n + nnzQ + nnzB + nnzD);
+   SimpleVector<double> v(n);
+   v.setToZero();
+   kkt->setToDiagonal(v);
+
+   kkt->symAtPutSubmatrix(0, 0, data->getLocalQ(), 0, 0, locnx, locnx);
+
+   // TODO this logic or is flawed - requires Bi to exist..
+   if (locmz > 0) {
+      kkt->symAtPutSubmatrix(locnx, 0, data->getLocalB(), 0, 0, locmy, locnx);
+      kkt->symAtPutSubmatrix(locnx + locmy, 0, data->getLocalD(), 0, 0, locmz, locnx);
+   } else
+      kkt->symAtPutSubmatrix(locnx, 0, data->getLocalB(), 0, 0, locmy, locnx);
+//      mySymAtPutSubmatrix(*kkt_sp, data->getLocalB(), locnx, locmy, locmz);
 }
 
 void DistributedLeafLinearSystem::factor2() {

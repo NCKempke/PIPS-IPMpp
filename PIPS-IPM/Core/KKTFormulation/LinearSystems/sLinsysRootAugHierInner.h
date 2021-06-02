@@ -63,9 +63,6 @@ public:
    void put_primal_diagonal() override;
 
    void put_dual_inequalites_diagonal() override;
-
-private:
-   void createSolversAndKKts();
 };
 
 #endif /* PIPS_IPM_CORE_STOCHLINEARALGEBRA_SLINSYSROOTAUGHIERINNER */

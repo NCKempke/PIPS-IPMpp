@@ -13,12 +13,12 @@
 class PardisoProjectSchurSolver : public PardisoSchurSolver {
 public:
    explicit PardisoProjectSchurSolver(const SparseSymmetricMatrix& sgm);
+   ~PardisoProjectSchurSolver() override;
 
    void solve(Vector<double>& rhs_in) override;
-   using DoubleLinearSolver::solve;
 
+   using DoubleLinearSolver::solve;
 protected:
-   ~PardisoProjectSchurSolver() override;
 
    void computeSC(int nSCO, const SparseMatrix& R, const SparseMatrix& A, const SparseMatrix& C, const SparseMatrix& F,
          const SparseMatrix& G, int*& rowptrSC, int*& colidxSC, double*& eltsSC) override;
