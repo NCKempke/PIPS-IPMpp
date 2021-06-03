@@ -32,11 +32,11 @@ void sLinsysRootAugHierInner::assembleLocalKKT() {
       if (children[c]->mpiComm == MPI_COMM_NULL)
          continue;
 
-      children[c]->stochNode->resMon.recFactTmChildren_start();
+      children[c]->resource_monitor->recFactTmChildren_start();
       //---------------------------------------------
       addTermToSchurCompl(c, false);
       //---------------------------------------------
-      children[c]->stochNode->resMon.recFactTmChildren_stop();
+      children[c]->resource_monitor->recFactTmChildren_stop();
    }
 }
 

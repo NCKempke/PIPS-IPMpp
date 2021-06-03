@@ -92,10 +92,6 @@ public:
       std::vector<BorderMod>& br_mod_border,
       bool sym_res, bool sparse_res, bool use_local_RAC, int begin_cols, int end_cols) override;
 
-   void addBorderTimesRhsToB0(DistributedVector<double>& rhs, SimpleVector<double>& b0, BorderLinsys& border) override;
-
-   void addBorderX0ToRhs(DistributedVector<double>& rhs, const SimpleVector<double>& x0, BorderLinsys& border) override;
-
    void put_primal_diagonal() override;
 
    void put_dual_inequalites_diagonal() override;
@@ -182,13 +178,13 @@ private:
    [[nodiscard]] std::vector<MatrixEntryTriplet> packKKTdistOutOfRangeEntries(int childStart, int childEnd) const;
 
    static void finalizeInnerSchurComplementContributionDense(AbstractMatrix& SC_, const DenseMatrix& X0,
-      const SparseMatrix* A0_border, const SparseMatrix* C0_border,
+      const SparseMatrix* A0_border, const SparseMatrix* C0_border, const SparseMatrix* A00_border,
       const SparseMatrix* F0vec_border, const SparseMatrix* G0vec_border, const SparseMatrix* F0cons_border,
       const SparseMatrix* G0cons_border, bool is_sym,
       int begin_rows, int end_rows);
 
    static void finalizeInnerSchurComplementContributionSparse(AbstractMatrix& SC_, const DenseMatrix& X0,
-      const SparseMatrix* A0_border, const SparseMatrix* C0_border,
+      const SparseMatrix* A0_border, const SparseMatrix* C0_border, const SparseMatrix* A00_border,
       const SparseMatrix* F0vec_border, const SparseMatrix* G0vec_border, const SparseMatrix* F0cons_border,
       const SparseMatrix* G0cons_border, int begin_rows,
       int end_rows);

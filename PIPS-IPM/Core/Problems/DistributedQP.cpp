@@ -1225,6 +1225,8 @@ void DistributedQP::destroyChildren() {
 }
 
 DistributedQP* DistributedQP::shaveBorderFromDataAndCreateNewTop(const DistributedTree* tree) {
+   assert(tree->nChildren() == 1);
+
    std::unique_ptr<SymmetricMatrix> Q_hier(
       dynamic_cast<DistributedSymmetricMatrix&>(*Q).raiseBorder(n_global_linking_vars));
 
@@ -1265,7 +1267,6 @@ DistributedQP* DistributedQP::shaveBorderFromDataAndCreateNewTop(const Distribut
 
    // TODO what is this?
    //DistributedVector<double>* sc_hier = dynamic_cast<DistributedVector<double>&>(*sc).shaveBorder(-1);
-
    return new DistributedQP(tree, std::move(g_hier), std::move(Q_hier), std::move(blx_hier), std::move(ixlow_hier), std::move(bux_hier), std::move(ixupp_hier), std::move(A_hier), std::move(bA_hier), std::move(C_hier),
                   std::move(bl_hier), std::move(iclow_hier), std::move(bu_hier),
                   std::move(icupp_hier), false, true);

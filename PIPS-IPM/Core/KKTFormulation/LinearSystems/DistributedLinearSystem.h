@@ -28,6 +28,8 @@ class DistributedFactory;
 
 class DistributedQP;
 
+class StochNodeResourcesMonitor;
+
 class DistributedLinearSystem : public LinearSystem {
 public:
    template<typename T>
@@ -175,8 +177,8 @@ protected:
 
 public:
    MPI_Comm mpiComm{MPI_COMM_NULL};
-   DistributedTree* stochNode{};
-
+   const DistributedTree* distributed_tree{};
+   StochNodeResourcesMonitor* resource_monitor{};
 protected:
    /* depending on SC_HIERARCHICAL_COMPUTE_BLOCKWISE either allocated a full buffer of buffer_m rows or a smaller one - returns number of rows in buffer */
    int allocateAndZeroBlockedComputationsBuffer(int buffer_m, int buffer_n);
@@ -213,14 +215,10 @@ public:
    };
 
    /* add you part of the border times rhs to b0 */
-   virtual void addBorderTimesRhsToB0(DistributedVector<double>& /*rhs*/, SimpleVector<double>& /*b0*/, BorderLinsys& /*border*/ ) {
-      assert(false && "not implemented here");
-   };
+   virtual void addBorderTimesRhsToB0(DistributedVector<double>& rhs, SimpleVector<double>& b0, BorderLinsys& border) = 0;
 
    /* add you part of the border times rhs to b0 */
-   virtual void addBorderX0ToRhs(DistributedVector<double>& /*rhs*/, const SimpleVector<double>& /*x0*/, BorderLinsys& /*border*/ ) {
-      assert(false && "not implemented here");
-   };
+   virtual void addBorderX0ToRhs(DistributedVector<double>& rhs, const SimpleVector<double>& x0, BorderLinsys& border)  = 0;
 
    virtual void addBiTLeftKiBiRightToResBlockedParallelSolvers(bool sparse_res, bool sym_res, const BorderBiBlock& border_left_transp,
          /* const */ BorderBiBlock& border_right, AbstractMatrix& result, int begin_cols, int end_cols, int begin_rows_res, int end_rows_res);

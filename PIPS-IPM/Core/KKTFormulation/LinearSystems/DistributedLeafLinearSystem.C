@@ -75,7 +75,7 @@ void DistributedLeafLinearSystem::create_kkt() {
 void DistributedLeafLinearSystem::factor2() {
    // Diagonals were already updated, so
    // just trigger a local refactorization (if needed, depends on the type of lin solver).
-   stochNode->resMon.recFactTmLocal_start();
+   resource_monitor->recFactTmLocal_start();
 
    if (apply_regularization) {
       factorize_with_correct_inertia();
@@ -83,7 +83,7 @@ void DistributedLeafLinearSystem::factor2() {
       solver->matrixChanged();
    }
 
-   stochNode->resMon.recFactTmLocal_stop();
+   resource_monitor->recFactTmLocal_stop();
 }
 
 void DistributedLeafLinearSystem::put_primal_diagonal() {
@@ -143,9 +143,9 @@ DistributedLeafLinearSystem::add_regularization_local_kkt(double primal_regulari
 void DistributedLeafLinearSystem::Dsolve(Vector<double>& x_in) {
    auto& x = dynamic_cast<DistributedVector<double>&>(x_in);
    assert(x.children.empty());
-   stochNode->resMon.recDsolveTmChildren_start();
+   resource_monitor->recDsolveTmChildren_start();
    solver->Dsolve(*x.first);
-   stochNode->resMon.recDsolveTmChildren_stop();
+   resource_monitor->recDsolveTmChildren_stop();
 }
 
 void DistributedLeafLinearSystem::Ltsolve2(DistributedVector<double>& x, SimpleVector<double>& xp, bool) {

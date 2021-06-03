@@ -71,6 +71,10 @@ private:
    // add specified columns of given matrix Ht (either Ft or Gt) to Schur complement
    void addLinkConsBlock0Matrix(const SparseMatrix& Ht, int nHtOffsetCols, int nKktOffsetCols, int startCol, int endCol);
 
+   void addBorderX0ToRhs(DistributedVector<double>& rhs, const SimpleVector<double>& x0, BorderLinsys& border) override;
+
+   void addBorderTimesRhsToB0(DistributedVector<double>& rhs, SimpleVector<double>& b0, BorderLinsys& border) override;
+
    /** y = beta*y - alpha* SC * x */
    void SCmult(double beta, SimpleVector<double>& y, double alpha, SimpleVector<double>& x);
 

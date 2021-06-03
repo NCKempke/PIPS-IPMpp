@@ -72,7 +72,7 @@ scaler_type, PresolverType presolver_type, const std::string& settings) : comm(c
 
    dataUnpermNotHier.reset(presolved_problem->cloneFull());
 
-   // after identifying the linking structure switch to hierarchical data structure -> will this do anything to the scaler?
+   // after identifying the linking structure switch to hierarchical data structure
    if (pipsipmpp_options::get_bool_parameter("PARDISO_FOR_GLOBAL_SC"))
       presolved_problem->activateLinkStructureExploitation();
 

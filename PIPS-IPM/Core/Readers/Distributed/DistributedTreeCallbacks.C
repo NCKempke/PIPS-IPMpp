@@ -1231,6 +1231,10 @@ DistributedTree* DistributedTreeCallbacks::switchToHierarchicalTree(DistributedQ
       auto* top_layer = dynamic_cast<DistributedTreeCallbacks*>(shaveDenseBorder(nx_to_shave, myl_to_shave, mzl_to_shave));
       data_to_split = data_to_split->shaveDenseBorder(top_layer);
 
+      assert(data_to_split->children.size() == 1);
+      assert(data_to_split->stochNode->isHierarchicalRoot());
+      assert(data_to_split->children[0]->stochNode == this);
+
       if (PIPS_MPIgetRank() == 0)
          std::cout << "Hierarchical data_to_split built\n";
 

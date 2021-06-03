@@ -65,8 +65,8 @@ sLinsysRootAug::sLinsysRootAug(DistributedFactory* factory_, DistributedQP* prob
  */
 void sLinsysRootAug::finalizeKKT() {
 
-   stochNode->resMon.recFactTmLocal_start();
-   stochNode->resMon.recSchurMultLocal_start();
+   resource_monitor->recFactTmLocal_start();
+   resource_monitor->recSchurMultLocal_start();
 
    if (usePrecondDist) {
       // don't do anything, already done previously
@@ -77,8 +77,8 @@ void sLinsysRootAug::finalizeKKT() {
          finalizeKKTdense();
    }
 
-   stochNode->resMon.recSchurMultLocal_stop();
-   stochNode->resMon.recFactTmLocal_stop();
+   resource_monitor->recSchurMultLocal_stop();
+   resource_monitor->recFactTmLocal_stop();
 }
 
 
@@ -265,13 +265,13 @@ void sLinsysRootAug::assembleLocalKKT() {
       if (children[c]->mpiComm == MPI_COMM_NULL)
          continue;
 
-      children[c]->stochNode->resMon.recFactTmChildren_start();
+      children[c]->resource_monitor->recFactTmChildren_start();
 
       //---------------------------------------------
       addTermToSchurCompl(c, !is_layer_only_twolinks);
 
       //---------------------------------------------
-      children[c]->stochNode->resMon.recFactTmChildren_stop();
+      children[c]->resource_monitor->recFactTmChildren_stop();
    }
 }
 
@@ -1431,6 +1431,153 @@ void sLinsysRootAug::clear_CtDC_from_schur_complement(const SymmetricMatrix& CtD
       clear_CtDC_from_sparse_schur_complement(CtDC_loc);
    } else {
       clear_CtDC_from_dense_schur_complement(CtDC_loc);
+   }
+}
+
+//   * Br0 = [  0  A00T F0CT G0CT ]
+//   *       [[A0]   0   0    0   ]
+//   *       [  C    0   0    0   ]
+//   *       [ F0V   0   0    0   ]
+//   *       [ G0V   0   0    0   ]
+void sLinsysRootAug::addBorderX0ToRhs(DistributedVector<double>& rhs, const SimpleVector<double>& x0,
+   BorderLinsys& border) {
+   assert(rhs.children.size() == children.size());
+   assert(border.A.children.size() == children.size());
+
+   for (size_t i = 0; i < children.size(); ++i) {
+      BorderLinsys child_border = getChild(border, i);
+      if (child_border.isEmpty())
+         continue;
+
+      children[i]->addBorderX0ToRhs(*rhs.children[i], x0, child_border);
+   }
+
+   /* add schur complement part */
+   assert(border.A.first);
+   assert(border.C.first);
+
+   const auto* A0_border = distributed_tree->was_A0_moved_to_border() ? nullptr : dynamic_cast<const SparseMatrix*>(border.A.first.get());
+   long long mA0 = A0_border ? A0_border->n_rows() : 0;
+
+   const auto* A00_border = distributed_tree->was_A0_moved_to_border() ? &data->getLocalB() : nullptr;
+   long long mA00 = A00_border ? A00_border->n_rows() : 0;
+
+   auto& C0_border = dynamic_cast<SparseMatrix&>(*border.C.first);
+   const auto mC0 = C0_border.n_rows();
+
+   assert(border.F.first);
+   assert(border.A.last);
+
+   auto& F0vec_border = dynamic_cast<SparseMatrix&>(*border.A.last);
+   auto& G0vec_border = dynamic_cast<SparseMatrix&>(*border.C.last);
+   const auto [mF0V, nF0V] = F0vec_border.n_rows_columns();
+
+   auto& F0cons_border = dynamic_cast<SparseMatrix&>(*border.F.first);
+   auto& G0cons_border = dynamic_cast<SparseMatrix&>(*border.G.first);
+   const auto[mF0C, nF0C] = F0cons_border.n_rows_columns();
+
+#ifndef NDEBUG
+   assert(border.C.last);
+   assert(border.G.first);
+
+   assert(rhs.first);
+   assert(rhs.first->length() == nF0C + mA0 + mC0 + mF0V + G0vec_border.n_rows());
+   assert(x0.length() == nF0V + mA00 + mF0C + G0cons_border.n_rows());
+#endif
+
+   auto& rhs0 = dynamic_cast<SimpleVector<double>&>(*rhs.first);
+
+   double* rhs01 = &rhs0[0];
+   double* rhs02 = &rhs0[nF0C];
+   double* rhs03 = &rhs0[nF0C + mA0];
+   double* rhs04 = &rhs0[nF0C + mA0 + mC0];
+   double* rhs05 = &rhs0[nF0C + mA0 + mC0 + mF0V];
+
+   const double* x01 = &x0[0];
+   const double* x02 = &x0[nF0V];
+   const double* x03 = &x0[nF0V + mA00];
+   const double* x04 = &x0[nF0V + mA00 + mF0C];
+
+   if (A0_border)
+      A0_border->getStorage().mult(1.0, rhs02, -1.0, x01);
+   C0_border.getStorage().mult(1.0, rhs03, -1.0, x01);
+   F0vec_border.getStorage().mult(1.0, rhs04, -1.0, x01);
+   G0vec_border.getStorage().mult(1.0, rhs05, -1.0, x01);
+
+   if (A00_border)
+      A00_border->getStorage().transMult(1.0, rhs01, -1.0, x02);
+   F0cons_border.getStorage().transMult(1.0, rhs01, -1.0, x03);
+   G0cons_border.getStorage().transMult(1.0, rhs01, -1.0, x04);
+}
+
+void sLinsysRootAug::addBorderTimesRhsToB0(DistributedVector<double>& rhs, SimpleVector<double>& b0,
+   BorderLinsys& border) {
+   assert(rhs.children.size() == children.size());
+   assert(border.A.children.size() == children.size());
+
+   for (size_t i = 0; i < children.size(); ++i) {
+      BorderLinsys child_border = getChild(border, i);
+      if (child_border.isEmpty())
+         continue;
+
+      children[i]->addBorderTimesRhsToB0(*rhs.children[i], b0, child_border);
+   }
+
+   /* add schur complement part */
+   if (PIPS_MPIgetSize(mpiComm) == 0 || PIPS_MPIgetRank(mpiComm) == 0) {
+      assert(border.A.first);
+      assert(border.C.first);
+
+      const auto* A0_border = distributed_tree->was_A0_moved_to_border() ? nullptr : dynamic_cast<const SparseMatrix*>(border.A.first.get());
+      long long mA0 = A0_border ? A0_border->n_rows() : 0;
+
+      const auto* A00_border = distributed_tree->was_A0_moved_to_border() ? &data->getLocalB() : nullptr;
+      long long mA00 = A00_border ? A00_border->n_rows() : 0;
+
+      auto& C0_border = dynamic_cast<SparseMatrix&>(*border.C.first);
+      const auto mC0 = C0_border.n_rows();
+
+      assert(border.F.first);
+      assert(border.A.last);
+      auto& F0vec_border = dynamic_cast<SparseMatrix&>(*border.A.last);
+      const auto [mF0V, nF0V] = F0vec_border.n_rows_columns();
+      auto& F0cons_border = dynamic_cast<SparseMatrix&>(*border.F.first);
+      const auto [mF0C, nF0C]  = F0cons_border.n_rows_columns();
+
+      assert(border.C.last);
+      assert(border.G.first);
+      auto& G0vec_border = dynamic_cast<SparseMatrix&>(*border.C.last);
+      const auto mG0V = G0vec_border.n_rows();
+      auto& G0cons_border = dynamic_cast<SparseMatrix&>(*border.G.first);
+      const auto mG0C = G0cons_border.n_rows();
+
+      assert(rhs.first);
+      assert(rhs.first->length() == nF0C + mA0 + mC0 + mF0V + mG0V);
+      assert(b0.length() == nF0V + mA00 + mF0C + mG0C);
+
+      auto& zi = dynamic_cast<SimpleVector<double>&>(*rhs.first);
+
+      SimpleVector<double> zi1(&zi[0], nF0C);
+      SimpleVector<double> zi2(&zi[nF0C], mA0);
+      SimpleVector<double> zi3(&zi[nF0C + mA0], mC0);
+      SimpleVector<double> zi4(&zi[nF0C + mA0 + mC0], mF0V);
+      SimpleVector<double> zi5(&zi[nF0C + mA0 + mC0 + mF0V], mG0V);
+
+      SimpleVector<double> b1(&b0[0], nF0V);
+      SimpleVector<double> b2(&b0[nF0V], mA00);
+      SimpleVector<double> b3(&b0[nF0V + mA00], mF0C);
+      SimpleVector<double> b4(&b0[nF0V + mA00 + mF0C], mG0C);
+
+      if (A0_border)
+         A0_border->transMult(1.0, b1, -1.0, zi2);
+      C0_border.transMult(1.0, b1, -1.0, zi3);
+      F0vec_border.transMult(1.0, b1, -1.0, zi4);
+      G0vec_border.transMult(1.0, b1, -1.0, zi5);
+
+      if (A00_border)
+         A00_border->mult(1.0, b2, -1.0, zi1);
+      F0cons_border.mult(1.0, b3, -1.0, zi1);
+      G0cons_border.mult(1.0, b4, -1.0, zi1);
    }
 }
 

@@ -24,11 +24,11 @@ public:
    StochNodeResourcesMonitor resMon;
    static Timer iterMon;
 
-   long long getN() const { return N; };
-   long long getMY() const { return MY; };
-   long long getMYL() const { return MYL; };
-   long long getMZ() const { return MZ; };
-   long long getMZL() const { return MZL; };
+   [[nodiscard]] long long getN() const { return N; };
+   [[nodiscard]] long long getMY() const { return MY; };
+   [[nodiscard]] long long getMYL() const { return MYL; };
+   [[nodiscard]] long long getMZ() const { return MZ; };
+   [[nodiscard]] long long getMZL() const { return MZL; };
 
    virtual DistributedTree* clone() const = 0;
 protected:
@@ -113,8 +113,8 @@ public:
 
    [[nodiscard]] virtual int nx() const = 0;
    [[nodiscard]] virtual int my() const = 0;
-   [[nodiscard]] virtual int myl() const;
-   [[nodiscard]] virtual int mzl() const;
+   [[nodiscard]] virtual int myl() const = 0;
+   [[nodiscard]] virtual int mzl() const = 0;
    [[nodiscard]] virtual int mz() const = 0;
    [[nodiscard]] virtual int id() const = 0;
 
@@ -140,7 +140,7 @@ public:
    virtual DistributedTree* switchToHierarchicalTree(DistributedQP*& data) = 0;
 
    void printProcessTree() const;
-   bool was_A0_moved_to_border() const { return was_a0_moved_to_border; };
+   [[nodiscard]] bool was_A0_moved_to_border() const { return was_a0_moved_to_border; };
 protected:
    bool was_a0_moved_to_border{false};
 

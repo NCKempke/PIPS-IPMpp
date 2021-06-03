@@ -54,12 +54,12 @@ public:
    DistributedVector<double>* createcupp() const override;
    DistributedVector<double>* createicupp() const override;
 
-   int nx() const override;
-   int my() const override;
-   int myl() const override;
-   int mz() const override;
-   int mzl() const override;
-   int id() const override;
+   [[nodiscard]] int nx() const override;
+   [[nodiscard]] int my() const override;
+   [[nodiscard]] int myl() const override;
+   [[nodiscard]] int mz() const override;
+   [[nodiscard]] int mzl() const override;
+   [[nodiscard]] int id() const override;
 
    void computeGlobalSizes() override;
 
@@ -77,7 +77,6 @@ public:
    [[nodiscard]] std::vector<MPI_Comm> getChildComms() const;
 
    void assertTreeStructureCorrect() const;
-
 protected:
    void assertTreeStructureChildren() const;
    void assertSubRoot() const;

@@ -106,11 +106,11 @@ void sLinsysRootBordered::assembleLocalKKT() {
    assert(is_hierarchy_root);
    assert(!hasSparseKkt);
    assert(children.size() == 1);
+   assert(locmy >= 0);
+   assert(data->children.size() == 1);
 
    // assemble complete inner KKT from children
    auto& SC = dynamic_cast<DenseSymmetricMatrix&>(*kkt);
-
-   assert(data->children.size() == 1);
 
    BorderLinsys B(*dynamic_cast<const BorderedSymmetricMatrix&>(*data->Q).border_vertical, *dynamic_cast<const BorderedMatrix&>(*data->A).border_left,
          *dynamic_cast<const BorderedMatrix&>(*data->C).border_left, locmy, *dynamic_cast<const BorderedMatrix&>(*data->A).border_bottom,
