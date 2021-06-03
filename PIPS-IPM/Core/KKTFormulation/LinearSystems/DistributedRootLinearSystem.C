@@ -226,15 +226,7 @@ void DistributedRootLinearSystem::factor2() {
    /* build KKT from local children */
    assembleLocalKKT();
 
-#ifdef TIMING
-   MPI_Barrier(MPI_COMM_WORLD);
-   stochNode->resMon.recReduceTmLocal_start();
-#endif
-
    reduceKKT();
-#ifdef TIMING
-   stochNode->resMon.recReduceTmLocal_stop();
-#endif
 
    finalizeKKT();
 
@@ -252,37 +244,7 @@ void DistributedRootLinearSystem::factor2() {
          std::cout << "done\n\n";
    }
 
-#ifdef TIMING
-   afterFactor();
-#endif
 }
-
-#ifdef TIMING
-void sLinsysRoot::afterFactor()
-{
-  int mype; MPI_Comm_rank(mpiComm, &mype);
-
-  if( (mype/256)*256==mype) {
-    for (size_t c=0; c<children.size(); c++) {
-      if (children[c]->mpiComm == MPI_COMM_NULL) continue;
-
-      printf("  rank %d NODE %4zu SPFACT %g BACKSOLVE %g SEC ITER %d\n", mype, c,
-        children[c]->stochNode->resMon.eFact.tmLocal,
-        children[c]->stochNode->resMon.eFact.tmChildren, (int)g_iterNumber);
-    }
-  }
-  if( (mype/1024)*1024==mype) {
-    for (size_t c=0; c<children.size(); c++) {
-      if (children[c]->mpiComm == MPI_COMM_NULL) continue;
-
-      double redall = stochNode->resMon.eReduce.tmLocal;
-      double redscat = stochNode->resMon.eReduceScatter.tmLocal;
-      printf("  rank %d REDUCE %g SEC ITER %d REDSCAT %g DIFF %g\n", mype, redall,
-        (int)g_iterNumber, redscat, redall-redscat);
-    }
-  }
-}
-#endif
 
 /* compute
  *             locnx locmy locmz locmyl locmzl
@@ -301,8 +263,7 @@ void sLinsysRoot::afterFactor()
  * [ G0V   0     0     0   ]
  */
 // TODO : move to aug..
-void
-DistributedRootLinearSystem::finalizeZ0Hierarchical(DenseMatrix& buffer, BorderLinsys& Br,
+void DistributedRootLinearSystem::finalizeZ0Hierarchical(DenseMatrix& buffer, BorderLinsys& Br,
    std::vector<BorderMod>& Br_mod_border, int begin_rows, int end_rows) {
    assert(!distributed_tree->isHierarchicalRoot());
    assert(0 <= begin_rows && begin_rows <= end_rows);

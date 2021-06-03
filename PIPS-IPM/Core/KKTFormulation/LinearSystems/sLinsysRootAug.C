@@ -290,27 +290,12 @@ void sLinsysRootAug::Lsolve(Vector<double>& x) {
 
    // compute Bi^T Ki^-1 rhs_i and sum it up
    for (size_t it = 0; it < children.size(); it++) {
-#ifdef TIMING
-      children[it]->stochNode->resMon.eLsolve.clear();
-      children[it]->stochNode->resMon.recLsolveTmChildren_start();
-#endif
       children[it]->addLniziLinkCons(b0, *b.children[it], true);
 
-#ifdef TIMING
-      children[it]->stochNode->resMon.recLsolveTmChildren_stop();
-#endif
    }
-#ifdef TIMING
-   MPI_Barrier(MPI_COMM_WORLD);
-   stochNode->resMon.eReduce.clear();//reset
-   stochNode->resMon.recReduceTmLocal_start();
-#endif
    if (iAmDistrib)
       PIPS_MPIsumArrayInPlace(b0.elements(), b0.length(), mpiComm);
 
-#ifdef TIMING
-   stochNode->resMon.recReduceTmLocal_stop();
-#endif
    //dumpRhs(0, "rhs",  b0);
 }
 
@@ -321,14 +306,7 @@ void sLinsysRootAug::Dsolve(Vector<double>& x) {
    /* children have already computed Li^T\Di\Li\bi in Lsolve() */
    auto& b = dynamic_cast<DistributedVector<double>&>(x);
    auto& b0 = dynamic_cast<SimpleVector<double>&>(*b.first);
-#ifdef TIMING
-   stochNode->resMon.eDsolve.clear();
-   stochNode->resMon.recDsolveTmLocal_start();
-#endif
    solveReducedLinkCons(b0);
-#ifdef TIMING
-   stochNode->resMon.recDsolveTmLocal_stop();
-#endif
 }
 
 void sLinsysRootAug::Ltsolve(Vector<double>& x) {
@@ -340,42 +318,6 @@ void sLinsysRootAug::Ltsolve(Vector<double>& x) {
 
    for (size_t it = 0; it < children.size(); it++)
       children[it]->Ltsolve2(*b.children[it], z0, true);
-
-#ifdef TIMING
-   int myRank; MPI_Comm_rank(MPI_COMM_WORLD, &myRank);
-
-   if( 256 * ( myRank / 256 ) == myRank )
-   {
-      double tTotResChildren=0.0;
-      for( size_t it = 0; it < children.size(); it++)
-      {
-         if( children[it]->mpiComm == MPI_COMM_NULL )
-            continue;
-         tTotResChildren += children[it]->stochNode->resMon.eLsolve.tmChildren;
-         tTotResChildren += children[it]->stochNode->resMon.eLsolve.tmLocal;
-      }
-      double tComm = stochNode->resMon.eReduce.tmLocal;
-
-      //double tTotChildren = 0.0;
-      //for( size_t it = 0; it < children.size(); it++)
-      //{
-      //   tTotChildren += children[it]->stochNode->resMon.eDsolve.tmChildren;
-      //   tTotChildren += children[it]->stochNode->resMon.eDsolve.tmLocal;
-      //}
-      double tStg1 = stochNode->resMon.eDsolve.tmLocal;
-
-      double tTotStg2Children = 0.0;
-      for( size_t it = 0; it < children.size(); it++)
-      {
-         if( children[it]->mpiComm == MPI_COMM_NULL )
-            continue;
-         tTotStg2Children += children[it]->stochNode->resMon.eLtsolve.tmChildren;
-         tTotStg2Children += children[it]->stochNode->resMon.eLtsolve.tmLocal;
-      }
-      std::cout << "  rank " << myRank << " " << "Resid comp " << tTotResChildren << " " << "reduce " << tComm << " "
-            << "1stStage solve " << tStg1 << " " << "2ndStage solve " << tTotStg2Children << "\n";
-   }
-#endif
 }
 
 /* gets called for computing the dense schur complement*/
@@ -397,11 +339,6 @@ sLinsysRootAug::LtsolveHierarchyBorder(AbstractMatrix& res, const DenseMatrix& X
 extern int gLackOfAccuracy;
 
 void sLinsysRootAug::solveReducedLinkCons(SimpleVector<double>& b_vec) {
-#ifdef TIMING
-   t_start = MPI_Wtime();
-   troot_total = tchild_total = tcomm_total = 0.0;
-#endif
-
    assert(locmyl >= 0 && locmzl >= 0);
    assert(locnx + locmy + locmz + locmyl + locmzl == b_vec.length());
 
@@ -482,12 +419,6 @@ void sLinsysRootAug::solveReducedLinkCons(SimpleVector<double>& b_vec) {
 
    // copy rhs3 and rhs4
    std::copy(rhs_reduced + locnx + locmy, rhs_reduced + locnx + locmy + locmyl + locmzl, b + locnx + locmy + locmz);
-
-#ifdef TIMING
-   if( myRank == 0 && innerSCSolve >= 1 )
-     std::cout << "Root - Refin times: child=" << tchild_total << " root=" << troot_total
-        << " comm=" << tcomm_total << " total=" << MPI_Wtime()-t_start << "\n";
-#endif
 }
 
 void sLinsysRootAug::solveReducedLinkConsBlocked(DenseMatrix& rhs_mat_transp, int rhs_start, int n_rhs) {

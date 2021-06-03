@@ -377,8 +377,9 @@ void DenseSymmetricMatrix::add_matrix_at_without_diag(const SparseSymmetricMatri
 
 void DenseSymmetricMatrix::add_matrix_at(const SparseMatrix& matrix, int row_0, int col_0)
 {
-   const auto m_matrix = matrix.n_rows();
-
+   const auto [m_matrix, n_matrix] = matrix.n_rows_columns();
+   if (m_matrix == 0 || n_matrix == 0)
+      return;
 #ifndef NDEBUG
    assert(row_0 != col_0);
    const int row_n = row_0 + m_matrix;
