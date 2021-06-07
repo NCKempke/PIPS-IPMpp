@@ -181,7 +181,7 @@ void LinearSystem::factorize(Variables& vars) {
    if (pipsipmpp_options::get_bool_parameter("HIERARCHICAL_TESTING")) {
       std::cout << "Setting diags to 1.0 for Hierarchical debugging\n";
       primal_diagonal->setToConstant(1.0);
-      nomegaInv->setToConstant(1.0);
+      nomegaInv->setToConstant(-1.0);
    }
 
    if (nxlow + nxupp > 0) {
