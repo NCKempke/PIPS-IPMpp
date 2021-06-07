@@ -781,6 +781,11 @@ DistributedTree* DistributedTreeCallbacks::shaveDenseBorder(int nx_to_shave, int
    top_layer->nx_active = nx_to_shave;
    this->nx_active -= nx_to_shave;
 
+   /* if we shave off all of the linking variables then there will also not be any Bmat rows left we need to take care of */
+   if(this->nx_active == 0) {
+      pipsipmpp_options::set_bool_parameter("HIERARCHICAL_MOVE_A0_TO_DENSE_LAYER", true);
+   }
+
    /* we move all of A0 to the border layer - else we have structural rank deficiency in the schur complement later */
    if (pipsipmpp_options::get_bool_parameter("HIERARCHICAL_MOVE_A0_TO_DENSE_LAYER")) {
       top_layer->my_active = this->my_active;
