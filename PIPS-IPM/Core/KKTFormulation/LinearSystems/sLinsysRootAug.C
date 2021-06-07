@@ -477,9 +477,7 @@ void sLinsysRootAug::solveReducedLinkConsBlocked(DenseMatrix& rhs_mat_transp, in
       if (locmz > 0) {
          assert(zDiag);
          assert(b3.length() == zDiag->length());
-         b3.componentDiv(*zDiag);
-         C.transMult(1.0, rhs1, -1.0, b3);
-//         C.transMultD(1.0, rhs1, -1.0, b3, *zDiag);
+         C.transMultD(1.0, rhs1, -1.0, b3, *zDiag);
       }
    }
 
