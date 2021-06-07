@@ -67,11 +67,8 @@ public:
 
    void symAtPutSubmatrix(int destRow, int destCol, const AbstractMatrix& M, int srcRow, int srcCol, int rowExtent, int colExtent) override;
 
-   virtual void mult(double beta, double y[], int incy, double alpha, const double x[], int incx) const;
-   virtual void transMult(double beta, double y[], int incy, double alpha, const double x[], int incx) const;
 
    void mult(double beta, Vector<double>& y, double alpha, const Vector<double>& x) const override;
-
    void transMult(double beta, Vector<double>& y, double alpha, const Vector<double>& x) const override;
 
    [[nodiscard]] double inf_norm() const override;

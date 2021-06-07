@@ -86,18 +86,18 @@ public:
 
    virtual void clear();
 
-   virtual void mult(double beta, double y[], int incy, double alpha, const double x[], int incx) const;
-   virtual void multSym(double beta, double y[], int incy, double alpha, const double x[], int incx) const;
+   virtual void mult(double beta, double y[], double alpha, const double x[]) const;
+   virtual void multSym(double beta, double y[], double alpha, const double x[]) const;
 
-   virtual void transMult(double beta, double y[], int incy, double alpha, const double x[], int incx) const;
-   virtual void transMultD(double beta, double y[], int incy, double alpha, const double x[], const double d[], int incxd) const;
+   virtual void transMult(double beta, double y[], double alpha, const double x[] ) const;
+   virtual void transMultD(double beta, double y[], double alpha, const double x[], const double d[]) const;
 
    void atPutDiagonal(int idiag, const Vector<double>& v) override;
    void atAddDiagonal(int idiag, const Vector<double>& v) override;
    void fromGetDiagonal(int idiag, Vector<double>& v) const override;
 
-   void atPutDiagonal(int idiag, const double x[], int incx, int extent);
-   void atAddDiagonal(int idiag, const double x[], int incx, int extent);
+   void atPutDiagonal(int idiag, const double x[], int extent);
+   void atAddDiagonal(int idiag, const double x[], int extent);
 
    void diagonal_set_to_constant_from(int from, int length, double value) override;
    void diagonal_add_constant_from(int from, int length, double value) override;

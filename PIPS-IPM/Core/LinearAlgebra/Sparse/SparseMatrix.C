@@ -118,7 +118,6 @@ void SparseMatrix::write_to_streamDense(std::ostream& out) const {
       mStorageDynamic->write_to_streamDense(out);
    else
       mStorage->write_to_streamDense(out);
-
 }
 
 void SparseMatrix::write_to_streamDenseRow(std::ostream& out, int rowidx) const {
@@ -220,26 +219,12 @@ SparseMatrix::atPutSubmatrix(int destRow, int destCol, const AbstractMatrix& M, 
    delete[] a;
 }
 
-
 void SparseMatrix::mult(double beta, Vector<double>& y_in, double alpha, const Vector<double>& x_in) const {
+   assert(x_in.length() == mStorage->n && y_in.length() == mStorage->m);
+
    const auto& x = dynamic_cast<const SimpleVector<double>&>(x_in);
    auto& y = dynamic_cast<SimpleVector<double>&>(y_in);
-
-   assert(x.length() == mStorage->n && y.length() == mStorage->m);
-
-   const double* xv = nullptr;
-   double* yv = nullptr;
-
-   if (x.length() > 0)
-      xv = &x[0];
-   if (y.length() > 0)
-      yv = &y[0];
-
-   mStorage->mult(beta, yv, 1, alpha, xv, 1);
-}
-
-void SparseMatrix::mult(double beta, double y[], int incy, double alpha, const double x[], int incx) const {
-   mStorage->mult(beta, y, incy, alpha, x, incx);
+   mStorage->mult(beta, y.elements(), alpha, x.elements());
 }
 
 void SparseMatrix::multMatSymUpper(double beta, SymmetricMatrix& y, double alpha, const double x[], int yrowstart,
@@ -263,28 +248,11 @@ void SparseMatrix::transmultMatSymUpper(double beta, SymmetricMatrix& y, double 
 }
 
 void SparseMatrix::transMult(double beta, Vector<double>& y_in, double alpha, const Vector<double>& x_in) const {
+   assert(x_in.length() == mStorage->m && y_in.length() == mStorage->n);
+
    const auto& x = dynamic_cast<const SimpleVector<double>&>(x_in);
    auto& y = dynamic_cast<SimpleVector<double>&>(y_in);
-
-   assert(x.length() == mStorage->m && y.length() == mStorage->n);
-
-   mStorage->transMult(beta, y.elements(), 1, alpha, x.elements(), 1);
-}
-
-void SparseMatrix::transMult(double beta, Vector<double>& y_in, int incy, double alpha, const Vector<double>& x_in,
-   int incx) const {
-   const auto& x = dynamic_cast<const SimpleVector<double>&>(x_in);
-   auto& y = dynamic_cast<SimpleVector<double>&>(y_in);
-
-   assert(x.length() > 0 && y.length() > 0);
-   assert(x.length() >= incx * mStorage->m);
-   assert(y.length() >= incy * mStorage->n);
-
-   mStorage->transMult(beta, y.elements(), incy, alpha, x.elements(), incx);
-}
-
-void SparseMatrix::transMult(double beta, double yv[], int incy, double alpha, const double xv[], int incx) const {
-   mStorage->transMult(beta, yv, incy, alpha, xv, incx);
+   mStorage->transMult(beta, y.elements(), alpha, x.elements());
 }
 
 void SparseMatrix::transMultD(double beta, Vector<double>& y_, double alpha, const Vector<double>& x_,
@@ -300,7 +268,7 @@ void SparseMatrix::transMultD(double beta, Vector<double>& y_, double alpha, con
    assert(x.length() == mStorage->m);
    assert(y.length() == mStorage->n);
 
-   mStorage->transMultD(beta, y.elements(), 1, alpha, x.elements(), d.elements(), 1);
+   mStorage->transMultD(beta, y.elements(), alpha, x.elements(), d.elements());
 }
 
 double SparseMatrix::inf_norm() const {
@@ -320,7 +288,7 @@ double SparseMatrix::abminnormNonZero(double tol) const {
 void SparseMatrix::atPutDiagonal(int idiag, const Vector<double>& vvec) {
    const auto& v = dynamic_cast<const SimpleVector<double>&>(vvec);
 
-   mStorage->atPutDiagonal(idiag, &v[0], 1, v.length());
+   mStorage->atPutDiagonal(idiag, &v[0], v.length());
 
    if (m_Mt)
       m_Mt->atPutDiagonal(idiag, vvec);
@@ -328,7 +296,7 @@ void SparseMatrix::atPutDiagonal(int idiag, const Vector<double>& vvec) {
 
 void SparseMatrix::atAddDiagonal(int idiag, const Vector<double>& vvec) {
    const auto& v = dynamic_cast<const SimpleVector<double>&>(vvec);
-   mStorage->atAddDiagonal(idiag, &v[0], 1, v.length());
+   mStorage->atAddDiagonal(idiag, &v[0], v.length());
 
    if (m_Mt)
       m_Mt->atAddDiagonal(idiag, vvec);
