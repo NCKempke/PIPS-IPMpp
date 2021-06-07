@@ -1138,7 +1138,7 @@ DistributedLinearSystem::addLeftBorderTimesDenseColsToResTranspSparse(const Bord
 
       assert(nF == nG && nF == nR);
       assert(length_col == nR + nA + nC);
-      assert(nRes >= mR + mF + mG);
+      assert(nRes == mR + Bl.n_empty_rows + mF + mG);
       assert(mR == mA && mA == mC);
    } else {
       /* >= since there could be 0linkvars */
