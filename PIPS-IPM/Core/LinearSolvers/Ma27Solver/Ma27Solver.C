@@ -56,15 +56,16 @@ void Ma27Solver::firstCall() {
    double ops;
 
    /* do ordering */
-   bool done{};
+   bool errors{false};
    int tries = 0;
    do {
       FNAME(ma27ad)(&n, &nnz, irowM.data(), jcolM.data(), iw, &liw, ikeep, iw1, &nsteps, &iflag, icntl.data(), cntl.data(), info.data(), &ops);
-      done = !checkErrorsAndReact();
+      errors = !checkErrorsAndReact();
       ++tries;
-   } while (!done && tries < max_tries);
+   } while (errors && tries < max_tries);
 
-   if (!done && tries > max_tries) {
+   if (errors) {
+      assert(tries == max_tries);
       std::cerr << "ERROR MA27 " << name << ": could not get ordering of matrix after max " << max_tries << " tries\n";
       MPI_Abort(MPI_COMM_WORLD, -1);
    }
