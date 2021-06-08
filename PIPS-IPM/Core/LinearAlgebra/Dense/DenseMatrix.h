@@ -5,7 +5,6 @@
 #ifndef DENSEGENMATRIX_H
 #define DENSEGENMATRIX_H
 
-#include "AbstractMatrix.h"
 #include "DenseStorage.h"
 #include <memory>
 
@@ -24,11 +23,10 @@ public:
 
    [[nodiscard]] int is_a(int matType) const override;
 
-   [[nodiscard]] int getM() const { return mStorage->m; };
-   [[nodiscard]] int getN() const { return mStorage->n; };
+   [[nodiscard]] long long n_rows() const override;
+   [[nodiscard]] long long n_columns() const override;
 
-   void getSize(long long& m, long long& n) const override;
-   void getSize(int& m, int& n) const override;
+   [[nodiscard]] std::pair<long long, long long> n_rows_columns() const override;
 
    void atPutDense(int row, int col, const double* A, int lda, int rowExtent, int colExtent) override;
 
@@ -69,8 +67,8 @@ public:
    [[nodiscard]] double inf_norm() const override;
    [[nodiscard]] double abminnormNonZero(double tol) const override;
 
-   void writeToStream(std::ostream& out) const override;
-   void writeToStreamDense(std::ostream& out) const override;
+   void write_to_stream(std::ostream& out) const override;
+   void write_to_streamDense(std::ostream& out) const override;
 
    void atPutDiagonal(int idiag, const Vector<double>& v) override;
    void atAddDiagonal(int idiag, const Vector<double>& v) override;
@@ -90,20 +88,10 @@ public:
    DenseStorage& getStorageRef() { return *mStorage; }
    std::shared_ptr<DenseStorage> getStorageHandle() { return mStorage; }
 
-   /* the following functions added by C.Petra 09/09 */
-
-   /** MatMat product
-    *
-    * this = alpha* op(A) * op(B) + beta*this
-    *
-    * op(...) specifies whether to use the matrix or its transpose
-    */
-   virtual void matMult(double alpha, DenseMatrix& A, int transA, DenseMatrix& B, int transB, double beta);
-
    /* compute beta * res += alpha * this * mat where mat gets multiplied to the submatrix
     * starting at mul_start and the results gets added starting at res_start */
    void multMatAt(int row_start, int row_end, int col_offset_this, double beta, int row_start_res, int col_offset_result, DenseMatrix& res,
-         double alpha, /* const */ SparseMatrix& mat) const;
+         double alpha, const SparseMatrix& mat) const;
 
    /* adds mat to this starting at row_0 col_0 */
    void addMatAt(const SparseMatrix& mat, int mat_row_start, int mat_row_end, int this_row_0, int this_col_0);

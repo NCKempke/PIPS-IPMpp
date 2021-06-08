@@ -55,18 +55,20 @@ void DenseSymmetricMatrix::fromGetSpRow(int row, int col, double A[], int lenA, 
    }
 }
 
-void DenseSymmetricMatrix::getSize(long long& m, long long& n) const {
-   m = mStorage->m;
-   n = mStorage->n;
+std::pair<long long, long long> DenseSymmetricMatrix::n_rows_columns() const {
+   return mStorage->n_rows_columns();
 }
 
-void DenseSymmetricMatrix::getSize(int& m, int& n) const {
-   m = mStorage->m;
-   n = mStorage->n;
+long long DenseSymmetricMatrix::n_rows() const {
+   return mStorage->n_rows();
+}
+
+long long DenseSymmetricMatrix::n_columns() const {
+   return mStorage->n_columns();
 }
 
 long long DenseSymmetricMatrix::size() const {
-   return mStorage->m;
+   return mStorage->n_rows();
 }
 
 void DenseSymmetricMatrix::symAtPutSubmatrix(int destRow, int destCol, const AbstractMatrix& Mat, int srcRow, int srcCol, int rowExtent, int colExtent) {
@@ -121,7 +123,7 @@ double DenseSymmetricMatrix::abminnormNonZero(double tol) const {
    return mStorage->abminnormNonZero(tol);
 }
 
-void DenseSymmetricMatrix::writeToStream(std::ostream& out) const {
+void DenseSymmetricMatrix::write_to_stream(std::ostream& out) const {
    for (int i = 0; i < mStorage->m; i++) {
       for (int j = 0; j < mStorage->n; j++)
          out << mStorage->M[i][j] << "\t";
@@ -130,8 +132,8 @@ void DenseSymmetricMatrix::writeToStream(std::ostream& out) const {
    }
 }
 
-void DenseSymmetricMatrix::writeToStreamDense(std::ostream& out) const {
-   writeToStream(out);
+void DenseSymmetricMatrix::write_to_streamDense(std::ostream& out) const {
+   write_to_stream(out);
 }
 
 void DenseSymmetricMatrix::fromGetDense(int row, int col, double* A, int lda, int rowExtent, int colExtent) const {
@@ -175,14 +177,14 @@ void DenseSymmetricMatrix::fromGetDiagonal(int idiag, Vector<double>& v) const {
 void DenseSymmetricMatrix::diagonal_add_constant_from(int from, int length, double value) {
    assert(0 <= from);
    assert(0 <= length);
-   assert(from + length < this->size());
+   assert(from + length <= this->size());
    mStorage->diagonal_add_constant_from(from, length, value);
 }
 
 void DenseSymmetricMatrix::diagonal_set_to_constant_from(int from, int length, double value) {
    assert(0 <= from);
    assert(0 <= length);
-   assert(from + length < this->size());
+   assert(from + length <= this->size());
    mStorage->diagonal_set_to_constant_from(from, length, value);
 }
 
@@ -227,22 +229,15 @@ void DenseSymmetricMatrix::matMult(double alpha, GeneralMatrix& A_, int transA, 
 
    DenseSymmetricMatrix& C = *this;
 
-   int m, n, k, kB;
    int ldc = mStorage->m;
 
-   if (!transA) {
-      A.getSize(m, k);
-   }
-   else {
-      A.getSize(k, m);
-   }
+   auto [m, k] = A.getStorageRef().n_rows_columns();
+   if (transA)
+      std::swap(m,k);
 
-   if (!transB) {
-      B.getSize(kB, n);
-   }
-   else {
-      B.getSize(n, kB);
-   }
+   auto [kB, n] = B.getStorageRef().n_rows_columns();
+   if (transB)
+      std::swap(kB,n);
 
    assert(k == kB);
 
@@ -255,7 +250,6 @@ void DenseSymmetricMatrix::matMult(double alpha, GeneralMatrix& A_, int transA, 
 
    dgemm_(&forTransA, &forTransB, &m, &n, &k, &alpha, &AA[0][0], &m, &BB[0][0], &n, &beta, &CC[0][0], &ldc);
 }
-
 
 void DenseSymmetricMatrix::symAtPutSubmatrix(int destRow, int destCol, const AbstractMatrix& Mat, int srcRow, int srcCol, int rowExtent, int colExtent,
       int forceSymUpdate) {
@@ -306,8 +300,8 @@ void DenseSymmetricMatrix::atRankkUpdate(double alpha, double beta, DenseMatrix&
    //trans=0 -> this += U*U' -> tell BLAS to do U'*U
    char TRANS = trans == 0 ? 'T' : 'N';
 
-   int m, k;
-   U.getSize(m, k);
+
+   auto[m, k] = U.getStorageRef().n_rows_columns();
    int ldu = k; // change leading dim so that U in row-major  in col-major
    if (trans)
       k = m;
@@ -342,14 +336,12 @@ int DenseSymmetricMatrix::getNumberOfNonZeros() const {
 
 void DenseSymmetricMatrix::add_matrix_at(const DenseMatrix& matrix, int row_0, int col_0)
 {
-   int m_matrix;
-   int n_matrix;
-   matrix.getSize(m_matrix, n_matrix);
+   const auto m_matrix = matrix.n_rows();
 
 #ifndef NDEBUG
    assert(row_0 != col_0);
    const int row_n = row_0 + m_matrix;
-   const int col_n = col_0 + n_matrix;
+   const int col_n = col_0 + matrix.n_columns();
    assert(row_n <= this->size());
    assert(col_n <= this->size());
 
@@ -368,14 +360,12 @@ void DenseSymmetricMatrix::add_matrix_at(const DenseMatrix& matrix, int row_0, i
 
 void DenseSymmetricMatrix::add_matrix_at(const SparseMatrix& matrix, int row_0, int col_0)
 {
-   int m_matrix;
-   int n_matrix;
-   matrix.getSize(m_matrix, n_matrix);
+   const auto m_matrix = matrix.n_rows();
 
 #ifndef NDEBUG
    assert(row_0 != col_0);
    const int row_n = row_0 + m_matrix;
-   const int col_n = col_0 + n_matrix;
+   const int col_n = col_0 + matrix.n_columns();
    assert(row_n <= this->size());
    assert(col_n <= this->size());
 

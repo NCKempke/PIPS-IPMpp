@@ -5,12 +5,8 @@
 #ifndef SPARSESTORAGE_H
 #define SPARSESTORAGE_H
 
-#include "AbstractMatrix.h"
-#include "Vector.hpp"
-#include "SmartPointer.h"
-#include "pipsport.h"
+#include "../Abstract/AbstractMatrix.h"
 
-#include <cstring>
 #include <iostream>
 #include <sstream>
 #include <fstream>
@@ -60,16 +56,18 @@ public:
    void copyFrom(int* krowM_, int* jcolM_, double* M_) const;
 
    void shiftRows(int row, int shift, int& info);
-   void getSize(int& m, int& n) const override;
-   int rows() const { return m; }
-   int cols() const { return n; }
 
-   bool isValid() const;
-   bool isSorted() const;
+   [[nodiscard]] std::pair<int,int> n_rows_columns() const override;
+   [[nodiscard]] int n_rows() const override;
+   [[nodiscard]] int n_columns() const override;
+
+   [[nodiscard]] bool isValid() const;
+   [[nodiscard]] bool isSorted() const;
 
 
-   int length() { return len; };
-   int numberOfNonZeros() const { return krowM[m]; };
+   [[nodiscard]] int length() const { return len; };
+   [[nodiscard]] int numberOfNonZeros() const;
+
    void fromGetDense(int row, int col, double* A, int lda, int rowExtent, int colExtent) const override;
    void atPutDense(int row, int col, const double* A, int lda, int rowExtent, int colExtent) override;
 
@@ -88,26 +86,26 @@ public:
 
    virtual void clear();
 
-   virtual void mult(double beta, double y[], int incy, double alpha, const double x[], int incx) const;
-   virtual void multSym(double beta, double y[], int incy, double alpha, const double x[], int incx) const;
+   virtual void mult(double beta, double y[], double alpha, const double x[]) const;
+   virtual void multSym(double beta, double y[], double alpha, const double x[]) const;
 
-   virtual void transMult(double beta, double y[], int incy, double alpha, const double x[], int incx) const;
-   virtual void transMultD(double beta, double y[], int incy, double alpha, const double x[], const double d[], int incxd) const;
+   virtual void transMult(double beta, double y[], double alpha, const double x[] ) const;
+   virtual void transMultD(double beta, double y[], double alpha, const double x[], const double d[]) const;
 
    void atPutDiagonal(int idiag, const Vector<double>& v) override;
    void atAddDiagonal(int idiag, const Vector<double>& v) override;
    void fromGetDiagonal(int idiag, Vector<double>& v) const override;
 
-   void atPutDiagonal(int idiag, const double x[], int incx, int extent);
-   void atAddDiagonal(int idiag, const double x[], int incx, int extent);
+   void atPutDiagonal(int idiag, const double x[], int extent);
+   void atAddDiagonal(int idiag, const double x[], int extent);
 
    void diagonal_set_to_constant_from(int from, int length, double value) override;
    void diagonal_add_constant_from(int from, int length, double value) override;
 
-   virtual void writeToStream(std::ostream& out) const;
+   virtual void write_to_stream(std::ostream& out) const;
    void writeNNZpatternToStreamDense(std::ostream& out) const;
-   virtual void writeToStreamDense(std::ostream& out) const;
-   virtual void writeToStreamDenseRow(std::ostream& out, int rowidx) const;
+   virtual void write_to_streamDense(std::ostream& out) const;
+   virtual void write_to_streamDenseRow(std::ostream& out, int rowidx) const;
 
    virtual void symmetrize(int& info);
    [[nodiscard]] double inf_norm() const override;
@@ -193,11 +191,11 @@ public:
     */
    void fullMatrixFromUpperTriangular(int*& rowPtrFull, int*& colIdxFull, double*& valuesFull) const;
 
-   virtual SparseStorage* shaveLeft(int n_cols);
-   virtual SparseStorage* shaveSymLeftBottom(int n);
-   virtual SparseStorage* shaveBottom(int n_rows);
-   virtual void dropNEmptyRowsBottom(int n_rows);
-   virtual void dropNEmptyRowsTop(int n_rows);
+   std::unique_ptr<SparseStorage> shaveLeft(int n_cols);
+   std::unique_ptr<SparseStorage> shaveSymLeftBottom(int n);
+   std::unique_ptr<SparseStorage> shaveBottom(int n_rows);
+   void dropNEmptyRowsBottom(int n_rows);
+   void dropNEmptyRowsTop(int n_rows);
 
    ~SparseStorage() override;
 

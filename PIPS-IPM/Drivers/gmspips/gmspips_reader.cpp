@@ -114,9 +114,10 @@ vecCB(dupp, mDL)
 vecCB(idupp, mDL)
 
 
-#define matCB(mat, mmat)                                                   \
+#define matCB(mat, mmat)                                                     \
    int fmat##mat(void* user_data, int id, int* krowM, int* jcolM, double* M) \
    {                                                                         \
+      assert(krowM && jcolM && M);                                           \
       GMSPIPSBlockData_t** blocks = (GMSPIPSBlockData_t**) user_data;        \
       checkAndAlloc(id);                                                     \
       GMSPIPSBlockData_t* blk = blocks[id];                                  \

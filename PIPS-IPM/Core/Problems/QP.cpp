@@ -9,11 +9,18 @@
 #include "SimpleVector.h"
 #include "MpsReader.h"
 
-QP::QP(Vector<double>* c_in, SymmetricMatrix* Q_in, Vector<double>* xlow_in, Vector<double>* ixlow_in, Vector<double>* xupp_in,
-      Vector<double>* ixupp_in, GeneralMatrix* A_in, Vector<double>* bA_in, GeneralMatrix* C_in, Vector<double>* clow_in, Vector<double>* iclow_in,
-      Vector<double>* cupp_in, Vector<double>* icupp_in) :
-      Problem(c_in, xlow_in, ixlow_in, xupp_in, ixupp_in, A_in, bA_in, C_in, clow_in, iclow_in, cupp_in, icupp_in) {
-   SpReferTo(Q, Q_in);
+QP::QP(std::shared_ptr<Vector<double>> c_in, std::shared_ptr<SymmetricMatrix> Q_in,
+   std::shared_ptr<Vector<double>> xlow_in,
+   std::shared_ptr<Vector<double>> ixlow_in, std::shared_ptr<Vector<double>> xupp_in,
+   std::shared_ptr<Vector<double>> ixupp_in, std::shared_ptr<GeneralMatrix> A_in, std::shared_ptr<Vector<double>> bA_in,
+   std::shared_ptr<GeneralMatrix> C_in, std::shared_ptr<Vector<double>> clow_in,
+   std::shared_ptr<Vector<double>> iclow_in,
+   std::shared_ptr<Vector<double>> cupp_in,
+   std::shared_ptr<Vector<double>> icupp_in) :
+   Problem(std::move(c_in), std::move(xlow_in), std::move(ixlow_in), std::move(xupp_in), std::move(ixupp_in),
+      std::move(A_in), std::move(bA_in), std::move(C_in), std::move(clow_in), std::move(iclow_in), std::move(cupp_in),
+      std::move(icupp_in)) {
+   Q = std::move(Q_in);
 }
 
 void QP::hessian_multiplication(double beta, Vector<double>& y, double alpha, const Vector<double>& x) const {
@@ -50,7 +57,7 @@ void QP::datainput(MpsReader* reader, int& iErr) {
 
 void QP::print() {
    std::cout << "begin Q\n";
-   Q->writeToStream(std::cout);
+   Q->write_to_stream(std::cout);
    std::cout << "end Q\n";
    Problem::print();
 }
@@ -63,21 +70,20 @@ void QP::putQIntoAt(GeneralMatrix& M, int row, int col) {
    M.atPutSubmatrix(row, col, *Q, 0, 0, nx, nx);
 }
 
-void QP::hessian_diagonal(Vector<double>& hessian_diagonal) {
+void QP::hessian_diagonal(Vector<double>& hessian_diagonal) const {
    Q->fromGetDiagonal(0, hessian_diagonal);
 }
 
 void QP::objective_gradient(const Variables& variables, Vector<double>& gradient) const {
    this->getg(gradient);
-   this->hessian_multiplication(1., gradient, 1., *variables.x);
-   return;
+   this->hessian_multiplication(1., gradient, 1., *variables.primals);
 }
 
 double QP::objective_value(const Variables& variables) const {
    SimpleVector<double> gradient(nx);
    this->getg(gradient);
-   this->hessian_multiplication(1., gradient, 0.5, *variables.x);
-   return gradient.dotProductWith(*variables.x);
+   this->hessian_multiplication(1., gradient, 0.5, *variables.primals);
+   return gradient.dotProductWith(*variables.primals);
 }
 
 void QP::createScaleFromQ() {
@@ -85,7 +91,7 @@ void QP::createScaleFromQ() {
    this->hessian_diagonal(*sc);
 
    // Modifying scVector is equivalent to modifying sc
-   SimpleVector<double>& scVector = dynamic_cast<SimpleVector<double>&>(*sc);
+   auto& scVector = dynamic_cast<SimpleVector<double>&>(*sc);
    for (int i = 0; i < scVector.length(); i++) {
       if (scVector[i] > 1)
          scVector[i] = 1.0 / sqrt(scVector[i]);

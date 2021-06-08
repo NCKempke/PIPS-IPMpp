@@ -4,7 +4,7 @@
 
 #include "rawInput.hpp"
 #include "sInterfaceCallbacks.h"
-#include "PIPSIpmInterface.h"
+#include "PIPSIPMppInterface.hpp"
 
 #include "sFactoryAug.h"
 #include "MehrotraStochSolver.h"
@@ -15,7 +15,7 @@ using namespace std;
 
 // two ways of solving
 
-// using the latest interface PIPSIpmInterface 
+// using the latest interface PIPSIPMppInterface
 int solve(const string& datarootname, int nscen);
 
 // using the "C"-callbacks interface sInterfaceCallbacks
@@ -57,9 +57,9 @@ int solve(const string& datarootname, int nscen) {
    rawInput* s = new rawInput(datarootname, nscen, MPI_COMM_WORLD);
    if (mype == 0)
       cout << "rawInput created .." << endl;
-   PIPSIpmInterface<sFactoryAug, MehrotraStochSolver> pipsIpm(*s);
+   PIPSIPMppInterface<sFactoryAug, MehrotraStochSolver> pipsIpm(*s);
    if (mype == 0)
-      cout << "PIPSIpmInterface created .." << endl;
+      cout << "PIPSIPMppInterface created .." << endl;
    delete s;
    if (mype == 0)
       cout << "rawInput deleted ... solving" << endl;

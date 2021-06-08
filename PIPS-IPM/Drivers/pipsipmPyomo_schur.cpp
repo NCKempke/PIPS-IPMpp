@@ -5,7 +5,7 @@
 #include <stdlib.h>
 
 #include "PyomoInput.hpp"
-#include "PIPSIpmInterface.h"
+#include "PIPSIPMppInterface.hpp"
 
 #include "sFactoryAugSchurLeaf.h"
 #include "MehrotraStochSolver.h"
@@ -46,13 +46,13 @@ int main(int argc, char** argv) {
    PyomoInput* s = new PyomoInput(datarootname, nscen);
    if (mype == 0)
       cout << "Pyomo input created from " << datarootname << endl;
-   PIPSIpmInterface<sFactoryAugSchurLeaf, MehrotraStochSolver> pipsIpm(*s);
+   PIPSIPMppInterface<sFactoryAugSchurLeaf, MehrotraStochSolver> pipsIpm(*s);
 
-   pips_options::setIntParameter("OUTER_SOLVE", outerSolve);
-   pips_options::setIntParameter("INNER_SC_SOLVE", innerSolve);
+   pipsipmpp_options::setIntParameter("OUTER_SOLVE", outerSolve);
+   pipsipmpp_options::setIntParameter("INNER_SC_SOLVE", innerSolve);
 
    if (mype == 0)
-      cout << "PIPSIpmInterface created" << endl;
+      cout << "PIPSIPMppInterface created" << endl;
    delete s;
    if (mype == 0)
       cout << "PyomoInput deleted ... starting to solve" << endl;

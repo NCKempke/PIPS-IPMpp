@@ -11,19 +11,19 @@
 class DistributedMatrixSplittingTest
       : public DistributedMatrix, public ::testing::TestWithParam<std::tuple<std::vector<unsigned int>, std::vector<int>, std::vector<unsigned int>>> {
 public:
-   DistributedMatrix*
+   static DistributedMatrix*
    createTestMatrix(unsigned int n_link_vars, unsigned int m_link_vars, unsigned int n_diag, unsigned int m_diag, unsigned int n_blocks,
-         unsigned int m_link_cons) const;
+         unsigned int m_link_cons) ;
 };
 
 DistributedMatrix*
 DistributedMatrixSplittingTest::createTestMatrix(unsigned int n_link_vars, unsigned int m_link_vars, unsigned int n_diag, unsigned int m_diag,
-      unsigned int n_blocks, unsigned int m_link_cons) const {
-   DistributedMatrix* root = new DistributedMatrix(0, 0, 0, 0, 0, m_link_vars, n_link_vars, 0, m_link_cons, n_link_vars, 0, MPI_COMM_WORLD);
+      unsigned int n_blocks, unsigned int m_link_cons) {
+   auto* root = new DistributedMatrix(0, 0, 0, 0, 0, m_link_vars, n_link_vars, 0, m_link_cons, n_link_vars, 0, MPI_COMM_WORLD);
 
    for (unsigned int i = 0; i < n_blocks; ++i) {
-      DistributedMatrix* child = new DistributedMatrix(0, 0, m_diag, n_link_vars, 0, m_diag, n_diag, 0, m_link_cons, n_diag, 0, MPI_COMM_WORLD);
-      root->AddChild(child);
+      std::unique_ptr<DistributedMatrix> child = std::make_unique<DistributedMatrix>(0, 0, m_diag, n_link_vars, 0, m_diag, n_diag, 0, m_link_cons, n_diag, 0, MPI_COMM_WORLD);
+      root->AddChild(std::move(child));
    }
 
    root->recomputeSize();
@@ -74,12 +74,9 @@ TEST_P(DistributedMatrixSplittingTest, TestSplitDistributedMatrixOnce) {
       EXPECT_TRUE(child->Blmat->is_a(kStripMatrix));
       EXPECT_TRUE(child->Amat->is_a(kSparseGenMatrix));
 
-      int ma, na;
-      child->Amat->getSize(ma, na);
-      int mb, nb;
-      child->Bmat->getSize(mb, nb);
-      int mbl, nbl;
-      child->Blmat->getSize(mbl, nbl);
+      const auto [ma, na] = child->Amat->n_rows_columns();
+      const auto nb = child->Bmat->n_columns();
+      auto [mbl, nbl] = child->Blmat->n_rows_columns();
 
       EXPECT_EQ(na, 0);
       EXPECT_EQ(ma, 0);
@@ -87,12 +84,12 @@ TEST_P(DistributedMatrixSplittingTest, TestSplitDistributedMatrixOnce) {
 
       EXPECT_EQ(mbl, n_links_in_root);
 
-      const DistributedMatrix& bmat = dynamic_cast<const DistributedMatrix&>(*child->Bmat);
-      const StripMatrix& blmat = dynamic_cast<const StripMatrix&>(*child->Blmat);
+      const auto& bmat = dynamic_cast<const DistributedMatrix&>(*child->Bmat);
+      const auto& blmat = dynamic_cast<const StripMatrix&>(*child->Blmat);
       EXPECT_EQ(blmat.children.size(), bmat.children.size());
       EXPECT_EQ(0, child->children.size());
 
-      bmat.Blmat->getSize(mbl, nbl);
+      std::tie(mbl, nbl) = bmat.Blmat->n_rows_columns();
 
       sum_child_links += mbl;
       sum_child_children += child->children.size();

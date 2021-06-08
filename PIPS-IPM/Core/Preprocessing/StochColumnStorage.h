@@ -26,7 +26,7 @@ public:
    void axpyAtCol(double beta, DistributedVector<double>* eq_vec, DistributedVector<double>* ineq_vec, SimpleVector<double>* eq_link,
          SimpleVector<double>* ineq_link, double alpha, const INDEX& col) const;
 
-   double multColTimesVec(const INDEX& col, const DistributedVector<double>& vec_eq, const DistributedVector<double>& vec_ineq) const;
+   [[nodiscard]] double multColTimesVec(const INDEX& col, const DistributedVector<double>& vec_eq, const DistributedVector<double>& vec_ineq) const;
 
    // todo: delete Column from storage
 private:
@@ -44,9 +44,9 @@ private:
    int storeLinkingCol(int col, const DistributedMatrix& matrix_eq_part, const DistributedMatrix& matrix_ineq_part);
    int storeLocalCol(const INDEX& col, const DistributedMatrix& matrix_eq_part, const DistributedMatrix& matrix_ineq_part);
 
-   double multiplyLocalColTimesVec(const INDEX& col, const DistributedVector<double>& vec_eq, const DistributedVector<double>& vec_ineq) const;
-   double multiplyLinkingColTimesVec(int col, const DistributedVector<double>& vec_eq, const DistributedVector<double>& vec_ineq) const;
-   double
+   [[nodiscard]] double multiplyLocalColTimesVec(const INDEX& col, const DistributedVector<double>& vec_eq, const DistributedVector<double>& vec_ineq) const;
+   [[nodiscard]] double multiplyLinkingColTimesVec(int col, const DistributedVector<double>& vec_eq, const DistributedVector<double>& vec_ineq) const;
+   [[nodiscard]] double
    multiplyLinkingColTimesVecWithoutRootNode(int col, const DistributedVector<double>& vec_eq, const DistributedVector<double>& vec_ineq) const;
 
    void createStorageMatrix(SystemType system_type, const DistributedMatrix& sys_matrix);

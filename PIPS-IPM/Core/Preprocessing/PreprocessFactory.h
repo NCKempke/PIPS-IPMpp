@@ -11,45 +11,40 @@
 #include "EquiStochScaler.h"
 #include "GeoStochScaler.h"
 #include "StochPresolver.h"
-#include "IotrRefCount.h"
+#include "PreprocessType.h"
 #include "StochPostsolver.h"
 #include "DistributedQP.hpp"
-#include "pipsport.h"
 
-enum ScalerType { SCALER_NONE, SCALER_EQUI_STOCH, SCALER_GEO_STOCH, SCALER_GEO_EQUI_STOCH };
-enum PresolverType { PRESOLVER_NONE, PRESOLVER_STOCH };
-
-class PreprocessFactory : public IotrRefCount {
+class PreprocessFactory {
 public:
 
-   static Scaler* makeScaler(Problem* data, ScalerType type) {
+   static Scaler* make_scaler(const Problem& problem, ScalerType type) {
       switch (type) {
-         case SCALER_EQUI_STOCH:
-            return new EquiStochScaler(data, false);
-         case SCALER_GEO_STOCH:
-            return new GeoStochScaler(data, false, false);
-         case SCALER_GEO_EQUI_STOCH:
-            return new GeoStochScaler(data, true, false);
+         case ScalerType::SCALER_EQUI_STOCH:
+            return new EquiStochScaler(problem, false);
+         case ScalerType::SCALER_GEO_STOCH:
+            return new GeoStochScaler(problem, false, false);
+         case ScalerType::SCALER_GEO_EQUI_STOCH:
+            return new GeoStochScaler(problem, true, false);
          default:
-            return 0;
+            return nullptr;
       }
    };
 
-   static Presolver* makePresolver(DistributedTree* tree, const Problem* data, PresolverType type, Postsolver* postsolver = nullptr) {
+   static Presolver* make_presolver(DistributedTree* tree, const Problem* data, PresolverType type, Postsolver* postsolver = nullptr) {
       assert(data);
       switch (type) {
-         case PRESOLVER_STOCH:
+         case PresolverType::PRESOLVER_STOCH:
             return new StochPresolver(tree, *data, postsolver);
          default:
-            return 0;
+            return nullptr;
       }
    };
 
    // todo : not sure about the factory design here
-   static Postsolver* makePostsolver(const Problem* original_problem) {
+   static Postsolver* make_postsolver(const Problem* original_problem) {
       return new StochPostsolver(dynamic_cast<const DistributedQP&>(*original_problem));
    }
 };
-
 
 #endif /* PIPS_IPM_CORE_QPPREPROCESS_PREPROCESSFACTORY_H_ */

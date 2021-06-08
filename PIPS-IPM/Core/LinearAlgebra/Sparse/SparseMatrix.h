@@ -5,14 +5,15 @@
 #ifndef SPARSEMATRIX_H
 #define SPARSEMATRIX_H
 
-#include "Vector.hpp"
-#include "SmartPointer.h"
-#include "AbstractMatrix.h"
+#include "../Abstract/Vector.hpp"
+#include "../Abstract/AbstractMatrix.h"
+
+#include "../Dense/SimpleVector.h"
+
 #include "SparseStorage.h"
 #include "SparseStorageDynamic.h"
-#include "SimpleVector.h"
+
 #include <vector>
-#include "pipsport.h"
 
 /** Represents sparse non-symmetric, possibly non-square matrices stored in
  *  row-major Harwell-Boeing format.
@@ -24,34 +25,33 @@ private:
    getMinMaxVec(bool getMin, bool initializeVec, const SparseStorage* storage, const Vector<double>* coScaleVec, Vector<double>& minmaxVec);
    static void getMinMaxVec(bool getMin, bool initializeVec, const SparseStorageDynamic* storage_dynamic, const Vector<double>* coScaleVec,
          Vector<double>& minmaxVec);
-protected:
-   SmartPointer<SparseStorage> mStorage;
-   SparseStorageDynamic* mStorageDynamic{};
+
+   std::unique_ptr<SparseStorage> mStorage{};
+   std::unique_ptr<SparseStorageDynamic> mStorageDynamic{};
 
    /* transposed will be initialized when necessary */
-   mutable SparseMatrix* m_Mt{};
-
+   mutable std::unique_ptr<SparseMatrix> m_Mt{};
 public:
-
-   SparseMatrix() = default;
 
    void updateTransposed() const;
    void deleteTransposed() const;
 
+   SparseMatrix() : SparseMatrix(0,0,0) {};
    SparseMatrix(int rows, int cols, int nnz);
    SparseMatrix(int rows, int cols, int nnz, int krowM[], int jcolM[], double M[], int deleteElts = 0);
-   explicit SparseMatrix(SparseStorage* m_storage);
+   explicit SparseMatrix(std::unique_ptr<SparseStorage> m_storage);
 
    using GeneralMatrix::cloneFull;
-   GeneralMatrix* cloneFull(bool switchToDynamicStorage) const override;
+   std::unique_ptr<GeneralMatrix> cloneFull(bool switchToDynamicStorage) const override;
 
    using GeneralMatrix::cloneEmptyRows;
-   GeneralMatrix* cloneEmptyRows(bool switchToDynamicStorage) const override;
+   std::unique_ptr<GeneralMatrix> cloneEmptyRows(bool switchToDynamicStorage) const override;
 
-   SparseMatrix* cloneEmptyRowsTransposed(bool switchToDynamicStorage = false) const;
+   std::unique_ptr<SparseMatrix> cloneEmptyRowsTransposed(bool switchToDynamicStorage = false) const;
 
-   void getSize(long long& m, long long& n) const override;
-   void getSize(int& m, int& n) const override;
+   [[nodiscard]] std::pair<long long, long long> n_rows_columns() const override;
+   [[nodiscard]] long long n_rows() const override;
+   [[nodiscard]] long long n_columns() const override;
 
    /** The actual number of structural non-zero elements in this sparse
     *  matrix. This includes so-called "accidental" zeros, elements that
@@ -81,15 +81,10 @@ public:
    void setToDiagonal(const Vector<double>& vec) override;
 
    void mult(double beta, Vector<double>& y, double alpha, const Vector<double>& x) const override;
-   void mult(double beta, double y[], int incy, double alpha, const double x[], int incx) const;
-
    void multMatSymUpper(double beta, SymmetricMatrix& y, double alpha, const double x[], int yrowstart, int ycolstart) const;
 
-   void transmultMatSymUpper(double beta, SymmetricMatrix& y, double alpha, const double x[], int yrowstart, int ycolstart) const;
-
    void transMult(double beta, Vector<double>& y, double alpha, const Vector<double>& x) const override;
-   void transMult(double beta, Vector<double>& y_in, int incy, double alpha, const Vector<double>& x_in, int incx) const;
-   void transMult(double beta, double y_in[], int incy, double alpha, const double x_in[], int incx) const;
+   void transmultMatSymUpper(double beta, SymmetricMatrix& y, double alpha, const double x[], int yrowstart, int ycolstart) const;
 
    /** y = beta * y + this^T diag(d)^-1 x */
    void transMultD(double beta, Vector<double>& y, double alpha, const Vector<double>& x, const Vector<double>& d) const;
@@ -109,9 +104,9 @@ public:
    [[nodiscard]] double inf_norm() const override;
    [[nodiscard]] double abminnormNonZero(double tol) const override;
 
-   void writeToStream(std::ostream& out) const override;
-   void writeToStreamDense(std::ostream& out) const override;
-   void writeToStreamDenseRow(std::ostream& out, int rowidx) const override;
+   void write_to_stream(std::ostream& out) const override;
+   void write_to_streamDense(std::ostream& out) const override;
+   void write_to_streamDenseRow(std::ostream& out, int rowidx) const override;
    void writeDashedLineToStream(std::ostream& out) const override;
 
    /** Make the elements in this matrix symmetric. The elements of interest
@@ -125,9 +120,6 @@ public:
    void atAddDiagonal(int idiag, const Vector<double>& v) override;
    void fromGetDiagonal(int idiag, Vector<double>& v) const override;
 
-   [[nodiscard]] SparseStorage& getStorageRef() { return *mStorage; }
-   [[nodiscard]] const SparseStorage& getStorageRef() const { return *mStorage; }
-
    [[nodiscard]] int* krowM() { return mStorage->krowM; }
    [[nodiscard]] const int* krowM() const { return mStorage->krowM; }
 
@@ -137,52 +129,53 @@ public:
    [[nodiscard]] double* M() { return mStorage->M; }
    [[nodiscard]] const double* M() const { return mStorage->M; }
 
-   [[nodiscard]] SparseStorageDynamic* getStorageDynamic() {
-      assert(mStorageDynamic);
-      return mStorageDynamic;
-   }
-
-   [[nodiscard]] SmartPointer<SparseStorage> getStorageHandle() {
-      return mStorage;
-   }
-
-   [[nodiscard]] SmartPointer<SparseStorage> getStorageHandle() const {
-      return mStorage;
-   }
-
-   [[nodiscard]] const SparseStorageDynamic* getStorageDynamic() const {
-      assert(mStorageDynamic);
-      return mStorageDynamic;
-   }
-
-   [[nodiscard]] SparseStorageDynamic& getStorageDynamicRef() {
+   [[nodiscard]] SparseStorageDynamic& getStorageDynamic() {
       assert(mStorageDynamic);
       return *mStorageDynamic;
    }
 
-   [[nodiscard]] const SparseStorageDynamic& getStorageDynamicRef() const {
+   [[nodiscard]] const SparseStorageDynamic& getStorageDynamic() const {
       assert(mStorageDynamic);
       return *mStorageDynamic;
    }
 
-   [[nodiscard]] SparseStorageDynamic* getStorageDynamicTransposed() {
+   [[nodiscard]] const SparseStorageDynamic* getStorageDynamicPtr() const {
+      return mStorageDynamic.get();
+   }
+
+   [[nodiscard]] SparseStorage& getStorage() {
+      assert(mStorage);
+      return *mStorage;
+   }
+
+   [[nodiscard]] const SparseStorage& getStorage() const {
+      assert(mStorage);
+      return *mStorage;
+   }
+
+   [[nodiscard]] SparseStorageDynamic& getStorageDynamicTransposed() {
       assert(m_Mt && m_Mt->hasDynamicStorage());
       return m_Mt->getStorageDynamic();
    }
 
-   [[nodiscard]] const SparseStorageDynamic* getStorageDynamicTransposed() const {
+   [[nodiscard]] const SparseStorageDynamic* getStorageDynamicTransposedPtr() const {
+      assert(m_Mt && m_Mt->hasDynamicStorage());
+      return m_Mt->getStorageDynamicPtr();
+   }
+
+   [[nodiscard]] const SparseStorageDynamic& getStorageDynamicTransposed() const {
       assert(m_Mt && m_Mt->hasDynamicStorage());
       return m_Mt->getStorageDynamic();
    }
 
-   [[nodiscard]] SparseStorageDynamic& getStorageDynamicTransposedRef() {
-      assert(m_Mt && m_Mt->hasDynamicStorage());
-      return m_Mt->getStorageDynamicRef();
+   [[nodiscard]] SparseStorage& getStorageTransposed() {
+      assert(m_Mt);
+      return m_Mt->getStorage();
    }
 
-   [[nodiscard]] const SparseStorageDynamic& getStorageDynamicTransposedRef() const {
-      assert(m_Mt && m_Mt->hasDynamicStorage());
-      return m_Mt->getStorageDynamicRef();
+   [[nodiscard]] const SparseStorage& getStorageTransposed() const {
+      assert(m_Mt);
+      return m_Mt->getStorage();
    }
 
    [[nodiscard]] bool hasDynamicStorage() const { return (mStorageDynamic != nullptr); };
@@ -229,14 +222,20 @@ public:
          int* row_sparsity = nullptr) const;
 
    void
-   fromGetColsBlock(const int* colIndices, int nCols, int arrayLineSize, int arrayLineOffset, double* colsArrayDense, int* rowSparsity = nullptr);
+   fromGetColsBlock(const int* colIndices, int nCols, int arrayLineSize, int arrayLineOffset, double* colsArrayDense, int* rowSparsity = nullptr) const;
 
    void
-   fromGetColsBlock(int col_start, int n_cols, int array_line_size, int array_line_offset, double* cols_array_dense, int* row_sparsity = nullptr);
+   fromGetColsBlock(int col_start, int n_cols, int array_line_size, int array_line_offset, double* cols_array_dense, int* row_sparsity = nullptr) const;
 
    bool hasTransposed() const;
 
    void freeDynamicStorage();
+
+   void clear_matrix();
+   void append_matrix_rows(const SparseMatrix& other);
+   void append_diagonal_matrix_columns(const std::vector<int>& diagonal);
+   void append_empty_columns(int n_columns);
+   void append_empty_rows(int n_columns);
 
    int appendRow(const SparseMatrix& matrix_row, int row);
    int appendCol(const SparseMatrix& matrix_col, int col);
@@ -255,12 +254,12 @@ public:
 
    void addColToRow(double coeff, int col, int row);
 
-   SparseMatrix* shaveLeft(int n_cols);
-   GeneralMatrix* shaveBottom(int n_rows) override;
+   std::unique_ptr<SparseMatrix> shaveLeft(int n_cols);
+   std::unique_ptr<GeneralMatrix> shaveBottom(int n_rows) override;
    void dropNEmptyRowsBottom(int n_rows);
    void dropNEmptyRowsTop(int n_rows);
 
-   ~SparseMatrix() override;
+   ~SparseMatrix() override = default;
 };
 
 #endif

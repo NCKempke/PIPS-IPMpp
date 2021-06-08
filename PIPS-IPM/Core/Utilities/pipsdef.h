@@ -16,19 +16,15 @@
 // turn the warnings back on
 #pragma GCC diagnostic pop
 
-#include <stdlib.h>
-#include <sstream>
 #include <iostream>
+#include <cassert>
 #include <cmath>
 #include <string>
 #include <vector>
 #include <set>
-#include <mpi.h>
 #include <limits>
-#include <assert.h>
 
 #include "omp.h"
-#include "pipsport.h"
 #include <algorithm>
 
 //#define PIPS_DEBUG
@@ -140,6 +136,9 @@ inline bool contains(const std::vector<T>& subset, const std::vector<T>& vec) {
 
    return containsSorted(subset_cpy, vec_cpy);
 }
+
+void doubleLexSort(int first[], int n, int second[], double data[]);
+
 
 template<typename T>
 inline void permuteVector(const Permutation& perm, std::vector<T>& vec) {

@@ -6,16 +6,12 @@
 #include <algorithm>
 
 #include "PardisoSolver.h"
-#include "SparseStorage.h"
-#include "SparseSymmetricMatrix.h"
-#include "SimpleVector.h"
-#include "DenseMatrix.h"
-#include "pipsdef.h"
-#include <cstdlib>
+#include "../../../LinearAlgebra/Dense/SimpleVector.h"
+#include "../../../LinearAlgebra/Dense/DenseMatrix.h"
 
 #include "mpi.h"
 
-PardisoSolver::PardisoSolver(const SparseSymmetricMatrix* sgm) : Msys{sgm}, n{static_cast<int>(sgm->size())}, nnz{sgm->numberOfNonZeros()} {
+PardisoSolver::PardisoSolver(const SparseSymmetricMatrix& sgm) : Msys{&sgm}, n{static_cast<int>(sgm.size())}, nnz{sgm.numberOfNonZeros()} {
    krowM = new int[n + 1];
    jcolM = new int[nnz];
    M = new double[nnz];
@@ -23,8 +19,8 @@ PardisoSolver::PardisoSolver(const SparseSymmetricMatrix* sgm) : Msys{sgm}, n{st
    nvec = new double[n];
 }
 
-PardisoSolver::PardisoSolver(const DenseSymmetricMatrix* m) : Mdsys{m}, n{static_cast<int>(Mdsys->size())} {
-   assert(m->size() < std::numeric_limits<int>::max());
+PardisoSolver::PardisoSolver(const DenseSymmetricMatrix& m) : Mdsys{&m}, n{static_cast<int>(Mdsys->size())} {
+   assert(m.size() < std::numeric_limits<int>::max());
    nvec = new double[n];
 }
 
@@ -54,14 +50,14 @@ bool PardisoSolver::iparmUnchanged() const {
 
 void PardisoSolver::initSystem() {
    if (Msys) {
-      assert(Msys->isLower);
+      assert(Msys->is_lower());
 
       //get the matrix in upper triangular
-      Msys->getStorageRef().transpose(krowM, jcolM, M);
+      Msys->getStorage().transpose(krowM, jcolM, M);
 
       //save the indices for diagonal entries for a streamlined later update
-      int* krowMsys = Msys->getStorageRef().krowM;
-      int* jcolMsys = Msys->getStorageRef().jcolM;
+      int* krowMsys = Msys->getStorage().krowM;
+      int* jcolMsys = Msys->getStorage().jcolM;
       for (int r = 0; r < n; r++) {
          // Msys - find the index in jcol for the diagonal (r,r)
          int idxDiagMsys = -1;
@@ -150,7 +146,7 @@ void PardisoSolver::matrixChanged() {
    else {
       if (Msys) {
          //update diagonal entries in the PARDISO aug sys (if the input is sparse)
-         double* eltsMsys = Msys->getStorageRef().M;
+         double* eltsMsys = Msys->getStorage().M;
          std::map<int, int>::iterator it;
          for (it = diagMap.begin(); it != diagMap.end(); it++)
             M[it->second] = eltsMsys[it->first];
@@ -209,7 +205,7 @@ void PardisoSolver::matrixChanged() {
 }
 
 void PardisoSolver::solve(Vector<double>& rhs_in) {
-   SimpleVector<double>& rhs = dynamic_cast<SimpleVector<double>&>(rhs_in);
+   auto& rhs = dynamic_cast<SimpleVector<double>&>(rhs_in);
    double* sol_local = nvec;
 
    //int maxRefinSteps=(gLackOfAccuracy==0?3:6);
@@ -232,17 +228,16 @@ void PardisoSolver::solve(Vector<double>& rhs_in) {
 }
 
 void PardisoSolver::solve(GeneralMatrix& rhs_in) {
-   DenseMatrix& rhs = dynamic_cast<DenseMatrix&>(rhs_in);
+   auto& rhs = dynamic_cast<DenseMatrix&>(rhs_in);
 
-   int nrows, ncols;
-   rhs.getSize(ncols, nrows);
+   const auto [nrows, ncols] = rhs.n_rows_columns();
    assert(nrows == n);
 
    if (static_cast<int>(sol.size()) < nrows * ncols)
       sol.resize(nrows * ncols);
 
    phase = 33; // solve and iterative refinement
-   nrhs = ncols;
+   nrhs = static_cast<int>(ncols);
    iparm[30] = 0;
    assert(iparmUnchanged());
 
@@ -256,10 +251,9 @@ void PardisoSolver::solve(GeneralMatrix& rhs_in) {
 
 void PardisoSolver::solve(GeneralMatrix& rhs_in, int* colSparsity) {
    std::cout << "PardisoSolver - using sparse rhs but might lead to numerical troubles .. \n";
-   DenseMatrix& rhs = dynamic_cast<DenseMatrix&>(rhs_in);
+   auto& rhs = dynamic_cast<DenseMatrix&>(rhs_in);
 
-   int nrows, ncols;
-   rhs.getSize(ncols, nrows);
+   const auto [nrows, ncols] = rhs.n_rows_columns();
    assert(nrows == n);
 
    if (static_cast<int>(sol.size()) < nrows * ncols)
@@ -269,7 +263,7 @@ void PardisoSolver::solve(GeneralMatrix& rhs_in, int* colSparsity) {
    phase = 33; // solve and iterative refinement
    iparm[30] = 1;
 
-   nrhs = ncols;
+   nrhs = static_cast<int>(ncols);
 
    pardisoCall(pt, &maxfct, &mnum, &mtype, &phase, &n, M, krowM, jcolM, colSparsity, &nrhs, iparm, &msglvl, &rhs[0][0], sol.data(), &error);
 
@@ -367,8 +361,7 @@ PardisoSolver::~PardisoSolver() {
 std::tuple<unsigned int, unsigned int, unsigned int> PardisoSolver::get_inertia() const {
    const int positive_eigenvalues = iparm[21];
    const int negative_eigenvalues = iparm[22];
-   const int number_pivot_perturbations = iparm[13]; // indicate zero pivots and thus rank deficiency
 
-   const int zero_eigenvalues = n - positive_eigenvalues - negative_eigenvalues + number_pivot_perturbations;
-   return {positive_eigenvalues - number_pivot_perturbations, negative_eigenvalues, zero_eigenvalues};
+   assert(positive_eigenvalues + negative_eigenvalues <= n);
+   return {positive_eigenvalues, negative_eigenvalues, n - positive_eigenvalues - negative_eigenvalues};
 }

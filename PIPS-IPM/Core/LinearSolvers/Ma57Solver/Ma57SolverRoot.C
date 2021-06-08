@@ -7,24 +7,22 @@
 
 #include "Ma57SolverRoot.h"
 
-#include "SimpleVector.h"
-#include "SparseSymmetricMatrix.h"
-
-Ma57SolverRoot::Ma57SolverRoot(SparseSymmetricMatrix* sgm, bool solve_in_parallel, MPI_Comm mpiComm, std::string name) : Ma57Solver(sgm, std::move(name)),
+Ma57SolverRoot::Ma57SolverRoot(SparseSymmetricMatrix& sgm, bool solve_in_parallel, MPI_Comm mpiComm, std::string name) : Ma57Solver(sgm, std::move(name)),
       solve_in_parallel(solve_in_parallel), comm(mpiComm) {
    assert(mpiComm != MPI_COMM_NULL);
+   print = print && PIPS_MPIgetRank(mpiComm) == 0;
 }
 
-void Ma57SolverRoot::matrixRebuild(AbstractMatrix& matrixNew) {
+void Ma57SolverRoot::matrixRebuild(const AbstractMatrix& matrixNew) {
    assert(omp_get_thread_num() == 0);
    const int my_rank = PIPS_MPIgetRank(comm);
 
    if (solve_in_parallel || my_rank == 0) {
-      auto& matrixNewSym = dynamic_cast<SparseSymmetricMatrix&>(matrixNew);
+      const auto& matrixNewSym = dynamic_cast<const SparseSymmetricMatrix&>(matrixNew);
 
-      assert(matrixNewSym.getStorageRef().fortranIndexed());
+      assert(matrixNewSym.getStorage().fortranIndexed());
 
-      mat_storage = matrixNewSym.getStorageHandle();
+      mat_storage = &matrixNewSym.getStorage();
       nnz = matrixNewSym.numberOfNonZeros();
       lkeep = 7 * n + nnz + 2 * std::max(n, nnz) + 42;
 

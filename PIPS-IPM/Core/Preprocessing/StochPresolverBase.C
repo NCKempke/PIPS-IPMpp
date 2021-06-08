@@ -8,14 +8,14 @@
 //#define PIPS_DEBUG
 #include "StochPresolverBase.h"
 
-#include "DistributedOptions.h"
+#include "PIPSIPMppOptions.h"
 #include "pipsdef.h"
 #include "DistributedVectorUtilities.h"
 #include <cassert>
 
 StochPresolverBase::StochPresolverBase(PresolveData& presolve_data, const DistributedQP& origProb) : my_rank(PIPS_MPIgetRank(MPI_COMM_WORLD)),
-      distributed(PIPS_MPIgetDistributed(MPI_COMM_WORLD)), verbosity(pips_options::get_int_parameter("PRESOLVE_VERBOSITY")),
-      INF_NEG(-pips_options::get_double_parameter("PRESOLVE_INFINITY")), INF_POS(pips_options::get_double_parameter("PRESOLVE_INFINITY")),
+      distributed(PIPS_MPIgetDistributed(MPI_COMM_WORLD)), verbosity(pipsipmpp_options::get_int_parameter("PRESOLVE_VERBOSITY")),
+      INF_NEG(-pipsipmpp_options::get_double_parameter("PRESOLVE_INFINITY")), INF_POS(pipsipmpp_options::get_double_parameter("PRESOLVE_INFINITY")),
       n_linking_vars(dynamic_cast<const DistributedVector<double>&>(*origProb.g).first->length()), n_linking_rows_eq(
             dynamic_cast<const DistributedVector<double>&>(*origProb.bA).last
             ? dynamic_cast<const DistributedVector<double>&>(*origProb.bA).last->length() : 0), n_linking_rows_ineq(
@@ -292,7 +292,7 @@ void StochPresolverBase::updatePointersForCurrentNode(int node, SystemType syste
    assert(-1 <= node && node < nChildren);
    assert(system_type == EQUALITY_SYSTEM || system_type == INEQUALITY_SYSTEM);
 
-   const SmartPointer<GeneralMatrix> matrix = (system_type == EQUALITY_SYSTEM) ? presolve_data.getPresProb().A : presolve_data.getPresProb().C;
+   const GeneralMatrix& matrix = (system_type == EQUALITY_SYSTEM) ? *presolve_data.getPresProb().A : *presolve_data.getPresProb().C;
 
    /* set matrix pointers for A B and Bl */
    setPointersMatrices(matrix, node);
@@ -311,28 +311,28 @@ void StochPresolverBase::updatePointersForCurrentNode(int node, SystemType syste
 }
 
 // todo : set pointers nullptr if no linking constraints?
-void StochPresolverBase::setPointersMatrices(const SmartPointer<GeneralMatrix> mat, int node) {
+void StochPresolverBase::setPointersMatrices(const GeneralMatrix& mat, int node) {
    assert(-1 <= node && node < nChildren);
-   const DistributedMatrix& smat = dynamic_cast<const DistributedMatrix&>(*mat);
+   const auto& smat = dynamic_cast<const DistributedMatrix&>(mat);
 
    /* in root node only B0 and Bl0 are present */
    if (node == -1) {
       currAmat = nullptr;
       currAmatTrans = nullptr;
 
-      currBmat = dynamic_cast<const SparseMatrix*>(smat.Bmat)->getStorageDynamic();
-      currBmatTrans = dynamic_cast<const SparseMatrix*>(smat.Bmat)->getStorageDynamicTransposed();
+      currBmat = dynamic_cast<const SparseMatrix&>(*smat.Bmat).getStorageDynamicPtr();
+      currBmatTrans = dynamic_cast<const SparseMatrix&>(*smat.Bmat).getStorageDynamicTransposedPtr();
 
-      currBlmat = dynamic_cast<const SparseMatrix*>(smat.Blmat)->getStorageDynamic();
-      currBlmatTrans = dynamic_cast<const SparseMatrix*>(smat.Blmat)->getStorageDynamicTransposed();
+      currBlmat = dynamic_cast<const SparseMatrix&>(*smat.Blmat).getStorageDynamicPtr();
+      currBlmatTrans = dynamic_cast<const SparseMatrix&>(*smat.Blmat).getStorageDynamicTransposedPtr();
    }
    else {
-      currAmat = dynamic_cast<const SparseMatrix*>(smat.children[node]->Amat)->getStorageDynamic();
-      currAmatTrans = dynamic_cast<const SparseMatrix*>(smat.children[node]->Amat)->getStorageDynamicTransposed();
-      currBmat = dynamic_cast<const SparseMatrix*>(smat.children[node]->Bmat)->getStorageDynamic();
-      currBmatTrans = dynamic_cast<const SparseMatrix*>(smat.children[node]->Bmat)->getStorageDynamicTransposed();
-      currBlmat = dynamic_cast<const SparseMatrix*>(smat.children[node]->Blmat)->getStorageDynamic();
-      currBlmatTrans = dynamic_cast<const SparseMatrix*>(smat.children[node]->Blmat)->getStorageDynamicTransposed();
+      currAmat = dynamic_cast<const SparseMatrix&>(*smat.children[node]->Amat).getStorageDynamicPtr();
+      currAmatTrans = dynamic_cast<const SparseMatrix&>(*smat.children[node]->Amat).getStorageDynamicTransposedPtr();
+      currBmat = dynamic_cast<const SparseMatrix&>(*smat.children[node]->Bmat).getStorageDynamicPtr();
+      currBmatTrans = dynamic_cast<const SparseMatrix&>(*smat.children[node]->Bmat).getStorageDynamicTransposedPtr();
+      currBlmat = dynamic_cast<const SparseMatrix&>(*smat.children[node]->Blmat).getStorageDynamicPtr();
+      currBlmatTrans = dynamic_cast<const SparseMatrix&>(*smat.children[node]->Blmat).getStorageDynamicTransposedPtr();
    }
 }
 

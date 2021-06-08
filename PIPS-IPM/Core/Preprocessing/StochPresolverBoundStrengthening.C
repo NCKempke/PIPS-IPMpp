@@ -9,14 +9,14 @@
 #include <limits>
 #include <cmath>
 #include "pipsdef.h"
-#include "DistributedOptions.h"
+#include "PIPSIPMppOptions.h"
 
 
 StochPresolverBoundStrengthening::StochPresolverBoundStrengthening(PresolveData& presolve_data, const DistributedQP& origProb) : StochPresolverBase(
-      presolve_data, origProb), limit_iter(pips_options::get_int_parameter("PRESOLVE_BOUND_STR_MAX_ITER")),
-      limit_entry(pips_options::get_double_parameter("PRESOLVE_BOUND_STR_NUMERIC_LIMIT_ENTRY")),
-      limit_partial_activity(pips_options::get_double_parameter("PRESOLVE_BOUND_STR_MAX_PARTIAL_ACTIVITY")),
-      limit_bounds(pips_options::get_double_parameter("PRESOLVE_BOUND_STR_NUMERIC_LIMIT_BOUNDS")), tightenings(0), local_bound_tightenings(false),
+      presolve_data, origProb), limit_iter(pipsipmpp_options::get_int_parameter("PRESOLVE_BOUND_STR_MAX_ITER")),
+      limit_entry(pipsipmpp_options::get_double_parameter("PRESOLVE_BOUND_STR_NUMERIC_LIMIT_ENTRY")),
+      limit_partial_activity(pipsipmpp_options::get_double_parameter("PRESOLVE_BOUND_STR_MAX_PARTIAL_ACTIVITY")),
+      limit_bounds(pipsipmpp_options::get_double_parameter("PRESOLVE_BOUND_STR_NUMERIC_LIMIT_BOUNDS")), tightenings(0), local_bound_tightenings(false),
       n_linking_vars(dynamic_cast<const DistributedVector<double>&>(*origProb.g).first->length()),
       n_eq_linking_rows(dynamic_cast<const DistributedVector<double>&>(*origProb.bA).last->length()),
       n_ineq_linking_rows(dynamic_cast<const DistributedVector<double>&>(*origProb.bl).last->length()), ub_linking_var(n_linking_vars),
@@ -40,14 +40,14 @@ bool StochPresolverBoundStrengthening::applyPresolving() {
 
 #ifndef NDEBUG
    if (my_rank == 0 && verbosity > 1) {
-      std::cout << "<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<" << "\n";
-      std::cout << "--- Before Bound Strengthening Presolving:" << "\n";
+      std::cout << "<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<\n";
+      std::cout << "--- Before Bound Strengthening Presolving:\n";
    }
    countRowsCols();
 #endif
 
    if (my_rank == 0 && verbosity > 1)
-      std::cout << "Start Bound Strengthening Presolving..." << "\n";
+      std::cout << "Start Bound Strengthening Presolving...\n";
 
 
    int iter = 0;
@@ -212,7 +212,7 @@ bool StochPresolverBoundStrengthening::strenghtenBoundsInBlock(SystemType system
    assert(mat);
 
    /* for every row in the current block and every entry in said row check if we can improve on the currently known bounds */
-   for (int row = 0; row < mat->getM(); ++row) {
+   for (int row = 0; row < mat->n_rows(); ++row) {
       const INDEX row_INDEX(ROW, linking ? -1 : node, row, linking, system_type);
 
       double actmin_part, actmax_part;

@@ -8,9 +8,7 @@
 #ifndef PIPSIPM_CORE_LINEARSOLVERS_MC30SCALER_H
 #define PIPSIPM_CORE_LINEARSOLVERS_MC30SCALER_H
 
-#include "DoubleLinearSolver.h"
-#include "pipsport.h"
-
+#include "../DoubleLinearSolver.h"
 #include <vector>
 
 #ifndef FNAME

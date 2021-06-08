@@ -6,11 +6,7 @@
  */
 
 #include "PardisoProjectSchurSolver.h"
-
-#include "pipsdef.h"
-#include "pipschecks.h"
-
-#include "SimpleVector.h"
+#include "../../../Utilities/pipschecks.h"
 
 extern "C" void pardisoinit(void*, int*, int*, int*, double*, int*);
 extern "C" void pardiso(void*, int*, int*, int*, int*, int*, double*, int*, int*, int*, int*, int*, int*, double*, double*, int*, double*);
@@ -22,7 +18,7 @@ extern "C" void pardiso_get_schur(void*, int*, int*, int*, double*, int*, int*);
 
 extern double g_iterNumber;
 
-PardisoProjectSchurSolver::PardisoProjectSchurSolver(const SparseSymmetricMatrix* sgm) : PardisoSchurSolver(sgm) {
+PardisoProjectSchurSolver::PardisoProjectSchurSolver(const SparseSymmetricMatrix& sgm) : PardisoSchurSolver(sgm) {
    num_threads = PIPSgetnOMPthreads();
 
    //initPardiso();
@@ -191,7 +187,7 @@ void PardisoProjectSchurSolver::computeSC(int nSCO, const SparseMatrix& R, const
    }
    else {
       //update diagonal entries in the PARDISO aug sys
-      const double* eltsMsys = Msys->getStorageRef().M;
+      const double* eltsMsys = Msys->getStorage().M;
       std::map<int, int>::iterator it;
 
 #if 0
@@ -289,7 +285,7 @@ void PardisoProjectSchurSolver::computeSC(int nSCO, const SparseMatrix& R, const
    for (int it = 0; it < nnzSC; it++)
       colidxSC[it]--;
 
-   assert(subMatrixIsOrdered(rowptrSC, colidxSC, 0, nSC));
+   assert(submatrix_is_ordered(rowptrSC, colidxSC, 0, nSC));
 }
 
 

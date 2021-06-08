@@ -6,9 +6,7 @@
 #define DENSESYMMETRICMATRIX_H
 
 #include <memory>
-#include "DenseStorage.h"
-#include "AbstractMatrix.h"
-#include "DenseSymMatrixHandle.h"
+#include "./DenseStorage.h"
 
 class SparseSymmetricMatrix;
 
@@ -34,13 +32,14 @@ public:
    virtual void transMult(double beta, double y[], int incy, double alpha, const double x[], int incx) const;
    void transMult(double beta, Vector<double>& y, double alpha, const Vector<double>& x) const override;
 
-   void getSize(long long& m, long long& n) const override;
-   void getSize(int& m, int& n) const override;
+   [[nodiscard]] std::pair<long long, long long> n_rows_columns() const override;
+   [[nodiscard]] long long n_rows() const override;
+   [[nodiscard]] long long n_columns() const override;
 
    [[nodiscard]] double inf_norm() const override;
    [[nodiscard]] double abminnormNonZero(double tol) const override;
-   void writeToStream(std::ostream& out) const override;
-   void writeToStreamDense(std::ostream& out) const override;
+   void write_to_stream(std::ostream& out) const override;
+   void write_to_streamDense(std::ostream& out) const override;
 
    void fromGetDense(int row, int col, double* A, int lda, int rowExtent, int colExtent) const override;
 
@@ -79,9 +78,8 @@ public:
 
    [[nodiscard]] long long size() const override;
 
-   [[nodiscard]] DenseStorage& getStorageRef() { return *mStorage; }
-   [[nodiscard]] const DenseStorage& getStorageRef() const { return *mStorage; }
-   [[nodiscard]] std::shared_ptr<DenseStorage> getStorageHandle() const { return mStorage; }
+   [[nodiscard]] DenseStorage& getStorage() { return *mStorage; }
+   [[nodiscard]] const DenseStorage& getStorage() const { return *mStorage; }
 
    /* this = alpha * op(A)*op(B)  +   beta * this */
    void matMult(double alpha, GeneralMatrix& A_, int transA, GeneralMatrix& B_, int transB, double beta);

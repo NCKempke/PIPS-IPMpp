@@ -7,20 +7,16 @@
 
 #include "StochPresolverModelCleanup.h"
 
-#include "DistributedOptions.h"
+#include "PIPSIPMppOptions.h"
 #include <cmath>
 #include <vector>
 
 StochPresolverModelCleanup::StochPresolverModelCleanup(PresolveData& presolve_data, const DistributedQP& origProb) : StochPresolverBase(presolve_data,
-      origProb), limit_min_mat_entry(pips_options::get_double_parameter("PRESOLVE_MODEL_CLEANUP_MIN_MATRIX_ENTRY")),
-      limit_max_matrix_entry_impact(pips_options::get_double_parameter("PRESOLVE_MODEL_CLEANUP_MAX_MATRIX_ENTRY_IMPACT")),
-      limit_matrix_entry_impact_feasdist(pips_options::get_double_parameter("PRESOLVE_MODEL_CLEANUP_MATRIX_ENTRY_IMPACT_FEASDIST")),
+      origProb), limit_min_mat_entry(pipsipmpp_options::get_double_parameter("PRESOLVE_MODEL_CLEANUP_MIN_MATRIX_ENTRY")),
+      limit_max_matrix_entry_impact(pipsipmpp_options::get_double_parameter("PRESOLVE_MODEL_CLEANUP_MAX_MATRIX_ENTRY_IMPACT")),
+      limit_matrix_entry_impact_feasdist(pipsipmpp_options::get_double_parameter("PRESOLVE_MODEL_CLEANUP_MATRIX_ENTRY_IMPACT_FEASDIST")),
       removed_entries_total(0), fixed_empty_cols_total(0), removed_rows_total(0) {
 }
-
-StochPresolverModelCleanup::~StochPresolverModelCleanup() {
-}
-
 
 bool StochPresolverModelCleanup::applyPresolving() {
    assert(presolve_data.reductionsEmpty());
@@ -28,8 +24,8 @@ bool StochPresolverModelCleanup::applyPresolving() {
 
 #ifndef NDEBUG
    if (my_rank == 0 && verbosity > 1) {
-      std::cout << "<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<" << "\n";
-      std::cout << "--- Before model cleanup:" << "\n";
+      std::cout << "<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<\n";
+      std::cout << "--- Before model cleanup:\n";
    }
    countRowsCols();
 #endif
@@ -78,11 +74,11 @@ bool StochPresolverModelCleanup::applyPresolving() {
       std::cout << "--- After model cleanup:" << "\n";
    }
    else if (my_rank == 0 && verbosity == 1)
-      std::cout << "Clean:\t removed " << removed_rows_total << " rows, " << fixed_empty_cols_total << " cols" << "\n";
+      std::cout << "Clean:\t removed " << removed_rows_total << " rows, " << fixed_empty_cols_total << " cols, " << removed_entries_total << " entries\n";
 
    countRowsCols();
    if (my_rank == 0 && verbosity > 1)
-      std::cout << "<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<" << "\n";
+      std::cout << "<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<\n";
 #endif
 
    assert(presolve_data.reductionsEmpty());
@@ -138,15 +134,12 @@ int StochPresolverModelCleanup::removeRedundantRows(SystemType system_type, int 
 
    int n_removed_rows = 0;
 
-   const SimpleVector<int>& nnzs = (linking == false) ? *currNnzRow : *currNnzRowLink;
-   const SimpleVector<double>& rhs_eq = (linking == false) ? *currEqRhs : *currEqRhsLink;
-   const SimpleVector<double>& clow = (linking == false) ? *currIneqLhs : *currIneqLhsLink;
-   const SimpleVector<double>& cupp = (linking == false) ? *currIneqRhs : *currIneqRhsLink;
-   const SimpleVector<double>& iclow = (linking == false) ? *currIclow : *currIclowLink;
-   const SimpleVector<double>& icupp = (linking == false) ? *currIcupp : *currIcuppLink;
+   const SimpleVector<int>& nnzs = !linking ? *currNnzRow : *currNnzRowLink;
 
    for (int row_index = 0; row_index < nnzs.length(); ++row_index) {
+
       const INDEX row(ROW, node, row_index, linking, system_type);
+
       if (presolve_data.wasRowRemoved(row)) {
          assert(nnzs[row_index] == 0);
          continue;
@@ -155,42 +148,49 @@ int StochPresolverModelCleanup::removeRedundantRows(SystemType system_type, int 
       double actmin_part, actmax_part;
       int actmin_ubndd, actmax_ubndd;
       presolve_data.getRowActivities(row, actmax_part, actmin_part, actmax_ubndd, actmin_ubndd);
+      const auto [clow, cupp] = presolve_data.getRowBounds(row);
 
-      if (system_type == EQUALITY_SYSTEM) {
+      const bool has_clow = clow != INF_NEG;
+      const bool has_cupp = cupp != INF_POS;
+      const bool has_max_activitiy = actmax_ubndd == 0;
+      const bool has_min_activity = actmin_ubndd == 0;
+
+      if (row.inEqSys()) {
+         assert(clow == cupp);
          if (actmin_ubndd != 0 || actmax_ubndd != 0)
             continue;
 
-         if ((PIPSisLT(rhs_eq[row_index], actmin_part, feastol) && actmin_ubndd == 0) ||
-             (PIPSisLT(actmax_part, rhs_eq[row_index], feastol) && actmax_ubndd == 0)) {
+         if ((PIPSisLTFeas(clow, actmin_part) && has_min_activity) ||
+             (PIPSisLTFeas(actmax_part, cupp) && has_max_activitiy)) {
             PIPS_MPIabortInfeasible("Found row that cannot meet it's rhs with it's computed activities", "StochPresolverModelCleanup.C",
                   "removeRedundantRows");
          }
-         else if (PIPSisLE(rhs_eq[row_index], actmin_part, feastol) && PIPSisLE(actmax_part, rhs_eq[row_index], feastol)) {
+         else if (PIPSisLEFeas(clow, actmin_part) && PIPSisLEFeas(actmax_part, cupp)) {
             presolve_data.removeRedundantRow(row);
             n_removed_rows++;
          }
       }
       else {
-         assert(PIPSisLT(0.0, iclow[row_index] + icupp[row_index]));
+         assert(row.inInEqSys());
 
-         if ((!PIPSisZero(iclow[row_index]) && (actmax_ubndd == 0 && PIPSisLTFeas(actmax_part, clow[row_index]))) ||
-             (!PIPSisZero(icupp[row_index]) && (actmin_ubndd == 0 && PIPSisLTFeas(cupp[row_index], actmin_part))))
+         if ((has_clow && has_max_activitiy && PIPSisLTFeas(actmax_part, clow)) ||
+             (has_cupp && has_min_activity && PIPSisLTFeas(cupp, actmin_part)))
             PIPS_MPIabortInfeasible("Found row that cannot meet it's lhs or rhs with it's computed activities", "StochPresolverModelCleanup.C",
                   "removeRedundantRows");
-         else if ((PIPSisZero(iclow[row_index]) || PIPSisLE(clow[row_index], -infinity)) &&
-                  (PIPSisZero(icupp[row_index]) || PIPSisLE(infinity, cupp[row_index]))) {
+         else if ((!has_clow || PIPSisLE(clow, -infinity)) &&
+                  (!has_cupp || PIPSisLE(infinity, cupp))) {
             presolve_data.removeRedundantRow(row);
             n_removed_rows++;
          }
-         else if ((PIPSisZero(iclow[row_index]) || (actmin_ubndd == 0 && PIPSisLEFeas(clow[row_index], actmin_part))) &&
-                  (PIPSisZero(icupp[row_index]) || (actmax_ubndd == 0 && PIPSisLEFeas(actmax_part, cupp[row_index])))) {
+         else if ((!has_clow || (has_min_activity && PIPSisLEFeas(clow, actmin_part))) &&
+                  (!has_cupp || (has_max_activitiy && PIPSisLEFeas(actmax_part, cupp)))) {
             presolve_data.removeRedundantRow(row);
             n_removed_rows++;
          }
-         else if (row.inInEqSys() && !PIPSisZero(icupp[row_index]) && actmax_ubndd == 0 && PIPSisLEFeas(actmax_part, cupp[row_index])) {
+         else if (has_cupp && has_max_activitiy && PIPSisLEFeas(actmax_part, cupp)) {
             presolve_data.removeRedundantSide(row, true);
          }
-         else if (row.inInEqSys() && !PIPSisZero(iclow[row_index]) && actmin_ubndd == 0 && PIPSisLEFeas(clow[row_index], actmin_part)) {
+         else if (has_clow && has_min_activity && PIPSisLEFeas(clow, actmin_part)) {
             presolve_data.removeRedundantSide(row, false);
          }
       }
@@ -218,7 +218,6 @@ int StochPresolverModelCleanup::removeTinyEntriesFromSystem(SystemType system_ty
    n_elims += removeTinyInnerLoop(system_type, -1, B_MAT);
    if (presolve_data.hasLinking(system_type))
       n_elims += removeTinyInnerLoop(system_type, -1, BL_MAT);
-
 
    /* count eliminations in B0 and Bl0 only once */
    if (distributed && my_rank != 0)
@@ -294,7 +293,7 @@ int StochPresolverModelCleanup::removeTinyInnerLoop(SystemType system_type, int 
    const SparseStorageDynamic* storage = mat;
 
    /* for every row in row in matrix */
-   for (int r = 0; r < storage->getM(); r++) {
+   for (int r = 0; r < storage->n_rows(); r++) {
       double total_sum_modifications_row = 0.0;
 
       int start = storage->getRowPtr(r).start;
@@ -317,7 +316,7 @@ int StochPresolverModelCleanup::removeTinyInnerLoop(SystemType system_type, int 
             if (my_rank == 0 || !(node_row == -1 && node_col == -1))
                ++n_elims;
          }
-            /* remove entries where their corresponding variables have valid lower and upper bounds, that overall do not have a real influence though */
+         /* remove entries where their corresponding variables have valid lower and upper bounds, that overall do not have a real influence though */
          else if (!PIPSisZero((*x_upper_idx)[col]) && !PIPSisZero((*x_lower_idx)[col])) {
             const double bux = (*x_upper)[col];
             const double blx = (*x_lower)[col];

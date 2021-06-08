@@ -29,9 +29,10 @@ class DistributedSymmetricMatrix;
 
 class BorderedSymmetricMatrix : public SymmetricMatrix {
 public:
-   BorderedSymmetricMatrix(DistributedSymmetricMatrix* inner_matrix, StripMatrix* border_vertical, SymmetricMatrix* bottom_block, MPI_Comm mpiComm_);
+   BorderedSymmetricMatrix(std::shared_ptr<DistributedSymmetricMatrix> inner_matrix, std::unique_ptr<StripMatrix> border_vertical,
+      std::unique_ptr<SymmetricMatrix> top_left_block, MPI_Comm mpiComm_);
 
-   ~BorderedSymmetricMatrix() override;
+   ~BorderedSymmetricMatrix() override = default;
 
    [[nodiscard]] int is_a(int type) const override;
 
@@ -45,8 +46,10 @@ public:
 
    [[nodiscard]] double inf_norm() const override;
    void scalarMult(double num) override;
-   void getSize(long long& m, long long& n) const override;
-   void getSize(int& m, int& n) const override;
+
+   [[nodiscard]] std::pair<long long, long long> n_rows_columns() const override;
+   [[nodiscard]] long long n_rows() const override;
+   [[nodiscard]] long long n_columns() const override;
    [[nodiscard]] long long size() const override;
 
    // ignored methods
@@ -54,7 +57,7 @@ public:
       assert(false && "TODO: implement");
       return 0.0;
    };
-   void writeToStreamDense(std::ostream&) const override { assert("Not implemented" && 0); };
+   void write_to_streamDense(std::ostream&) const override { assert("Not implemented" && 0); };
    void symAtPutSpRow(int, const double[], int, const int[], int&) override { assert("Not implemented" && 0); };
    void symAtPutSubmatrix(int, int, const AbstractMatrix&, int, int, int, int) override { assert("Not implemented" && 0); };
    void atPutDiagonal(int, const Vector<double>&) override { assert("Not implemented" && 0); };
@@ -66,14 +69,14 @@ public:
    void symmetricScale(const Vector<double>&) override { assert("Not implemented" && 0); };
    void columnScale(const Vector<double>&) override { assert("Not implemented" && 0); };
    void rowScale(const Vector<double>&) override { assert("Not implemented" && 0); };
-   void writeToStream(std::ostream&) const override { assert("Not implemented" && 0); };
+   void write_to_stream(std::ostream&) const override { assert("Not implemented" && 0); };
    void putSparseTriple(const int[], int, const int[], const double[], int&) override { assert("Not implemented" && 0); };
 
    // TODO could be more general..
-   DistributedSymmetricMatrix* inner_matrix;
-   StripMatrix* border_vertical;
+   std::shared_ptr<DistributedSymmetricMatrix> inner_matrix;
+   std::unique_ptr<StripMatrix> border_vertical;
 
-   SymmetricMatrix* top_left_block;
+   std::unique_ptr<SymmetricMatrix> top_left_block;
 
 protected:
 

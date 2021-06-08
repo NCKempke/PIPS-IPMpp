@@ -5,9 +5,10 @@
 #ifndef MA27LINSYS_H
 #define MA27LINSYS_H
 
-#include "DoubleLinearSolver.h"
-#include "Vector.hpp"
-#include "SparseSymmetricMatrix.h"
+#include "../DoubleLinearSolver.h"
+
+#include "../LinearAlgebra/Sparse/SparseSymmetricMatrix.h"
+#include "../LinearAlgebra/Dense/SimpleVector.h"
 
 #include <vector>
 #include <string>
@@ -43,8 +44,7 @@ FNAME(ma27cd)(const int* n, const double a[], const int* la, const int iw[], con
 class Ma27Solver : public DoubleLinearSolver {
 
 protected:
-   const SparseSymmetricMatrix* mat{};
-   SmartPointer<SparseStorage> mat_storage;
+   const SparseStorage* mat_storage;
 
    /** control structures MA27 */
    std::vector<int> icntl = std::vector<int>(30);
@@ -158,9 +158,9 @@ protected:
    SymmetricLinearScaler* scaler{};
 
    /* stuff for MA60 iterative refinement */
-   int icntl_ma60[5];
-   int keep_ma60[10];
-   double rkeep_ma60[10];
+   int icntl_ma60[5]{};
+   int keep_ma60[10]{};
+   double rkeep_ma60[10]{};
 
    std::vector<double> w_ma60;
    std::vector<int> iw_ma60;
@@ -170,7 +170,7 @@ protected:
 
 //  void orderMatrix(); // TODO : implement..
 public:
-   explicit Ma27Solver(const SparseSymmetricMatrix* sgm, std::string name_ = "leaf");
+   explicit Ma27Solver(const SparseSymmetricMatrix& sgm, std::string name_ = "leaf");
 
    ~Ma27Solver() override;
 

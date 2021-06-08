@@ -5,7 +5,7 @@
 #include <stdlib.h>
 
 #include "rawInput.hpp"
-#include "PIPSIpmInterface.h"
+#include "PIPSIPMppInterface.hpp"
 
 #include "sFactoryAugSchurLeaf.h"
 #include "MehrotraStochSolver.h"
@@ -36,9 +36,9 @@ int main(int argc, char** argv) {
    rawInput* s = new rawInput(datarootname, nscen);
    if (mype == 0)
       cout << " raw input created ..." << endl;
-   PIPSIpmInterface<sFactoryAugSchur32Leaf, MehrotraStochSolver> pipsIpm(*s);
+   PIPSIPMppInterface<sFactoryAugSchur32Leaf, MehrotraStochSolver> pipsIpm(*s);
    if (mype == 0)
-      cout << "PIPSIpmInterface created (32-bit second stage factorization) " << endl;
+      cout << "PIPSIPMppInterface created (32-bit second stage factorization) " << endl;
    delete s;
    if (mype == 0)
       cout << "rawInput deleted ... starting to solve" << endl;

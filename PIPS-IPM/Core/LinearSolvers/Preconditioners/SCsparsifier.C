@@ -8,7 +8,7 @@
 
 #include "SCsparsifier.h"
 #include "pipsdef.h"
-#include "DistributedOptions.h"
+#include "PIPSIPMppOptions.h"
 #include "mpi.h"
 #include <cassert>
 
@@ -193,12 +193,12 @@ void SCsparsifier::resetSCdistEntries(SparseSymmetricMatrix& sc) const {
       if (jcolM[i] < 0)
          jcolM[i] = -jcolM[i] - 1;
 
-   assert(sc.getStorageRef().isValid());
+   assert(sc.getStorage().isValid());
 }
 
 
 void SCsparsifier::getSparsifiedSC_fortran(const DistributedQP& prob, SparseSymmetricMatrix& sc) {
-   assert(!sc.getStorageRef().fortranIndexed());
+   assert(!sc.getStorage().fortranIndexed());
 
    int* const krowM = sc.krowM();
    int* const jcolM = sc.jcolM();
@@ -263,9 +263,9 @@ void SCsparsifier::getSparsifiedSC_fortran(const DistributedQP& prob, SparseSymm
       krowM[r + 1] = nnznew + 1;
    }
 
-   sc.getStorageRef().len = nnznew;
+   sc.getStorage().len = nnznew;
 
-   sc.getStorageRef().set2FortranIndexed();
+   sc.getStorage().set2FortranIndexed();
 }
 
 

@@ -23,6 +23,8 @@
  */
 // todo improve description
 
+#include <memory>
+
 #include "StochColumnStorage.h"
 #include "DoubleMatrixTypes.h"
 #include "SystemType.h"
@@ -43,10 +45,9 @@ void StochColumnStorage::createStorageMatrix(SystemType system_type, const Distr
 
    /* extra storage for b0mat entries in linking variable column we want to store */
    assert(sys_matrix.Bmat);
-   b0_block_storage.reset(dynamic_cast<const SparseMatrix*>(sys_matrix.Bmat)->cloneEmptyRowsTransposed(true));
+   b0_block_storage = dynamic_cast<const SparseMatrix&>(*sys_matrix.Bmat).cloneEmptyRowsTransposed(true);
 
    // todo : n, m are wrong here but the counters are broken anyways?
-   col_storage.reset(new DistributedMatrix(sys_matrix.n, sys_matrix.m, sys_matrix.mpiComm));
 
 
    /* the rest of the matrix is going to get transposed - note that this would normally reverse the dummy non-dummy structure of the matrix
@@ -58,32 +59,27 @@ void StochColumnStorage::createStorageMatrix(SystemType system_type, const Distr
 
    /* clone submatrices */
    /* Amat is empty in root node */
-   assert(col_storage->Amat == nullptr);
-   assert(col_storage->Bmat == nullptr);
-   assert(col_storage->Blmat == nullptr);
-   col_storage->Amat = dynamic_cast<const SparseMatrix*>(sys_matrix.Amat)->cloneEmptyRows(true);
+   auto Amat_clone = dynamic_cast<const SparseMatrix&>(*sys_matrix.Amat).cloneEmptyRows(true);
    /* B0mat will not be used and stay empty */
-   col_storage->Bmat = dynamic_cast<const SparseMatrix*>(sys_matrix.Blmat)->cloneEmptyRowsTransposed(true);
-   col_storage->Blmat = dynamic_cast<const SparseMatrix*>(sys_matrix.Blmat)->cloneEmptyRowsTransposed(true);
+   auto Bmat_clone = dynamic_cast<const SparseMatrix&>(*sys_matrix.Blmat).cloneEmptyRowsTransposed(true);
+   auto Blmat_clone = dynamic_cast<const SparseMatrix&>(*sys_matrix.Blmat).cloneEmptyRowsTransposed(true);
 
-   for (size_t it = 0; it < sys_matrix.children.size(); it++) {
-      const DistributedMatrix& child = *sys_matrix.children[it];
+   col_storage = std::make_unique<DistributedMatrix>(std::move(Amat_clone), std::move(Bmat_clone), std::move(Blmat_clone), sys_matrix.mpiComm);
 
-      /* create child */
-      DistributedMatrix* child_clone;
-      if (child.is_a(kStochGenDummyMatrix))
-         child_clone = new StochGenDummyMatrix();
-      else
-         child_clone = new DistributedMatrix(child.m, child.n, child.mpiComm);
+   for (const auto & it : sys_matrix.children) {
+      const DistributedMatrix& child = *it;
 
       /* clone submatrices */
-      delete child_clone->Amat;
-      delete child_clone->Bmat;
-      delete child_clone->Blmat;
+      auto Amat_child_clone = dynamic_cast<const SparseMatrix&>(*child.Blmat).cloneEmptyRowsTransposed(true);
+      auto Bmat_child_clone = dynamic_cast<const SparseMatrix&>(*child.Bmat).cloneEmptyRowsTransposed(true);
+      auto Blmat_child_clone = dynamic_cast<const SparseMatrix&>(*child.Amat).cloneEmptyRowsTransposed(true);
 
-      child_clone->Amat = dynamic_cast<const SparseMatrix*>(child.Blmat)->cloneEmptyRowsTransposed(true);
-      child_clone->Bmat = dynamic_cast<const SparseMatrix*>(child.Bmat)->cloneEmptyRowsTransposed(true);
-      child_clone->Blmat = dynamic_cast<const SparseMatrix*>(child.Amat)->cloneEmptyRowsTransposed(true);
+      /* create child */
+      std::shared_ptr<DistributedMatrix> child_clone;
+      if (child.is_a(kStochGenDummyMatrix))
+         child_clone = std::make_unique<StochGenDummyMatrix>();
+      else
+         child_clone = std::make_unique<DistributedMatrix>(std::move(Amat_child_clone), std::move(Bmat_child_clone), std::move(Blmat_child_clone), child.mpiComm);
 
       col_storage->children.push_back(child_clone);
    }

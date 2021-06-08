@@ -1,30 +1,21 @@
 #include <SimpleVector.h>
 #include "Problem.h"
 
-Problem::Problem(Vector<double>* c_in, Vector<double>* xlow_in, Vector<double>* ixlow_in, Vector<double>* xupp_in,
-      Vector<double>* ixupp_in, GeneralMatrix* A_in, Vector<double>* bA_in, GeneralMatrix* C_in, Vector<double>* clow_in, Vector<double>* iclow_in,
-      Vector<double>* cupp_in, Vector<double>* icupp_in) : nxlow{ixlow_in->numberOfNonzeros()}, nxupp{ixupp_in->numberOfNonzeros()},
-      mclow{iclow_in->numberOfNonzeros()}, mcupp{icupp_in->numberOfNonzeros()} {
-   SpReferTo(g, c_in);
-   SpReferTo(bA, bA_in);
-   SpReferTo(blx, xlow_in);
-   SpReferTo(ixlow, ixlow_in);
-   SpReferTo(bux, xupp_in);
-   SpReferTo(ixupp, ixupp_in);
-   SpReferTo(bl, clow_in);
-   SpReferTo(iclow, iclow_in);
-   SpReferTo(bu, cupp_in);
-   SpReferTo(icupp, icupp_in);
-
-   long long dummy;
-
-   nx = g->length();
-
-   SpReferTo(A, A_in);
-   A->getSize(my, dummy);
-
-   SpReferTo(C, C_in);
-   C->getSize(mz, dummy);
+Problem::Problem(std::shared_ptr<Vector<double>> g_in, std::shared_ptr<Vector<double>> xlow_in,
+   std::shared_ptr<Vector<double>> ixlow_in, std::shared_ptr<Vector<double>> xupp_in,
+   std::shared_ptr<Vector<double>> ixupp_in,
+   std::shared_ptr<GeneralMatrix> A_in, std::shared_ptr<Vector<double>> bA_in, std::shared_ptr<GeneralMatrix> C_in,
+   std::shared_ptr<Vector<double>> clow_in, std::shared_ptr<Vector<double>> iclow_in,
+   std::shared_ptr<Vector<double>> cupp_in, std::shared_ptr<Vector<double>> icupp_in) : A{std::move(A_in)},
+   C{std::move(C_in)},
+   g{std::move(g_in)}, bA{std::move(bA_in)}, bux{std::move(xupp_in)}, ixupp{std::move(ixupp_in)},
+   blx{std::move(xlow_in)},
+   ixlow{std::move(ixlow_in)}, bu{std::move(cupp_in)}, icupp{std::move(icupp_in)}, bl{std::move(clow_in)},
+   iclow{std::move(iclow_in)},
+   nx{g->length()}, my{A->n_rows()}, mz{C->n_rows()}, nxlow{ixlow->number_nonzeros()},
+   nxupp{ixupp->number_nonzeros()},
+   mclow{iclow->number_nonzeros()}, mcupp{icupp->number_nonzeros()} {
+   assert(ixlow && ixupp && iclow && icupp);
 }
 
 void Problem::Amult(double beta, Vector<double>& y, double alpha, const Vector<double>& x) const {
@@ -76,7 +67,7 @@ void Problem::scaleC() {
 }
 
 void Problem::scaleg() {
-   SimpleVector<double>& scVector = dynamic_cast<SimpleVector<double>&>(*sc);
+   auto& scVector = dynamic_cast<SimpleVector<double>&>(*sc);
    assert (scVector.length() == g->length());
 
    // D * g
@@ -84,7 +75,7 @@ void Problem::scaleg() {
 }
 
 void Problem::scalexupp() {
-   SimpleVector<double>& scVector = dynamic_cast<SimpleVector<double>&>(*sc);
+   auto& scVector = dynamic_cast<SimpleVector<double>&>(*sc);
 
    assert (scVector.length() == bux->length());
 
@@ -95,7 +86,7 @@ void Problem::scalexupp() {
 
 
 void Problem::scalexlow() {
-   SimpleVector<double>& scVector = dynamic_cast<SimpleVector<double>&>(*sc);
+   auto& scVector = dynamic_cast<SimpleVector<double>&>(*sc);
 
    assert (scVector.length() == blx->length());
 
@@ -113,11 +104,11 @@ double Problem::datanorm() const {
    double norm = 0.0;
    double componentNorm;
 
-   componentNorm = g->infnorm();
+   componentNorm = g->inf_norm();
    if (componentNorm > norm)
       norm = componentNorm;
 
-   componentNorm = bA->infnorm();
+   componentNorm = bA->inf_norm();
    if (componentNorm > norm)
       norm = componentNorm;
 
@@ -130,22 +121,22 @@ double Problem::datanorm() const {
       norm = componentNorm;
 
    assert(blx->matchesNonZeroPattern(*ixlow));
-   componentNorm = blx->infnorm();
+   componentNorm = blx->inf_norm();
    if (componentNorm > norm)
       norm = componentNorm;
 
    assert(bux->matchesNonZeroPattern(*ixupp));
-   componentNorm = bux->infnorm();
+   componentNorm = bux->inf_norm();
    if (componentNorm > norm)
       norm = componentNorm;
 
    assert(bl->matchesNonZeroPattern(*iclow));
-   componentNorm = bl->infnorm();
+   componentNorm = bl->inf_norm();
    if (componentNorm > norm)
       norm = componentNorm;
 
    assert(bu->matchesNonZeroPattern(*icupp));
-   componentNorm = bu->infnorm();
+   componentNorm = bu->inf_norm();
    if (componentNorm > norm)
       norm = componentNorm;
 
@@ -154,44 +145,44 @@ double Problem::datanorm() const {
 
 void Problem::print() {
    std::cout << "begin c\n";
-   g->writeToStream(std::cout);
+   g->write_to_stream(std::cout);
    std::cout << "end c\n";
 
    std::cout << "begin xlow\n";
-   blx->writeToStream(std::cout);
+   blx->write_to_stream(std::cout);
    std::cout << "end xlow\n";
    std::cout << "begin ixlow\n";
-   ixlow->writeToStream(std::cout);
+   ixlow->write_to_stream(std::cout);
    std::cout << "end ixlow\n";
 
    std::cout << "begin xupp\n";
-   bux->writeToStream(std::cout);
+   bux->write_to_stream(std::cout);
    std::cout << "end xupp\n";
    std::cout << "begin ixupp\n";
-   ixupp->writeToStream(std::cout);
+   ixupp->write_to_stream(std::cout);
    std::cout << "end ixupp\n";
    std::cout << "begin A\n";
 
-   A->writeToStream(std::cout);
+   A->write_to_stream(std::cout);
    std::cout << "end A\n";
    std::cout << "begin b\n";
-   bA->writeToStream(std::cout);
+   bA->write_to_stream(std::cout);
    std::cout << "end b\n";
    std::cout << "begin C\n";
-   C->writeToStream(std::cout);
+   C->write_to_stream(std::cout);
    std::cout << "end C\n";
 
    std::cout << "begin clow\n";
-   bl->writeToStream(std::cout);
+   bl->write_to_stream(std::cout);
    std::cout << "end clow\n";
    std::cout << "begin iclow\n";
-   iclow->writeToStream(std::cout);
+   iclow->write_to_stream(std::cout);
    std::cout << "end iclow\n";
 
    std::cout << "begin cupp\n";
-   bu->writeToStream(std::cout);
+   bu->write_to_stream(std::cout);
    std::cout << "end cupp\n";
    std::cout << "begin icupp\n";
-   icupp->writeToStream(std::cout);
+   icupp->write_to_stream(std::cout);
    std::cout << "end icupp\n";
 }

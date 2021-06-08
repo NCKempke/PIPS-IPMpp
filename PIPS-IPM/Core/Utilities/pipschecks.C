@@ -11,7 +11,7 @@
 #include <vector>
 #include <cassert>
 
-bool permutationIsValid(const Permutation& perm) {
+bool permutation_is_valid(const Permutation& perm) {
    size_t size = perm.size();
    std::vector<bool> permflag(size, false);
 
@@ -29,7 +29,7 @@ bool permutationIsValid(const Permutation& perm) {
    return true;
 }
 
-bool subMatrixIsOrdered(const int* rowptr, const int* colidx, int rowstart, int rowend) {
+bool submatrix_is_ordered(const int* rowptr, const int* colidx, int rowstart, int rowend) {
    assert(rowptr);
    assert(colidx);
    assert(rowstart >= 0 && rowstart <= rowend);
@@ -42,7 +42,7 @@ bool subMatrixIsOrdered(const int* rowptr, const int* colidx, int rowstart, int 
    return true;
 }
 
-void computeFortranCSRMatResidualNorms(const int* rowptr, const int* colidx, const double* vals, const SimpleVector<double>& rhs,
+void compute_fortran_CSR_matrix_residual_norms(const int* rowptr, const int* colidx, const double* vals, const SimpleVector<double>& rhs,
       const SimpleVector<double>& x, double& res_norm2, double& res_nrmInf, double& sol_inf, double& mat_max) {
    const int dim = rhs.length();
    double* tmp_resid = new double[dim];

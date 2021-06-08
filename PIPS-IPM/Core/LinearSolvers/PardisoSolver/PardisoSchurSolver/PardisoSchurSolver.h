@@ -5,14 +5,11 @@
 #ifndef PARDISO_SCHUR_SOLVER
 #define PARDISO_SCHUR_SOLVER
 
-#include "DoubleLinearSolver.h"
-#include "SparseSymmetricMatrix.h"
-#include "SparseMatrix.h"
-#include "DenseSymmetricMatrix.h"
-#include "Vector.hpp"
-#include "SmartPointer.h"
-#include "SparseStorage.h"
-#include "pipsport.h"
+#include "../../DoubleLinearSolver.h"
+#include "../../../LinearAlgebra/Sparse/SparseMatrix.h"
+#include "../../../LinearAlgebra/Dense/DenseSymmetricMatrix.h"
+#include "../../../LinearAlgebra/Sparse/SparseSymmetricMatrix.h"
+
 #include <map>
 
 /** implements the linear solver class using the Pardiso SC solver
@@ -29,10 +26,10 @@ class PardisoSchurSolver : public DoubleLinearSolver {
 
 public:
    virtual void firstCall(); //first factorization call
-   void firstSolveCall( const SparseMatrix& R, const SparseMatrix& A, const SparseMatrix& C, const SparseMatrix& F, const SparseMatrix& G, int nSC0); //first solve call
+   void firstSolveCall(const SparseMatrix& R, const SparseMatrix& A, const SparseMatrix& C, const SparseMatrix& F, const SparseMatrix& G, int nSC0); //first solve call
 
    /** sets mStorage to refer to the argument sgm */
-   explicit PardisoSchurSolver(const SparseSymmetricMatrix* sgm);
+   explicit PardisoSchurSolver(const SparseSymmetricMatrix& sgm);
 
    void diagonalChanged(int idiag, int extent) override;
    void matrixChanged() override;

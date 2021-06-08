@@ -7,8 +7,6 @@
 
 #include "Variables.h"
 #include "Vector.hpp"
-#include "SimpleVector.h"
-#include "SmartPointer.h"
 #include "AbstractMatrix.h"
 
 class Problem {
@@ -16,19 +14,19 @@ protected:
    Problem() = default;
 
 public:
-   SmartPointer<GeneralMatrix> A;
-   SmartPointer<GeneralMatrix> C;
-   SmartPointer<Vector<double> > g; // objective
-   SmartPointer<Vector<double> > bA; // rhs equality
-   SmartPointer<Vector<double> > bux; // upper bounds x
-   SmartPointer<Vector<double> > ixupp; // index for upper bounds
-   SmartPointer<Vector<double> > blx; // lower bounds x
-   SmartPointer<Vector<double> > ixlow; // index for lower bounds
-   SmartPointer<Vector<double> > bu; // upper bounds C
-   SmartPointer<Vector<double> > icupp; // index upper bounds
-   SmartPointer<Vector<double> > bl; // lower bounds C
-   SmartPointer<Vector<double> > iclow; // index lower bounds
-   SmartPointer<Vector<double> > sc; // scale (and diag of Q) -> not maintained currently
+   std::shared_ptr<GeneralMatrix> A;
+   std::shared_ptr<GeneralMatrix> C;
+   std::shared_ptr<Vector<double>> g; // objective
+   std::shared_ptr<Vector<double>> bA; // rhs equality
+   std::shared_ptr<Vector<double>> bux; // upper bounds x
+   std::shared_ptr<Vector<double>> ixupp; // index for upper bounds
+   std::shared_ptr<Vector<double>> blx; // lower bounds x
+   std::shared_ptr<Vector<double>> ixlow; // index for lower bounds
+   std::shared_ptr<Vector<double>> bu; // upper bounds C
+   std::shared_ptr<Vector<double>> icupp; // index upper bounds
+   std::shared_ptr<Vector<double>> bl; // lower bounds C
+   std::shared_ptr<Vector<double>> iclow; // index lower bounds
+   std::shared_ptr<Vector<double>> sc; // scale (and diag of Q) -> not maintained currently
 
    long long nx{0};
    long long my{0};
@@ -39,30 +37,33 @@ public:
    long long mclow{0};
    long long mcupp{0};
 
-   Problem(Vector<double>* c, Vector<double>* xlow, Vector<double>* ixlow, Vector<double>* xupp, Vector<double>* ixupp,
-         GeneralMatrix* A, Vector<double>* bA, GeneralMatrix* C, Vector<double>* clow, Vector<double>* iclow, Vector<double>* cupp, Vector<double>* ciupp);
+   Problem(std::shared_ptr<Vector<double>> g_in, std::shared_ptr<Vector<double>> xlow_in,
+      std::shared_ptr<Vector<double>> ixlow_in, std::shared_ptr<Vector<double>> xupp_in, std::shared_ptr<Vector<double>> ixupp_in,
+      std::shared_ptr<GeneralMatrix> A_in, std::shared_ptr<Vector<double>> bA_in, std::shared_ptr<GeneralMatrix> C_in,
+      std::shared_ptr<Vector<double>> clow_in, std::shared_ptr<Vector<double>> iclow_in,
+      std::shared_ptr<Vector<double>> cupp_in, std::shared_ptr<Vector<double>> icupp_in);
 
    virtual ~Problem() = default;
 
-   virtual double objective_value(const Variables& x) const = 0;
+   [[nodiscard]] virtual double objective_value(const Variables& x) const = 0;
 
    virtual void objective_gradient(const Variables& vars, Vector<double>& gradient) const = 0;
 
    /** compute the norm of the problem data */
-   virtual double datanorm() const;
+   [[nodiscard]] virtual double datanorm() const;
 
    /** print the problem data */
    virtual void print();
 
    Vector<double>& xupperBound() { return *bux; };
 
-   const Vector<double>& xupperBound() const { return *bux; };
+   [[nodiscard]] const Vector<double>& xupperBound() const { return *bux; };
 
    Vector<double>& ixupperBound() { return *ixupp; };
 
    Vector<double>& xlowerBound() { return *blx; };
 
-   const Vector<double>& xlowerBound() const { return *blx; };
+   [[nodiscard]] const Vector<double>& xlowerBound() const { return *blx; };
 
    Vector<double>& ixlowerBound() { return *ixlow; };
 
@@ -78,7 +79,7 @@ public:
 
    virtual void hessian_multiplication(double beta, Vector<double>& y, double alpha, const Vector<double>& x) const = 0;
 
-   virtual void hessian_diagonal(Vector<double>& hessian_diagonal) = 0;
+   virtual void hessian_diagonal(Vector<double>& hessian_diagonal) const = 0;
 
    /** insert the constraint matrix A into the matrix M for the
     fundamental linear system, where M is stored as a GenMatrix */

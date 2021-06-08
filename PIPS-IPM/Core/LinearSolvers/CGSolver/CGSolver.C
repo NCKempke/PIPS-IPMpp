@@ -1,10 +1,7 @@
 #include "CGSolver.h"
 #include "SimpleVector.h"
-#include "pipsport.h"
 
-#include <math.h>
-
-extern int gOoqpPrintLevel;
+extern int print_level;
 
 #define EPS 2.220e-16
 
@@ -13,57 +10,37 @@ CGSolver::CGSolver(MatTimesVec* A, MatTimesVec* M1, MatTimesVec* M2) : DoubleIte
    maxit = 10;
    iter = -1;
    flag = -1;
-   tmpVec1 = tmpVec2 = tmpVec3 = tmpVec4 = tmpVec5 = tmpVec6 = nullptr;
    //firstSolve = 1;
 };
 
-CGSolver::~CGSolver() {
-   if (tmpVec1)
-      delete[] tmpVec1;
-   if (tmpVec2)
-      delete[] tmpVec2;
-   if (tmpVec3)
-      delete[] tmpVec3;
-   if (tmpVec4)
-      delete[] tmpVec4;
-   if (tmpVec5)
-      delete[] tmpVec5;
-   if (tmpVec6)
-      delete[] tmpVec6;
-}
-
 void CGSolver::solve(Vector<double>& rhs_) {
-   SimpleVector<double>& b = dynamic_cast<SimpleVector<double>&>(rhs_);
+   auto& b = dynamic_cast<SimpleVector<double>&>(rhs_);
    int n = b.length();
 
    int flag, imin;
    int stag, maxmsteps, maxstagsteps, moresteps;
-   double normr, normr_act, normrmin;
+   double normrmin;
    double alpha, beta, rho, rho1, pq;
    int iter;
 
-   double n2b = b.twonorm();
+   double n2b = b.two_norm();
    double tolb = n2b * tol;
 
-   if (tmpVec1 == nullptr)
-      tmpVec1 = new double[n];
-   if (tmpVec2 == nullptr)
-      tmpVec2 = new double[n];
-   if (tmpVec3 == nullptr)
-      tmpVec3 = new double[n];
-   if (tmpVec4 == nullptr)
-      tmpVec4 = new double[n];
-   if (tmpVec5 == nullptr)
-      tmpVec5 = new double[n];
-   if (tmpVec6 == nullptr)
-      tmpVec6 = new double[n];
+   if (tmpVec1.size() < static_cast<size_t>(n)) {
+      tmpVec1.resize(n);
+      tmpVec2.resize(n);
+      tmpVec3.resize(n);
+      tmpVec4.resize(n);
+      tmpVec5.resize(n);
+      tmpVec6.resize(n);
+   }
 
-   SimpleVector<double> x(tmpVec1, n);      //iterate
-   SimpleVector<double> r(tmpVec2, n);      //residual
-   SimpleVector<double> xmin(tmpVec3, n);   //minimal residual iterate
-   SimpleVector<double> y(tmpVec4, n);      //work vectors
-   SimpleVector<double> z(tmpVec5, n);      //work vectors
-   SimpleVector<double> p(tmpVec6, n);
+   SimpleVector<double> x(tmpVec1.data(), n);      //iterate
+   SimpleVector<double> r(tmpVec2.data(), n);      //residual
+   SimpleVector<double> xmin(tmpVec3.data(), n);   //minimal residual iterate
+   SimpleVector<double> y(tmpVec4.data(), n);      //work vectors
+   SimpleVector<double> z(tmpVec5.data(), n);      //work vectors
+   SimpleVector<double> p(tmpVec6.data(), n);
    //if(firstSolve)
    //  //initial guess is 0, the previous found solution otherwise
    x.setToZero();
@@ -75,7 +52,8 @@ void CGSolver::solve(Vector<double>& rhs_) {
 
    r.copyFrom(b);
    applyA(1.0, r, -1.0, x);
-   normr = r.twonorm();
+   double normr = r.two_norm();
+   double normr_act = normr;
 
    maxit = n / 2 + 20;
    if (normr < tolb) {
@@ -87,7 +65,7 @@ void CGSolver::solve(Vector<double>& rhs_) {
    normrmin = normr;
    rho = 1.0;
    stag = 0;
-   maxmsteps = min(min(n / 50, 5), n - maxit);
+   maxmsteps = std::min(std::min(n / 50, 5), n - maxit);
    maxstagsteps = 2;
    moresteps = 0;
    iter = 0;
@@ -129,7 +107,7 @@ void CGSolver::solve(Vector<double>& rhs_) {
       alpha = rho / pq;
 
       //check for stagnation
-      if (p.twonorm() * fabs(alpha) < EPS * x.twonorm())
+      if (p.two_norm() * fabs(alpha) < EPS * x.two_norm())
          stag++;
       else
          stag = 0;
@@ -137,7 +115,7 @@ void CGSolver::solve(Vector<double>& rhs_) {
       //---- updates ----
       x.axpy(alpha, p);
       r.axpy(-alpha, q);
-      normr = r.twonorm();
+      normr = r.two_norm();
       normr_act = normr;
 
       //printf("stag=%d  maxstagsteps=%d moresteps=%d  normr=%g\n",
@@ -146,7 +124,7 @@ void CGSolver::solve(Vector<double>& rhs_) {
       if (normr <= tolb || stag >= maxstagsteps || moresteps) {
          r.copyFrom(b);
          applyA(1.0, r, -1.0, x);
-         normr_act = r.twonorm();
+         normr_act = r.two_norm();
 
          if (normr_act <= tolb) {
             flag = 0;
@@ -190,7 +168,7 @@ void CGSolver::solve(Vector<double>& rhs_) {
       double relres = normr_act / n2b;
       r.copyFrom(b);
       applyA(1.0, r, -1.0, xmin);
-      normr = r.twonorm();
+      normr = r.two_norm();
       if (normr < normr_act) {
          x.copyFrom(xmin);
          iter = imin;
@@ -201,7 +179,7 @@ void CGSolver::solve(Vector<double>& rhs_) {
          relres = normr_act / n2b;
       }
 
-      if (gOoqpPrintLevel >= 1) {
+      if (print_level >= 1) {
          printf("CG did not NOT converged after %d  max of %d iters were made.\n", iter, ii);
          printf("\t - Error code %d\n\t - Act res=%g\n\t - Rel res=%g %g\n\n", flag, normr, relres, normrmin);
       }
@@ -209,4 +187,3 @@ void CGSolver::solve(Vector<double>& rhs_) {
    }
    b.copyFrom(x);
 }
-

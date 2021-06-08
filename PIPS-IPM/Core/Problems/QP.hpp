@@ -32,13 +32,16 @@ protected:
    QP() = default;
 
 public:
-   SmartPointer<SymmetricMatrix> Q;
+   std::shared_ptr<SymmetricMatrix> Q;
 
    /** constructor that sets up pointers to the data objects that are
        passed as arguments */
-   QP(Vector<double>* c, SymmetricMatrix* Q, Vector<double>* xlow, Vector<double>* ixlow, Vector<double>* xupp,
-         Vector<double>* ixupp, GeneralMatrix* A, Vector<double>* bA, GeneralMatrix* C, Vector<double>* clow, Vector<double>* iclow, Vector<double>* cupp,
-         Vector<double>* ciupp);
+   QP(std::shared_ptr<Vector<double>> c, std::shared_ptr<SymmetricMatrix> Q, std::shared_ptr<Vector<double>> xlow,
+      std::shared_ptr<Vector<double>> ixlow, std::shared_ptr<Vector<double>> xupp,
+      std::shared_ptr<Vector<double>> ixupp, std::shared_ptr<GeneralMatrix> A, std::shared_ptr<Vector<double>> bA,
+      std::shared_ptr<GeneralMatrix> C, std::shared_ptr<Vector<double>> clow, std::shared_ptr<Vector<double>> iclow,
+      std::shared_ptr<Vector<double>> cupp,
+      std::shared_ptr<Vector<double>> icupp);
 
    /** insert the Hessian Q into the matrix M for the fundamental linear system, where M is stored as a SymMatrix */
    virtual void putQIntoAt(SymmetricMatrix& M, int row, int col);
@@ -47,10 +50,11 @@ public:
    virtual void putQIntoAt(GeneralMatrix& M, int row, int col);
 
    /** y = beta * y + alpha * Q * x */
-   virtual void hessian_multiplication(double beta, Vector<double>& y, double alpha, const Vector<double>& x) const override;
+   void
+   hessian_multiplication(double beta, Vector<double>& y, double alpha, const Vector<double>& x) const override;
 
    /** extract the diagonal of the Hessian and put it in the Vector<double> hessian_diagonal */
-   void hessian_diagonal(Vector<double>& hessian_diagonal) override;
+   void hessian_diagonal(Vector<double>& hessian_diagonal) const override;
 
    void createScaleFromQ();
 
@@ -58,7 +62,7 @@ public:
 
    void flipQ();
 
-   double datanorm() const override;
+   [[nodiscard]] double datanorm() const override;
 
    virtual void datainput() {};
 

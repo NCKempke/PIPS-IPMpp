@@ -3,17 +3,11 @@
  * (C) 2001 University of Chicago. See Copyright Notification in OOQP */
 
 #include "Ma27Solver.h"
-#include "SparseSymmetricMatrix.h"
-#include "SimpleVector.h"
-#include "pipsdef.h"
-#include <fstream>
-#include <algorithm>
-#include <utility>
 
-extern int gOoqpPrintLevel;
+extern int print_level;
 
-Ma27Solver::Ma27Solver(const SparseSymmetricMatrix* sgm, std::string name_) : mat{sgm}, mat_storage(sgm->getStorageHandle()), n{mat_storage->n},
-      nnz{mat_storage->numberOfNonZeros()}, n_threads{PIPSgetnOMPthreads()}, name(std::move(name_))//, scaler( new Mc30Scaler() )
+Ma27Solver::Ma27Solver(const SparseSymmetricMatrix& sgm, std::string name_) : mat_storage(&sgm.getStorage()), n{mat_storage->n},
+      nnz{sgm.numberOfNonZeros()}, n_threads{PIPSgetnOMPthreads()}, name(std::move(name_))//, scaler( new Mc30Scaler() )
 {
    assert(n_threads >= 1);
 
@@ -89,14 +83,12 @@ void Ma27Solver::diagonalChanged(int /* idiag */, int /* extent */) {
    this->matrixChanged();
 }
 
-bool new_factor;
 void Ma27Solver::matrixChanged() {
    if (fact.empty())
       this->firstCall();
 
    bool done;
    int tries = 0;
-   new_factor = true;
    do {
       // copy M to fact
       copyMatrixElements(fact, la);
@@ -166,7 +158,7 @@ void Ma27Solver::solve(Vector<double>& rhs_in) {
    double best_resid = std::numeric_limits<double>::infinity();
 
 
-   const double rhsnorm = rhs.twonorm();
+   const double rhsnorm = rhs.two_norm();
 
    bool done = false;
    int n_iter_ref = 0;
@@ -199,10 +191,10 @@ void Ma27Solver::solve(Vector<double>& rhs_in) {
 
       residual_loc.copyFrom(rhs);
       /* calculate residual and possibly new rhs */
-      mat_storage->multSym(1.0, residual_loc.elements(), 1, -1.0, iter_loc.elements(), 1);
+      mat_storage->multSym(1.0, residual_loc.elements(), -1.0, iter_loc.elements());
 
       /* res = res - A * drhs where A * drhs_out = drhs_in */
-      rnorm = residual_loc.twonorm();
+      rnorm = residual_loc.two_norm();
 
       if (PIPSisEQ(rnorm, res_last, 1e-7) || rnorm > 100 * best_resid)
          done = true;
@@ -223,7 +215,7 @@ void Ma27Solver::solve(Vector<double>& rhs_in) {
          std::cout << "bad resnorm " << rnorm << " >= precision " << precision << " * 1+rhsnorm " << 1 + rhsnorm << " = "
                    << precision * (1.0 + rhsnorm) << "\n";
          if (thresholdPivoting() >= threshold_pivoting_max) {
-            if (gOoqpPrintLevel >= ooqp_print_level_warnings) {
+            if (print_level >= ooqp_print_level_warnings) {
                std::cout << "WARNING MA27 " << name
                          << ": threshold_pivoting parameter is already at its max and iterative refinement steps are exceeded with unsifficient precision"
                          << "\n";
@@ -233,7 +225,7 @@ void Ma27Solver::solve(Vector<double>& rhs_in) {
          else {
             setThresholdPivoting(std::min(thresholdPivoting() * threshold_pivoting_factor, threshold_pivoting_max));
 
-            if (gOoqpPrintLevel >= ooqp_print_level_warnings)
+            if (print_level >= ooqp_print_level_warnings)
                std::cout << "STATUS MA27 " << name << ": Setting ThresholdPivoting parameter to " << thresholdPivoting()
                          << " refactorization suggested\n";
 //
@@ -252,10 +244,10 @@ void Ma27Solver::solve(Vector<double>& rhs_in) {
 
    if (rnorm >= precision * (1.0 + rhsnorm)) {
 //      std::cout << "ERROR " << rnorm/(1.0 + rhsnorm) << " > " << precision << " (after " << n_iter_ref << " iter refs)\n";
-//      rhs_cpy->writeToStreamAll(std::cout);
+//      rhs_cpy->write_to_streamAll(std::cout);
 //      std::cout << "ERROR " << rnorm << " vs " << precision * (1.0 + rhsnorm) << " required \n";
-//      best_iter->writeToStreamAll(std::cout);
-//      mat->writeToStreamDense(std::cout);
+//      best_iter->write_to_streamAll(std::cout);
+//      mat->write_to_streamDense(std::cout);
 //      assert( false );
 //      std::cout << "Writing K of local schur complement computation...\n";
 //      std::ofstream myfile("../test.prb");
@@ -265,17 +257,17 @@ void Ma27Solver::solve(Vector<double>& rhs_in) {
 //
 //      myfile << "ia: ";
 //      for( int i = 0; i <= n; i++ )
-//         myfile << mat->getStorageRef().krowM[i] << ", ";
+//         myfile << mat->getStorage().krowM[i] << ", ";
 //      myfile << "\n";
 //
 //      myfile << "ja: ";
 //      for( int i = 0; i < nnz; i++ )
-//         myfile << mat->getStorageRef().jcolM[i] << ", ";
+//         myfile << mat->getStorage().jcolM[i] << ", ";
 //      myfile << "\n";
 //
 //      myfile << "a: ";
 //      for( int i = 0; i < nnz; i++ )
-//         myfile << mat->getStorageRef().M[i] << ", ";
+//         myfile << mat->getStorage().M[i] << ", ";
 //      myfile << "\n";
 //
 //      myfile.close();
@@ -384,7 +376,7 @@ bool Ma27Solver::checkErrorsAndReact() {
       };
          break;
       case -3 : {
-         if (gOoqpPrintLevel >= ooqp_print_level_warnings)
+         if (print_level >= ooqp_print_level_warnings)
             std::cout << "WARNING MA27 " << name << ": insufficient space in iw: " << liw << " suggest reset to " << error_info << "\n";
          ipessimism *= 1.1;
 
@@ -393,14 +385,14 @@ bool Ma27Solver::checkErrorsAndReact() {
 
          liw = std::max(static_cast<int>(ipessimism * error_info), static_cast<int>(ipessimism * liw));
          iw = new int[liw];
-         if (gOoqpPrintLevel >= ooqp_print_level_warnings)
+         if (print_level >= ooqp_print_level_warnings)
             std::cout << " resetting to " << liw << "\n";
 
          error = true;
       };
          break;
       case -4 : {
-         if (gOoqpPrintLevel >= ooqp_print_level_warnings)
+         if (print_level >= ooqp_print_level_warnings)
             std::cout << "WARNING MA27 " << name << ": insufficient factorization space: " << la << "\n";;
          rpessimism *= 1.1;
 
@@ -408,14 +400,14 @@ bool Ma27Solver::checkErrorsAndReact() {
          fact.resize(la);
 
          this->copyMatrixElements(fact, la);
-         if (gOoqpPrintLevel >= ooqp_print_level_warnings)
+         if (print_level >= ooqp_print_level_warnings)
             std::cout << " resetting to " << la << "\n";
 
          error = true;
       }
          break;
       case -5: {
-         if (gOoqpPrintLevel >= ooqp_print_level_warnings)
+         if (print_level >= ooqp_print_level_warnings)
             std::cout << "WARNING MA27 " << name << ": matrix apparently numerically singular, detected at stage " << error_info << "\n";
 
          if (getSmallPivot() <= threshold_pivtol) {
@@ -432,7 +424,7 @@ bool Ma27Solver::checkErrorsAndReact() {
       };
          break;
       case -6: {
-         if (gOoqpPrintLevel >= ooqp_print_level_warnings)
+         if (print_level >= ooqp_print_level_warnings)
             std::cout << "WARNING MA27 " << name << ": change of sign of pivots detected at stage " << error_info << "\n";
       };
          break;
@@ -442,7 +434,7 @@ bool Ma27Solver::checkErrorsAndReact() {
       };
          break;
       case 1 : {
-         if (gOoqpPrintLevel >= ooqp_print_level_warnings)
+         if (print_level >= ooqp_print_level_warnings)
             std::cout << "WARNING MA27 " << name << ": detected " << error_info << " entries out of range in irowM and jcolM; ignored" << "\n";
       };
          break;
@@ -452,7 +444,7 @@ bool Ma27Solver::checkErrorsAndReact() {
       }
          break;
       case 3: {
-         if (gOoqpPrintLevel >= ooqp_print_level_warnings)
+         if (print_level >= ooqp_print_level_warnings)
             std::cout << "WARNING MA27 " << name << ": rank deficient matrix detected; apparent rank is " << error_info << " != n : " << this->n
                       << "\n";
          error = false;

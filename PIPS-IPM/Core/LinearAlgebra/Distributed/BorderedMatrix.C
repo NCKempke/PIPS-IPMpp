@@ -19,42 +19,32 @@
 #include <cassert>
 #include "StripMatrix.h"
 
-BorderedMatrix::BorderedMatrix(DistributedMatrix* inner_matrix_, StripMatrix* border_left_, StripMatrix* border_bottom_,
-      SparseMatrix* bottom_left_block_, MPI_Comm mpi_comm_) : inner_matrix{inner_matrix_}, border_left{border_left_},
-      border_bottom{border_bottom_}, bottom_left_block{bottom_left_block_}, mpi_comm(mpi_comm_), distributed(mpi_comm == MPI_COMM_NULL),
+BorderedMatrix::BorderedMatrix(std::shared_ptr<DistributedMatrix> inner_matrix_, std::unique_ptr<StripMatrix> border_left_, std::unique_ptr<StripMatrix> border_bottom_,
+      std::unique_ptr<GeneralMatrix> bottom_left_block_, MPI_Comm mpi_comm_) : inner_matrix{std::move(inner_matrix_)}, border_left{std::move(border_left_)},
+      border_bottom{std::move(border_bottom_)}, bottom_left_block{std::move(bottom_left_block_)}, mpi_comm(mpi_comm_), distributed(mpi_comm == MPI_COMM_NULL),
       rank(PIPS_MPIgetRank(mpi_comm)) {
    assert(inner_matrix);
    assert(border_left);
    assert(border_bottom);
    assert(bottom_left_block);
 
-   bottom_left_block->getSize(m, n);
+   m = bottom_left_block->n_rows();
+   n = bottom_left_block->n_columns();
 
-   int m_bottom, n_bottom;
-   border_bottom->getSize(m_bottom, n_bottom);
-
-   int m_left, n_left;
-   border_left->getSize(m_left, n_left);
-
-   int m_inner, n_inner;
-   inner_matrix->getSize(m_inner, n_inner);
+#ifndef NDEBUG
+   const auto [m_bottom, n_bottom] = border_bottom->n_rows_columns();
+   const auto [m_left, n_left] = border_left->n_rows_columns();
+   const auto [m_inner, n_inner] = inner_matrix->n_rows_columns();
 
    assert(n == n_left);
    assert(m == m_bottom);
 
    assert(m_inner == m_left);
    assert(n_inner == n_bottom);
+#endif
 
-   m += m_left;
-   n += n_bottom;
-
-}
-
-BorderedMatrix::~BorderedMatrix() {
-   delete bottom_left_block;
-   delete border_bottom;
-   delete border_left;
-   delete inner_matrix;
+   m += border_left->n_rows();
+   n += border_bottom->n_columns();
 }
 
 int BorderedMatrix::is_a(int type) const {
@@ -134,14 +124,16 @@ void BorderedMatrix::scalarMult(double num) {
    bottom_left_block->scalarMult(num);
 }
 
-void BorderedMatrix::getSize(long long& m_, long long& n_) const {
-   m_ = m;
-   n_ = n;
+std::pair<long long, long long> BorderedMatrix::n_rows_columns() const {
+   return {m, n};
 }
 
-void BorderedMatrix::getSize(int& m_, int& n_) const {
-   m_ = static_cast<int>(m);
-   n_ = static_cast<int>(n);
+long long BorderedMatrix::n_rows() const {
+   return m;
+}
+
+long long BorderedMatrix::n_columns() const {
+   return n;
 }
 
 void BorderedMatrix::getRowMinMaxVec(bool get_min, bool initialize_vec, const Vector<double>* col_scale_in, Vector<double>& minmax_in) const {
@@ -153,11 +145,11 @@ void BorderedMatrix::getRowMinMaxVec(bool get_min, bool initialize_vec, const Ve
    auto& minmax = dynamic_cast<DistributedVector<double>&>(minmax_in);
    const DistributedVector<double>* col_scale = has_colscale ? dynamic_cast<const DistributedVector<double>*>(col_scale_in) : nullptr;
 
-   border_left->getRowMinMaxVec(get_min, initialize_vec, has_colscale ? col_scale->first : nullptr, *minmax.children[0]);
-   inner_matrix->getRowMinMaxVec(get_min, false, has_colscale ? col_scale->children[0] : nullptr, *minmax.children[0]);
+   border_left->getRowMinMaxVec(get_min, initialize_vec, has_colscale ? col_scale->first.get() : nullptr, *minmax.children[0]);
+   inner_matrix->getRowMinMaxVec(get_min, false, has_colscale ? col_scale->children[0].get() : nullptr, *minmax.children[0]);
 
-   bottom_left_block->getRowMinMaxVec(get_min, initialize_vec, has_colscale ? col_scale->first : nullptr, *minmax.last);
-   border_bottom->getRowMinMaxVec(get_min, false, has_colscale ? col_scale->children[0] : nullptr, *minmax.last);
+   bottom_left_block->getRowMinMaxVec(get_min, initialize_vec, has_colscale ? col_scale->first.get() : nullptr, *minmax.last);
+   border_bottom->getRowMinMaxVec(get_min, false, has_colscale ? col_scale->children[0].get() : nullptr, *minmax.last);
 }
 
 void BorderedMatrix::getColMinMaxVec(bool get_min, bool initialize_vec, const Vector<double>* row_scale_in, Vector<double>& minmax_in) const {
@@ -170,11 +162,11 @@ void BorderedMatrix::getColMinMaxVec(bool get_min, bool initialize_vec, const Ve
    auto& minmax = dynamic_cast<DistributedVector<double>&>(minmax_in);
    const DistributedVector<double>* row_scale = has_rowscale ? dynamic_cast<const DistributedVector<double>*>(row_scale_in) : nullptr;
 
-   border_left->getColMinMaxVec(get_min, initialize_vec, has_rowscale ? row_scale->children[0] : nullptr, *minmax.first);
-   bottom_left_block->getColMinMaxVec(get_min, false, has_rowscale ? row_scale->last : nullptr, *minmax.first);
+   border_left->getColMinMaxVec(get_min, initialize_vec, has_rowscale ? row_scale->children[0].get() : nullptr, *minmax.first);
+   bottom_left_block->getColMinMaxVec(get_min, false, has_rowscale ? row_scale->last.get() : nullptr, *minmax.first);
 
-   inner_matrix->getColMinMaxVec(get_min, initialize_vec, has_rowscale ? row_scale->children[0] : nullptr, *minmax.children[0]);
-   border_bottom->getColMinMaxVec(get_min, false, has_rowscale ? row_scale->last : nullptr, *minmax.children[0]);
+   inner_matrix->getColMinMaxVec(get_min, initialize_vec, has_rowscale ? row_scale->children[0].get() : nullptr, *minmax.children[0]);
+   border_bottom->getColMinMaxVec(get_min, false, has_rowscale ? row_scale->last.get() : nullptr, *minmax.children[0]);
 }
 
 void BorderedMatrix::addRowSums(Vector<double>& vec_) const {
@@ -246,8 +238,8 @@ bool BorderedMatrix::hasVecStructureForBorderedMat(const Vector<T>& vec, bool ro
       return false;
    }
 
-   int n_border, m_border;
-   border_left->getSize(m_border, n_border);
+   const auto [m_border, n_border] = border_left->n_rows_columns();
+
    if (row_vec && vecs.first->length() != n_border) {
       std::cout << "ROW: root.first.length = " << vecs.first->length() << " != " << n_border << " = border.n " << std::endl;
       return false;
@@ -260,15 +252,14 @@ bool BorderedMatrix::hasVecStructureForBorderedMat(const Vector<T>& vec, bool ro
    return true;
 }
 
-void BorderedMatrix::writeToStreamDense(std::ostream& out) const {
+void BorderedMatrix::write_to_streamDense(std::ostream& out) const {
    const int my_rank = PIPS_MPIgetRank(mpi_comm);
    const int size = PIPS_MPIgetSize(mpi_comm);
    const bool iAmDistrib = (size != 0);
 
-   inner_matrix->writeToStreamDenseBordered(*border_left, out,0);
+   inner_matrix->write_to_streamDenseBordered(*border_left, out,0);
 
-   int mL, nL;
-   this->bottom_left_block->getSize(mL, nL);
+   const auto mL = this->bottom_left_block->n_rows();
    if (mL > 0) {
       if (iAmDistrib)
          MPI_Barrier(mpi_comm);
@@ -279,10 +270,10 @@ void BorderedMatrix::writeToStreamDense(std::ostream& out) const {
 
          // process Zero collects all the information and then prints it.
          if (my_rank == 0) {
-            bottom_left_block->writeToStreamDenseRow(out, r);
+            bottom_left_block->write_to_streamDenseRow(out, r);
             out << "|\t";
          }
-         border_bottom->writeToStreamDenseRow(out, r);
+         border_bottom->write_to_streamDenseRow(out, r);
 
          if (my_rank == 0)
             out << "\n";
@@ -293,4 +284,3 @@ void BorderedMatrix::writeToStreamDense(std::ostream& out) const {
    if (iAmDistrib)
       MPI_Barrier(mpi_comm);
 }
-

@@ -161,7 +161,7 @@ private:
    insertRowsIntoHashtable(boost::unordered_set<rowlib::rowWithColInd, boost::hash<rowlib::rowWithColInd> >& rows, const SparseStorageDynamic* Ablock,
          const SparseStorageDynamic* Bblock, SystemType system_type, const SimpleVector<int>* nnz_row_norm, const SimpleVector<int>* nnz_row_orig);
    void compareRowsInCoeffHashTable(int& nRowElims, int it);
-   bool checkRowsAreParallel(const rowlib::rowWithEntries& row1, const rowlib::rowWithEntries& row2);
+   bool checkRowsAreParallel(const rowlib::rowWithEntries& row1, const rowlib::rowWithEntries& row2) const;
 
    void tightenOriginalBoundsOfRow1(const INDEX& row1, const INDEX& row2) const;
 

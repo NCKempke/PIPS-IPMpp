@@ -1,7 +1,10 @@
-#include <InteriorPointMethod.h>
+#include "PIPSIPMppInterface.hpp"
 #include "DistributedInputTree.h"
-#include "PIPSIpmInterface.h"
-#include "MehrotraStrategy.hpp"
+
+#include "PIPSIPMppOptions.h"
+#include "PreprocessType.h"
+#include "MehrotraStrategyType.h"
+
 #include "mpi.h"
 
 #define LINKING_CONS 1
@@ -20,7 +23,7 @@ public: //data
    int nScenarios;
 
 public: //methods
-   ProbData(int nScenarios) {
+   explicit ProbData(int nScenarios) {
       this->nScenarios = nScenarios;
    };
 
@@ -489,11 +492,11 @@ int main(int argc, char** argv) {
       std::cout << "Using a total of " << size << " MPI processes." << std::endl;
 
    /* use BiCGStab for outer solve */
-   pips_options::set_int_parameter("INNER_SC_SOLVE", 0);
-   PIPSIpmInterface<InteriorPointMethod> pipsIpm(root, PRIMAL, MPI_COMM_WORLD, SCALER_GEO_STOCH, PRESOLVER_NONE);
+   pipsipmpp_options::set_int_parameter("INNER_SC_SOLVE", 0);
+   PIPSIPMppInterface pipsIpm(root, MehrotraStrategyType::PRIMAL, MPI_COMM_WORLD, ScalerType::SCALER_GEO_STOCH, PresolverType::PRESOLVER_NONE);
 
    if (rank == 0)
-      std::cout << "PIPSIpmInterface created" << std::endl;
+      std::cout << "PIPSIPMppInterface created" << std::endl;
 
    if (rank == 0)
       std::cout << "solving..." << std::endl;

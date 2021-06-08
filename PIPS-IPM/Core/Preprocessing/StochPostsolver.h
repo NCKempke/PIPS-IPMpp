@@ -11,7 +11,7 @@
 #include <vector>
 #include <memory>
 
-#include "QpPostsolver.h"
+#include "Postsolver.hpp"
 #include "DistributedVector.h"
 #include "DistributedQP.hpp"
 #include "DistributedVariables.h"
@@ -19,11 +19,11 @@
 #include "StochRowStorage.h"
 #include "StochColumnStorage.h"
 
-class StochPostsolver : public QpPostsolver {
+class StochPostsolver : public Postsolver {
 
 public:
    StochPostsolver(const DistributedQP& original_problem);
-   virtual ~StochPostsolver();
+   ~StochPostsolver() override;
 
    void notifyRowModified(const INDEX& row);
    void notifyColModified(const INDEX& col);
@@ -68,8 +68,10 @@ public:
    void notifyParallelRowsBoundsTightened(const INDEX& row1, const INDEX& row2, double clow_old, double cupp_old, double clow_new, double cupp_new,
          double factor);
 
-   bool wasColumnRemoved(const INDEX& col) const;
-   bool wasRowRemoved(const INDEX& row) const;
+   void notifyTransformedInequalitiesIntoEqualties();
+
+   [[nodiscard]] bool wasColumnRemoved(const INDEX& col) const;
+   [[nodiscard]] bool wasRowRemoved(const INDEX& row) const;
 
 private:
    void markColumnRemoved(const INDEX& col);
@@ -82,10 +84,10 @@ private:
    /// stores col in specified node and returns it's new col index
    int storeColumn(const INDEX& col, const DistributedMatrix& matrix_col_eq, const DistributedMatrix& matrix_col_ineq);
 
-   bool isRowModified(const INDEX& row) const;
+   [[nodiscard]] bool isRowModified(const INDEX& row) const;
    void markRowClean(const INDEX& row);
    void markColClean(const INDEX& col);
-   bool isColModified(const INDEX& col) const;
+   [[nodiscard]] bool isColModified(const INDEX& col) const;
 
 public:
    /// synchronization events
@@ -100,6 +102,7 @@ private:
    const double INF_NEG;
    const double INF_POS;
 
+   bool transformed_inequalities_to_equalities{false};
 
    enum ReductionType {
       FIXED_COLUMN = 0,
@@ -121,7 +124,7 @@ private:
       LINKING_INEQ_ROW_SYNC_EVENT = 16,
       LINKIN_EQ_ROW_SYNC_EVENT = 17,
       LINKING_VARS_SYNC_EVENT = 18,
-      BOUND_TIGHTENING_LINKING_ROW_SYNC_EVENT = 19
+      BOUND_TIGHTENING_LINKING_ROW_SYNC_EVENT = 19,
    };
 
    const unsigned int n_rows_original;
@@ -216,12 +219,12 @@ private:
    void addIneqRowDual(double& z, double& lambda, double& pi, double value) const;
 
    void setOriginalVarsFromReduced(const DistributedVariables& reduced_vars, DistributedVariables& original_vars) const;
-   bool allVariablesSet(const DistributedVariables& vars) const;
-   bool complementarySlackVariablesMet(const DistributedVariables& vars, const INDEX& col, double tol) const;
-   bool complementarySlackRowMet(const DistributedVariables& vars, const INDEX& row, double tol) const;
+   [[nodiscard]] bool allVariablesSet(const DistributedVariables& vars) const;
+   [[nodiscard]] bool complementarySlackVariablesMet(const DistributedVariables& vars, const INDEX& col, double tol) const;
+   [[nodiscard]] bool complementarySlackRowMet(const DistributedVariables& vars, const INDEX& row, double tol) const;
 
-   bool sameNonZeroPatternDistributed(const DistributedVector<double>& svec) const; // TODO: move
-   bool sameNonZeroPatternDistributed(const SimpleVector<double>& vec) const; // TODO: move
+   [[nodiscard]] bool sameNonZeroPatternDistributed(const DistributedVector<double>& svec) const; // TODO: move
+   static bool sameNonZeroPatternDistributed(const SimpleVector<double>& vec) ; // TODO: move
 
    template<typename T>
    void setOriginalValuesFromReduced(DistributedVector<T>& original_vector, const DistributedVector<T>& reduced_vector,
@@ -230,6 +233,19 @@ private:
    template<typename T>
    void setOriginalValuesFromReduced(SimpleVector<T>& original_vector, const SimpleVector<T>& reduced_vector,
          const SimpleVector<int>& padding_original) const;
+
+   template<typename T>
+   void set_original_ineq_eq_tranformed_values_from_reduced(DistributedVector<T>& original_first, DistributedVector<T>& original_last,
+      const DistributedVector<T>& reduced, const DistributedVector<int>& padding_original_first, const DistributedVector<int>& padding_original_last, bool mixed_row_column) const;
+
+   template<typename T>
+   void set_original_ineq_eq_tranformed_values_from_reduced(SimpleVector<T>& original_first, SimpleVector<T>& original_last,
+      const SimpleVector<T>& reduced, const SimpleVector<int>& padding_original_first, const SimpleVector<int>& padding_original_last) const;
+
+   template<typename T>
+   void set_original_ineq_eq_tranformed_values_from_reduced(SimpleVector<T>& original_first, SimpleVector<T>& original_second, SimpleVector<T>& original_third,
+      const SimpleVector<T>& reduced, const SimpleVector<int>& padding_original_first, const SimpleVector<int>& padding_original_second, const SimpleVector<int>& padding_original_third) const;
+
 };
 
 

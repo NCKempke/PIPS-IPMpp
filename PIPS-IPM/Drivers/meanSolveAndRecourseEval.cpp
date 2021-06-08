@@ -5,7 +5,7 @@
 #include <stdlib.h>
 
 #include "rawInput.hpp"
-#include "PIPSIpmInterface.h"
+#include "PIPSIPMppInterface.hpp"
 #include "OOQPRecourseInterface.hpp"
 #include "QpGenSparseMa57.h"
 #include "QpGenSparseMa27.h"
@@ -85,8 +85,8 @@ int main(int argc, char** argv) {
    std::vector<double> firstStageSol;
    std::vector<double> fstStageDual;
    {
-      //PIPSIpmInterface<sFactoryAugSchurLeaf, MehrotraStochSolver> pipsIpm(*sMean, MPI_COMM_SELF);
-      PIPSIpmInterface<sFactoryAug, MehrotraStochSolver> pipsIpm(*sMean, MPI_COMM_SELF);
+      //PIPSIPMppInterface<sFactoryAugSchurLeaf, MehrotraStochSolver> pipsIpm(*sMean, MPI_COMM_SELF);
+      PIPSIPMppInterface<sFactoryAug, MehrotraStochSolver> pipsIpm(*sMean, MPI_COMM_SELF);
       delete sMean;
 
       pipsIpm.go();
@@ -151,7 +151,7 @@ int main(int argc, char** argv) {
       if (scen % nbatchprocs == myBatchPe) {
          printf("Proc [%d][%d] does scen [%d] in batch [%s]\n", mype, myBatchPe, scen, datarootname.c_str());
 
-         pips_options::setIntParameter("OUTER_SOLVE", 1); //iter.refin.
+         pipsipmpp_options::setIntParameter("OUTER_SOLVE", 1); //iter.refin.
          OOQPRecourseInterface <MehrotraSolver, QpGenSparseMa27> ooqpRecourse(*s, scen, firstStageSol);
          ooqpRecourse.go();
 

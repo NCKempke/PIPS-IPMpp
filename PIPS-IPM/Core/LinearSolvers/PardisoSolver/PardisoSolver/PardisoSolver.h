@@ -5,9 +5,9 @@
 #ifndef PARDISOLINSYS_H
 #define PARDISOLINSYS_H
 
-#include "DoubleLinearSolver.h"
-#include "DenseSymmetricMatrix.h"
-#include "pipsport.h"
+#include "../../DoubleLinearSolver.h"
+#include "../../../LinearAlgebra/Dense/DenseSymmetricMatrix.h"
+#include "../../../LinearAlgebra/Sparse/SparseSymmetricMatrix.h"
 
 #include <map>
 #include <vector>
@@ -21,8 +21,8 @@ public:
    virtual void firstCall() = 0;
 
    /** sets mStorage to refer to the argument sgm */
-   explicit PardisoSolver(const SparseSymmetricMatrix* sgm);
-   explicit PardisoSolver(const DenseSymmetricMatrix* m);
+   explicit PardisoSolver(const SparseSymmetricMatrix& sgm);
+   explicit PardisoSolver(const DenseSymmetricMatrix& m);
 
    void diagonalChanged(int idiag, int extent) override;
    void matrixChanged() override;

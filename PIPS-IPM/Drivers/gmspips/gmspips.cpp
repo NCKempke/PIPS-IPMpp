@@ -1,9 +1,11 @@
 #if defined(GMS_PIPS)
 
+#include "PIPSIPMppInterface.hpp"
 #include "DistributedInputTree.h"
-#include "PreprocessFactory.h"
-#include "PIPSIpmInterface.h"
-#include "InteriorPointMethod.h"
+
+#include "PIPSIPMppOptions.h"
+#include "PreprocessType.h"
+#include "MehrotraStrategyType.h"
 
 #endif
 #if defined(GMS_MPI)
@@ -13,13 +15,12 @@
 #endif
 
 #include "gmspipsio.h"
-#include <stdio.h>
-#include <stdlib.h>
-#include <assert.h>
-#include <string.h>
+#include <cstdio>
+#include <cstdlib>
+#include <cassert>
+#include <cstring>
 
 #include <iostream>
-#include <fstream>
 
 extern "C" typedef int (* FNNZ)(void* user_data, int id, int* nnz);
 
@@ -183,11 +184,11 @@ int fmatQ(void* user_data, int id, int* krowM, int*, double*) {
 #if defined(GMS_PIPS)
 static void setParams(ScalerType& scaler_type, bool& stepDiffLp, bool& presolve, bool& printsol, bool& hierarchical, const char* paramname) {
    if (strcmp(paramname, "scale") == 0 || strcmp(paramname, "scaleEqui") == 0)
-      scaler_type = SCALER_EQUI_STOCH;
+      scaler_type = ScalerType::SCALER_EQUI_STOCH;
    else if (strcmp(paramname, "scaleGeo") == 0)
-      scaler_type = SCALER_GEO_STOCH;
+      scaler_type = ScalerType::SCALER_GEO_STOCH;
    else if (strcmp(paramname, "scaleGeoEqui") == 0)
-      scaler_type = SCALER_GEO_EQUI_STOCH;
+      scaler_type = ScalerType::SCALER_GEO_EQUI_STOCH;
    else if (strcmp(paramname, "stepLp") == 0)
       stepDiffLp = true;
    else if (strcmp(paramname, "presolve") == 0)
@@ -212,7 +213,7 @@ int main(int argc, char** argv) {
 
    GMSPIPSBlockData_t** blocks;
 #if defined(GMS_PIPS)
-   ScalerType scaler_type = SCALER_NONE;
+   ScalerType scaler_type = ScalerType::SCALER_NONE;
 #endif
 
    bool primal_dual_step_length = false;
@@ -226,7 +227,7 @@ int main(int argc, char** argv) {
       exit(1);
    }
 
-   allGDX = strstr(argv[2], ".gdx") != NULL;
+   allGDX = strstr(argv[2], ".gdx") != nullptr;
    numBlocks = atoi(argv[1]);
    strcpy(fileName, argv[2]);
    if (argc >= 4) {
@@ -310,7 +311,7 @@ int main(int argc, char** argv) {
          fdlow, fidlow, fdupp, fidupp,
 #endif
          fxlow, fixlow, fxupp, fixupp, false);
-   DistributedInputTree* root = new DistributedInputTree(data);
+   auto* root = new DistributedInputTree(data);
 #endif
    for (int blk = 1; blk < numBlocks; blk++) {
 
@@ -370,14 +371,14 @@ int main(int argc, char** argv) {
    if (hierarchical) {
       if (gmsRank == 0)
          std::cout << "Using Hierarchical approach\n";
-      pips_options::activate_hierarchial_approach();
+      pipsipmpp_options::activate_hierarchial_approach();
    }
 
-   pips_options::set_int_parameter("OUTER_SOLVE", 2);
+   pipsipmpp_options::set_int_parameter("OUTER_SOLVE", 2);
    if (gmsRank == 0)
       std::cout << "Using outer BICGSTAB\n";
 
-   if (gmsRank == 0 && pips_options::get_int_parameter("INNER_SC_SOLVE") == 2)
+   if (gmsRank == 0 && pipsipmpp_options::get_int_parameter("INNER_SC_SOLVE") == 2)
       std::cout << "Using inner BICGSTAB\n";
 
    std::vector<double> primalSolVec;
@@ -388,17 +389,17 @@ int main(int argc, char** argv) {
    std::vector<double> eqValues;
    std::vector<double> ineqValues;
 
-   pips_options::set_bool_parameter("GONDZIO_ADAPTIVE_LINESEARCH", !primal_dual_step_length);
+   pipsipmpp_options::set_bool_parameter("GONDZIO_ADAPTIVE_LINESEARCH", !primal_dual_step_length);
    if (primal_dual_step_length && gmsRank == 0) {
       std::cout << "Different steplengths in primal and dual direction are used.\n";
    }
 
    // create the PIPS-IPM++ interface
-   PIPSIpmInterface<InteriorPointMethod> pipsIpm(root, primal_dual_step_length ? PRIMAL_DUAL : PRIMAL, MPI_COMM_WORLD, scaler_type,
-         presolve ? PRESOLVER_STOCH : PRESOLVER_NONE);
+   PIPSIPMppInterface pipsIpm(root, primal_dual_step_length ? MehrotraStrategyType::PRIMAL_DUAL : MehrotraStrategyType::PRIMAL, MPI_COMM_WORLD, scaler_type,
+         presolve ? PresolverType::PRESOLVER_STOCH : PresolverType::PRESOLVER_NONE);
 
    if (gmsRank == 0) {
-      std::cout << "PIPSIpmInterface created\n";
+      std::cout << "PIPSIPMppInterface created\n";
       std::cout << "solving...\n";
    }
 

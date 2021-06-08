@@ -5,7 +5,7 @@
 #include <stdlib.h>
 
 #include "rawInput.hpp"
-#include "PIPSIpmInterface.h"
+#include "PIPSIPMppInterface.hpp"
 
 #include "sFactoryAugComm2SchurLeaf.h"
 #include "MehrotraStochSolver.h"
@@ -47,13 +47,13 @@ int main(int argc, char** argv) {
    rawInput* s = new rawInput(datarootname, nscen);
    if (mype == 0)
       cout << " raw input created from " << datarootname << endl;
-   PIPSIpmInterface<sFactoryAugComm2SchurLeaf, MehrotraStochSolver> pipsIpm(*s);
+   PIPSIPMppInterface<sFactoryAugComm2SchurLeaf, MehrotraStochSolver> pipsIpm(*s);
 
-   pips_options::setIntParameter("OUTER_SOLVE", outerSolve);
-   pips_options::setIntParameter("INNER_SC_SOLVE", innerSolve);
+   pipsipmpp_options::setIntParameter("OUTER_SOLVE", outerSolve);
+   pipsipmpp_options::setIntParameter("INNER_SC_SOLVE", innerSolve);
 
    if (mype == 0)
-      cout << "PIPSIpmInterface created" << endl;
+      cout << "PIPSIPMppInterface created" << endl;
    delete s;
    if (mype == 0)
       cout << "rawInput deleted ... starting to solve" << endl;

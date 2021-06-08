@@ -3,9 +3,12 @@
  * (C) 2001 University of Chicago. See Copyright Notification in OOQP */
 
 #include "MpsReader.h"
+
 #include "Vector.hpp"
 #include "AbstractMatrix.h"
 #include "SimpleVector.h"
+#include "sort.h"
+
 #include <cstring>
 #include <cerrno>
 #include <cassert>
@@ -13,7 +16,7 @@
 #include <cctype>
 #include <cmath>
 
-extern int gOoqpPrintLevel;
+extern int print_level;
 
 enum { DATALINE = 1, HEADERLINE };
 enum {
@@ -36,8 +39,6 @@ struct MpsColInfo {
 
 int MpsRowTypeFromCode(char code[4]);
 int MpsRowTypeFromCode2(char code);
-
-void doubleLexSort(int first[], int n, int second[], double data[]);
 
 MpsReader::MpsReader(FILE* file_) {
    file = file_;
@@ -2674,7 +2675,7 @@ void MpsReader::printSolution(double x[], int nx, double xlow[], char ixlow[], d
          iErr = mpsfileopenerr;
          return;
       }
-      if (gOoqpPrintLevel > 0) {
+      if (print_level > 0) {
          printf("\nprinting solution:  input file name %s\n", infilename);
          printf("printing solution: output file name %s\n", outfilename);
       }

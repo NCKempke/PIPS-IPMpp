@@ -15,25 +15,25 @@
 #include "pipsdef.h"
 #include <algorithm>
 
-StripMatrix::StripMatrix(bool is_vertical, GeneralMatrix* first, GeneralMatrix* last, MPI_Comm mpi_comm_, bool is_view) : first(first),
-      last(last), is_vertical(is_vertical), mpi_comm(mpi_comm_), distributed(PIPS_MPIgetDistributed(mpi_comm)),
-      rank(PIPS_MPIgetRank(mpi_comm)), is_view{is_view} {
+StripMatrix::StripMatrix(bool is_vertical, std::unique_ptr<GeneralMatrix> first_in, std::unique_ptr<GeneralMatrix> last_in,
+   MPI_Comm mpi_comm_, bool is_view) : first(std::move(first_in)),
+   last(std::move(last_in)), is_vertical(is_vertical), mpi_comm(mpi_comm_), distributed(PIPS_MPIgetDistributed(mpi_comm)),
+   rank(PIPS_MPIgetRank(mpi_comm)), is_view{is_view} {
    assert(first);
 
-   first->getSize(m, n);
+   m = first->n_rows();
+   n = first->n_columns();
 
    nonzeros += first->numberOfNonZeros();
 
    if (last) {
-      long long ml, nl;
-      last->getSize(ml, nl);
+      const auto[ml, nl] = last->n_rows_columns();
       nonzeros += last->numberOfNonZeros();
 
       if (is_vertical) {
          assert(n == nl);
          m += ml;
-      }
-      else {
+      } else {
          assert(m == ml);
          n += nl;
       }
@@ -41,36 +41,49 @@ StripMatrix::StripMatrix(bool is_vertical, GeneralMatrix* first, GeneralMatrix* 
 }
 
 StripMatrix::~StripMatrix() {
-   if (is_view)
-      return;
+   if(is_view)
+   {
+      first.release();
+      last.release();
 
-   for (StripMatrix* child : children)
-      delete child;
-
-   delete first;
-   delete last;
+      for( auto& child : children )
+         child.release();
+   }
 }
 
-void StripMatrix::addChild(StripMatrix* child) {
-   children.push_back(child);
+void StripMatrix::addChild(std::unique_ptr<StripMatrix> child_in) {
+   assert(child_in);
 
-   nonzeros += child->numberOfNonZeros();
+   StripMatrix* child_ptr = child_in.get();
+   children.push_back(std::move(child_in));
 
-   long long m_, n_;
-   child->getSize(m_, n_);
+   nonzeros += child_ptr->numberOfNonZeros();
 
-   assert(child->is_vertical == this->is_vertical || child->is_a(kStringGenDummyMatrix));
+   const auto[m_, n_] = child_ptr->n_rows_columns();
 
-   if (!child->is_a(kStringGenDummyMatrix)) {
+   assert(child_ptr->is_vertical == this->is_vertical || child_ptr->is_a(kStringGenDummyMatrix));
+
+   if (!child_ptr->is_a(kStringGenDummyMatrix)) {
       if (is_vertical) {
          assert(n == n_);
          m += m_;
-      }
-      else {
+      } else {
          assert(m == m_);
          n += n_;
       }
    }
+}
+
+std::pair<long long, long long> StripMatrix::n_rows_columns() const {
+   return {m, n};
+}
+
+long long StripMatrix::n_rows() const {
+   return m;
+}
+
+long long StripMatrix::n_columns() const {
+   return n;
 }
 
 bool StripMatrix::isEmpty() const {
@@ -84,7 +97,7 @@ int StripMatrix::is_a(int type) const {
 double StripMatrix::inf_norm() const {
    double norm = 0.0;
 
-   for (auto it : children)
+   for (const auto& it : children)
       norm = std::max(norm, it->inf_norm());
 
    if (distributed)
@@ -104,7 +117,7 @@ void StripMatrix::scalarMult(double num) {
    if (last)
       last->scalarMult(num);
 
-   for (auto & it : children)
+   for (auto& it : children)
       it->scalarMult(num);
 }
 
@@ -146,18 +159,17 @@ void StripMatrix::recomputeNonzeros() {
 #endif
    }
 
-   if (dynamic_cast<const StripMatrix*>(first)) {
+   if (dynamic_cast<const StripMatrix*>(first.get())) {
       auto& matstr = dynamic_cast<StripMatrix&>(*first);
       matstr.recomputeNonzeros();
       if (PIPS_MPIgetRank(matstr.mpi_comm) == 0)
          nonzeros += matstr.numberOfNonZeros();
 #ifndef NDEBUG
-      // !in DEBUG the nonzeros get recomputed so all processes have to join in - a terrible hack but for safety..
+         // !in DEBUG the nonzeros get recomputed so all processes have to join in - a terrible hack but for safety..
       else
          static_cast<void>(matstr.numberOfNonZeros());
 #endif
-   }
-   else if (PIPS_MPIiAmSpecial(distributed, mpi_comm)) {
+   } else if (PIPS_MPIiAmSpecial(distributed, mpi_comm)) {
       if (first)
          nonzeros += first->numberOfNonZeros();
       if (last)
@@ -189,7 +201,8 @@ void StripMatrix::multVertical(double beta, Vector<double>& y_in, double alpha, 
    }
 }
 
-void StripMatrix::multHorizontal(double beta, Vector<double>& y_in, double alpha, const Vector<double>& x_in, bool root) const {
+void StripMatrix::multHorizontal(double beta, Vector<double>& y_in, double alpha, const Vector<double>& x_in,
+   bool root) const {
    const auto& x = dynamic_cast<const DistributedVector<double>&>(x_in);
    auto& y = dynamic_cast<SimpleVector<double>&>(y_in);
 
@@ -201,15 +214,13 @@ void StripMatrix::multHorizontal(double beta, Vector<double>& y_in, double alpha
       assert(!last);
       assert(children.empty());
       assert(!root);
-      dynamic_cast<const StripMatrix*>(first)->multHorizontal(1.0, y, alpha, *x.first, false);
-   }
-   else {
+      dynamic_cast<const StripMatrix&>(*first).multHorizontal(1.0, y, alpha, *x.first, false);
+   } else {
       if (PIPS_MPIiAmSpecial(distributed, mpi_comm)) {
          first->mult(root ? beta : 1.0, y, alpha, *x.first);
          if (last)
             last->mult(1.0, y, alpha, *x.last);
-      }
-      else if (root)
+      } else if (root)
          y.setToZero();
 
       for (size_t i = 0; i < children.size(); ++i)
@@ -220,7 +231,8 @@ void StripMatrix::multHorizontal(double beta, Vector<double>& y_in, double alpha
    }
 }
 
-void StripMatrix::transMultVertical(double beta, Vector<double>& y_in, double alpha, const Vector<double>& x_in, bool root) const {
+void StripMatrix::transMultVertical(double beta, Vector<double>& y_in, double alpha, const Vector<double>& x_in,
+   bool root) const {
    const auto& x = dynamic_cast<const DistributedVector<double>&>(x_in);
    auto& y = dynamic_cast<SimpleVector<double>&>(y_in);
 
@@ -233,15 +245,13 @@ void StripMatrix::transMultVertical(double beta, Vector<double>& y_in, double al
       assert(!last);
       assert(children.empty());
       assert(!root);
-      dynamic_cast<StripMatrix*>(first)->transMultVertical(1.0, y, alpha, *x.first, false);
-   }
-   else {
+      dynamic_cast<StripMatrix&>(*first).transMultVertical(1.0, y, alpha, *x.first, false);
+   } else {
       if (rank == 0) {
          first->transMult(root ? beta : 1.0, y, alpha, *x.first);
          if (last)
             last->transMult(1.0, y, alpha, *x.last);
-      }
-      else if (root)
+      } else if (root)
          y.setToZero();
 
       for (size_t i = 0; i < children.size(); i++)
@@ -252,7 +262,8 @@ void StripMatrix::transMultVertical(double beta, Vector<double>& y_in, double al
    }
 }
 
-void StripMatrix::transMultHorizontal(double beta, Vector<double>& y_in, double alpha, const Vector<double>& x_in) const {
+void
+StripMatrix::transMultHorizontal(double beta, Vector<double>& y_in, double alpha, const Vector<double>& x_in) const {
 
    const auto& x = dynamic_cast<const SimpleVector<double>&>(x_in);
    auto& y = dynamic_cast<DistributedVector<double>&>(y_in);
@@ -277,7 +288,8 @@ void StripMatrix::transMultHorizontal(double beta, Vector<double>& y_in, double 
    }
 }
 
-void StripMatrix::getColMinMaxVecHorizontal(bool get_min, bool initialize_vec, const Vector<double>* row_scale, Vector<double>& minmax_in) const {
+void StripMatrix::getColMinMaxVecHorizontal(bool get_min, bool initialize_vec, const Vector<double>* row_scale,
+   Vector<double>& minmax_in) const {
    assert(!is_vertical);
    auto& minmax = dynamic_cast<DistributedVector<double>&>(minmax_in);
 
@@ -300,7 +312,8 @@ void StripMatrix::getColMinMaxVecHorizontal(bool get_min, bool initialize_vec, c
       last->getColMinMaxVec(get_min, initialize_vec, row_scale, *minmax.last);
 }
 
-void StripMatrix::getColMinMaxVecVertical(bool get_min, bool initialize_vec, const Vector<double>* row_scale_in, Vector<double>& minmax_) const {
+void StripMatrix::getColMinMaxVecVertical(bool get_min, bool initialize_vec, const Vector<double>* row_scale_in,
+   Vector<double>& minmax_) const {
    assert(is_vertical);
    const bool has_rowscale = (row_scale_in != nullptr);
 
@@ -317,7 +330,7 @@ void StripMatrix::getColMinMaxVecVertical(bool get_min, bool initialize_vec, con
          if (children[i]->is_a(kStringGenDummyMatrix))
             assert(row_scale->children[i]->isKindOf(kStochDummy));
 
-      children[i]->getColMinMaxVecVertical(get_min, false, has_rowscale ? row_scale->children[i] : nullptr, minmax);
+      children[i]->getColMinMaxVecVertical(get_min, false, has_rowscale ? row_scale->children[i].get() : nullptr, minmax);
    }
 
    if (distributed) {
@@ -327,15 +340,16 @@ void StripMatrix::getColMinMaxVecVertical(bool get_min, bool initialize_vec, con
          PIPS_MPImaxArrayInPlace(minmax.elements(), minmax.length(), mpi_comm);
    }
 
-   first->getColMinMaxVec(get_min, initialize_vec, has_rowscale ? row_scale->first : nullptr, minmax);
+   first->getColMinMaxVec(get_min, initialize_vec, has_rowscale ? row_scale->first.get() : nullptr, minmax);
 
    if (last)
-      last->getColMinMaxVec(get_min, false, has_rowscale ? row_scale->last : nullptr, minmax);
+      last->getColMinMaxVec(get_min, false, has_rowscale ? row_scale->last.get() : nullptr, minmax);
 }
 
 /** DistributedVector<double> colScaleVec, SimpleVector<double> minmaxVec */
 void
-StripMatrix::getRowMinMaxVecHorizontal(bool get_min, bool initialize_vec, const Vector<double>* col_scale_in, Vector<double>& minmax_) const {
+StripMatrix::getRowMinMaxVecHorizontal(bool get_min, bool initialize_vec, const Vector<double>* col_scale_in,
+   Vector<double>& minmax_) const {
    assert(!is_vertical);
    const bool has_colscale = (col_scale_in != nullptr);
 
@@ -351,7 +365,7 @@ StripMatrix::getRowMinMaxVecHorizontal(bool get_min, bool initialize_vec, const 
          if (children[i]->is_a(kStringGenDummyMatrix))
             assert(col_scale->children[i]->isKindOf(kStochDummy));
 
-      children[i]->getRowMinMaxVecHorizontal(get_min, false, has_colscale ? col_scale->children[i] : nullptr, minmax);
+      children[i]->getRowMinMaxVecHorizontal(get_min, false, has_colscale ? col_scale->children[i].get() : nullptr, minmax);
    }
 
    if (distributed) {
@@ -361,14 +375,15 @@ StripMatrix::getRowMinMaxVecHorizontal(bool get_min, bool initialize_vec, const 
          PIPS_MPImaxArrayInPlace(minmax.elements(), minmax.length(), mpi_comm);
    }
 
-   first->getRowMinMaxVec(get_min, initialize_vec, has_colscale ? col_scale->first : nullptr, minmax);
+   first->getRowMinMaxVec(get_min, initialize_vec, has_colscale ? col_scale->first.get() : nullptr, minmax);
 
    if (last)
-      last->getRowMinMaxVec(get_min, false, has_colscale ? col_scale->last : nullptr, minmax);
+      last->getRowMinMaxVec(get_min, false, has_colscale ? col_scale->last.get() : nullptr, minmax);
 }
 
 /** DistributedVector<double> minmaxVec, SimpleVector<double> colScaleVec */
-void StripMatrix::getRowMinMaxVecVertical(bool get_min, bool initialize_vec, const Vector<double>* col_scale, Vector<double>& minmax_in) const {
+void StripMatrix::getRowMinMaxVecVertical(bool get_min, bool initialize_vec, const Vector<double>* col_scale,
+   Vector<double>& minmax_in) const {
    assert(is_vertical);
 
    auto& minmax = dynamic_cast<DistributedVector<double>&>(minmax_in);
@@ -391,7 +406,8 @@ void StripMatrix::getRowMinMaxVecVertical(bool get_min, bool initialize_vec, con
       last->getRowMinMaxVec(get_min, initialize_vec, col_scale, *minmax.last);
 }
 
-void StripMatrix::getRowMinMaxVec(bool getMin, bool initializeVec, const Vector<double>* colScaleVec, Vector<double>& minmaxVec) const {
+void StripMatrix::getRowMinMaxVec(bool getMin, bool initializeVec, const Vector<double>* colScaleVec,
+   Vector<double>& minmaxVec) const {
    if (is_vertical)
       getRowMinMaxVecVertical(getMin, initializeVec, colScaleVec, minmaxVec);
    else
@@ -399,7 +415,8 @@ void StripMatrix::getRowMinMaxVec(bool getMin, bool initializeVec, const Vector<
 }
 
 
-void StripMatrix::getColMinMaxVec(bool getMin, bool initializeVec, const Vector<double>* rowScaleVec, Vector<double>& minmaxVec) const {
+void StripMatrix::getColMinMaxVec(bool getMin, bool initializeVec, const Vector<double>* rowScaleVec,
+   Vector<double>& minmaxVec) const {
    if (is_vertical)
       getColMinMaxVecVertical(getMin, initializeVec, rowScaleVec, minmaxVec);
    else
@@ -411,7 +428,7 @@ void StripMatrix::columnScaleVertical(const Vector<double>& vec) {
 
    first->columnScale(vec);
 
-   for (auto & i : children)
+   for (auto& i : children)
       i->columnScaleVertical(vec);
 
    if (last)
@@ -471,7 +488,7 @@ void StripMatrix::rowScaleHorizontal(const Vector<double>& vec) {
    if (last)
       last->rowScale(vec);
 
-   for (auto & i : children)
+   for (auto& i : children)
       i->rowScaleHorizontal(vec);
 }
 
@@ -516,7 +533,7 @@ void StripMatrix::addRowSumsHorizontal(Vector<double>& vec_in) const {
    assert(!is_vertical);
    auto& vec = dynamic_cast<SimpleVector<double>&>(vec_in);
 
-   for (auto i : children)
+   for (const auto& i : children)
       i->addRowSumsHorizontal(vec);
 
    if (distributed)
@@ -532,7 +549,7 @@ void StripMatrix::addColSumsVertical(Vector<double>& vec_in) const {
    assert(is_vertical);
    auto& vec = dynamic_cast<SimpleVector<double>&>(vec_in);
 
-   for (auto i : children)
+   for (const auto& i : children)
       i->addColSumsVertical(vec);
 
    if (distributed)
@@ -581,7 +598,8 @@ void StripMatrix::addColSums(Vector<double>& vec) const {
       addColSumsHorizontal(vec);
 }
 
-void StripMatrix::combineChildrenInNewChildren(const std::vector<unsigned int>& map_child_subchild, const std::vector<MPI_Comm>& child_comms) {
+void StripMatrix::combineChildrenInNewChildren(const std::vector<unsigned int>& map_child_subchild,
+   const std::vector<MPI_Comm>& child_comms) {
 
 #ifndef NDEBUG
    const unsigned int n_new_children = getNDistinctValues(map_child_subchild);
@@ -592,25 +610,24 @@ void StripMatrix::combineChildrenInNewChildren(const std::vector<unsigned int>& 
    unsigned int n_children{0};
    for (unsigned int i = 0; i < map_child_subchild.size(); ++i) {
       if (child_comms[n_children] == MPI_COMM_NULL) {
-         addChild(new StringGenDummyMatrix());
-         delete children[i];
+         addChild(std::make_unique<StringGenDummyMatrix>());
+
          while (i + 1 != map_child_subchild.size() && map_child_subchild[i] == map_child_subchild[i + 1]) {
             ++i;
-            delete children[i];
          }
-      }
-      else {
-         SparseMatrix* empty_filler = is_vertical ? new SparseMatrix(0, n, 0) : new SparseMatrix(m, 0, 0);
-         auto* new_child = new StripMatrix(is_vertical, empty_filler, nullptr, child_comms[n_children]);
+      } else {
+         std::unique_ptr<SparseMatrix> empty_filler = is_vertical ? std::make_unique<SparseMatrix>(0, n, 0) : std::make_unique<SparseMatrix>(m, 0, 0);
+         std::unique_ptr<StripMatrix> new_child = std::make_unique<StripMatrix>(is_vertical, std::move(empty_filler), nullptr, child_comms[n_children]);
 
+         StripMatrix* new_child_ptr = new_child.get();
          /* will not change size of StringGenMat since new_child is of size zero */
-         addChild(new_child);
+         addChild(std::move(new_child));
 
-         new_child->addChild(children[i]);
+         new_child_ptr->addChild(std::move(children[i]));
 
          while (i + 1 != map_child_subchild.size() && map_child_subchild[i] == map_child_subchild[i + 1]) {
             ++i;
-            new_child->addChild(children[i]);
+            new_child_ptr->addChild(std::move(children[i]));
          }
       }
 
@@ -626,23 +643,23 @@ void StripMatrix::combineChildrenInNewChildren(const std::vector<unsigned int>& 
    recomputeNonzeros();
 }
 
-GeneralMatrix* StripMatrix::shaveBottom(int n_rows) {
+std::unique_ptr<GeneralMatrix> StripMatrix::shaveBottom(int n_rows) {
    assert(!is_vertical);
    assert(first);
 
-   GeneralMatrix* mat_border = first->shaveBottom(n_rows);
-   GeneralMatrix* matlink_border = last ? last->shaveBottom(n_rows) : nullptr;
+   std::unique_ptr<GeneralMatrix> mat_border{first->shaveBottom(n_rows)};
+   std::unique_ptr<GeneralMatrix> matlink_border{last ? last->shaveBottom(n_rows) : nullptr};
 
-   auto* border = new StripMatrix(false, mat_border, matlink_border, mpi_comm);
+   std::unique_ptr<StripMatrix> border = std::make_unique<StripMatrix>(false, std::move(mat_border), std::move(matlink_border), mpi_comm);
 
 #ifndef NDEBUG
-   int mB, nB;
-   border->getSize(mB, nB);
+   const auto[mB, nB] = border->n_rows_columns();
+   (void) nB;
    assert(mB == n_rows);
 #endif
 
    for (auto& child : children)
-      border->addChild(dynamic_cast<StripMatrix*>(child->shaveBottom(n_rows)));
+      border->addChild(std::unique_ptr<StripMatrix>(dynamic_cast<StripMatrix*>(child->shaveBottom(n_rows).release())));
 
    m -= n_rows;
 
@@ -652,21 +669,21 @@ GeneralMatrix* StripMatrix::shaveBottom(int n_rows) {
    return border;
 }
 
-void StripMatrix::writeToStreamDense(std::ostream& out) const {
+void StripMatrix::write_to_streamDense(std::ostream& out) const {
    assert(!is_vertical);
    for (int i = 0; i < m; ++i) {
-      writeToStreamDenseRow(out, i);
+      write_to_streamDenseRow(out, i);
       out << "\n";
    }
 }
 
-void StripMatrix::writeToStreamDenseRow(std::ostream& out, int row) const {
+void StripMatrix::write_to_streamDenseRow(std::ostream& out, int row) const {
    assert(!is_vertical);
 
    const int my_rank = PIPS_MPIgetRank(mpi_comm);
 
    std::ostringstream row_stream{};
-   first->writeToStreamDenseRow(row_stream, row);
+   first->write_to_streamDenseRow(row_stream, row);
 
    if (my_rank != 0) {
       row_stream.str("");
@@ -674,7 +691,7 @@ void StripMatrix::writeToStreamDenseRow(std::ostream& out, int row) const {
    }
 
    for (auto& child : children)
-      child->writeToStreamDenseRow(row_stream, row);
+      child->write_to_streamDenseRow(row_stream, row);
 
    const std::string my_row_part = row_stream.str();
    const std::string full_row = PIPS_MPIallgatherString(my_row_part, mpi_comm);
@@ -683,7 +700,7 @@ void StripMatrix::writeToStreamDenseRow(std::ostream& out, int row) const {
       out << full_row;
 
    if (last && my_rank == 0)
-      last->writeToStreamDenseRow(out, row);
+      last->write_to_streamDenseRow(out, row);
 }
 
 void StripMatrix::writeDashedLineToStream(std::ostream& out) const {
@@ -719,9 +736,7 @@ void StripMatrix::splitAlongTree(const DistributedTreeCallbacks& tree) {
    assert(tree.getChildComms().size() == children.size());
 
    for (size_t i = 0; i < children.size(); ++i) {
-      auto& child = children[i];
-      auto* new_child = new StripMatrix(is_vertical, child, nullptr, tree.getChildComms()[i]);
-      child = new_child;
+      children[i] = std::make_unique<StripMatrix>(is_vertical, std::move(children[i]), nullptr, tree.getChildComms()[i]);
    }
 
    assert(children.size() == tree.getChildren().size());
@@ -729,12 +744,11 @@ void StripMatrix::splitAlongTree(const DistributedTreeCallbacks& tree) {
    for (size_t i = 0; i < tree_children.size(); ++i) {
       const auto& tree_child = tree_children[i];
       if (tree_child->getCommWorkers() == MPI_COMM_NULL) {
-         delete children[i];
-         children[i] = new StringGenDummyMatrix();
-      }
-      else if (tree_child->getSubRoot()) {
+         children[i] = std::make_unique<StringGenDummyMatrix>();
+      } else if (tree_child->getSubRoot()) {
          assert(children[i]->first->is_a(kStripMatrix));
-         dynamic_cast<StripMatrix*>(children[i]->first)->splitAlongTree(dynamic_cast<const DistributedTreeCallbacks&>(*tree_child->getSubRoot()));
+         dynamic_cast<StripMatrix&>(*children[i]->first).splitAlongTree(
+            dynamic_cast<const DistributedTreeCallbacks&>(*tree_child->getSubRoot()));
       }
    }
 

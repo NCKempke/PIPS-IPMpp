@@ -6,9 +6,6 @@
  */
 
 #include "PardisoProjectSolver.h"
-#include "pipsdef.h"
-
-#include "mpi.h"
 
 extern "C" void pardisoinit(void*, const int*, int*, int*, double*, int*);
 extern "C" void
@@ -19,7 +16,7 @@ extern "C" void pardiso_chkmatrix(int*, int*, double*, int*, int*, int*);
 extern "C" void pardiso_chkvec(int*, int*, double*, int*);
 extern "C" void pardiso_printstats(int*, int*, double*, int*, int*, int*, double*, int*);
 
-PardisoProjectSolver::PardisoProjectSolver(const SparseSymmetricMatrix* sgm) : PardisoSolver(sgm) {
+PardisoProjectSolver::PardisoProjectSolver(const SparseSymmetricMatrix& sgm) : PardisoSolver(sgm) {
 #ifdef TIMING
    if( PIPS_MPIgetRank() == 0 )
       std::cout << "PardisoProjectSolver::PardisoProjectSolver (sparse input)\n";
@@ -29,7 +26,7 @@ PardisoProjectSolver::PardisoProjectSolver(const SparseSymmetricMatrix* sgm) : P
    solver = 0; /* sparse direct solver */
 }
 
-PardisoProjectSolver::PardisoProjectSolver(const DenseSymmetricMatrix* m) : PardisoSolver(m) {
+PardisoProjectSolver::PardisoProjectSolver(const DenseSymmetricMatrix& m) : PardisoSolver(m) {
 #ifdef TIMING
    if( myRank == PIPS_MPIgetRank() )
      std::cout << "PardisoProjectSolver created (dense input)\n";

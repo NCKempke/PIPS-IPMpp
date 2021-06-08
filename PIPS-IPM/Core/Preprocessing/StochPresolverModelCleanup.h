@@ -9,13 +9,12 @@
 #define PIPS_IPM_CORE_QPPREPROCESS_STOCHPRESOLVERMODELCLEANUP_H_
 
 #include "StochPresolverBase.h"
-#include "pipsport.h"
 
 class StochPresolverModelCleanup : public StochPresolverBase {
 public:
    StochPresolverModelCleanup(PresolveData& presolve_data, const DistributedQP& origProb);
 
-   virtual ~StochPresolverModelCleanup();
+   ~StochPresolverModelCleanup() override = default;
 
    // remove small matrix entries
    bool applyPresolving() override;

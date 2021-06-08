@@ -4,7 +4,6 @@
 #include "DoubleLinearSolver.h"
 #include "AbstractMatrix.h"
 #include "SimpleVector.h"
-#include "pipsport.h"
 
 class MatTimesVec;
 
@@ -19,7 +18,7 @@ public:
     */
    BiCGStabSolver(MatTimesVec* A, MatTimesVec* M1, MatTimesVec* M2 = nullptr);
 
-   virtual ~BiCGStabSolver() {};
+   ~BiCGStabSolver() override = default;;
 
    /** version of the main solve routine that takes argument as an
     * Vector<double>
@@ -27,15 +26,16 @@ public:
     * @param drhs on input contains the right-hand side; on output
     * contains the solution
     */
+    using DoubleLinearSolver::solve;
    void solve(Vector<double>& rhs);
 
 protected:
-   BiCGStabSolver() {};
+   BiCGStabSolver() = default;
 
-   double tol;
-   double iter;
-   int maxit;
-   int flag;
+   double tol{};
+   double iter{};
+   int maxit{};
+   int flag{};
 };
 
 

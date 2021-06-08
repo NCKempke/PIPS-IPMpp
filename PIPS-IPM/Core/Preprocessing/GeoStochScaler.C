@@ -14,7 +14,7 @@
 static const double maxobjscale = 100.0;
 
 
-GeoStochScaler::GeoStochScaler(Problem* prob, bool equiScaling, bool bitshifting) : StochScaler(prob, bitshifting) {
+GeoStochScaler::GeoStochScaler(const Problem& problem, bool equiScaling, bool bitshifting) : StochScaler(problem, bitshifting) {
    if (PIPS_MPIgetRank() == 0 && scaling_output)
       std::cout << "Creating GeoStochScaler... bitshifting=" << bitshifting << " equiscaling=" << equiScaling << "\n";
    equilibrate = equiScaling;
@@ -217,7 +217,7 @@ void GeoStochScaler::applyGeoMean(Vector<double>& maxvec, const Vector<double>& 
    assert(maxvec.length() == minvec.length());
 
    maxvec.componentMult(minvec);
-   maxvec.applySqrt();
+   maxvec.sqrt();
 }
 
 /** apply Equilibrium Scaling after having done Geometric Scaling.

@@ -12,29 +12,22 @@
 
 class Problem;
 
-
 /**  * @defgroup QpPreprocess
  *
- * QP scaler
+ * scaler
  * @{
  */
 
-/**
- * Derived class for QP scalers.
- */
 class EquiStochScaler : public StochScaler {
 protected:
    void doObjScaling() override;
 
 public:
-   EquiStochScaler(Problem* prob, bool bitshifting = true);
+   EquiStochScaler(const Problem& problem, bool bitshifting = true);
    ~EquiStochScaler() override = default;
 
    /** scale */
    void scale() override;
 };
-
-//@}
-
 
 #endif /* PIPS_IPM_CORE_QPPREPROCESS_EQUISTOCHSCALER_H_ */
