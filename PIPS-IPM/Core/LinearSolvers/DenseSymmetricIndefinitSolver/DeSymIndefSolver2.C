@@ -41,7 +41,7 @@ void DeSymIndefSolver2::matrixChanged() {
    */
 
 
-   FNAME(dpotrf)(&fortranUplo, &nx, mat, &n, &info);
+   dpotrf(&fortranUplo, &nx, mat, &n, &info);
    if (info != 0) {
       std::cerr << "error factoring Q block: info = " << info << "\n";
    }
@@ -51,15 +51,15 @@ void DeSymIndefSolver2::matrixChanged() {
 
    printf("dtrsm\n");
 
-   FNAME(dtrsm)(&fortranL, &fortranUplo, &fortranT, &fortranN, &nx, &ny, &one, mat, &n, mat + nx * n, &n);
+   dtrsm(&fortranL, &fortranUplo, &fortranT, &fortranN, &nx, &ny, &one, mat, &n, mat + nx * n, &n);
 
    printf("dsyrk\n");
 
-   FNAME(dsyrk)(&fortranUplo, &fortranT, &ny, &nx, &one, mat + nx * n, &n, &zero, mat + nx * n + nx, &n);
+   dsyrk(&fortranUplo, &fortranT, &ny, &nx, &one, mat + nx * n, &n, &zero, mat + nx * n + nx, &n);
 
    printf("dpotrf2\n");
 
-   FNAME(dpotrf)(&fortranUplo, &ny, mat + nx * n + nx, &n, &info);
+   dpotrf(&fortranUplo, &ny, mat + nx * n + nx, &n, &info);
    if (info != 0) {
       std::cerr << "error factoring AQ^-1A^T block: info = " << info << "\n";
    }
@@ -82,12 +82,12 @@ void DeSymIndefSolver2::solve(Vector<double>& v) {
    SimpleVector<double>& sv = dynamic_cast<SimpleVector<double>&>(v);
    double* rhs = &sv[0];
 
-   FNAME(dtrsv)(&fortranUplo, &fortranT, &fortranN, &n, mat, &n, rhs, &one);
+   dtrsv(&fortranUplo, &fortranT, &fortranN, &n, mat, &n, rhs, &one);
 
    if (ny > 0)
-      FNAME(dscal)(&ny, &minus1, rhs + nx, &one);
+      dscal(&ny, &minus1, rhs + nx, &one);
 
-   FNAME(dtrsv)(&fortranUplo, &fortranN, &fortranN, &n, mat, &n, rhs, &one);
+   dtrsv(&fortranUplo, &fortranN, &fortranN, &n, mat, &n, rhs, &one);
 
    printf("finished rhs solve\n");
 

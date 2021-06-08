@@ -90,7 +90,7 @@ void DenseMatrix::mult(double beta, double y[], int incy, double alpha, const do
    char fortranTrans = 'T';
    int n = mStorage->n, m = mStorage->m;
 
-   dgemv_(&fortranTrans, &n, &m, &alpha, &mStorage->M[0][0], &n, x, &incx, &beta, y, &incy);
+   dgemv(&fortranTrans, &n, &m, &alpha, &mStorage->M[0][0], &n, x, &incx, &beta, y, &incy);
 }
 
 void DenseMatrix::mult(double beta, Vector<double>& y_in, double alpha, const Vector<double>& x_in) const {
@@ -103,7 +103,7 @@ void DenseMatrix::mult(double beta, Vector<double>& y_in, double alpha, const Ve
    auto& y = dynamic_cast<SimpleVector<double>&>(y_in);
 
    if (n != 0 && m != 0) {
-      dgemv_(&fortranTrans, &n, &m, &alpha, &M[0][0], &n, &x[0], &incx, &beta, &y[0], &incy);
+      dgemv(&fortranTrans, &n, &m, &alpha, &M[0][0], &n, &x[0], &incx, &beta, &y[0], &incy);
    }
    else {
       if (m != 0)
@@ -117,7 +117,7 @@ void DenseMatrix::transMult(double beta, double y[], int incy, double alpha, con
    int n = mStorage->n, m = mStorage->m;
    double** M = mStorage->M;
 
-   dgemv_(&fortranTrans, &n, &m, &alpha, &M[0][0], &n, x, &incx, &beta, y, &incy);
+   dgemv(&fortranTrans, &n, &m, &alpha, &M[0][0], &n, x, &incx, &beta, y, &incy);
 }
 
 void DenseMatrix::transMult(double beta, Vector<double>& y_in, double alpha, const Vector<double>& x_in) const {
@@ -129,7 +129,7 @@ void DenseMatrix::transMult(double beta, Vector<double>& y_in, double alpha, con
    int incx = 1, incy = 1;
 
    if (m != 0 && n != 0) {
-      dgemv_(&fortranTrans, &n, &m, &alpha, &M[0][0], &n, &x[0], &incx, &beta, &y[0], &incy);
+      dgemv(&fortranTrans, &n, &m, &alpha, &M[0][0], &n, &x[0], &incx, &beta, &y[0], &incy);
    }
    else {
       if (n != 0) {

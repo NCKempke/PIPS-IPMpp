@@ -274,10 +274,11 @@ void DistributedRootLinearSystem::finalizeZ0Hierarchical(DenseMatrix& buffer, Bo
       assert(end_rows - begin_rows <= buffer.n_rows());
    else
       assert(end_rows <= buffer.n_rows());
-
-   if (!Br.has_RAC && !Br.use_local_RAC) {
-      return;
-   }
+// TODO : why was this here?
+//   if (!Br.has_RAC && !Br.use_local_RAC) {
+//      std::cout << "early quitting" << std::endl;
+//      return;
+//   }
 
    bool has_RAC = Br.has_RAC;
 
@@ -432,8 +433,9 @@ void DistributedRootLinearSystem::finalizeInnerSchurComplementContribution(Abstr
       assert(is_sym);
 
    const bool has_RAC = Br.has_RAC;
-   if (!has_RAC && !Br.use_local_RAC)
-      return;
+// why was this here?
+//   if (!has_RAC && !Br.use_local_RAC)
+//      return;
 
    const SparseMatrix* F0cons_border = has_RAC ? dynamic_cast<SparseMatrix*>(Br.F.first.get()) : nullptr;
    const SparseMatrix* G0cons_border = has_RAC ? dynamic_cast<SparseMatrix*>(Br.G.first.get()) : nullptr;

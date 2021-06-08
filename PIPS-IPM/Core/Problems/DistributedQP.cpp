@@ -642,7 +642,6 @@ std::unique_ptr<SparseSymmetricMatrix> DistributedQP::createSchurCompSymbSparseU
    const int nnz = getSchurCompMaxNnz();
 
    assert(nnz > 0);
-   assert(myl >= 0 && mzl >= 0);
 
    int* krowM = new int[sizeSC + 1];
    int* jcolM = new int[nnz];
@@ -944,15 +943,18 @@ Permutation DistributedQP::get0VarsLastGlobalsFirstPermutation(std::vector<int>&
       if (link_vars_n_blocks[i] > threshold_global_vars) {
          ++n_globals;
          permvec[count++] = i;
-      } else if (link_vars_n_blocks[i] == 0)
+      } else if (link_vars_n_blocks[i] == 0) {
          permvec[back_count--] = i;
+      }
    }
 
-   for (size_t i = 0; i < n_link_vars; ++i) {
-      if (link_vars_n_blocks[i] == -1 ||
-         (link_vars_n_blocks[i] > 0 && link_vars_n_blocks[i] <= threshold_global_vars)) {
-         assert(count <= back_count);
-         permvec[count++] = i;
+   if (threshold_global_vars >= -1) {
+      for (size_t i = 0; i < n_link_vars; ++i) {
+         if (link_vars_n_blocks[i] == -1 ||
+            (link_vars_n_blocks[i] > 0 && link_vars_n_blocks[i] <= threshold_global_vars)) {
+            assert(count <= back_count);
+            permvec[count++] = i;
+         }
       }
    }
    assert(count == back_count + 1);
@@ -1226,7 +1228,6 @@ void DistributedQP::destroyChildren() {
 
 DistributedQP* DistributedQP::shaveBorderFromDataAndCreateNewTop(const DistributedTree* tree) {
    assert(tree->nChildren() == 1);
-
    std::unique_ptr<SymmetricMatrix> Q_hier(
       dynamic_cast<DistributedSymmetricMatrix&>(*Q).raiseBorder(n_global_linking_vars));
 
@@ -1914,6 +1915,10 @@ void DistributedQP::activateLinkStructureExploitation() {
       return (blocks == 0);
    });
 
+   if (threshold_global_vars <= 0) {
+      n0LinkVars = 0;
+   }
+
    n2LinksEq = std::count_if(linkStartBlockIdA.begin(), linkStartBlockIdA.end(), [](int blocks) {
       return (blocks >= 0);
    });
@@ -1927,7 +1932,9 @@ void DistributedQP::activateLinkStructureExploitation() {
    for (int i : n_blocks_per_link_var)
       if (i == 0)
          n0LinkVars_cpy++;
-
+   if (threshold_global_vars <= 0) {
+      n0LinkVars_cpy = 0;
+   }
    int n2LinksEq_cpy = 0;
    for (int i : linkStartBlockIdA)
       if (i >= 0)
@@ -1992,6 +1999,7 @@ void DistributedQP::activateLinkStructureExploitation() {
       permuteLinkingCons(linkConsPermutationA, linkConsPermutationC);
 
       assert(linkVarsPermutation.empty());
+      //n0LinkVars = 0;
       linkVarsPermutation = get0VarsLastGlobalsFirstPermutation(n_blocks_per_link_var, n_global_linking_vars);
       permuteLinkingVars(linkVarsPermutation);
    }

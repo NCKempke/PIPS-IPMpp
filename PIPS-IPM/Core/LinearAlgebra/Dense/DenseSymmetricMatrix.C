@@ -92,7 +92,7 @@ void DenseSymmetricMatrix::mult(double beta, double y[], int incy, double alpha,
    char fortranUplo = 'U';
    int n = mStorage->n;
 
-   dsymv_(&fortranUplo, &n, &alpha, &mStorage->M[0][0], &n, x, &incx, &beta, y, &incy);
+   dsymv(&fortranUplo, &n, &alpha, &mStorage->M[0][0], &n, x, &incx, &beta, y, &incy);
 }
 
 void DenseSymmetricMatrix::mult(double beta, Vector<double>& y_in, double alpha, const Vector<double>& x_in) const {
@@ -103,7 +103,7 @@ void DenseSymmetricMatrix::mult(double beta, Vector<double>& y_in, double alpha,
    int incx = 1, incy = 1;
 
    if (n != 0) {
-      dsymv_(&fortranUplo, &n, &alpha, &mStorage->M[0][0], &n, &x[0], &incx, &beta, &y[0], &incy);
+      dsymv(&fortranUplo, &n, &alpha, &mStorage->M[0][0], &n, &x[0], &incx, &beta, &y[0], &incy);
    }
 }
 
@@ -248,7 +248,7 @@ void DenseSymmetricMatrix::matMult(double alpha, GeneralMatrix& A_, int transA, 
    double** BB = B.mStorage->M;
    double** CC = C.mStorage->M;
 
-   dgemm_(&forTransA, &forTransB, &m, &n, &k, &alpha, &AA[0][0], &m, &BB[0][0], &n, &beta, &CC[0][0], &ldc);
+   dgemm(&forTransA, &forTransB, &m, &n, &k, &alpha, &AA[0][0], &m, &BB[0][0], &n, &beta, &CC[0][0], &ldc);
 }
 
 void DenseSymmetricMatrix::symAtPutSubmatrix(int destRow, int destCol, const AbstractMatrix& Mat, int srcRow, int srcCol, int rowExtent, int colExtent,

@@ -69,7 +69,6 @@ void DistributedLeafLinearSystem::create_kkt() {
       kkt->symAtPutSubmatrix(locnx + locmy, 0, data->getLocalD(), 0, 0, locmz, locnx);
    } else
       kkt->symAtPutSubmatrix(locnx, 0, data->getLocalB(), 0, 0, locmy, locnx);
-//      mySymAtPutSubmatrix(*kkt_sp, data->getLocalB(), locnx, locmy, locmz);
 }
 
 void DistributedLeafLinearSystem::factor2() {
