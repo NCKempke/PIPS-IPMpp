@@ -45,7 +45,7 @@ TerminationStatus InteriorPointMethod::solve(Problem& problem, Variables& iterat
    int iteration = 0;
    while (!termination) {
       if (iteration >= max_iterations - 1) {
-         status = MAX_ITS_EXCEEDED;
+         status = TerminationStatus::MAX_ITS_EXCEEDED;
          termination = true;
       }
       else {
@@ -58,7 +58,7 @@ TerminationStatus InteriorPointMethod::solve(Problem& problem, Variables& iterat
          this->update_history(duality_gap, residual_norm, iteration, mu);
          status = this->compute_status(duality_gap, residual_norm, iteration, mu);
 
-         if (status == NOT_FINISHED) {
+         if (status == TerminationStatus::NOT_FINISHED) {
             // run Gondzio's multiple corrector scheme
             this->factory.iterate_started();
             this->mehrotra_strategy->corrector_predictor(problem, iterate, residuals, *step, *linear_system, iteration);
@@ -111,11 +111,11 @@ void InteriorPointMethod::update_history(double duality_gap, double residual_nor
 
 TerminationStatus InteriorPointMethod::compute_status(double duality_gap, double residual_norm, int iteration, double mu) {
    const int myrank = PIPS_MPIgetRank();
-   TerminationStatus status = NOT_FINISHED;
+   TerminationStatus status = TerminationStatus::NOT_FINISHED;
    double phi = (residual_norm + duality_gap) / dnorm_orig;
 
    if (mu <= mutol && residual_norm <= artol * dnorm_orig)
-      status = SUCCESSFUL_TERMINATION;
+      status = TerminationStatus::SUCCESSFUL_TERMINATION;
 
    if (myrank == 0) {
       std::cout << "mu/mutol: " << mu << "  " << mutol << "  ....   rnorm/limit: " << residual_norm << " " << artol * dnorm_orig << std::endl;
@@ -126,7 +126,7 @@ TerminationStatus InteriorPointMethod::compute_status(double duality_gap, double
       }
    }
 
-   if (status != NOT_FINISHED)
+   if (status != TerminationStatus::NOT_FINISHED)
       return status;
 
    // check infeasibility condition
@@ -135,21 +135,21 @@ TerminationStatus InteriorPointMethod::compute_status(double duality_gap, double
       if( myrank == 0 )
          std::cout << "possible INFEASIBLITY detected, phi: " << phi << std::endl;
 #endif
-      status = INFEASIBLE;
+      status = TerminationStatus::INFEASIBLE;
    }
 
-   if (status != NOT_FINISHED)
+   if (status != TerminationStatus::NOT_FINISHED)
       return status;
 
    // check for unknown status: slow convergence first
    if (iteration >= 350 && phi_min_history[iteration] >= 0.5 * phi_min_history[iteration - 30]) {
-      status = UNKNOWN;
+      status = TerminationStatus::UNKNOWN;
       printf("dnorm=%g rnorm=%g artol=%g\n", residual_norm, dnorm_orig, artol);
    }
 
    if (iteration >= 350 && residual_norm > artol * dnorm_orig &&
        residual_norm_history[iteration] * mu_history[0] >= 1.e8 * mu_history[iteration] * residual_norm_history[0]) {
-      status = UNKNOWN;
+      status = TerminationStatus::UNKNOWN;
       printf("dnorm=%g rnorm=%g artol=%g\n", residual_norm, dnorm_orig, artol);
    }
 

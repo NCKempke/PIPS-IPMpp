@@ -92,7 +92,7 @@ private:
 public:
    /// synchronization events
 
-   PostsolveStatus postsolve(const Variables& reduced_solution, Variables& original_solution, int result_code) override;
+   PostsolveStatus postsolve(const Variables& reduced_solution, Variables& original_solution, TerminationStatus result_code) override;
 private:
 
    const int my_rank{PIPS_MPIgetRank()};

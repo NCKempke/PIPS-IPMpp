@@ -33,7 +33,7 @@ public:
    virtual double compute_centering_parameter(Variables& iterate, Variables& step) = 0;
    virtual void
    print_statistics(const Problem* problem, const Variables* iterate, const Residuals* residuals, double dnorm, double sigma, int i, double mu,
-         int stop_code, int level) = 0;
+      TerminationStatus stop_code, int level) = 0;
    virtual void take_step(Variables& iterate, Variables& step) = 0;
    virtual void
    gondzio_correction_loop(Problem& problem, Variables& iterate, Residuals& residuals, Variables& step, AbstractLinearSystem& linear_system,
@@ -121,7 +121,7 @@ protected:
    void adjust_limit_gondzio_correctors();
    void check_numerical_troubles(Residuals* residuals, bool& numerical_troubles, bool& small_corr) const;
    void print_statistics(const Problem* problem, const Variables* iterate, const Residuals* residuals, double dnorm, double alpha_primal,
-         double alpha_dual, double sigma, int i, double mu, int stop_code, int level);
+         double alpha_dual, double sigma, int i, double mu, TerminationStatus stop_code, int level);
    void notify_from_subject() override;
 };
 
@@ -141,7 +141,7 @@ public:
    void compute_probing_step(Variables& probing_step, const Variables& iterate, const Variables& step) const override;
    [[nodiscard]] std::pair<double, double> get_step_lengths() const override;
    void print_statistics(const Problem* problem, const Variables* iterate, const Residuals* residuals, double dnorm, double sigma, int i, double mu,
-         int stop_code, int level) override;
+      TerminationStatus stop_code, int level) override;
 
 protected:
    double primal_step_length;
@@ -164,7 +164,7 @@ public:
    void compute_probing_step(Variables& probing_step, const Variables& iterate, const Variables& step) const override;
    std::pair<double, double> get_step_lengths() const override;
    void print_statistics(const Problem* problem, const Variables* iterate, const Residuals* residuals, double dnorm, double sigma, int i, double mu,
-         int stop_code, int level) override;
+      TerminationStatus stop_code, int level) override;
 
 protected:
    double primal_step_length;
