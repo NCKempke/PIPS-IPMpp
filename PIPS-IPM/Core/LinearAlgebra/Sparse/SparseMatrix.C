@@ -341,8 +341,8 @@ void SparseMatrix::matTransDMultMat(const Vector<double>& d_, SymmetricMatrix** 
    int n = mStorage->n;
    int nnz = mStorage->numberOfNonZeros();
 
-   if (*res == nullptr) {
-      assert(m_Mt == nullptr);
+   if (!*res) {
+      assert(!m_Mt);
       //we need to form the transpose
       m_Mt = std::make_unique<SparseMatrix>(n, m, nnz);
       mStorage->transpose(m_Mt->krowM(), m_Mt->jcolM(), m_Mt->M());
@@ -413,6 +413,8 @@ void SparseMatrix::matTransDinvMultMat(const Vector<double>& d_, SymmetricMatrix
 
    mStorage->matTransDinvMultMat(&d[0], m_Mt->krowM(), m_Mt->jcolM(), m_Mt->M(), MtDM->krowM(), MtDM->jcolM(),
       MtDM->M());
+
+   assert(mStorage->isValid());
 }
 
 void SparseMatrix::matMultTrans(SymmetricMatrix** res) const {
@@ -497,8 +499,11 @@ void SparseMatrix::addRowSums(Vector<double>& sumVec) const {
 }
 
 void SparseMatrix::addColSums(Vector<double>& sumVec) const {
+   if (!m_Mt)
+      initTransposed();
+
    assert(m_Mt);
-   assert(m_Mt->mStorageDynamic == nullptr && m_Mt->mStorage != nullptr);
+   assert(!m_Mt->mStorageDynamic && m_Mt->mStorage);
 
    auto& vec = dynamic_cast<SimpleVector<double>&>(sumVec);
    assert(vec.length() == m_Mt->mStorage->m);
