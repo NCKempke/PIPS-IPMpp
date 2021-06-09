@@ -3821,6 +3821,9 @@ void PresolveData::transform_inequalities_into_equalities(int node, bool linking
    std::vector<int> diagonal_for_identity = get_slack_diagonal_for_inequality_equality_tranformation(node, linking);
    const int n_new_slacks = static_cast<int>(diagonal_for_identity.size());
 
+   if (n_new_slacks == 0)
+      return;
+
    if (linking) {
       transform_linking_matrices_inequalities_into_equalities(n_new_slacks, diagonal_for_identity);
    } else {
@@ -3949,6 +3952,7 @@ std::vector<int> PresolveData::get_slack_diagonal_for_inequality_equality_tranfo
    SparseMatrix& mat = *getSparseGenMatrixFromStochMat(getSystemMatrix(INEQUALITY_SYSTEM), node, linking ? BL_MAT : B_MAT);
    const int n_new_slack_variables = mat.n_rows();
 
+   assert(n_new_slack_variables >= 0);
    std::vector<int> diagonal_for_identity(n_new_slack_variables, 0);
    for (int i = 0; i < mat.n_rows(); ++i) {
       if (!wasRowRemoved(INDEX(ROW, node, i, linking, INEQUALITY_SYSTEM))) {
