@@ -714,11 +714,11 @@ void StochPostsolver::markRowAdded(const INDEX& row) {
 // todo : usage and check of padding origrow - can already be done - even without any dual postsolve stuff
 // todo : sort reductions by nodes ? and then reverse ?
 PostsolveStatus
-StochPostsolver::postsolve(const Variables& reduced_solution, Variables& original_solution, int result_code) {
+StochPostsolver::postsolve(const Variables& reduced_solution, Variables& original_solution, TerminationStatus result_code) {
    if (my_rank == 0)
       std::cout << "start postsolving...\n";
 
-   if (result_code != 0) {
+   if (result_code != TerminationStatus::SUCCESSFUL_TERMINATION) {
       if (my_rank != 0)
          std::cout << "prostsolving non-optimal solution - will not check tolerances\n";
 
@@ -948,7 +948,7 @@ bool StochPostsolver::postsolveRedundantRow(DistributedVariables& original_vars,
                "Postsolve Warning: when reintroducing a redundant equality row it did not meet its rhs with feastol: %f != %f",
                value_row,
                rhs);
-      assert(PIPSisEQ(value_row, rhs, postsolve_tol));
+      assert(PIPSisEQ(value_row, rhs, postsolve_tol * 10));
 
       /* set dual multiplier to zero and mark row as added */
       getSimpleVecFromRowStochVec(*original_vars.equality_duals, row) = 0;

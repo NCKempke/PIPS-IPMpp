@@ -9,6 +9,7 @@
 #include <string>
 #include <memory>
 
+#include "TerminationStatus.h"
 #include "MehrotraStrategyType.h"
 #include "pipsdef.h"
 #include "PreprocessType.h"
@@ -34,7 +35,7 @@ public:
 
    ~PIPSIPMppInterface();
 
-   void run();
+   TerminationStatus run();
 
    double getObjective();
 
@@ -98,7 +99,7 @@ protected:
 
    MPI_Comm comm = MPI_COMM_NULL;
    const int my_rank = -1;
-   int result{-1};
+   TerminationStatus result{TerminationStatus::DID_NOT_RUN};
    bool ran_solver = false;
 };
 

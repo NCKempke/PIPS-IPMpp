@@ -4,9 +4,10 @@
  *  Created on: 03.05.2019
  *      Author: bzfkempk
  */
-
 #ifndef QPPOSTSOLVER_H
 #define QPPOSTSOLVER_H
+
+#include "TerminationStatus.h"
 
 class Problem;
 
@@ -22,11 +23,11 @@ enum PostsolveStatus {
 
 class Postsolver {
 public:
-   Postsolver(const Problem& problem);
+   explicit Postsolver(const Problem& problem);
    virtual ~Postsolver() = default;
 
    /** postsolve reduced solution and set original solution accordingly */
-   virtual PostsolveStatus postsolve(const Variables& reduced_solution, Variables& original_solution, int result_code) = 0;
+   virtual PostsolveStatus postsolve(const Variables& reduced_solution, Variables& original_solution, TerminationStatus result_code) = 0;
 
 protected:
    const Problem& original_problem;

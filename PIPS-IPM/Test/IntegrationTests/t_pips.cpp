@@ -49,10 +49,10 @@ public:
 
    std::string gams_path;
 
-   void solveInstanceAndCheckResult(double expected_result, const std::string& path, size_t n_blocks,
+   void solveInstanceAndCheckResult(double expected_objective, const std::string& path, size_t n_blocks,
       PresolverType presolver_type, ScalerType scaler_type, MehrotraStrategyType primal_dual_type);
 
-   [[nodiscard]] std::pair<double, std::string>
+   [[nodiscard]] std::tuple<TerminationStatus, double, std::string>
    solveInstance(const std::string& path_instance, size_t n_blocks, PresolverType presolver, ScalerType scaler,
       MehrotraStrategyType primal_dual_type) const;
 };
@@ -64,7 +64,7 @@ std::vector<Instance> getInstances() {
 }
 
 
-std::pair<double, std::string>
+std::tuple<TerminationStatus, double, std::string>
 ScenarioTests::solveInstance(const std::string& path_instance, size_t n_blocks, PresolverType presolver,
    ScalerType scaler, MehrotraStrategyType primal_dual_type) const {
    testing::internal::CaptureStdout();
@@ -74,21 +74,23 @@ ScenarioTests::solveInstance(const std::string& path_instance, size_t n_blocks, 
 
    pipsipmpp_options::set_bool_parameter("GONDZIO_ADAPTIVE_LINESEARCH", false);
 
-   double result = std::numeric_limits<double>::infinity();
+   double objective = std::numeric_limits<double>::infinity();
 
    PIPSIPMppInterface pipsIpm(tree.get(), primal_dual_type, MPI_COMM_WORLD, scaler, presolver);
+
+   TerminationStatus result = TerminationStatus::DID_NOT_RUN;
    try {
-      pipsIpm.run();
-      result = pipsIpm.getObjective();
+      result = pipsIpm.run();
+      objective = pipsIpm.getObjective();
    }
    catch (...) {
       EXPECT_TRUE(false) << " PIPS threw while solving " << path_instance;
    }
    std::string output = testing::internal::GetCapturedStdout();
-   return {result, output};
+   return {result, objective, output};
 };
 
-void ScenarioTests::solveInstanceAndCheckResult(double expected_result, const std::string& path, size_t n_blocks,
+void ScenarioTests::solveInstanceAndCheckResult(double expected_objective, const std::string& path, size_t n_blocks,
    PresolverType presolver_type, ScalerType scaler_type, MehrotraStrategyType primal_dual_type) {
 
    ASSERT_GE(world_size, 1);
@@ -96,9 +98,10 @@ void ScenarioTests::solveInstanceAndCheckResult(double expected_result, const st
    if (static_cast<size_t>(world_size) >= n_blocks)
       GTEST_SKIP();
 
-   const auto[result_solve, output_solve] = solveInstance(path, n_blocks, presolver_type, scaler_type, primal_dual_type);
+   const auto[result, objective_solve, output_solve] = solveInstance(path, n_blocks, presolver_type, scaler_type, primal_dual_type);
 
-   EXPECT_NEAR(expected_result, result_solve, solution_tol) << " while solving " << path << "\nOutput_run: " << output_solve << "\n";
+   EXPECT_EQ(result, TerminationStatus::SUCCESSFUL_TERMINATION);
+   EXPECT_NEAR(expected_objective, objective_solve, solution_tol) << " while solving " << path << "\nOutput_run: " << output_solve << "\n";
 }
 
 TEST_P(ScenarioTests, TestGamssmallPrimalDualStepScaleGeo) {

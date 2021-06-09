@@ -128,7 +128,7 @@ scaler_type, PresolverType presolver_type, const std::string& settings) : comm(c
 
 PIPSIPMppInterface::~PIPSIPMppInterface() = default;;
 
-void PIPSIPMppInterface::run() {
+TerminationStatus PIPSIPMppInterface::run() {
    if (my_rank == 0)
       std::cout << "solving ...\n";
 
@@ -164,7 +164,7 @@ void PIPSIPMppInterface::run() {
    //---------------------------------------------
 #endif
 
-   if (result != 0 && my_rank == 0)
+   if (result != TerminationStatus::SUCCESSFUL_TERMINATION && my_rank == 0)
       std::cout << "failed to solve instance, result code: " << result << "\n";
 
    ran_solver = true;
@@ -198,6 +198,8 @@ void PIPSIPMppInterface::run() {
 #if !defined(NDEBUG) && defined(PRESOLVE_POSTSOLVE_ONLY)
    postsolveComputedSolution();
 #endif
+
+   return result;
 }
 
 double PIPSIPMppInterface::getObjective() {

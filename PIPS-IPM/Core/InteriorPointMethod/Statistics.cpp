@@ -14,13 +14,13 @@ Statistics::Statistics(const DistributedFactory& factory, const Scaler* scaler) 
 }
 
 void Statistics::print(const Problem* problem, const Variables* variables, const Residuals* residuals, double dnorm, double alpha, double sigma, int i,
-      double mu, int status_code, int level) {
+      double mu, TerminationStatus status_code, int level) {
    Statistics::print(problem, variables, residuals, dnorm, alpha, -1.0, sigma, i, mu, status_code, level);
 }
 
 void
 Statistics::print(const Problem* problem, const Variables* variables, const Residuals* residuals, double dnorm, double alpha_primal, double alpha_dual,
-      double sigma, int i, double mu, int status_code, int level) const {
+      double sigma, int i, double mu, TerminationStatus status_code, int level) const {
    double objective = problem->objective_value(*variables);
 
    const Residuals* unscaled_residuals = residuals;
@@ -63,17 +63,23 @@ Statistics::print(const Problem* problem, const Variables* variables, const Resi
          if (level == 1) {
             // Termination has been detected by the status check; print appropriate message
             switch (status_code) {
-               case SUCCESSFUL_TERMINATION:
+               case TerminationStatus::SUCCESSFUL_TERMINATION:
                   std::cout << "\n *** SUCCESSFUL TERMINATION ***\n";
                   break;
-               case MAX_ITS_EXCEEDED:
+               case TerminationStatus::MAX_ITS_EXCEEDED:
                   std::cout << "\n *** MAXIMUM ITERATIONS REACHED ***\n";
                   break;
-               case INFEASIBLE:
+               case TerminationStatus::INFEASIBLE:
                   std::cout << "\n *** TERMINATION: PROBABLY INFEASIBLE ***\n";
                   break;
-               case UNKNOWN:
+               case TerminationStatus::UNKNOWN:
                   std::cout << "\n *** TERMINATION: STATUS UNKNOWN ***\n";
+                  break;
+               case TerminationStatus::DID_NOT_RUN:
+                  std::cout << "\n *** TERMINATION: DID NOT RUN ***\n";
+                  break;
+               case TerminationStatus::NOT_FINISHED:
+                  std::cout << "\n *** TERMINATION: NOT FINISHED YET ***\n";
                   break;
             }
          }
