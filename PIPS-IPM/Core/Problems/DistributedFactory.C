@@ -20,17 +20,8 @@
 #include "sLinsysRootAugHierInner.h"
 #include "sLinsysRootBordered.h"
 
-class PardisoProjectSolver;
-
-class PardisoMKLSolver;
-
-class MumpsSolverLeaf;
-
-class PardisoSchurSolver;
-
-class Ma27Solver;
-
-class Ma57Solver;
+#include "IpoptRegularization.hpp"
+#include "FriedlanderOrbanRegularization.hpp"
 
 #ifdef WITH_MA57
 
@@ -299,6 +290,16 @@ std::unique_ptr<AbstractLinearSystem> DistributedFactory::make_linear_system(Pro
       return make_root_hierarchical_linear_system(problem);
    else
       return make_linear_system_root(problem);
+}
+
+std::unique_ptr<RegularizationStrategy> DistributedFactory::make_regularization_strategy(unsigned int positive_eigenvalues, unsigned int negative_eigenvalues) {
+   if (pipsipmpp_options::get_int_parameter("REGULARIZATION_STRATEGY") == 0) {
+      return std::make_unique<IpoptRegularization>(positive_eigenvalues, negative_eigenvalues);
+   } else if (pipsipmpp_options::get_int_parameter("REGULARIZATION_STRATEGY") == 1) {
+      return std::make_unique<FriedlanderOrbanRegularization>(positive_eigenvalues, negative_eigenvalues);
+   } else {
+      assert(false && "Regularization defined in option REGULARIZATION_STRATEGY strategy does not exist");
+   }
 }
 
 Vector<double>* DistributedFactory::make_primal_vector() const {

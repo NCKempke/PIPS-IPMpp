@@ -9,6 +9,7 @@
 #include "DistributedQP.hpp"
 #include "BorderedSymmetricMatrix.h"
 #include "PIPSIPMppOptions.h"
+#include "DistributedFactory.h"
 #include <memory>
 #include <unistd.h>
 #include <cmath>
@@ -44,7 +45,7 @@ sLinsysRootAug::sLinsysRootAug(DistributedFactory* factory_, DistributedQP* prob
    if (apply_regularization) {
       std::cout << "setting up root regularization : " << locnx << " " << locmy << " " << locmz << " " << locmyl << " "
                 << locmzl << std::endl;
-      regularization_strategy = std::make_unique<RegularizationStrategy>(locnx, locmy + locmyl + locmzl);
+      regularization_strategy = factory_->make_regularization_strategy(locnx, locmy + locmyl + locmzl);
    }
 
    redRhs = std::make_unique<SimpleVector<double>>(locnx + locmy + locmz + locmyl + locmzl);
@@ -69,7 +70,7 @@ sLinsysRootAug::sLinsysRootAug(DistributedFactory* factory_, DistributedQP* prob
    if (apply_regularization) {
       std::cout << "setting up root regularization : " << locnx << " " << locmy << " " << locmz << " " << locmyl << " "
                 << locmzl << std::endl;
-      regularization_strategy = std::make_unique<RegularizationStrategy>(locnx, locmy + locmyl + locmzl);
+      regularization_strategy = factory_->make_regularization_strategy(locnx, locmy + locmyl + locmzl);
    }
 
    redRhs = std::make_unique<SimpleVector<double>>(locnx + locmy + locmz + locmyl + locmzl);
@@ -386,10 +387,6 @@ void sLinsysRootAug::schur_complement_add_CTDC_block(const Vector<double>* diago
    SymmetricMatrix* CtDCptr = CtDC ? CtDC.get() : nullptr;
 
    compute_CtDC_and_add_to_Schur_complement(CtDCptr, *diagonal);
-   this->data->getLocalC().write_to_streamDense(std::cout);
-   std::cout << "ctDc" << std::endl;
-   CtDCptr->write_to_streamDense(std::cout);
-   std::cout << "------------" << std::endl;
    if (!CtDC){
       CtDC.reset(CtDCptr);
    }
@@ -1517,44 +1514,6 @@ void sLinsysRootAug::add_CtDC_to_dense_schur_complement(const SymmetricMatrix& C
    }
 }
 
-void sLinsysRootAug::remove_CtDC_block_from_dense_Schur_complement() {
-   auto& schur_complement_dense = dynamic_cast<DenseSymmetricMatrix&>(*kkt);
-
-   for (int i = 0; i < locnx; ++i) {
-      std::fill(schur_complement_dense[i] + i, schur_complement_dense[i] + locnx, 0.0);
-   }
-
-   if (locnx > 0) {
-      assert(xDiag);
-      kkt->atPutDiagonal(0, *xDiag);
-   }
-}
-
-void sLinsysRootAug::remove_CtDC_block_from_sparse_Schur_complement() {
-   auto& schur_complement_sparse = dynamic_cast<SparseSymmetricMatrix&>(*kkt);
-
-   for (int i = 0; i < locnx; ++i) {
-      const int row_start = schur_complement_sparse.krowM()[i];
-      const int entries_above_diagonal = locnx - i;
-
-#ifndef NDEBUG
-      assert(entries_above_diagonal > 0);
-      const int row_end = schur_complement_sparse.krowM()[i+1];
-
-      assert(schur_complement_sparse.jcolM()[row_start] == i);
-      assert(row_end - row_start >= entries_above_diagonal);
-      assert(schur_complement_sparse.jcolM()[row_start + entries_above_diagonal - 1] == locnx);
-#endif
-
-      std::fill(schur_complement_sparse.M() + row_start, schur_complement_sparse.M() + row_start + entries_above_diagonal, 0.0);
-   }
-
-   if (locnx > 0) {
-      assert(xDiag);
-      kkt->atPutDiagonal(0, *xDiag);
-   }
-}
-
 void sLinsysRootAug::add_CtDC_to_sparse_schur_complement(const SymmetricMatrix& CtDC_loc) {
    auto& kkts = dynamic_cast<SparseSymmetricMatrix&>(*kkt);
 #ifndef NDEBUG
@@ -1580,14 +1539,6 @@ void sLinsysRootAug::add_CtDC_to_sparse_schur_complement(const SymmetricMatrix& 
             MKkt[blockStart + col - i] -= M_CtDC[p];
          }
       }
-   }
-}
-
-void sLinsysRootAug::remove_CtDC_block_from_Schur_complement() {
-   if (hasSparseKkt) {
-      remove_CtDC_block_from_sparse_Schur_complement();
-   } else {
-      remove_CtDC_block_from_dense_Schur_complement();
    }
 }
 
@@ -1674,14 +1625,13 @@ void sLinsysRootAug::add_regularization_local_kkt(double primal_regularization, 
    assert(dynamic_cast<const DistributedVector<double>*>(this->dual_equality_regularization_diagonal.get()));
    assert(dynamic_cast<const DistributedVector<double>*>(this->dual_inequality_regularization_diagonal.get()));
 
-
    assert(primal_regularization >= 0);
    assert(dual_inequality_regularization >= 0);
    assert(dual_equality_regularization >= 0);
 
    if (PIPS_MPIgetRank() == 0) {
       std::cout << "regularizing with root " << primal_regularization << " " << dual_equality_regularization << " "
-                << dual_inequality_regularization << std::endl;
+                << dual_inequality_regularization << "\n";
    }
 
    /* primal diagonal */
@@ -1695,24 +1645,29 @@ void sLinsysRootAug::add_regularization_local_kkt(double primal_regularization, 
 
    /* C^T reg^-1 C block */
    if (locmz > 0) {
-      assert(zDiag);
-      if (!dual_inequality_diagonal_regularized) {
-         dual_inequality_diagonal_regularized.reset(zDiag->clone());
-      }
-
       const auto& dual_inequality_regularization_vec = dynamic_cast<DistributedVector<double>&>(*this->dual_inequality_regularization_diagonal).first;
-      dual_inequality_regularization_vec->addConstant(-dual_inequality_regularization);
       assert(dual_inequality_regularization_vec);
+      dual_inequality_regularization_vec->addConstant(-dual_inequality_regularization);
 
       assert(zDiag);
       assert(CtDC);
 
-      dual_inequality_regularization_vec->addConstant(-dual_inequality_regularization);
-      SymmetricMatrix* CTDC_regularization_ptr = CtDC.get();
-      compute_CtDC_and_add_to_Schur_complement(CTDC_regularization_ptr, *dual_inequality_regularization_vec);
+      if (!dual_inequality_diagonal_regularized)
+         dual_inequality_diagonal_regularized.reset(dynamic_cast<SimpleVector<double>*>(zDiag->clone()));
+
+      assert(std::all_of(dynamic_cast<const SimpleVector<double>&>(*zDiag).elements(),
+         dynamic_cast<const SimpleVector<double>&>(*zDiag).elements(), [](const double& d) {
+            return d <= 0;
+         }));
+
+      dual_inequality_diagonal_regularized->copyFrom(*zDiag);
+      dual_inequality_diagonal_regularized->axpy(1.0, *dual_inequality_regularization_vec);
+
+      SymmetricMatrix* CTDC_ptr = CtDC.get();
+      clear_CtDC_from_schur_complement(*CtDC);
+      compute_CtDC_and_add_to_Schur_complement(CTDC_ptr, *dual_inequality_diagonal_regularized);
    }
 
-   /* A0 dual equalities */
    if (locmy > 0) {
       const auto& dual_equality_regularization_vec = dynamic_cast<DistributedVector<double>&>(*this->dual_equality_regularization_diagonal).first;
       assert(dual_equality_regularization_vec);
@@ -1721,7 +1676,6 @@ void sLinsysRootAug::add_regularization_local_kkt(double primal_regularization, 
       kkt->diagonal_add_constant_from(locnx, locmy, -dual_equality_regularization);
    }
 
-   /* dual linking equalities */
    if (locmyl > 0) {
       const auto& dual_equality_regularization_link_cons = dynamic_cast<DistributedVector<double>&>(*this->dual_equality_regularization_diagonal).last;
       assert(dual_equality_regularization_link_cons);
@@ -1741,7 +1695,6 @@ void sLinsysRootAug::add_regularization_local_kkt(double primal_regularization, 
 
 void sLinsysRootAug::finalizeKKTsparse() {
    auto& kkts = dynamic_cast<SparseSymmetricMatrix&>(*kkt);
-
 #ifndef NDEBUG
    int* const jcolKkt = kkts.jcolM();
 #endif
@@ -1882,24 +1835,23 @@ void sLinsysRootAug::finalizeKKTsparse() {
 }
 
 void sLinsysRootAug::finalizeKKTdense() {
-   auto* const kktd = dynamic_cast<DenseSymmetricMatrix*>(kkt.get());
-
+   auto& kktd = dynamic_cast<DenseSymmetricMatrix&>(*kkt.get());
    /* put Q+ X^{-1} Z - C' * diag(zDiag) * C into Schur complement */
 
    /* put Q + diag(q) + X^{-1} Z */
-   schur_complement_put_primal_block(xDiag, *kkt);
+   schur_complement_put_primal_block(xDiag, kktd);
 
    /* update Schur complement with - C' * diag(zDiag) *C */
-   schur_complement_add_CTDC_block(zDiag, *kkt);
+   schur_complement_add_CTDC_block(zDiag, kktd);
 
    /* put AT into Schur complement */
-   schur_complement_put_AT_block(*kkt);
+   schur_complement_put_AT_block(kktd);
 
    /////////////////////////////////////////////////////////////
    // update the KKT with F
    /////////////////////////////////////////////////////////////
    if (locmyl > 0) {
-      kktd->add_matrix_at(data->getLocalF(), locnx + locmy, 0);
+      kktd.add_matrix_at(data->getLocalF(), locnx + locmy, 0);
    }
 
    /////////////////////////////////////////////////////////////
@@ -1907,8 +1859,8 @@ void sLinsysRootAug::finalizeKKTdense() {
    /////////////////////////////////////////////////////////////
    if (locmzl > 0) {
       assert(zDiagLinkCons);
-      kktd->add_matrix_at(data->getLocalG(), locnx + locmy + locmyl, 0);
-      kktd->atAddDiagonal(locnx + locmy + locmyl, *zDiagLinkCons);
+      kktd.add_matrix_at(data->getLocalG(), locnx + locmy + locmyl, 0);
+      kktd.atAddDiagonal(locnx + locmy + locmyl, *zDiagLinkCons);
    }
 
 #ifdef DUMPKKT

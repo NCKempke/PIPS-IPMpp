@@ -25,8 +25,7 @@ DistributedLeafLinearSystem::DistributedLeafLinearSystem(DistributedFactory* fac
    prob->getLocalNnz(nnzQ, nnzB, nnzD);
 
    if (apply_regularization) {
-      regularization_strategy = std::make_unique<RegularizationStrategy>(static_cast<unsigned int>(locnx),
-         static_cast<unsigned int>(locmy + locmz));
+      regularization_strategy = factory_->make_regularization_strategy(static_cast<unsigned int>(locnx), static_cast<unsigned int>(locmy + locmz));
    }
 #ifdef TIMING
    if( myRank == 0 )

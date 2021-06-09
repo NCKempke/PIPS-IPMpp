@@ -66,7 +66,7 @@ public:
    add_regularization_local_kkt(double primal_regularization, double dual_equality_regularization, double dual_inequality_regularization) override;
 
 protected:
-   SymmetricMatrix* createKKT() const;
+   [[nodiscard]] SymmetricMatrix* createKKT() const;
    void createSolversSparse(SolverType solver);
    void createSolversDense();
 
@@ -89,12 +89,9 @@ private:
 
    void add_CtDC_to_sparse_schur_complement(const SymmetricMatrix& CtDC);
    void add_CtDC_to_dense_schur_complement(const SymmetricMatrix& CtDC);
-   void remove_CtDC_block_from_sparse_Schur_complement();
-   void remove_CtDC_block_from_dense_Schur_complement();
 
    /** computes CtDC and stores it in CtDC_loc + adds it to the Schur complement. If CtDC == nullptr it will also allocate CtDC */
    void compute_CtDC_and_add_to_Schur_complement(SymmetricMatrix*& CtDC_loc, const Vector<double>& diagonal);
-   void remove_CtDC_block_from_Schur_complement();
 
    void clear_CtDC_from_sparse_schur_complement(const SymmetricMatrix& CtDC);
    void clear_CtDC_from_dense_schur_complement(const SymmetricMatrix& CtDC);
