@@ -723,10 +723,10 @@ void LinearSystem::solveCompressedBiCGStab(const std::function<void(double, Vect
 /**
  * res = beta * res + alpha * mat * sol
  *       [ Q + dq + gamma/ v + phi/w + regP                   AT                                 CT               ]
- * mat = [            A                     -dual_equality_regularization_diagonal               0                ]
+ * mat = [            A                      dual_equality_regularization_diagonal               0                ]
  *       [            C                                       0                     -(lambda/V + pi/u)^-1 + regDz ]
  * stepx, stepy, stepz are used as temporary buffers
- * if use_regularized_sysyem == false primal_regularization_diagonal, dual_equality_regularization_diagonal and dual_inequality_regularization_diagonal are not used
+ * if use_regularized_system == false primal_regularization_diagonal, dual_equality_regularization_diagonal and dual_inequality_regularization_diagonal are not used
  */
 void
 LinearSystem::system_mult(double beta, Vector<double>& res, double alpha, const Vector<double>& sol, const Problem& problem, Vector<double>& solx,
@@ -780,14 +780,16 @@ LinearSystem::matXYZinfnorm(const Problem& problem, Vector<double>& solx, Vector
    soly.setToZero();
    if (use_regularized_system && dual_equality_regularization_diagonal)
       soly.axpy(1.0, *dual_equality_regularization_diagonal);
+   soly.negate();
 
    problem.A->addRowSums(soly);
    infnorm = std::max(infnorm, soly.inf_norm());
 
    solz.copyFromAbs(*nomegaInv);
-   solz.negate();
-   if (use_regularized_system && dual_inequality_regularization_diagonal)
+   if (use_regularized_system && dual_inequality_regularization_diagonal) {
       solz.axpy(1.0, *dual_inequality_regularization_diagonal);
+   }
+   solz.negate();
 
    problem.C->addRowSums(solz);
    infnorm = std::max(infnorm, solz.inf_norm());
