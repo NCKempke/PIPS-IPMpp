@@ -97,7 +97,7 @@ void Ma57Solver::matrixChanged() {
    } while (errors && tries < max_tries);
 
    if (errors) {
-      assert(tries ==  max_tries);
+      assert(tries == max_tries);
       std::cerr << "ERROR MA57: " << name << ":could not get factorization of matrix after max " << max_tries
                 << " tries\n";
       MPI_Abort(MPI_COMM_WORLD, -1);
@@ -145,7 +145,7 @@ void Ma57Solver::solve(Vector<double>& rhs_in) {
          &lifact, rhs.elements(),
          x_loc.elements(), resid_loc.elements(), dworkn_loc, iworkn_loc, icntl_loc, cntl.data(), info_loc, rinfo_loc);
 
-      done = checkErrorsAndReact();
+      done = !checkErrorsAndReact();
 
       const double resid_norm = resid_loc.inf_norm();
       // TODO: when performing iterative refinement MA57 does not compute the final residuals so these computations should be off
