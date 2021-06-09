@@ -23,6 +23,7 @@ public:
 
    void matrixRebuild(const AbstractMatrix& matrixNew) override;
    void matrixChanged() override;
+   bool reports_inertia() const override;
 
    using Ma57Solver::solve;
 
