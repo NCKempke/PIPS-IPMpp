@@ -60,7 +60,7 @@ void Ma27Solver::firstCall() {
    int tries = 0;
    do {
       FNAME(ma27ad)(&n, &nnz, irowM.data(), jcolM.data(), iw, &liw, ikeep, iw1, &nsteps, &iflag, icntl.data(), cntl.data(), info.data(), &ops);
-      errors = !checkErrorsAndReact();
+      errors = checkErrorsAndReact();
       ++tries;
    } while (errors && tries < max_tries);
 
