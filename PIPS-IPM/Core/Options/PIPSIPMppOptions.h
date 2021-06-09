@@ -67,7 +67,7 @@ namespace pipsipmpp_options {
 
       static void setHierarchical();
       void setDefaults() override;
-      void setPresolveDefaults();
+      static void setPresolveDefaults();
       PIPSIPMppOptions();
 
       ~PIPSIPMppOptions() override = default;
