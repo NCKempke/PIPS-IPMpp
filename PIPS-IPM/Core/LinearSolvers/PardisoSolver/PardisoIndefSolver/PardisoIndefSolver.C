@@ -540,15 +540,19 @@ PardisoIndefSolver::~PardisoIndefSolver() {
    delete[] x;
 }
 
+bool PardisoIndefSolver::reports_inertia() const {
+   if (solve_in_parallel || PIPS_MPIgetRank(mpi_comm) == 0)
+      return true;
+   else
+      return false;
+};
+
+
 std::tuple<unsigned int, unsigned int, unsigned int> PardisoIndefSolver::get_inertia() const {
-   if (solve_in_parallel || PIPS_MPIgetRank(mpi_comm) == 0) {
-      const int positive_eigenvalues = iparm[21];
-      const int negative_eigenvalues = iparm[22];
+   assert(solve_in_parallel || PIPS_MPIgetRank(mpi_comm) == 0);
+   const int positive_eigenvalues = iparm[21];
+   const int negative_eigenvalues = iparm[22];
 
-      assert(positive_eigenvalues + negative_eigenvalues <= n);
-      return {positive_eigenvalues, negative_eigenvalues, n - positive_eigenvalues - negative_eigenvalues};
-   } else {
-      return {0, 0, n};
-   }
-
+   assert(positive_eigenvalues + negative_eigenvalues <= n);
+   return {positive_eigenvalues, negative_eigenvalues, n - positive_eigenvalues - negative_eigenvalues};
 }

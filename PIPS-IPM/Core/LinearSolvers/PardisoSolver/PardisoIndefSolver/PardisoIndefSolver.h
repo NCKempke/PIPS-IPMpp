@@ -90,7 +90,7 @@ public:
    void solveSynchronized(Vector<double>& vec) override;
    ~PardisoIndefSolver() override;
 
-   [[nodiscard]] bool reports_inertia() const override { return true; };
+   [[nodiscard]] bool reports_inertia() const override;
    [[nodiscard]] std::tuple<unsigned int, unsigned int, unsigned int> get_inertia() const override;
 
 private:
