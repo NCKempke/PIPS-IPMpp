@@ -143,6 +143,11 @@ void PrimalMehrotraStrategy::corrector_predictor(Problem& problem, Variables& it
 
    // figure out step lengths that produce a sufficient decrease
    auto[initial_primal_step_length, initial_dual_step_length] = this->get_step_lengths();
+   const double step_inf_norm = step.inf_norm();
+   if (PIPS_MPIgetRank() == 0) {
+      std::cout << "Direction has length: " << step_inf_norm << "\n";
+      std::cout << "Step length: " << initial_primal_step_length << "\n";
+   }
    this->filter_line_search.compute_acceptable_iterate(problem, iterate, step, residuals, initial_primal_step_length, initial_dual_step_length);
    //this->take_step(iterate, step);
    return;
@@ -229,8 +234,10 @@ void PrimalDualMehrotraStrategy::corrector_predictor(Problem& problem, Variables
    auto[initial_primal_step_length, initial_dual_step_length] = this->get_step_lengths();
 
    const double step_inf_norm = step.inf_norm();
-   if (PIPS_MPIgetRank() == 0)
-      std::cout << "Step has length: " << step_inf_norm << "\n";
+   if (PIPS_MPIgetRank() == 0) {
+      std::cout << "Direction has length: " << step_inf_norm << "\n";
+      std::cout << "Step lengths: " << initial_primal_step_length << " (primal), " << initial_dual_step_length << " (dual)\n";
+   }
    this->filter_line_search.compute_acceptable_iterate(problem, iterate, step, residuals, initial_primal_step_length, initial_dual_step_length);
    // actually take the step and calculate the new mu
    //this->take_step(iterate, step);
