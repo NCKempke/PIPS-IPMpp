@@ -723,12 +723,6 @@ PrimalDualMehrotraStrategy::print_statistics(const Problem* problem, const Varia
    statistics.print(problem, iterate, residuals, dnorm, this->primal_step_length, this->dual_step_length, sigma, i, mu, stop_code, level);
 }
 
-void
-MehrotraStrategy::print_statistics(const Problem* problem, const Variables* iterate, const Residuals* residuals, double dnorm, double alpha_primal,
-      double alpha_dual, double sigma, int i, double mu, TerminationStatus stop_code, int level) {
-   statistics.print(problem, iterate, residuals, dnorm, alpha_primal, alpha_dual, sigma, i, mu, stop_code, level);
-}
-
 void PrimalMehrotraStrategy::mehrotra_step_length(Variables& iterate, Variables& step) {
    double primalValue = -std::numeric_limits<double>::max();
    double primalStep = -std::numeric_limits<double>::max();
