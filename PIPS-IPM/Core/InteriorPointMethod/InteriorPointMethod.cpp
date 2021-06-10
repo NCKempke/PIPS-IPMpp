@@ -82,6 +82,11 @@ TerminationStatus InteriorPointMethod::solve(Problem& problem, Variables& iterat
    return status;
 }
 
+double InteriorPointMethod::predicted_reduction(Problem& problem, Variables& direction, double step_length) {
+   // scale it with the step length and return the (positive) predicted reduction
+   return -step_length * problem.g->dotProductWith(*direction.primals);
+}
+
 std::pair<double, double> InteriorPointMethod::compute_unscaled_gap_and_residual_norm(const Residuals& residuals) {
    if (!scaler)
       return std::make_pair(std::fabs(residuals.get_duality_gap()), residuals.get_residual_norm());

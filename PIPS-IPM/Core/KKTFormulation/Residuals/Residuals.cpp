@@ -360,18 +360,21 @@ void Residuals::write_to_stream(std::ostream& out) {
    printf("---------------------------\n");
 }
 
-double Residuals::constraint_violation() {
+double Residuals::constraint_violation() const {
    return equality_residuals->one_norm() + inequality_residuals->one_norm();
 }
 
-double Residuals::optimality_measure(double mu) {
+double Residuals::optimality_measure() const {
    //return this->lagrangian_gradient->inf_norm();// + mu;
    return this->primal_objective;
 }
 
-double Residuals::feasibility_measure(double mu) {
-   //double complementarity = 0.;
-   // compute componentwise products of complementary variables
+double Residuals::feasibility_measure() {
+   return this->constraint_violation();
+}
+
+//double complementarity = 0.;
+// compute componentwise products of complementary variables
 //   if (mclow > 0) {
 //      SmartPointer<Vector<double> > rt_copy = SmartPointer<Vector<double> >(rt->cloneFull());
 //      rt_copy->componentMult(*rlambda);
@@ -396,5 +399,3 @@ double Residuals::feasibility_measure(double mu) {
 //      rw_copy->addConstant(-mu);
 //      complementarity += rw_copy->onenorm();
 //   }
-   return this->constraint_violation();
-}

@@ -1,31 +1,18 @@
+#include <InteriorPointMethod.hpp>
 #include "FilterLineSearch.hpp"
 #include "FilterStrategy.hpp"
 #include "Problem.h"
 #include "Residuals.h"
 #include "Variables.h"
 
-FilterLineSearch::FilterLineSearch(FilterStrategyParameters& filter_strategy_parameters, FilterParameters& filter_parameters, int max_iterations,
-      double backtracking_ratio, double min_step_length) : filter_strategy(FilterStrategy(filter_strategy_parameters, filter_parameters)),
-      backtracking_ratio(backtracking_ratio), min_step_length(min_step_length), max_iterations(max_iterations) {
-}
-
-FilterLineSearch::FilterLineSearch(int max_iterations, double backtracking_ratio, double min_step_length) :
-filter_strategy(FilterStrategy()), backtracking_ratio(backtracking_ratio), min_step_length(min_step_length), max_iterations(max_iterations) {
+FilterLineSearch::FilterLineSearch(const Scaler* scaler, int max_iterations, double backtracking_ratio, double min_step_length) :
+filter_strategy(FilterStrategy()), backtracking_ratio(backtracking_ratio), scaler(scaler), min_step_length(min_step_length),
+max_iterations(max_iterations) {
 }
 
 void FilterLineSearch::initialize(Residuals& initial_residuals) {
    /* set the filter upper bound */
    this->filter_strategy.initialize(initial_residuals);
-   return;
-}
-
-double FilterLineSearch::predicted_reduction(Problem& problem, Variables& direction, Variables& trial_iterate, double step_length) {
-   // compute the directional derivative,
-   double directional_derivative = trial_iterate.mu(); //problem.directionalDerivative(direction, mu);
-   if (verbose) std::cout << "Directional derivative = " << directional_derivative << "\n";
-
-   // scale it with the step length and return the (positive) predicted reduction
-   return -step_length * directional_derivative;
 }
 
 void FilterLineSearch::compute_acceptable_iterate(Problem& problem, Variables& current_iterate, Variables& direction, Residuals& current_residuals,
@@ -45,7 +32,7 @@ void FilterLineSearch::compute_acceptable_iterate(Problem& problem, Variables& c
       trial_residuals.evaluate(problem, trial_iterate);
       trial_residuals.recompute_residual_norm();
 
-      double predicted_reduction = this->predicted_reduction(problem, direction, trial_iterate, primal_step_length);
+      double predicted_reduction = InteriorPointMethod::predicted_reduction(problem, direction, primal_step_length);
 
       /* check whether the trial step is accepted */
       is_accepted = this->filter_strategy.check_acceptance(current_iterate, current_residuals, trial_iterate, trial_residuals, predicted_reduction,
