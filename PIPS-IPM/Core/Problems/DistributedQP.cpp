@@ -1051,9 +1051,15 @@ DistributedQP::getAscending2LinkFirstGlobalsLastPermutation(std::vector<int>& li
       assert(linkStartBlockId[permvec[front_pointer]] == -1);
       assert(linkStartBlockId[permvec[end_pointer]] == -1);
 
-      if (n_blocks_per_row[permvec[front_pointer]] <= threshold_global_cons)
+      /* blocks == -1 indicates a non-local 2 link */
+      auto is_local_link = [](int blocks) {
+         return (blocks <= threshold_global_cons && (blocks != -1 || !shave_nonlocal_2links));
+      };
+
+      /* keep link at front if it is not global and either not a 2 link or we don't shave the 2links */
+      if (is_local_link(n_blocks_per_row[permvec[front_pointer]]))
          ++front_pointer;
-      else if (n_blocks_per_row[permvec[end_pointer]] > threshold_global_cons)
+      else if (!is_local_link(n_blocks_per_row[permvec[end_pointer]]))
          --end_pointer;
       else {
          assert(front_pointer < end_pointer);
