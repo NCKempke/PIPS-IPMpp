@@ -242,8 +242,6 @@ sLinsysRootAugHierInner::addInnerBorderKiInvBrToRes(AbstractMatrix& result, Bord
 void sLinsysRootAugHierInner::addTermToSchurComplBlocked(bool sparseSC, SymmetricMatrix& SC, bool use_local_RAC,
    int n_empty_rows_inner_border) {
    assert(data->getLocalFBorder().n_columns() == data->getLocalGBorder().n_columns());
-   assert(dynamic_cast<const DistributedMatrix&>(*data->A).Blmat->is_a(kStripMatrix));
-   assert(dynamic_cast<const DistributedMatrix&>(*data->C).Blmat->is_a(kStripMatrix));
    assert(n_empty_rows_inner_border + data->getLocalFBorder().n_rows() + data->getLocalGBorder().n_rows() == SC.size());
 
    BorderLinsys Bl(n_empty_rows_inner_border, data->getLocalFBorder(), data->getLocalGBorder(), use_local_RAC);
