@@ -315,9 +315,8 @@ void sLinsysRootAug::Ltsolve(Vector<double>& x) {
 
 /* gets called for computing the dense schur complement*/
 void sLinsysRootAug::LsolveHierarchyBorder(DenseMatrix& result, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border,
-   bool two_link_border,
    int begin_cols, int end_cols) {
-   LsolveHierarchyBorder(result, Br, Br_mod_border, true, two_link_border, begin_cols, end_cols);
+   LsolveHierarchyBorder(result, Br, Br_mod_border, true, begin_cols, end_cols);
 }
 
 void
@@ -1942,15 +1941,19 @@ void sLinsysRootAug::addBlTKiInvBrToResBlockwise(AbstractMatrix& result, BorderL
    assert(buffer_b0.n_columns() == kkt->size() || buffer_b0.n_columns() == kkt->size() + locmz);
    assert(buffer_b0.n_rows() >= end_cols - begin_cols);
 
-   const bool two_link_border_left = !(Bl.has_RAC || Bl.use_local_RAC);
-   const bool two_link_border_right = !(Br.has_RAC || Br.use_local_RAC);
+   if (Bl.is_twolink_border) {
+      assert(!Bl.has_RAC && !Bl.use_local_RAC);
+   }
+   if (Br.is_twolink_border) {
+      assert(!Br.has_RAC && !Br.use_local_RAC);
+   }
 
-   if (two_link_border_right);
+   if (Br.is_twolink_border);
 
    /* compute Schur Complement right hand sides SUM_i Bi_{inner} Ki^-1 ( Bri - sum_j Bmodij Xij )
     * (keep in mind that in Bi_{this} and the SC we projected C0 Omega0 out) */
    // buffer_b0 = - [ SUM_i Bi_{inner}^T Ki^{-1} (Bri - SUM_j Bmodij Xij) ]^T = SUM_i (Bri^T - SUM_j Xij^T Bmodij^T) Ki^{-1} Bi_{inner}
-   LsolveHierarchyBorder(buffer_b0, Br, Br_mod_border, two_link_border_left, begin_cols, end_cols);
+   LsolveHierarchyBorder(buffer_b0, Br, Br_mod_border, begin_cols, end_cols);
 
    // buffer_b0 = (Br0 - sum_j Bmod0J X0j ) - buffer_b0 = Br0 - sum_j Bmod0J X0j - SUM_i Bi_{inner}^T Ki^{-1} ( Bri - sum_j Bmodij Xij )}
    finalizeZ0Hierarchical(buffer_b0, Br, Br_mod_border, begin_cols, end_cols);

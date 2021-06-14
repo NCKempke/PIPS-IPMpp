@@ -62,9 +62,8 @@ void sLinsysRootAugHierInner::Ltsolve2(DistributedVector<double>& x, SimpleVecto
 
 void
 sLinsysRootAugHierInner::LsolveHierarchyBorder(DenseMatrix& result, BorderLinsys& Br,
-   std::vector<BorderMod>& Br_mod_border, bool two_link_border,
-   int begin_cols, int end_cols) {
-   LsolveHierarchyBorder(result, Br, Br_mod_border, false, two_link_border, begin_cols, end_cols);
+   std::vector<BorderMod>& Br_mod_border, int begin_cols, int end_cols) {
+   LsolveHierarchyBorder(result, Br, Br_mod_border, false, begin_cols, end_cols);
 }
 
 void sLinsysRootAugHierInner::LtsolveHierarchyBorder(AbstractMatrix& res, const DenseMatrix& X0, BorderLinsys& Bl,

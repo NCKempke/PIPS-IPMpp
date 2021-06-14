@@ -631,8 +631,7 @@ DistributedRootLinearSystem::finalizeInnerSchurComplementContributionDense(Abstr
 
 /* compute result += [ SUM_i Bi_{inner}^T Ki^{-1} (Bri - SUM_j Bmodij Xij) ]^T += SUM_i (Bri - SUM_j Xij^T Bmodij^T) Ki^{-1} Bi_{inner}^T */
 void DistributedRootLinearSystem::LsolveHierarchyBorder(DenseMatrix& result, BorderLinsys& Br,
-   std::vector<BorderMod>& Br_mod_border, bool use_local_RAC,
-   bool two_link_border, int begin_cols, int end_cols) {
+   std::vector<BorderMod>& Br_mod_border, bool use_local_RAC, int begin_cols, int end_cols) {
    assert(children.size() == Br.F.children.size());
 
    /* get contribution to schur_complement from each child */

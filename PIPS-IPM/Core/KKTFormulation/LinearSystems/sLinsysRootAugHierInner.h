@@ -29,8 +29,7 @@ public:
    using DistributedLinearSystem::LsolveHierarchyBorder;
 
    void LsolveHierarchyBorder(DenseMatrix& result, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border,
-      bool two_link_border, int begin_cols,
-      int end_cols) override;
+      int begin_cols, int end_cols) override;
 
    using DistributedLinearSystem::LtsolveHierarchyBorder;
 
