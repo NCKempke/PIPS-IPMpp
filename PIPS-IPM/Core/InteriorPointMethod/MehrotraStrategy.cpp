@@ -16,10 +16,11 @@ extern double g_iterNumber;
 
 const unsigned int max_linesearch_points = 50;
 
-MehrotraStrategy::MehrotraStrategy(DistributedFactory& factory, Problem& problem, double dnorm, const Scaler* scaler) : dnorm(dnorm),
+MehrotraStrategy::MehrotraStrategy(DistributedFactory& factory, Problem& problem, double dnorm, const Scaler* scaler) :
+      dnorm(dnorm),
       corrector_step(factory.make_variables(problem)), corrector_residuals(factory.make_residuals(problem)),
       n_linesearch_points(pipsipmpp_options::get_int_parameter("GONDZIO_STOCH_N_LINESEARCH")), temp_step(factory.make_variables(problem)),
-      statistics(factory, scaler), filter_line_search(), bicgstab_skipped(false), bicgstab_converged(true), bigcstab_norm_res_rel(0.),
+      statistics(factory, scaler), filter_line_search(scaler), bicgstab_skipped(false), bicgstab_converged(true), bigcstab_norm_res_rel(0.),
       bicg_iterations(0), dynamic_corrector_schedule(pipsipmpp_options::get_bool_parameter("GONDZIO_STOCH_USE_DYNAMIC_CORRECTOR_SCHEDULE")),
       additional_correctors_small_comp_pairs(pipsipmpp_options::get_bool_parameter("GONDZIO_STOCH_ADDITIONAL_CORRECTORS_SMALL_VARS")),
       max_additional_correctors(pipsipmpp_options::get_int_parameter("GONDZIO_STOCH_ADDITIONAL_CORRECTORS_MAX")),
@@ -143,6 +144,11 @@ void PrimalMehrotraStrategy::corrector_predictor(Problem& problem, Variables& it
 
    // figure out step lengths that produce a sufficient decrease
    auto[initial_primal_step_length, initial_dual_step_length] = this->get_step_lengths();
+   const double step_inf_norm = step.inf_norm();
+   if (PIPS_MPIgetRank() == 0) {
+      std::cout << "Direction has length: " << step_inf_norm << "\n";
+      std::cout << "Step length: " << initial_primal_step_length << "\n";
+   }
    this->filter_line_search.compute_acceptable_iterate(problem, iterate, step, residuals, initial_primal_step_length, initial_dual_step_length);
    //this->take_step(iterate, step);
    return;
@@ -229,8 +235,10 @@ void PrimalDualMehrotraStrategy::corrector_predictor(Problem& problem, Variables
    auto[initial_primal_step_length, initial_dual_step_length] = this->get_step_lengths();
 
    const double step_inf_norm = step.inf_norm();
-   if (PIPS_MPIgetRank() == 0)
-      std::cout << "Step has length: " << step_inf_norm << "\n";
+   if (PIPS_MPIgetRank() == 0) {
+      std::cout << "Direction has length: " << step_inf_norm << "\n";
+      std::cout << "Step lengths: " << initial_primal_step_length << " (primal), " << initial_dual_step_length << " (dual)\n";
+   }
    this->filter_line_search.compute_acceptable_iterate(problem, iterate, step, residuals, initial_primal_step_length, initial_dual_step_length);
    // actually take the step and calculate the new mu
    //this->take_step(iterate, step);
@@ -714,12 +722,6 @@ void
 PrimalDualMehrotraStrategy::print_statistics(const Problem* problem, const Variables* iterate, const Residuals* residuals, double dnorm, double sigma,
       int i, double mu, TerminationStatus stop_code, int level) {
    statistics.print(problem, iterate, residuals, dnorm, this->primal_step_length, this->dual_step_length, sigma, i, mu, stop_code, level);
-}
-
-void
-MehrotraStrategy::print_statistics(const Problem* problem, const Variables* iterate, const Residuals* residuals, double dnorm, double alpha_primal,
-      double alpha_dual, double sigma, int i, double mu, TerminationStatus stop_code, int level) {
-   statistics.print(problem, iterate, residuals, dnorm, alpha_primal, alpha_dual, sigma, i, mu, stop_code, level);
 }
 
 void PrimalMehrotraStrategy::mehrotra_step_length(Variables& iterate, Variables& step) {

@@ -24,17 +24,16 @@ void FilterStrategy::initialize(Residuals& initial_residuals) {
  * */
 bool FilterStrategy::check_acceptance(Variables& current_iterate, Residuals& current_residuals, Variables& trial_iterate, Residuals& trial_residuals,
       double predicted_reduction, double step_length) {
-   double current_mu = current_iterate.mu();
-   const double current_feasibility = current_residuals.feasibility_measure(current_mu);
-   const double current_optimality = current_residuals.optimality_measure(current_mu);
-   double trial_mu = trial_iterate.mu();
-   const double trial_feasibility = trial_residuals.feasibility_measure(trial_mu);
-   const double trial_optimality = trial_residuals.optimality_measure(trial_mu);
-   if (verbose) std::cout << "Current mu: " << current_mu << "\n";
-   if (verbose) std::cout << "Trial mu: " << trial_mu << "\n";
+   const double current_feasibility = current_residuals.feasibility_measure();
+   const double current_optimality = current_residuals.optimality_measure();
+   const double trial_feasibility = trial_residuals.feasibility_measure();
+   const double trial_optimality = trial_residuals.optimality_measure();
 
    if (verbose) std::cout << "Filter strategy: feasibility " << trial_feasibility << " vs " << current_feasibility << "\n";
    if (verbose) std::cout << "Filter strategy: objective " << trial_optimality << " vs " << current_optimality << "\n";
+
+   // double current_mu = current_iterate.mu();
+   // double trial_mu = trial_iterate.mu();
 
    bool accept = false;
    /* check acceptance */

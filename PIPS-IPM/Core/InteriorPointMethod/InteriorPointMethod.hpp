@@ -16,9 +16,11 @@ class InteriorPointMethod : public Solver {
 public:
    InteriorPointMethod(DistributedFactory& factory, Problem& problem, MehrotraStrategyType mehrotra_strategy_type, const Scaler* scaler = nullptr);
    TerminationStatus solve(Problem& problem, Variables& iterate, Residuals& residuals) override;
+   static double predicted_reduction(Problem& problem, Variables& direction, double step_length);
    ~InteriorPointMethod() override;
 
 protected:
+   bool verbose{false};
    const Scaler* scaler{};
    int max_iterations{0};
 
