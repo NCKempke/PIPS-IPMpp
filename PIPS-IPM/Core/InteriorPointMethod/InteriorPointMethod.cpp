@@ -52,10 +52,12 @@ TerminationStatus InteriorPointMethod::solve(Problem& problem, Variables& iterat
          residuals.evaluate(problem, iterate);
          double mu = iterate.mu();
          assert(!PIPSisZero(mu));
-         std::cout << "Norm of x: " << iterate.primals->inf_norm() << "\n";
-         std::cout << "Norm of s: " << iterate.slacks->inf_norm() << "\n";
-         std::cout << "Norm of eq. duals: " << iterate.equality_duals->inf_norm() << "\n";
-         std::cout << "Norm of ineq. duals: " << iterate.inequality_duals->inf_norm() << "\n";
+         if (PIPS_MPIgetRank() && this->verbose) {
+            std::cout << "Norm of x: " << iterate.primals->inf_norm() << "\n";
+            std::cout << "Norm of s: " << iterate.slacks->inf_norm() << "\n";
+            std::cout << "Norm of eq. duals: " << iterate.equality_duals->inf_norm() << "\n";
+            std::cout << "Norm of ineq. duals: " << iterate.inequality_duals->inf_norm() << "\n";
+         }
 
          // termination test
          const auto [duality_gap, residual_norm] = this->compute_unscaled_gap_and_residual_norm(residuals);
