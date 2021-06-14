@@ -18,16 +18,6 @@
 #ifdef STOCH_TESTING
 extern double g_iterNumber;
 #endif
-extern int gInnerBiCGIter;
-extern int gInnerBiCGFails;
-
-
-static void biCGStabCommunicateStatus(int flag, int it) {
-   gInnerBiCGIter = it;
-
-   if (flag != 0)
-      gInnerBiCGFails++;
-}
 
 sLinsysRootAug::sLinsysRootAug(DistributedFactory* factory_, DistributedQP* prob_, bool is_hierarchy_root) : DistributedRootLinearSystem(
    factory_, prob_, is_hierarchy_root) {
@@ -1237,8 +1227,6 @@ void sLinsysRootAug::solveWithBiCGStab(SimpleVector<double>& b) {
    if (myRank == 0)
       std::cout << "innerBICG: " << "ii=" << ii << " flag=" << flag << " normr=" << normr << " normr_act=" << normr_act
                 << " tolb=" << tolb << "\n";
-
-   biCGStabCommunicateStatus(flag, ii);
 
    b.copyFrom(x);
    delete[] resvec;

@@ -20,7 +20,6 @@
 extern int gOuterBiCGIter;
 extern double gOuterBiCGIterAvg;
 extern double g_iterNumber;
-extern int gOuterBiCGFails;
 
 static std::vector<int> bicgIters;
 
@@ -154,9 +153,6 @@ static void biCGStabCommunicateStatus(int flag, int it) {
 
    gOuterBiCGIterAvg = iterAvg;
    gOuterBiCGIter = it;
-
-   if (flag != 0 && flag != 1)
-      gOuterBiCGFails++;
 }
 
 static bool isZero(double val, LinearSystem::IterativeSolverSolutionStatus& status) {
