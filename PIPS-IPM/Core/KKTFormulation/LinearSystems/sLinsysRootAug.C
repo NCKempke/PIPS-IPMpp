@@ -53,6 +53,9 @@ sLinsysRootAug::sLinsysRootAug(DistributedFactory* factory_, DistributedQP* prob
    assert(pipsipmpp_options::get_bool_parameter("HIERARCHICAL"));
    assert(computeBlockwiseSC);
 
+   std::cout << "slinsysrootaug : " << locnx << " " << locmy << " " << locmz << " " << locmyl << " "
+             << locmzl << std::endl;
+
    redRhs = std::make_unique<SimpleVector<double>>(locnx + locmy + locmz + locmyl + locmzl);
 }
 
