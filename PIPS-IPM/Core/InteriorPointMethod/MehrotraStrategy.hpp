@@ -120,8 +120,6 @@ protected:
    static bool decrease_preconditioner_impact(AbstractLinearSystem* sys);
    void adjust_limit_gondzio_correctors();
    void check_numerical_troubles(Residuals* residuals, bool& numerical_troubles, bool& small_corr) const;
-   void print_statistics(const Problem* problem, const Variables* iterate, const Residuals* residuals, double dnorm, double alpha_primal,
-         double alpha_dual, double sigma, int i, double mu, TerminationStatus stop_code, int level);
    void notify_from_subject() override;
 };
 

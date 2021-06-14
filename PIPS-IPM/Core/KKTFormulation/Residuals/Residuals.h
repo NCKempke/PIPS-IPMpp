@@ -160,11 +160,11 @@ public:
 
    [[nodiscard]] const long long& getMclow() const { return mclow; };
 
-   double constraint_violation();
+   double constraint_violation() const;
 
-   double optimality_measure(double mu);
+   double optimality_measure() const;
 
-   double feasibility_measure(double mu);
+   double feasibility_measure();
 };
 
 #endif
