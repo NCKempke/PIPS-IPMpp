@@ -10,7 +10,6 @@
 #include "BorderedMatrixLiftedA0wrapper.h"
 #include <iomanip>
 #include <iostream>
-#include <algorithm>
 #include <numeric>
 #include <functional>
 

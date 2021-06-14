@@ -202,7 +202,8 @@ private:
    int n0LinkVars{0};
 
    /* trimming everything that is not a 2 link and everything that is not a 0vec at the moment - makes border computations sparser */
-   constexpr static int threshold_global_cons{1};
+   /* a constraint is global if it is in more than threshold_global_cons blocks */
+   constexpr static int threshold_global_cons{2};
    constexpr static int threshold_global_vars{-1}; // TODO: adapt properly
    constexpr static int nLinkStats{6};
    constexpr static double minStructuredLinksRatio{0.5};
