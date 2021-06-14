@@ -68,8 +68,10 @@ Problem* StochPresolver::presolve() {
 
    if (transform_inequalities_to_equalities) {
       if (my_rank == 0)
-         std::cout << "Transforming all inequality rows to equalities + slack variable\n";
+         std::cout << "Transforming all inequality rows to equalities + slack variable...";
       presolve_data.transfrom_ineqalities_to_equalities();
+      if (my_rank == 0)
+         std::cout << " done\n";
    }
 
    /* finalize data and switch tree to new presolved data */

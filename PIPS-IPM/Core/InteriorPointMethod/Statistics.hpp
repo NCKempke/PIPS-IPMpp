@@ -1,6 +1,7 @@
 #ifndef MONITOR_H
 #define MONITOR_H
 
+#include "TerminationStatus.h"
 #include "DistributedFactory.h"
 #include "Scaler.hpp"
 
@@ -19,10 +20,10 @@ public:
 
    void
    print(const Problem* problem, const Variables* variables, const Residuals* residuals, double dnorm, double alpha, double sigma, int i, double mu,
-         int status_code, int level);
+      TerminationStatus status_code, int level);
 
    void print(const Problem* problem, const Variables* variables, const Residuals* residuals, double dnorm, double alpha_primal, double alpha_dual,
-         double sigma, int i, double mu, int status_code, int level) const;
+         double sigma, int i, double mu, TerminationStatus status_code, int level) const;
 
 protected:
    const Scaler* scaler{};

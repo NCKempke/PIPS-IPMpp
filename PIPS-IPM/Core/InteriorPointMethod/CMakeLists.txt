@@ -6,4 +6,5 @@ target_sources(pips-ipmpp
         ${CMAKE_CURRENT_SOURCE_DIR}/MehrotraStrategy.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/Solver.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/Statistics.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/TerminationStatus.cpp
 )

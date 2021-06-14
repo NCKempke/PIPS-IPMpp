@@ -85,18 +85,19 @@ void Ma57Solver::matrixChanged() {
    if (keep.empty())
       firstCall();
 
-   bool done = false;
+   bool errors{false};
    int tries = 0;
 
    do {
       FNAME(ma57bd)(&n, &nnz, mat_storage->M, fact.data(), &lfact, ifact.data(), &lifact, &lkeep, keep.data(),
          iworkn.data(), icntl.data(),
          cntl.data(), info.data(), rinfo.data());
-      done = checkErrorsAndReact();
+      errors = checkErrorsAndReact();
       ++tries;
-   } while (!done && tries < max_tries);
+   } while (errors && tries < max_tries);
 
-   if (!done && tries > max_tries) {
+   if (errors) {
+      assert(tries == max_tries);
       std::cerr << "ERROR MA57: " << name << ":could not get factorization of matrix after max " << max_tries
                 << " tries\n";
       MPI_Abort(MPI_COMM_WORLD, -1);
@@ -144,7 +145,7 @@ void Ma57Solver::solve(Vector<double>& rhs_in) {
          &lifact, rhs.elements(),
          x_loc.elements(), resid_loc.elements(), dworkn_loc, iworkn_loc, icntl_loc, cntl.data(), info_loc, rinfo_loc);
 
-      done = checkErrorsAndReact();
+      done = !checkErrorsAndReact();
 
       const double resid_norm = resid_loc.inf_norm();
       // TODO: when performing iterative refinement MA57 does not compute the final residuals so these computations should be off
@@ -455,6 +456,11 @@ void Ma57Solver::getIndices(std::vector<int>& irowM, std::vector<int>& jcolM) co
 }
 
 std::tuple<unsigned int, unsigned int, unsigned int> Ma57Solver::get_inertia() const {
-   assert(false && "TODO: Implement");
-   return {0, 0, 0};
+
+   const int rank = info[24];
+   const int n_negative_eigenvalues = info[23];
+   const int n_positive_eigenvalues = rank - n_negative_eigenvalues;
+   assert(0 <= n_positive_eigenvalues);
+
+   return {n_positive_eigenvalues, n_negative_eigenvalues, n - rank};
 }

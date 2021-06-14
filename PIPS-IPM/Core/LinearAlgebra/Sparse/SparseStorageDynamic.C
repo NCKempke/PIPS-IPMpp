@@ -829,8 +829,9 @@ void SparseStorageDynamic::rebuildSpareStructure(int guaranteed_spare) {
 
       assert(offset + range + spare_range < len);
 
-      std::copy(&M_copy.at(start), &M_copy.at(end), M + offset);
-      std::copy(&jcolM_copy.at(start), &jcolM_copy.at(end), jcolM + offset);
+      assert(end <= len);
+      std::copy(M_copy.begin() + start, M_copy.begin() + end, M + offset);
+      std::copy(jcolM_copy.begin() + start, jcolM_copy.begin() + end, jcolM + offset);
 
       rowptr[i].start = offset;
       rowptr[i].end = offset + range;

@@ -3,6 +3,7 @@
 #include "DistributedVector.h"
 #include "SimpleVector.h"
 #include "pipsdef.h"
+#include "PIPSIPMppOptions.h"
 #include <limits>
 #include <algorithm>
 #include <numeric>
@@ -896,7 +897,8 @@ void DistributedMatrix::getColMinMaxVecChild(bool getMin, bool initializeVec, co
 
 
 void DistributedMatrix::addRowSums(Vector<double>& sumVec, Vector<double>* linkParent) const {
-   assert(false && "TODO : hierarchical version");
+   if (pipsipmpp_options::get_bool_parameter("HIERARCHICAL"))
+      assert(false && "TODO : hierarchical version");
    assert(hasSparseMatrices());
 
    auto& sumVecStoch = dynamic_cast<DistributedVector<double>&>(sumVec);
@@ -945,7 +947,8 @@ void DistributedMatrix::addRowSums(Vector<double>& sumVec, Vector<double>* linkP
 }
 
 void DistributedMatrix::addColSums(Vector<double>& sumVec, Vector<double>* linkParent) const {
-   assert(false && "TODO : hierarchical version");
+   if (pipsipmpp_options::get_bool_parameter("HIERARCHICAL"))
+      assert(false && "TODO : hierarchical version");
    assert(hasSparseMatrices());
 
    auto& sumVecStoch = dynamic_cast<DistributedVector<double>&>(sumVec);
