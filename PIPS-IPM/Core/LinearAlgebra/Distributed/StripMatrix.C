@@ -8,7 +8,7 @@
 #include "StripMatrix.h"
 
 #include "DistributedVector.h"
-#include "SimpleVector.h"
+#include "SimpleVector.hpp"
 #include "DoubleMatrixTypes.h"
 #include "DistributedTreeCallbacks.h"
 

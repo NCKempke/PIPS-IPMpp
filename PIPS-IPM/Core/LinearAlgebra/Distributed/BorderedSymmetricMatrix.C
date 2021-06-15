@@ -7,7 +7,7 @@
 
 #include "BorderedSymmetricMatrix.h"
 #include "DoubleMatrixTypes.h"
-#include "SimpleVector.h"
+#include "SimpleVector.hpp"
 #include "pipsdef.h"
 #include <algorithm>
 

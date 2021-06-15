@@ -2222,7 +2222,30 @@ void DistributedVector<T>::pushSmallComplementarityPairs(Vector<T>& other_vec_in
 
       children[i]->pushSmallComplementarityPairs(*other_vec.children[i], *select.children[i], tol_this, tol_other, tol_pairs);
    }
+}
 
+template<typename T>
+double DistributedVector<T>::special_operation(const Vector<T>& x_in, const Vector<T>& bound_in, const Vector<T>& bound_indicator_in, double scaling)
+const {
+   const auto& x = dynamic_cast<const DistributedVector<T>&>(x_in);
+   const auto& bound = dynamic_cast<const DistributedVector<T>&>(bound_in);
+   const auto& bound_indicator = dynamic_cast<const DistributedVector<T>&>(bound_indicator_in);
+   assert(this->children.size() == x.children.size());
+   assert(this->children.size() == bound.children.size());
+
+   double result = 0.0;
+   for (size_t i = 0; i < children.size(); i++) {
+      result += children[i]->special_operation(*x.children[i], *bound.children[i], *bound_indicator.children[i], scaling);
+   }
+
+   if (first && x.first && bound.first && bound_indicator.first) {
+      result += first->special_operation(*x.first, *bound.first, *bound_indicator.first, scaling);
+   }
+
+   if (last && x.last && bound.last && bound_indicator.last) {
+      result += last->special_operation(*x.last, *bound.last, *bound_indicator.last, scaling);
+   }
+   return result;
 }
 
 template

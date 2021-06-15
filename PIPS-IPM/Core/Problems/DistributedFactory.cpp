@@ -3,7 +3,7 @@
    See license and copyright information in the documentation */
 
 #include <memory>
-#include "DistributedFactory.h"
+#include "DistributedFactory.hpp"
 #include "DistributedQP.hpp"
 #include "DistributedTreeCallbacks.h"
 #include "DistributedInputTree.h"
@@ -254,11 +254,11 @@ Variables* DistributedFactory::make_variables(Problem& problem) const {
    std::unique_ptr<Vector<double>> u(make_inequalities_dual_vector());
    std::unique_ptr<Vector<double>> pi(make_inequalities_dual_vector());
 
-   assert(problem.ixlow && problem.ixupp && problem.iclow && problem.icupp);
+   assert(problem.primal_lower_bound_indicators && problem.primal_upper_bound_indicators && problem.inequality_lower_bound_indicators && problem.inequality_upper_bound_indicators);
    auto* variables = new DistributedVariables(tree, std::move(x), std::move(s), std::move(y), std::move(z),
       std::move(v), std::move(gamma), std::move(w), std::move(phi), std::move(t), std::move(lambda), std::move(u),
-      std::move(pi), problem.ixlow, problem.ixlow->number_nonzeros(), problem.ixupp, problem.ixupp->number_nonzeros(),
-      problem.iclow, problem.iclow->number_nonzeros(), problem.icupp, problem.icupp->number_nonzeros());
+      std::move(pi), problem.primal_lower_bound_indicators, problem.primal_lower_bound_indicators->number_nonzeros(), problem.primal_upper_bound_indicators, problem.primal_upper_bound_indicators->number_nonzeros(),
+      problem.inequality_lower_bound_indicators, problem.inequality_lower_bound_indicators->number_nonzeros(), problem.inequality_upper_bound_indicators, problem.inequality_upper_bound_indicators->number_nonzeros());
    return variables;
 }
 
@@ -271,26 +271,26 @@ Residuals* DistributedFactory::make_residuals(Problem& problem) const {
 
    std::unique_ptr<Vector<double>> rz{tree->newDualZVector()};
 
-   const bool mclow_empty = problem.mclow <= 0;
+   const bool mclow_empty = problem.number_inequality_lower_bounds <= 0;
    std::unique_ptr<Vector<double>> rt{tree->newDualZVector(mclow_empty)};
    std::unique_ptr<Vector<double>> rlambda{tree->newDualZVector(mclow_empty)};
 
-   const bool mcupp_empty = problem.mcupp <= 0;
+   const bool mcupp_empty = problem.number_inequality_upper_bounds <= 0;
    std::unique_ptr<Vector<double>> ru{tree->newDualZVector(mcupp_empty)};
    std::unique_ptr<Vector<double>> rpi{tree->newDualZVector(mcupp_empty)};
 
-   const bool nxlow_empty = problem.nxlow <= 0;
+   const bool nxlow_empty = problem.number_primal_lower_bounds <= 0;
    std::unique_ptr<Vector<double>> rv{tree->new_primal_vector(nxlow_empty)};
    std::unique_ptr<Vector<double>> rgamma{tree->new_primal_vector(nxlow_empty)};
 
-   const bool nxupp_empty = problem.nxupp <= 0;
+   const bool nxupp_empty = problem.number_primal_upper_bounds <= 0;
    std::unique_ptr<Vector<double>> rw{tree->new_primal_vector(nxupp_empty)};
    std::unique_ptr<Vector<double>> rphi{tree->new_primal_vector(nxupp_empty)};
 
-   assert(problem.ixlow && problem.ixupp && problem.iclow && problem.icupp);
+   assert(problem.primal_lower_bound_indicators && problem.primal_upper_bound_indicators && problem.inequality_lower_bound_indicators && problem.inequality_upper_bound_indicators);
    return new DistributedResiduals(std::move(lagrangian_gradient), std::move(rA), std::move(rC), std::move(rz),
       std::move(rt), std::move(rlambda), std::move(ru), std::move(rpi), std::move(rv), std::move(rgamma), std::move(rw),
-      std::move(rphi), problem.ixlow, problem.ixupp, problem.iclow, problem.icupp);
+      std::move(rphi), problem.primal_lower_bound_indicators, problem.primal_upper_bound_indicators, problem.inequality_lower_bound_indicators, problem.inequality_upper_bound_indicators);
 }
 
 std::unique_ptr<AbstractLinearSystem> DistributedFactory::make_linear_system(Problem& problem_in) {

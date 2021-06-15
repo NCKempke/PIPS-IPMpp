@@ -22,7 +22,7 @@ StochPostsolver::StochPostsolver(const DistributedQP& original_problem) : Postso
    n_rows_original(original_problem.my + original_problem.mz),
    n_cols_original(original_problem.nx), padding_origcol{cloneStochVector<double, int>(*original_problem.g)},
    padding_origrow_equality{cloneStochVector<double, int>(*original_problem.bA)},
-   padding_origrow_inequality{cloneStochVector<double, int>(*original_problem.bu)},
+   padding_origrow_inequality{cloneStochVector<double, int>(*original_problem.inequality_upper_bounds)},
    eq_row_marked_modified{dynamic_cast<DistributedVector<int>*>(padding_origrow_equality->clone())},
    ineq_row_marked_modified{dynamic_cast<DistributedVector<int>*>(padding_origrow_inequality->clone())},
    column_marked_modified{dynamic_cast<DistributedVector<int>*>(padding_origcol->clone())},

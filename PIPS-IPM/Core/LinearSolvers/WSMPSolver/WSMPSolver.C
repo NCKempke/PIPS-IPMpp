@@ -5,7 +5,7 @@
 #include "WSMPSolver.h"
 #include "SparseStorage.h"
 #include "SparseSymmetricMatrix.h"
-#include "SimpleVector.h"
+#include "SimpleVector.hpp"
 #include "DenseMatrix.h"
 
 #ifdef HAVE_GETRUSAGE

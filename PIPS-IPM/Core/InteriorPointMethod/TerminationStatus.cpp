@@ -1,7 +1,7 @@
 //
 // Created by nils-christian on 09.06.21.
 //
-#include "TerminationStatus.h"
+#include "TerminationStatus.hpp"
 
 std::ostream& operator<<(std::ostream& os, TerminationStatus status) {
    switch (status) {

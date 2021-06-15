@@ -8,7 +8,7 @@
 #define DISTRIBUTEDVECTORUTILITIES_H
 
 #include "DistributedVector.h"
-#include "SimpleVector.h"
+#include "SimpleVector.hpp"
 
 #include <string>
 #include <iostream>

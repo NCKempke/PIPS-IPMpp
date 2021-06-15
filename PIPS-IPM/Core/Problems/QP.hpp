@@ -5,7 +5,7 @@
 #ifndef QPGENDATA
 #define QPGENDATA
 
-#include "Problem.h"
+#include "Problem.hpp"
 #include "Vector.hpp"
 
 class MpsReader;

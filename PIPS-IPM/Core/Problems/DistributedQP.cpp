@@ -1132,28 +1132,28 @@ void DistributedQP::write_to_streamDense(std::ostream& out) const {
    (*bA).write_to_stream(out);
    if (myRank == 0)
       out << "xupp:\n";
-   (*bux).write_to_stream(out);
+   (*primal_upper_bounds).write_to_stream(out);
    if (myRank == 0)
       out << "ixupp:\n";
-   (*ixupp).write_to_stream(out);
+   (*primal_upper_bound_indicators).write_to_stream(out);
    if (myRank == 0)
       out << "xlow:\n";
-   (*blx).write_to_stream(out);
+   (*primal_lower_bounds).write_to_stream(out);
    if (myRank == 0)
       out << "ixlow:\n";
-   (*ixlow).write_to_stream(out);
+   (*primal_lower_bound_indicators).write_to_stream(out);
    if (myRank == 0)
       out << "cupp:\n";
-   (*bu).write_to_stream(out);
+   (*inequality_upper_bounds).write_to_stream(out);
    if (myRank == 0)
       out << "icupp:\n";
-   (*icupp).write_to_stream(out);
+   (*inequality_upper_bound_indicators).write_to_stream(out);
    if (myRank == 0)
       out << "clow:\n";
-   (*bl).write_to_stream(out);
+   (*inequality_lower_bounds).write_to_stream(out);
    if (myRank == 0)
       out << "iclow:\n";
-   (*iclow).write_to_stream(out);
+   (*inequality_lower_bound_indicators).write_to_stream(out);
 }
 
 DistributedQP* DistributedQP::cloneFull(bool switchToDynamicStorage) const {
@@ -1164,14 +1164,14 @@ DistributedQP* DistributedQP::cloneFull(bool switchToDynamicStorage) const {
 
    std::shared_ptr<DistributedVector<double>> c_clone(dynamic_cast<DistributedVector<double>*>(g->cloneFull()));
    std::shared_ptr<DistributedVector<double>> bA_clone(dynamic_cast<DistributedVector<double>*>(bA->cloneFull()));
-   std::shared_ptr<DistributedVector<double>> xupp_clone(dynamic_cast<DistributedVector<double>*>(bux->cloneFull()));
-   std::shared_ptr<DistributedVector<double>> ixupp_clone(dynamic_cast<DistributedVector<double>*>(ixupp->cloneFull()));
-   std::shared_ptr<DistributedVector<double>> xlow_clone(dynamic_cast<DistributedVector<double>*>(blx->cloneFull()));
-   std::shared_ptr<DistributedVector<double>> ixlow_clone(dynamic_cast<DistributedVector<double>*>(ixlow->cloneFull()));
-   std::shared_ptr<DistributedVector<double>> cupp_clone(dynamic_cast<DistributedVector<double>*>(bu->cloneFull()));
-   std::shared_ptr<DistributedVector<double>> icupp_clone(dynamic_cast<DistributedVector<double>*>(icupp->cloneFull()));
-   std::shared_ptr<DistributedVector<double>> clow_clone(dynamic_cast<DistributedVector<double>*>(bl->cloneFull()));
-   std::shared_ptr<DistributedVector<double>> iclow_clone(dynamic_cast<DistributedVector<double>*>(iclow->cloneFull()));
+   std::shared_ptr<DistributedVector<double>> xupp_clone(dynamic_cast<DistributedVector<double>*>(primal_upper_bounds->cloneFull()));
+   std::shared_ptr<DistributedVector<double>> ixupp_clone(dynamic_cast<DistributedVector<double>*>(primal_upper_bound_indicators->cloneFull()));
+   std::shared_ptr<DistributedVector<double>> xlow_clone(dynamic_cast<DistributedVector<double>*>(primal_lower_bounds->cloneFull()));
+   std::shared_ptr<DistributedVector<double>> ixlow_clone(dynamic_cast<DistributedVector<double>*>(primal_lower_bound_indicators->cloneFull()));
+   std::shared_ptr<DistributedVector<double>> cupp_clone(dynamic_cast<DistributedVector<double>*>(inequality_upper_bounds->cloneFull()));
+   std::shared_ptr<DistributedVector<double>> icupp_clone(dynamic_cast<DistributedVector<double>*>(inequality_upper_bound_indicators->cloneFull()));
+   std::shared_ptr<DistributedVector<double>> clow_clone(dynamic_cast<DistributedVector<double>*>(inequality_lower_bounds->cloneFull()));
+   std::shared_ptr<DistributedVector<double>> iclow_clone(dynamic_cast<DistributedVector<double>*>(inequality_lower_bound_indicators->cloneFull()));
 
    const DistributedTree* tree_clone = stochNode;
 
@@ -1189,17 +1189,17 @@ void DistributedQP::createChildren() {
    auto& gSt = dynamic_cast<DistributedVector<double>&>(*g);
    auto& QSt = dynamic_cast<DistributedSymmetricMatrix&>(*Q);
 
-   auto& xlowSt = dynamic_cast<DistributedVector<double>&>(*blx);
-   auto& ixlowSt = dynamic_cast<DistributedVector<double>&>(*ixlow);
-   auto& xuppSt = dynamic_cast<DistributedVector<double>&>(*bux);
-   auto& ixuppSt = dynamic_cast<DistributedVector<double>&>(*ixupp);
+   auto& xlowSt = dynamic_cast<DistributedVector<double>&>(*primal_lower_bounds);
+   auto& ixlowSt = dynamic_cast<DistributedVector<double>&>(*primal_lower_bound_indicators);
+   auto& xuppSt = dynamic_cast<DistributedVector<double>&>(*primal_upper_bounds);
+   auto& ixuppSt = dynamic_cast<DistributedVector<double>&>(*primal_upper_bound_indicators);
    auto& ASt = dynamic_cast<DistributedMatrix&>(*A);
    auto& bASt = dynamic_cast<DistributedVector<double>&>(*bA);
    auto& CSt = dynamic_cast<DistributedMatrix&>(*C);
-   auto& clowSt = dynamic_cast<DistributedVector<double>&>(*bl);
-   auto& iclowSt = dynamic_cast<DistributedVector<double>&>(*iclow);
-   auto& cuppSt = dynamic_cast<DistributedVector<double>&>(*bu);
-   auto& icuppSt = dynamic_cast<DistributedVector<double>&>(*icupp);
+   auto& clowSt = dynamic_cast<DistributedVector<double>&>(*inequality_lower_bounds);
+   auto& iclowSt = dynamic_cast<DistributedVector<double>&>(*inequality_lower_bound_indicators);
+   auto& cuppSt = dynamic_cast<DistributedVector<double>&>(*inequality_upper_bounds);
+   auto& icuppSt = dynamic_cast<DistributedVector<double>&>(*inequality_upper_bound_indicators);
 
    for (size_t it = 0; it < gSt.children.size(); it++) {
       AddChild(new DistributedQP(stochNode->getChildren()[it], gSt.children[it], QSt.children[it], xlowSt.children[it],
@@ -1227,26 +1227,26 @@ DistributedQP* DistributedQP::shaveBorderFromDataAndCreateNewTop(const Distribut
    std::shared_ptr<DistributedVector<double>> g_hier(
       dynamic_cast<DistributedVector<double>&>(*g).raiseBorder(n_global_linking_vars, -1));
    std::shared_ptr<DistributedVector<double>> bux_hier(
-      dynamic_cast<DistributedVector<double>&>(*bux).raiseBorder(n_global_linking_vars, -1));
+      dynamic_cast<DistributedVector<double>&>(*primal_upper_bounds).raiseBorder(n_global_linking_vars, -1));
    std::shared_ptr<DistributedVector<double>> ixupp_hier(
-      dynamic_cast<DistributedVector<double>&>(*ixupp).raiseBorder(n_global_linking_vars, -1));
+      dynamic_cast<DistributedVector<double>&>(*primal_upper_bound_indicators).raiseBorder(n_global_linking_vars, -1));
    std::shared_ptr<DistributedVector<double>> blx_hier(
-      dynamic_cast<DistributedVector<double>&>(*blx).raiseBorder(n_global_linking_vars, -1));
+      dynamic_cast<DistributedVector<double>&>(*primal_lower_bounds).raiseBorder(n_global_linking_vars, -1));
    std::shared_ptr<DistributedVector<double>> ixlow_hier(
-      dynamic_cast<DistributedVector<double>&>(*ixlow).raiseBorder(n_global_linking_vars, -1));
+      dynamic_cast<DistributedVector<double>&>(*primal_lower_bound_indicators).raiseBorder(n_global_linking_vars, -1));
 
    // TODO shave top
    std::shared_ptr<DistributedVector<double>> bA_hier(
       dynamic_cast<DistributedVector<double>&>(*bA).raiseBorder(-1, n_global_eq_linking_conss));
 
    std::shared_ptr<DistributedVector<double>> bu_hier(
-      dynamic_cast<DistributedVector<double>&>(*bu).raiseBorder(-1, n_global_ineq_linking_conss));
+      dynamic_cast<DistributedVector<double>&>(*inequality_upper_bounds).raiseBorder(-1, n_global_ineq_linking_conss));
    std::shared_ptr<DistributedVector<double>> icupp_hier(
-      dynamic_cast<DistributedVector<double>&>(*icupp).raiseBorder(-1, n_global_ineq_linking_conss));
+      dynamic_cast<DistributedVector<double>&>(*inequality_upper_bound_indicators).raiseBorder(-1, n_global_ineq_linking_conss));
    std::shared_ptr<DistributedVector<double>> bl_hier(
-      dynamic_cast<DistributedVector<double>&>(*bl).raiseBorder(-1, n_global_ineq_linking_conss));
+      dynamic_cast<DistributedVector<double>&>(*inequality_lower_bounds).raiseBorder(-1, n_global_ineq_linking_conss));
    std::shared_ptr<DistributedVector<double>> iclow_hier(
-      dynamic_cast<DistributedVector<double>&>(*iclow).raiseBorder(-1, n_global_ineq_linking_conss));
+      dynamic_cast<DistributedVector<double>&>(*inequality_lower_bound_indicators).raiseBorder(-1, n_global_ineq_linking_conss));
 
    // TODO what is this?
    //DistributedVector<double>* sc_hier = dynamic_cast<DistributedVector<double>&>(*sc).shaveBorder(-1);
@@ -1259,19 +1259,19 @@ DistributedQP* DistributedQP::shaveBorderFromDataAndCreateNewTop(const Distribut
 DistributedQP* DistributedQP::shaveDenseBorder(const DistributedTree* tree) {
    DistributedQP* hierarchical_top = shaveBorderFromDataAndCreateNewTop(tree);
 
-   const auto& ixlow = dynamic_cast<const DistributedVector<double>&>(*hierarchical_top->ixlow);
-   const auto& ixupp = dynamic_cast<const DistributedVector<double>&>(*hierarchical_top->ixupp);
+   const auto& ixlow = dynamic_cast<const DistributedVector<double>&>(*hierarchical_top->primal_lower_bound_indicators);
+   const auto& ixupp = dynamic_cast<const DistributedVector<double>&>(*hierarchical_top->primal_upper_bound_indicators);
    assert(ixlow.first);
    assert(ixupp.first);
-   nxlow -= ixlow.first->number_nonzeros();
-   nxupp -= ixupp.first->number_nonzeros();
+   number_primal_lower_bounds -= ixlow.first->number_nonzeros();
+   number_primal_upper_bounds -= ixupp.first->number_nonzeros();
 
-   const auto& iclow = dynamic_cast<const DistributedVector<double>&>(*hierarchical_top->iclow);
-   const auto& icupp = dynamic_cast<const DistributedVector<double>&>(*hierarchical_top->icupp);
+   const auto& iclow = dynamic_cast<const DistributedVector<double>&>(*hierarchical_top->inequality_lower_bound_indicators);
+   const auto& icupp = dynamic_cast<const DistributedVector<double>&>(*hierarchical_top->inequality_upper_bound_indicators);
    assert(iclow.last);
    assert(icupp.last);
-   mclow -= iclow.last->number_nonzeros();
-   mcupp -= icupp.last->number_nonzeros();
+   number_inequality_lower_bounds -= iclow.last->number_nonzeros();
+   number_inequality_upper_bounds -= icupp.last->number_nonzeros();
 
    nx = g->length();
    my = A->n_rows();
@@ -1414,34 +1414,34 @@ void DistributedQP::addChildrenForSplit() {
          ? dynamic_cast<DistributedVector<double>&>(*g).children[i]
          : dynamic_cast<DistributedVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*g).first).children[i];
       std::shared_ptr<DistributedVector<double>> blx_child = is_hierarchy_inner_root
-         ? dynamic_cast<DistributedVector<double>&>(*blx).children[i]
-         : dynamic_cast<DistributedVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*blx).first).children[i];
+         ? dynamic_cast<DistributedVector<double>&>(*primal_lower_bounds).children[i]
+         : dynamic_cast<DistributedVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*primal_lower_bounds).first).children[i];
       std::shared_ptr<DistributedVector<double>> ixlow_child = is_hierarchy_inner_root
-         ? dynamic_cast<DistributedVector<double>&>(*ixlow).children[i]
-         : dynamic_cast<DistributedVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*ixlow).first).children[i];
+         ? dynamic_cast<DistributedVector<double>&>(*primal_lower_bound_indicators).children[i]
+         : dynamic_cast<DistributedVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*primal_lower_bound_indicators).first).children[i];
       std::shared_ptr<DistributedVector<double>> bux_child = is_hierarchy_inner_root
-         ? dynamic_cast<DistributedVector<double>&>(*bux).children[i]
-         : dynamic_cast<DistributedVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*bux).first).children[i];
+         ? dynamic_cast<DistributedVector<double>&>(*primal_upper_bounds).children[i]
+         : dynamic_cast<DistributedVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*primal_upper_bounds).first).children[i];
       std::shared_ptr<DistributedVector<double>> ixupp_child = is_hierarchy_inner_root
-         ? dynamic_cast<DistributedVector<double>&>(*ixupp).children[i]
-         : dynamic_cast<DistributedVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*ixupp).first).children[i];
+         ? dynamic_cast<DistributedVector<double>&>(*primal_upper_bound_indicators).children[i]
+         : dynamic_cast<DistributedVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*primal_upper_bound_indicators).first).children[i];
 
       std::shared_ptr<DistributedVector<double>> bA_child = is_hierarchy_inner_root
          ? dynamic_cast<DistributedVector<double>&>(*bA).children[i]
          : dynamic_cast<DistributedVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*bA).first).children[i];
 
       std::shared_ptr<DistributedVector<double>> bl_child = is_hierarchy_inner_root
-         ? dynamic_cast<DistributedVector<double>&>(*bl).children[i]
-         : dynamic_cast<DistributedVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*bl).first).children[i];
+         ? dynamic_cast<DistributedVector<double>&>(*inequality_lower_bounds).children[i]
+         : dynamic_cast<DistributedVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*inequality_lower_bounds).first).children[i];
       std::shared_ptr<DistributedVector<double>> iclow_child = is_hierarchy_inner_root
-         ? dynamic_cast<DistributedVector<double>&>(*iclow).children[i]
-         : dynamic_cast<DistributedVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*iclow).first).children[i];
+         ? dynamic_cast<DistributedVector<double>&>(*inequality_lower_bound_indicators).children[i]
+         : dynamic_cast<DistributedVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*inequality_lower_bound_indicators).first).children[i];
       std::shared_ptr<DistributedVector<double>> bu_child = is_hierarchy_inner_root
-         ? dynamic_cast<DistributedVector<double>&>(*bu).children[i]
-         : dynamic_cast<DistributedVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*bu).first).children[i];
+         ? dynamic_cast<DistributedVector<double>&>(*inequality_upper_bounds).children[i]
+         : dynamic_cast<DistributedVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*inequality_upper_bounds).first).children[i];
       std::shared_ptr<DistributedVector<double>> icupp_child = is_hierarchy_inner_root
-         ? dynamic_cast<DistributedVector<double>&>(*icupp).children[i]
-         : dynamic_cast<DistributedVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*icupp).first).children[i];
+         ? dynamic_cast<DistributedVector<double>&>(*inequality_upper_bound_indicators).children[i]
+         : dynamic_cast<DistributedVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*inequality_upper_bound_indicators).first).children[i];
 
       assert(dynamic_cast<const DistributedTreeCallbacks&>(*tree.getChildren()[i]).isHierarchicalInnerLeaf());
       const DistributedTree* tree_child = dynamic_cast<const DistributedTreeCallbacks&>(*tree.getChildren()[i]).getSubRoot();
@@ -1565,29 +1565,29 @@ void DistributedQP::splitData() {
       dynamic_cast<DistributedVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*g).first).split(
          map_block_subtree, child_comms);
 
-      dynamic_cast<DistributedVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*bux).first).split(
+      dynamic_cast<DistributedVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*primal_upper_bounds).first).split(
          map_block_subtree, child_comms);
-      dynamic_cast<DistributedVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*ixupp).first).split(
+      dynamic_cast<DistributedVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*primal_upper_bound_indicators).first).split(
          map_block_subtree, child_comms);
-      dynamic_cast<DistributedVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*blx).first).split(
+      dynamic_cast<DistributedVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*primal_lower_bounds).first).split(
          map_block_subtree, child_comms);
-      dynamic_cast<DistributedVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*ixlow).first).split(
+      dynamic_cast<DistributedVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*primal_lower_bound_indicators).first).split(
          map_block_subtree, child_comms);
 
       dynamic_cast<DistributedVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*bA).first).split(
          map_block_subtree, child_comms,
          linkStartBlockLengthsA, stochNode->myl());
 
-      dynamic_cast<DistributedVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*bu).first).split(
+      dynamic_cast<DistributedVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*inequality_upper_bounds).first).split(
          map_block_subtree, child_comms,
          linkStartBlockLengthsC, stochNode->mzl());
-      dynamic_cast<DistributedVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*icupp).first).split(
+      dynamic_cast<DistributedVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*inequality_upper_bound_indicators).first).split(
          map_block_subtree, child_comms,
          linkStartBlockLengthsC, stochNode->mzl());
-      dynamic_cast<DistributedVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*bl).first).split(
+      dynamic_cast<DistributedVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*inequality_lower_bounds).first).split(
          map_block_subtree, child_comms,
          linkStartBlockLengthsC, stochNode->mzl());
-      dynamic_cast<DistributedVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*iclow).first).split(
+      dynamic_cast<DistributedVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*inequality_lower_bound_indicators).first).split(
          map_block_subtree, child_comms,
          linkStartBlockLengthsC, stochNode->mzl());
    } else {
@@ -1599,21 +1599,21 @@ void DistributedQP::splitData() {
 
       dynamic_cast<DistributedVector<double>&>(*g).split(map_block_subtree, child_comms);
 
-      dynamic_cast<DistributedVector<double>&>(*bux).split(map_block_subtree, child_comms);
-      dynamic_cast<DistributedVector<double>&>(*ixupp).split(map_block_subtree, child_comms);
-      dynamic_cast<DistributedVector<double>&>(*blx).split(map_block_subtree, child_comms);
-      dynamic_cast<DistributedVector<double>&>(*ixlow).split(map_block_subtree, child_comms);
+      dynamic_cast<DistributedVector<double>&>(*primal_upper_bounds).split(map_block_subtree, child_comms);
+      dynamic_cast<DistributedVector<double>&>(*primal_upper_bound_indicators).split(map_block_subtree, child_comms);
+      dynamic_cast<DistributedVector<double>&>(*primal_lower_bounds).split(map_block_subtree, child_comms);
+      dynamic_cast<DistributedVector<double>&>(*primal_lower_bound_indicators).split(map_block_subtree, child_comms);
 
       dynamic_cast<DistributedVector<double>&>(*bA).split(map_block_subtree, child_comms, linkStartBlockLengthsA,
          stochNode->myl());
 
-      dynamic_cast<DistributedVector<double>&>(*bu).split(map_block_subtree, child_comms, linkStartBlockLengthsC,
+      dynamic_cast<DistributedVector<double>&>(*inequality_upper_bounds).split(map_block_subtree, child_comms, linkStartBlockLengthsC,
          stochNode->mzl());
-      dynamic_cast<DistributedVector<double>&>(*icupp).split(map_block_subtree, child_comms, linkStartBlockLengthsC,
+      dynamic_cast<DistributedVector<double>&>(*inequality_upper_bound_indicators).split(map_block_subtree, child_comms, linkStartBlockLengthsC,
          stochNode->mzl());
-      dynamic_cast<DistributedVector<double>&>(*bl).split(map_block_subtree, child_comms, linkStartBlockLengthsC,
+      dynamic_cast<DistributedVector<double>&>(*inequality_lower_bounds).split(map_block_subtree, child_comms, linkStartBlockLengthsC,
          stochNode->mzl());
-      dynamic_cast<DistributedVector<double>&>(*iclow).split(map_block_subtree, child_comms, linkStartBlockLengthsC,
+      dynamic_cast<DistributedVector<double>&>(*inequality_lower_bound_indicators).split(map_block_subtree, child_comms, linkStartBlockLengthsC,
          stochNode->mzl());
    }
 }
@@ -1625,17 +1625,17 @@ void DistributedQP::recomputeSize() {
 
    dynamic_cast<DistributedVector<double>&>(*g).recomputeSize();
 
-   dynamic_cast<DistributedVector<double>&>(*bux).recomputeSize();
-   dynamic_cast<DistributedVector<double>&>(*ixupp).recomputeSize();
-   dynamic_cast<DistributedVector<double>&>(*blx).recomputeSize();
-   dynamic_cast<DistributedVector<double>&>(*ixlow).recomputeSize();
+   dynamic_cast<DistributedVector<double>&>(*primal_upper_bounds).recomputeSize();
+   dynamic_cast<DistributedVector<double>&>(*primal_upper_bound_indicators).recomputeSize();
+   dynamic_cast<DistributedVector<double>&>(*primal_lower_bounds).recomputeSize();
+   dynamic_cast<DistributedVector<double>&>(*primal_lower_bound_indicators).recomputeSize();
 
    dynamic_cast<DistributedVector<double>&>(*bA).recomputeSize();
 
-   dynamic_cast<DistributedVector<double>&>(*bu).recomputeSize();
-   dynamic_cast<DistributedVector<double>&>(*icupp).recomputeSize();
-   dynamic_cast<DistributedVector<double>&>(*bl).recomputeSize();
-   dynamic_cast<DistributedVector<double>&>(*iclow).recomputeSize();
+   dynamic_cast<DistributedVector<double>&>(*inequality_upper_bounds).recomputeSize();
+   dynamic_cast<DistributedVector<double>&>(*inequality_upper_bound_indicators).recomputeSize();
+   dynamic_cast<DistributedVector<double>&>(*inequality_lower_bounds).recomputeSize();
+   dynamic_cast<DistributedVector<double>&>(*inequality_lower_bound_indicators).recomputeSize();
 }
 
 void DistributedQP::splitStringMatricesAccordingToSubtreeStructure() {
@@ -1696,22 +1696,22 @@ void DistributedQP::permuteLinkingCons(const Permutation& permA, const Permutati
       dynamic_cast<DistributedMatrix&>(*dynamic_cast<DistributedMatrix&>(*C).Bmat).permuteLinkingCons(permC);
       dynamic_cast<DistributedVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*bA).first).permuteLinkingEntries(
          permA);
-      dynamic_cast<DistributedVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*bl).first).permuteLinkingEntries(
+      dynamic_cast<DistributedVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*inequality_lower_bounds).first).permuteLinkingEntries(
          permC);
-      dynamic_cast<DistributedVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*bu).first).permuteLinkingEntries(
+      dynamic_cast<DistributedVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*inequality_upper_bounds).first).permuteLinkingEntries(
          permC);
-      dynamic_cast<DistributedVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*iclow).first).permuteLinkingEntries(
+      dynamic_cast<DistributedVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*inequality_lower_bound_indicators).first).permuteLinkingEntries(
          permC);
-      dynamic_cast<DistributedVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*icupp).first).permuteLinkingEntries(
+      dynamic_cast<DistributedVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*inequality_upper_bound_indicators).first).permuteLinkingEntries(
          permC);
    } else {
       dynamic_cast<DistributedMatrix&>(*A).permuteLinkingCons(permA);
       dynamic_cast<DistributedMatrix&>(*C).permuteLinkingCons(permC);
       dynamic_cast<DistributedVector<double>&>(*bA).permuteLinkingEntries(permA);
-      dynamic_cast<DistributedVector<double>&>(*bl).permuteLinkingEntries(permC);
-      dynamic_cast<DistributedVector<double>&>(*bu).permuteLinkingEntries(permC);
-      dynamic_cast<DistributedVector<double>&>(*iclow).permuteLinkingEntries(permC);
-      dynamic_cast<DistributedVector<double>&>(*icupp).permuteLinkingEntries(permC);
+      dynamic_cast<DistributedVector<double>&>(*inequality_lower_bounds).permuteLinkingEntries(permC);
+      dynamic_cast<DistributedVector<double>&>(*inequality_upper_bounds).permuteLinkingEntries(permC);
+      dynamic_cast<DistributedVector<double>&>(*inequality_lower_bound_indicators).permuteLinkingEntries(permC);
+      dynamic_cast<DistributedVector<double>&>(*inequality_upper_bound_indicators).permuteLinkingEntries(permC);
    }
 }
 
@@ -1722,10 +1722,10 @@ void DistributedQP::permuteLinkingVars(const Permutation& perm) {
    dynamic_cast<DistributedMatrix&>(*A).permuteLinkingVars(perm);
    dynamic_cast<DistributedMatrix&>(*C).permuteLinkingVars(perm);
    dynamic_cast<DistributedVector<double>&>(*g).permuteVec0Entries(perm);
-   dynamic_cast<DistributedVector<double>&>(*bux).permuteVec0Entries(perm);
-   dynamic_cast<DistributedVector<double>&>(*blx).permuteVec0Entries(perm);
-   dynamic_cast<DistributedVector<double>&>(*ixupp).permuteVec0Entries(perm);
-   dynamic_cast<DistributedVector<double>&>(*ixlow).permuteVec0Entries(perm);
+   dynamic_cast<DistributedVector<double>&>(*primal_upper_bounds).permuteVec0Entries(perm);
+   dynamic_cast<DistributedVector<double>&>(*primal_lower_bounds).permuteVec0Entries(perm);
+   dynamic_cast<DistributedVector<double>&>(*primal_upper_bound_indicators).permuteVec0Entries(perm);
+   dynamic_cast<DistributedVector<double>&>(*primal_lower_bound_indicators).permuteVec0Entries(perm);
 }
 
 DistributedVariables*
@@ -1733,8 +1733,8 @@ DistributedQP::getVarsUnperm(const DistributedVariables& vars, const Distributed
    auto* unperm_vars = new DistributedVariables(vars);
 
    if (is_hierarchy_root)
-      unperm_vars->collapseHierarchicalStructure(*this, unpermData.stochNode, unpermData.ixlow, unpermData.ixupp,
-         unpermData.iclow, unpermData.icupp);
+      unperm_vars->collapseHierarchicalStructure(*this, unpermData.stochNode, unpermData.primal_lower_bound_indicators, unpermData.primal_upper_bound_indicators,
+         unpermData.inequality_lower_bound_indicators, unpermData.inequality_upper_bound_indicators);
 
    const Permutation perm_inv_link_vars = getLinkVarsPermInv();
    const Permutation perm_inv_link_cons_eq = getLinkConsEqPermInv();
@@ -1757,7 +1757,7 @@ DistributedQP::getResidsUnperm(const DistributedResiduals& resids, const Distrib
    auto* unperm_resids = new DistributedResiduals(resids);
 
    if (is_hierarchy_root)
-      unperm_resids->collapse_hierarchical_structure(*this, stochNode, unpermData.ixlow, unpermData.ixupp, unpermData.iclow, unpermData.icupp);
+      unperm_resids->collapse_hierarchical_structure(*this, stochNode, unpermData.primal_lower_bound_indicators, unpermData.primal_upper_bound_indicators, unpermData.inequality_lower_bound_indicators, unpermData.inequality_upper_bound_indicators);
 
    const Permutation perm_inv_link_vars = this->getLinkVarsPermInv();
    const Permutation perm_inv_link_cons_eq = this->getLinkConsEqPermInv();
@@ -2628,15 +2628,15 @@ DistributedQP::cleanUpPresolvedData(const DistributedVector<int>& rowNnzVecA, co
    auto& C_stoch = dynamic_cast<DistributedMatrix&>(*C);
    auto& g_stoch = dynamic_cast<DistributedVector<double>&>(*g);
 
-   auto& blx_stoch = dynamic_cast<DistributedVector<double>&>(*blx);
-   auto& ixlow_stoch = dynamic_cast<DistributedVector<double>&>(*ixlow);
-   auto& bux_stoch = dynamic_cast<DistributedVector<double>&>(*bux);
-   auto& ixupp_stoch = dynamic_cast<DistributedVector<double>&>(*ixupp);
+   auto& blx_stoch = dynamic_cast<DistributedVector<double>&>(*primal_lower_bounds);
+   auto& ixlow_stoch = dynamic_cast<DistributedVector<double>&>(*primal_lower_bound_indicators);
+   auto& bux_stoch = dynamic_cast<DistributedVector<double>&>(*primal_upper_bounds);
+   auto& ixupp_stoch = dynamic_cast<DistributedVector<double>&>(*primal_upper_bound_indicators);
 
-   auto& bl_stoch = dynamic_cast<DistributedVector<double>&>(*bl);
-   auto& iclow_stoch = dynamic_cast<DistributedVector<double>&>(*iclow);
-   auto& bu_stoch = dynamic_cast<DistributedVector<double>&>(*bu);
-   auto& icupp_stoch = dynamic_cast<DistributedVector<double>&>(*icupp);
+   auto& bl_stoch = dynamic_cast<DistributedVector<double>&>(*inequality_lower_bounds);
+   auto& iclow_stoch = dynamic_cast<DistributedVector<double>&>(*inequality_lower_bound_indicators);
+   auto& bu_stoch = dynamic_cast<DistributedVector<double>&>(*inequality_upper_bounds);
+   auto& icupp_stoch = dynamic_cast<DistributedVector<double>&>(*inequality_upper_bound_indicators);
 
    C_stoch.initStaticStorageFromDynamic(rowNnzVecC, colNnzVec);
    C_stoch.freeDynamicStorage();
@@ -2658,10 +2658,10 @@ DistributedQP::cleanUpPresolvedData(const DistributedVector<int>& rowNnzVecA, co
    my = A_stoch.n_rows();
    mz = C_stoch.n_rows();
 
-   nxlow = ixlow_stoch.number_nonzeros();
-   nxupp = ixupp_stoch.number_nonzeros();
-   mclow = iclow_stoch.number_nonzeros();
-   mcupp = icupp_stoch.number_nonzeros();
+   number_primal_lower_bounds = ixlow_stoch.number_nonzeros();
+   number_primal_upper_bounds = ixupp_stoch.number_nonzeros();
+   number_inequality_lower_bounds = iclow_stoch.number_nonzeros();
+   number_inequality_upper_bounds = icupp_stoch.number_nonzeros();
 }
 
 void DistributedQP::initDistMarker(int blocksStart, int blocksEnd) const {
@@ -2761,49 +2761,49 @@ bool DistributedQP::isRootNodeInSync() const {
    }
 
    /* upper bounds x bux */
-   if (!dynamic_cast<const DistributedVector<double>&>(*bux).isRootNodeInSync()) {
+   if (!dynamic_cast<const DistributedVector<double>&>(*primal_upper_bounds).isRootNodeInSync()) {
       std::cout << "ERROR: upper bounds x corrupted!\n";
       in_sync = false;
    }
 
    /* index for upper bounds x ixupp */
-   if (!dynamic_cast<const DistributedVector<double>&>(*ixupp).isRootNodeInSync()) {
+   if (!dynamic_cast<const DistributedVector<double>&>(*primal_upper_bound_indicators).isRootNodeInSync()) {
       std::cout << "ERROR: index upper bounds x corrupted!\n";
       in_sync = false;
    }
 
    /* lower bounds x blx */
-   if (!dynamic_cast<const DistributedVector<double>&>(*blx).isRootNodeInSync()) {
+   if (!dynamic_cast<const DistributedVector<double>&>(*primal_lower_bounds).isRootNodeInSync()) {
       std::cout << "ERROR: lower bounds x corrupted!\n";
       in_sync = false;
    }
 
    /* index for lower bounds x ixlow */
-   if (!dynamic_cast<const DistributedVector<double>&>(*ixlow).isRootNodeInSync()) {
+   if (!dynamic_cast<const DistributedVector<double>&>(*primal_lower_bound_indicators).isRootNodeInSync()) {
       std::cout << "ERROR: index lower bounds x corrupted!\n";
       in_sync = false;
    }
 
    /* upper bounds C bu */
-   if (!dynamic_cast<const DistributedVector<double>&>(*bu).isRootNodeInSync()) {
+   if (!dynamic_cast<const DistributedVector<double>&>(*inequality_upper_bounds).isRootNodeInSync()) {
       std::cout << "ERROR: rhs C corrupted!\n";
       in_sync = false;
    }
 
    /* index upper bounds C icupp */
-   if (!dynamic_cast<const DistributedVector<double>&>(*icupp).isRootNodeInSync()) {
+   if (!dynamic_cast<const DistributedVector<double>&>(*inequality_upper_bound_indicators).isRootNodeInSync()) {
       std::cout << "ERROR: index rhs C corrupted!\n";
       in_sync = false;
    }
 
    /* lower bounds C bl */
-   if (!dynamic_cast<const DistributedVector<double>&>(*bl).isRootNodeInSync()) {
+   if (!dynamic_cast<const DistributedVector<double>&>(*inequality_lower_bounds).isRootNodeInSync()) {
       std::cout << "ERROR: lower bounds C corrupted!\n";
       in_sync = false;
    }
 
    /* index for lower bounds C iclow */
-   if (!dynamic_cast<const DistributedVector<double>&>(*iclow).isRootNodeInSync()) {
+   if (!dynamic_cast<const DistributedVector<double>&>(*inequality_lower_bound_indicators).isRootNodeInSync()) {
       std::cout << "ERROR: index lower bounds C corrupted!\n";
       in_sync = false;
    }
@@ -2836,25 +2836,25 @@ void DistributedQP::printRanges() const {
    double absmin_bA;
    bA->absminNonZero(absmin_bA, 0.0);
    double absmin_bl;
-   bl->absminNonZero(absmin_bl, 0.0);
+   inequality_lower_bounds->absminNonZero(absmin_bl, 0.0);
    double absmin_bu;
-   bu->absminNonZero(absmin_bu, 0.0);
+   inequality_upper_bounds->absminNonZero(absmin_bu, 0.0);
 
    const double absmax_bA = bA->inf_norm();
-   const double absmax_bl = bl->inf_norm();
-   const double absmax_bu = bu->inf_norm();
+   const double absmax_bl = inequality_lower_bounds->inf_norm();
+   const double absmax_bu = inequality_upper_bounds->inf_norm();
 
    const double rhs_min = std::min(absmin_bA, std::min(absmin_bl, absmin_bu));
    const double rhs_max = std::max(absmax_bA, std::max(absmax_bl, absmax_bu));
 
    /* bounds range */
    double absmin_blx;
-   blx->absminNonZero(absmin_blx, 0.0);
+   primal_lower_bounds->absminNonZero(absmin_blx, 0.0);
    double absmin_bux;
-   bux->absminNonZero(absmin_bux, 0.0);
+   primal_upper_bounds->absminNonZero(absmin_bux, 0.0);
 
-   const double absmax_blx = blx->inf_norm();
-   const double absmax_bux = bux->inf_norm();
+   const double absmax_blx = primal_lower_bounds->inf_norm();
+   const double absmax_bux = primal_upper_bounds->inf_norm();
 
    const double bounds_min = std::min(absmin_blx, absmin_bux);
    const double bounds_max = std::max(absmax_blx, absmax_bux);

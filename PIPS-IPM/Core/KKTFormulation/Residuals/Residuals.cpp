@@ -1,6 +1,6 @@
 #include "Residuals.h"
 #include "Variables.h"
-#include "Problem.h"
+#include "Problem.hpp"
 #include "pipsdef.h"
 
 #include <iostream>
@@ -114,7 +114,7 @@ void Residuals::evaluate(Problem& problem, Variables& iterate, bool print_residu
       this->rt->axpy(-1.0, *iterate.slack_lower_bound_gap);
 
       // contribution - d^T lambda to duality gap
-      const double bl_lambda = problem.bl->dotProductWith(*iterate.slack_lower_bound_gap_dual);
+      const double bl_lambda = problem.inequality_lower_bounds->dotProductWith(*iterate.slack_lower_bound_gap_dual);
       this->duality_gap -= bl_lambda;
       this->dual_objective += bl_lambda;
       this->residual_norm = std::max(this->residual_norm, compute_inf_norm(*this->rt, print_residuals, "rt"));
@@ -128,7 +128,7 @@ void Residuals::evaluate(Problem& problem, Variables& iterate, bool print_residu
       this->ru->axpy(1.0, *iterate.slack_upper_bound_gap);
 
       // contribution - f^T pi to duality gap
-      const double bu_pi = problem.bu->dotProductWith(*iterate.slack_upper_bound_gap_dual);
+      const double bu_pi = problem.inequality_upper_bounds->dotProductWith(*iterate.slack_upper_bound_gap_dual);
       this->duality_gap += bu_pi;
       this->dual_objective -= bu_pi;
       this->residual_norm = std::max(this->residual_norm, compute_inf_norm(*this->ru, print_residuals, "ru"));
@@ -143,7 +143,7 @@ void Residuals::evaluate(Problem& problem, Variables& iterate, bool print_residu
 
       this->residual_norm = std::max(this->residual_norm, compute_inf_norm(*this->rv, print_residuals, "rv"));
       // contribution - lx^T gamma to duality gap
-      const double blx_gamma = problem.blx->dotProductWith(*iterate.primal_lower_bound_gap_dual);
+      const double blx_gamma = problem.primal_lower_bounds->dotProductWith(*iterate.primal_lower_bound_gap_dual);
       this->duality_gap -= blx_gamma;
       this->dual_objective += blx_gamma;
    }
@@ -158,7 +158,7 @@ void Residuals::evaluate(Problem& problem, Variables& iterate, bool print_residu
       this->residual_norm = std::max(this->residual_norm, compute_inf_norm(*this->rw, print_residuals, "rw"));
 
       // contribution + bu^T phi to duality gap
-      const double bux_phi = problem.bux->dotProductWith(*iterate.primal_upper_bound_gap_dual);
+      const double bux_phi = problem.primal_upper_bounds->dotProductWith(*iterate.primal_upper_bound_gap_dual);
       this->duality_gap += bux_phi;
       this->dual_objective -= bux_phi;
    }
@@ -364,8 +364,9 @@ double Residuals::constraint_violation() const {
    return equality_residuals->one_norm() + inequality_residuals->one_norm();
 }
 
-double Residuals::optimality_measure() const {
+double Residuals::optimality_measure(/*Problem& problem, Variables& iterate, Scaler& scaler*/) const {
    //return this->lagrangian_gradient->inf_norm();// + mu;
+   //return problem.objective_value(iterate);
    return this->primal_objective;
 }
 

@@ -7,7 +7,7 @@
 
 
 #include "MumpsSolverRoot.h"
-#include "SimpleVector.h"
+#include "SimpleVector.hpp"
 #include <stdlib.h>
 
 MumpsSolverRoot::MumpsSolverRoot(MPI_Comm mpiComm, const SparseSymmetricMatrix* sgm, bool solve_in_parallel) : MumpsSolverBase(mpiComm, mpiComm, sgm),

@@ -7,7 +7,7 @@
 
 #include <memory>
 #include "Statistics.hpp"
-#include "TerminationStatus.h"
+#include "TerminationStatus.hpp"
 #include "Observer.h"
 #include "MehrotraStrategyType.h"
 #include "FilterLineSearch.hpp"

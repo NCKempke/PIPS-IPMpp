@@ -7,7 +7,7 @@
 #ifndef QPPOSTSOLVER_H
 #define QPPOSTSOLVER_H
 
-#include "TerminationStatus.h"
+#include "TerminationStatus.hpp"
 
 class Problem;
 

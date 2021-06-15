@@ -18,24 +18,24 @@ public:
    std::shared_ptr<GeneralMatrix> C;
    std::shared_ptr<Vector<double>> g; // objective
    std::shared_ptr<Vector<double>> bA; // rhs equality
-   std::shared_ptr<Vector<double>> bux; // upper bounds x
-   std::shared_ptr<Vector<double>> ixupp; // index for upper bounds
-   std::shared_ptr<Vector<double>> blx; // lower bounds x
-   std::shared_ptr<Vector<double>> ixlow; // index for lower bounds
-   std::shared_ptr<Vector<double>> bu; // upper bounds C
-   std::shared_ptr<Vector<double>> icupp; // index upper bounds
-   std::shared_ptr<Vector<double>> bl; // lower bounds C
-   std::shared_ptr<Vector<double>> iclow; // index lower bounds
+   std::shared_ptr<Vector<double>> primal_upper_bounds; // upper bounds x
+   std::shared_ptr<Vector<double>> primal_upper_bound_indicators; // index for upper bounds
+   std::shared_ptr<Vector<double>> primal_lower_bounds; // lower bounds x
+   std::shared_ptr<Vector<double>> primal_lower_bound_indicators; // index for lower bounds
+   std::shared_ptr<Vector<double>> inequality_upper_bounds; // upper bounds C
+   std::shared_ptr<Vector<double>> inequality_upper_bound_indicators; // index upper bounds
+   std::shared_ptr<Vector<double>> inequality_lower_bounds; // lower bounds C
+   std::shared_ptr<Vector<double>> inequality_lower_bound_indicators; // index lower bounds
    std::shared_ptr<Vector<double>> sc; // scale (and diag of Q) -> not maintained currently
 
    long long nx{0};
    long long my{0};
    long long mz{0};
 
-   long long nxlow{0};
-   long long nxupp{0};
-   long long mclow{0};
-   long long mcupp{0};
+   long long number_primal_lower_bounds{0};
+   long long number_primal_upper_bounds{0};
+   long long number_inequality_lower_bounds{0};
+   long long number_inequality_upper_bounds{0};
 
    Problem(std::shared_ptr<Vector<double>> g_in, std::shared_ptr<Vector<double>> xlow_in,
       std::shared_ptr<Vector<double>> ixlow_in, std::shared_ptr<Vector<double>> xupp_in, std::shared_ptr<Vector<double>> ixupp_in,
@@ -55,25 +55,25 @@ public:
    /** print the problem data */
    virtual void print();
 
-   Vector<double>& xupperBound() { return *bux; };
+   Vector<double>& xupperBound() { return *primal_upper_bounds; };
 
-   [[nodiscard]] const Vector<double>& xupperBound() const { return *bux; };
+   [[nodiscard]] const Vector<double>& xupperBound() const { return *primal_upper_bounds; };
 
-   Vector<double>& ixupperBound() { return *ixupp; };
+   Vector<double>& ixupperBound() { return *primal_upper_bound_indicators; };
 
-   Vector<double>& xlowerBound() { return *blx; };
+   Vector<double>& xlowerBound() { return *primal_lower_bounds; };
 
-   [[nodiscard]] const Vector<double>& xlowerBound() const { return *blx; };
+   [[nodiscard]] const Vector<double>& xlowerBound() const { return *primal_lower_bounds; };
 
-   Vector<double>& ixlowerBound() { return *ixlow; };
+   Vector<double>& ixlowerBound() { return *primal_lower_bound_indicators; };
 
-   Vector<double>& supperBound() { return *bu; };
+   Vector<double>& supperBound() { return *inequality_upper_bounds; };
 
-   Vector<double>& isupperBound() { return *icupp; };
+   Vector<double>& isupperBound() { return *inequality_upper_bound_indicators; };
 
-   Vector<double>& slowerBound() { return *bl; };
+   Vector<double>& slowerBound() { return *inequality_lower_bounds; };
 
-   Vector<double>& islowerBound() { return *iclow; };
+   Vector<double>& islowerBound() { return *inequality_lower_bound_indicators; };
 
    Vector<double>& scale() { return *sc; };
 

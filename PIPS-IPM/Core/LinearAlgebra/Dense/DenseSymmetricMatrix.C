@@ -5,7 +5,7 @@
 #include <cassert>
 #include "DenseSymmetricMatrix.h"
 #include "OoqpBlas.h"
-#include "SimpleVector.h"
+#include "SimpleVector.hpp"
 
 #include "DenseMatrix.h"
 #include "SparseMatrix.h"

@@ -4,13 +4,13 @@
 
 #include "LinearSystem.h"
 #include "Residuals.h"
-#include "Problem.h"
+#include "Problem.hpp"
 #include "Variables.h"
 #include "Vector.hpp"
 #include "mpi.h"
 #include "Options.h"
 #include "PIPSIPMppOptions.h"
-#include "DistributedFactory.h"
+#include "DistributedFactory.hpp"
 #include <utility>
 #include <vector>
 #include <functional>
@@ -37,15 +37,15 @@ LinearSystem::LinearSystem(DistributedFactory* factory_, const Problem& problem,
    nx = problem.nx;
    my = problem.my;
    mz = problem.mz;
-   ixlow = problem.ixlow;
-   ixupp = problem.ixupp;
-   iclow = problem.iclow;
-   icupp = problem.icupp;
+   ixlow = problem.primal_lower_bound_indicators;
+   ixupp = problem.primal_upper_bound_indicators;
+   iclow = problem.inequality_lower_bound_indicators;
+   icupp = problem.inequality_upper_bound_indicators;
 
-   nxlow = problem.nxlow;
-   nxupp = problem.nxupp;
-   mclow = problem.mclow;
-   mcupp = problem.mcupp;
+   nxlow = problem.number_primal_lower_bounds;
+   nxupp = problem.number_primal_upper_bounds;
+   mclow = problem.number_inequality_lower_bounds;
+   mcupp = problem.number_inequality_upper_bounds;
 
    if (create_iter_ref_vecs) {
       if (outerSolve || xyzs_solve_print_residuals) {

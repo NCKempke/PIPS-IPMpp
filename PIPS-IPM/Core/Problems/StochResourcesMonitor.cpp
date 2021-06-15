@@ -1,4 +1,4 @@
-#include "StochResourcesMonitor.h"
+#include "StochResourcesMonitor.hpp"
 
 // save diagnostic state
 #pragma GCC diagnostic push

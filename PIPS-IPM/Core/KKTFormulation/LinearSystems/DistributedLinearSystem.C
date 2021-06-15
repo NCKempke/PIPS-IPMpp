@@ -8,7 +8,7 @@
 #include "PIPSIPMppOptions.h"
 #include "BorderedSymmetricMatrix.h"
 #include "DistributedLinearSystem.h"
-#include "DistributedFactory.h"
+#include "DistributedFactory.hpp"
 #include "DistributedQP.hpp"
 
 DistributedLinearSystem::DistributedLinearSystem(DistributedFactory* factory_, DistributedQP* problem,

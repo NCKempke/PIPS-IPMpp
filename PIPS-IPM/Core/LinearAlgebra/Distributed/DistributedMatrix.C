@@ -1,7 +1,7 @@
 #include "DistributedMatrix.h"
 #include "DoubleMatrixTypes.h"
 #include "DistributedVector.h"
-#include "SimpleVector.h"
+#include "SimpleVector.hpp"
 #include "pipsdef.h"
 #include "PIPSIPMppOptions.h"
 #include <limits>

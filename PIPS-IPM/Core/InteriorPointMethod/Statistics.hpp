@@ -1,8 +1,8 @@
 #ifndef MONITOR_H
 #define MONITOR_H
 
-#include "TerminationStatus.h"
-#include "DistributedFactory.h"
+#include "TerminationStatus.hpp"
+#include "DistributedFactory.hpp"
 #include "Scaler.hpp"
 
 class Problem;

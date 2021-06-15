@@ -11,7 +11,7 @@
 #include "DeSymIndefSolver2.h"
 #include "DeSymPSDSolver.h"
 #include "PIPSIPMppOptions.h"
-#include "DistributedFactory.h"
+#include "DistributedFactory.hpp"
 
 sLinsysRootBordered::sLinsysRootBordered(DistributedFactory* factory_, DistributedQP* prob_) : DistributedRootLinearSystem(factory_, prob_, true) {
    assert(locmyl >= 0 && locmzl >= 0);
