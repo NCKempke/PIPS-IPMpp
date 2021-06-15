@@ -7,10 +7,12 @@
 #include "Problem.h"
 #include "Variables.h"
 #include "Vector.hpp"
-#include "mpi.h"
-#include "Options.h"
+#include "DoubleLinearSolver.h"
 #include "PIPSIPMppOptions.h"
 #include "DistributedFactory.h"
+
+#include "mpi.h"
+
 #include <utility>
 #include <vector>
 #include <functional>
@@ -279,6 +281,37 @@ void LinearSystem::computeDiagonals(Vector<double>& t, Vector<double>& lambda, V
    /*** omega = -omega^-1 ***/
    nomegaInv->safe_invert();
    nomegaInv->negate();
+}
+
+void LinearSystem::factorize_with_correct_inertia() {
+   regularization_strategy->notify_new_step();
+
+   auto [last_primal_regularization, last_dual_equality_regularization, last_dual_inequality_regularization] =
+   this->regularization_strategy->get_default_regularization();
+
+   this->add_regularization_local_kkt(last_primal_regularization,
+      last_dual_equality_regularization, last_dual_inequality_regularization);
+
+   /* factor once without applying regularization */
+   solver->matrixChanged();
+   if (!solver->reports_inertia()) {
+      return;
+   }
+
+   // TODO : add max tries..
+   while (!regularization_strategy->is_inertia_correct(solver->get_inertia())) {
+      auto[primal_regularization_value, dual_equality_regularization_value, dual_inequality_regularization_value] =
+      this->regularization_strategy->get_regularization_parameters(solver->get_inertia(), barrier_parameter_current_iterate);
+
+      assert(primal_regularization_value >= last_primal_regularization);
+      assert(dual_equality_regularization_value >= last_dual_equality_regularization);
+      assert(dual_inequality_regularization_value >= last_dual_inequality_regularization);
+
+      this->add_regularization_local_kkt(primal_regularization_value - last_primal_regularization,
+         dual_equality_regularization_value - last_dual_equality_regularization,
+         dual_inequality_regularization_value - last_dual_inequality_regularization);
+      solver->matrixChanged();
+   }
 }
 
 void LinearSystem::solve(Variables& variables, Residuals& residuals, Variables& step) {

@@ -117,11 +117,6 @@ public:
 
    void factorize(Variables& variables) override;
 
-   void factorize_with_correct_inertia() override;
-
-   virtual void
-   add_regularization_local_kkt(double primal_regularization, double dual_equality_regularization, double dual_inequality_regularization) = 0;
-
    virtual void factor2() = 0;
 
    virtual void assembleKKT() = 0;
@@ -165,10 +160,6 @@ protected:
    /* is this linsys the overall root */
    const bool is_hierarchy_root{false};
 
-   /* symmetric Schur Complement / whole KKT system in lower triangular from */
-   std::unique_ptr<SymmetricMatrix> kkt{};
-   std::unique_ptr<DoubleLinearSolver> solver{};
-
    const int blocksize_hierarchical{20};
    const bool sc_compute_blockwise_hierarchical{false};
    std::unique_ptr<DenseMatrix> buffer_blocked_hierarchical{};
@@ -187,7 +178,6 @@ public:
    virtual void addLniziLinkCons(Vector<double>& /*z0*/, Vector<double>& /*zi*/, bool /*use_local_RAC*/) {
       assert(false && "not implemented here");
    };
-
 
    /* put BiT into res */
    virtual void putBiTBorder(DenseMatrix& res, const BorderBiBlock& BiT, int begin_rows, int end_rows) const;
@@ -214,7 +204,6 @@ public:
    };
 
 public:
-
    /* add you part of the border times rhs to b0 */
    virtual void addBorderTimesRhsToB0(DistributedVector<double>& /*rhs*/, SimpleVector<double>& /*b0*/, BorderLinsys& /*border*/ ) {
       assert(false && "not implemented here");
