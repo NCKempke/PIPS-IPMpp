@@ -15,6 +15,9 @@
 #include "DistributedVector.h"
 #include "StripMatrix.h"
 
+#include "RACFG_BLOCK.h"
+#include "BorderMod_Block.h"
+
 #include <vector>
 #include <memory>
 #include <tuple>
@@ -28,86 +31,8 @@ class DistributedFactory;
 class DistributedQP;
 
 class DistributedLinearSystem : public LinearSystem {
+
 public:
-   template<typename T>
-   struct RACFG_BLOCK {
-   private:
-      std::unique_ptr<T> dummy{new T()};
-
-   public:
-      const bool use_local_RAC{};
-      const bool has_RAC{};
-      /* represents a block like
-       * [ R_i 0 F_i^T G_i^T ]             [ R_i^T A_i^T C_i^T ]
-       * [ A_i 0   0     0   ] or possibly [   0     0     0   ]
-       * [ C_i 0   0     0   ]             [  F_i    0     0   ]
-       *                                   [  G_i    0     0   ]
-       */
-      const T& R;
-      const T& A;
-      const T& C;
-      const T& F;
-      const T& G;
-
-      /* n_empty_rows gives the distance between RAC and F,G blocks */
-      int n_empty_rows;
-
-      [[nodiscard]] bool isEmpty() const;
-
-      RACFG_BLOCK(const T& R, const T& A, const T& C, int n_empty_rows, const T& F, const T& G) : has_RAC{true}, R{R}, A{A}, C{C}, F{F}, G{G}, n_empty_rows{n_empty_rows} {
-         assert(n_empty_rows >= 0);
-      };
-
-      RACFG_BLOCK(int n_empty_rows, const T& F, const T& G, bool use_local_RAC) : use_local_RAC{use_local_RAC}, has_RAC{false}, R{*dummy}, A{*dummy}, C{*dummy},
-            F{F}, G{G}, n_empty_rows{n_empty_rows} { assert(n_empty_rows >= 0); };
-
-      RACFG_BLOCK(const RACFG_BLOCK<T>& block) : use_local_RAC{block.use_local_RAC}, has_RAC{block.has_RAC}, R{block.R}, A{block.A}, C{block.C},
-            F{block.F}, G{block.G}, n_empty_rows{block.n_empty_rows} { assert(n_empty_rows >= 0); };
-   };
-
-   using BorderLinsys = RACFG_BLOCK<StripMatrix>;
-   using BorderBiBlock = RACFG_BLOCK<SparseMatrix>;
-
-   static BorderLinsys getChild(BorderLinsys& border, unsigned int i) {
-      const bool dummy = border.F.children[i]->is_a(kStringGenDummyMatrix);
-      assert(i < border.F.children.size());
-      if (border.has_RAC) {
-         if (!dummy && border.F.children[i]->first->is_a(kStripMatrix))
-            return BorderLinsys(dynamic_cast<StripMatrix&>(*border.R.children[i]->first),
-                  dynamic_cast<StripMatrix&>(*border.A.children[i]->first), dynamic_cast<StripMatrix&>(*border.C.children[i]->first),
-                  border.n_empty_rows, dynamic_cast<StripMatrix&>(*border.F.children[i]->first),
-                  dynamic_cast<StripMatrix&>(*border.G.children[i]->first));
-         else
-            return BorderLinsys(*border.R.children[i], *border.A.children[i], *border.C.children[i], border.n_empty_rows, *border.F.children[i],
-                  *border.G.children[i]);
-      }
-      else {
-         if (!dummy && border.F.children[i]->first->is_a(kStripMatrix))
-            return BorderLinsys(border.n_empty_rows, dynamic_cast<StripMatrix&>(*border.F.children[i]->first),
-                  dynamic_cast<StripMatrix&>(*border.G.children[i]->first), border.use_local_RAC);
-         else
-            return BorderLinsys(border.n_empty_rows, *border.F.children[i], *border.G.children[i], border.use_local_RAC);
-      }
-   }
-
-   template<typename T>
-   struct BorderMod_Block {
-   public:
-      BorderLinsys border;
-      const T& multiplier;
-
-      BorderMod_Block(BorderLinsys& border_, const T& multiplier) : border{border_}, multiplier{multiplier} {};
-   };
-
-   using BorderMod = BorderMod_Block<DenseMatrix>;
-
-
-   template<typename T>
-   static BorderMod_Block<T> getChild(BorderMod_Block<T>& bordermod, unsigned int i) {
-      BorderLinsys child = getChild(bordermod.border, i);
-      return BorderMod_Block<T>(child, bordermod.multiplier);
-   }
-
    DistributedLinearSystem(DistributedFactory* factory, DistributedQP* prob, bool is_hierarchy_root = false);
 
    DistributedLinearSystem(DistributedFactory* factory, DistributedQP* prob, std::shared_ptr<Vector<double>> dd, std::shared_ptr<Vector<double>> dq, std::shared_ptr<Vector<double>> nomegaInv,
@@ -284,12 +209,5 @@ protected:
    void finalizeDenseBorderModBlocked(std::vector<BorderMod>& border_mod, DenseMatrix& result, int begin_rows, int end_rows);
 
 };
-
-template<>
-bool DistributedLinearSystem::RACFG_BLOCK<StripMatrix>::isEmpty() const;
-
-template<>
-bool DistributedLinearSystem::RACFG_BLOCK<SparseMatrix>::isEmpty() const;
-
 
 #endif

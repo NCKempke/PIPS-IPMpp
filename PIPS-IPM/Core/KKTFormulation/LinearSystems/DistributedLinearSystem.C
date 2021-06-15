@@ -57,8 +57,6 @@ DistributedLinearSystem::DistributedLinearSystem(DistributedFactory* factory_, D
       mpiComm = MPI_COMM_NULL;
       iAmDistrib = false;
    }
-
-   useRefs = true;
 }
 
 void DistributedLinearSystem::factorize(Variables& vars) {
@@ -1269,34 +1267,4 @@ int DistributedLinearSystem::allocateAndZeroBlockedComputationsBuffer(int buffer
    buffer_blocked_hierarchical->putZeros();
 
    return buffer_m_blocked;
-}
-
-template<>
-bool DistributedLinearSystem::BorderLinsys::isEmpty() const {
-   if (use_local_RAC)
-      return false;
-   else {
-      if (F.numberOfNonZeros() == 0 && G.numberOfNonZeros() == 0) {
-         if (has_RAC)
-            return R.numberOfNonZeros() == 0 && A.numberOfNonZeros() == 0 && C.numberOfNonZeros() == 0;
-         else
-            return true;
-      } else
-         return false;
-   }
-}
-
-template<>
-bool DistributedLinearSystem::BorderBiBlock::isEmpty() const {
-   if (use_local_RAC)
-      return false;
-   else {
-      if (F.numberOfNonZeros() == 0 && G.numberOfNonZeros() == 0) {
-         if (has_RAC)
-            return R.numberOfNonZeros() == 0 && A.numberOfNonZeros() == 0 && C.numberOfNonZeros() == 0;
-         else
-            return true;
-      } else
-         return false;
-   }
 }
