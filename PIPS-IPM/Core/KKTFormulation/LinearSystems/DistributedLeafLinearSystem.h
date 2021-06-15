@@ -7,7 +7,7 @@
 
 #include "DistributedLinearSystem.h"
 #include "DistributedTree.h"
-#include "DistributedFactory.h"
+#include "DistributedFactory.hpp"
 #include "DistributedQP.hpp"
 #include "SparseSymmetricMatrix.h"
 #include "SparseMatrix.h"

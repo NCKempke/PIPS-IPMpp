@@ -8,7 +8,7 @@
 #include "gtest/gtest.h"
 #include "gmock/gmock.h"
 #include "gmspips_reader.hpp"
-#include "DistributedFactory.h"
+#include "DistributedFactory.hpp"
 #include <cstdlib>
 #include <tuple>
 #include <memory>

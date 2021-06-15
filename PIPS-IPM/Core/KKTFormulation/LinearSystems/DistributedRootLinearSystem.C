@@ -5,7 +5,7 @@
 #include <utility>
 
 #include "DistributedRootLinearSystem.h"
-#include "DistributedFactory.h"
+#include "DistributedFactory.hpp"
 #include "DistributedQP.hpp"
 #include "DistributedDummyLinearSystem.h"
 #include "DistributedLeafLinearSystem.h"

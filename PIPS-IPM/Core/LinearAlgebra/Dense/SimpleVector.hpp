@@ -154,6 +154,9 @@ public:
    void jointCopyTo(Vector<T>& vx, Vector<T>& vy, Vector<T>& vz) const override;
 
    virtual SimpleVector<T>* shaveBorder(int n_shave, bool shave_top);
+
+   [[nodiscard]] double special_operation(const Vector<T>& x, const Vector<T>& bound, const Vector<T>& bound_indicator, double scaling) const
+   override;
 };
 
 #endif

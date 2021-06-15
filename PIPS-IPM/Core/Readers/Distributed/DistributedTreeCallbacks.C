@@ -7,7 +7,7 @@
 #include "DistributedSymmetricMatrix.h"
 #include "DistributedMatrix.h"
 #include "DistributedVector.h"
-#include "SimpleVector.h"
+#include "SimpleVector.hpp"
 #include <cmath>
 #include <algorithm>    // std::swap
 #include <numeric>
@@ -143,9 +143,9 @@ void DistributedTreeCallbacks::initPresolvedData(const DistributedQP& presolved_
    const auto& g = dynamic_cast<const DistributedVector<double>&>(*presolved_data.g);
    const auto& b = dynamic_cast<const DistributedVector<double>&>(*presolved_data.bA);
 
-   assert(presolved_data.icupp || presolved_data.icupp);
-   const DistributedVector<double>& ic = presolved_data.iclow ? dynamic_cast<const DistributedVector<double>&>(*presolved_data.iclow)
-                                                                       : dynamic_cast<const DistributedVector<double>&>(*presolved_data.icupp);
+   assert(presolved_data.inequality_upper_bound_indicators || presolved_data.inequality_upper_bound_indicators);
+   const DistributedVector<double>& ic = presolved_data.inequality_lower_bound_indicators ? dynamic_cast<const DistributedVector<double>&>(*presolved_data.inequality_lower_bound_indicators)
+                                                                                          : dynamic_cast<const DistributedVector<double>&>(*presolved_data.inequality_upper_bound_indicators);
 
    initPresolvedData(Q, A, C, g, b, ic, -1, -1);
 }

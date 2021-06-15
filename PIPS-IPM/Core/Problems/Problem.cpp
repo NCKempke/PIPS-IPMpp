@@ -1,5 +1,5 @@
-#include <SimpleVector.h>
-#include "Problem.h"
+#include <SimpleVector.hpp>
+#include "Problem.hpp"
 
 Problem::Problem(std::shared_ptr<Vector<double>> g_in, std::shared_ptr<Vector<double>> xlow_in,
    std::shared_ptr<Vector<double>> ixlow_in, std::shared_ptr<Vector<double>> xupp_in,
@@ -8,14 +8,14 @@ Problem::Problem(std::shared_ptr<Vector<double>> g_in, std::shared_ptr<Vector<do
    std::shared_ptr<Vector<double>> clow_in, std::shared_ptr<Vector<double>> iclow_in,
    std::shared_ptr<Vector<double>> cupp_in, std::shared_ptr<Vector<double>> icupp_in) : A{std::move(A_in)},
    C{std::move(C_in)},
-   g{std::move(g_in)}, bA{std::move(bA_in)}, bux{std::move(xupp_in)}, ixupp{std::move(ixupp_in)},
-   blx{std::move(xlow_in)},
-   ixlow{std::move(ixlow_in)}, bu{std::move(cupp_in)}, icupp{std::move(icupp_in)}, bl{std::move(clow_in)},
-   iclow{std::move(iclow_in)},
-   nx{g->length()}, my{A->n_rows()}, mz{C->n_rows()}, nxlow{ixlow->number_nonzeros()},
-   nxupp{ixupp->number_nonzeros()},
-   mclow{iclow->number_nonzeros()}, mcupp{icupp->number_nonzeros()} {
-   assert(ixlow && ixupp && iclow && icupp);
+   g{std::move(g_in)}, bA{std::move(bA_in)}, primal_upper_bounds{std::move(xupp_in)}, primal_upper_bound_indicators{std::move(ixupp_in)},
+   primal_lower_bounds{std::move(xlow_in)},
+   primal_lower_bound_indicators{std::move(ixlow_in)}, inequality_upper_bounds{std::move(cupp_in)}, inequality_upper_bound_indicators{std::move(icupp_in)}, inequality_lower_bounds{std::move(clow_in)},
+   inequality_lower_bound_indicators{std::move(iclow_in)},
+   nx{g->length()}, my{A->n_rows()}, mz{C->n_rows()}, number_primal_lower_bounds{primal_lower_bound_indicators->number_nonzeros()},
+   number_primal_upper_bounds{primal_upper_bound_indicators->number_nonzeros()},
+   number_inequality_lower_bounds{inequality_lower_bound_indicators->number_nonzeros()}, number_inequality_upper_bounds{inequality_upper_bound_indicators->number_nonzeros()} {
+   assert(primal_lower_bound_indicators && primal_upper_bound_indicators && inequality_lower_bound_indicators && inequality_upper_bound_indicators);
 }
 
 void Problem::Amult(double beta, Vector<double>& y, double alpha, const Vector<double>& x) const {
@@ -77,10 +77,10 @@ void Problem::scaleg() {
 void Problem::scalexupp() {
    auto& scVector = dynamic_cast<SimpleVector<double>&>(*sc);
 
-   assert (scVector.length() == bux->length());
+   assert (scVector.length() == primal_upper_bounds->length());
 
    // inverse(D) * bux
-   bux->componentDiv(scVector);
+   primal_upper_bounds->componentDiv(scVector);
 
 }
 
@@ -88,10 +88,10 @@ void Problem::scalexupp() {
 void Problem::scalexlow() {
    auto& scVector = dynamic_cast<SimpleVector<double>&>(*sc);
 
-   assert (scVector.length() == blx->length());
+   assert (scVector.length() == primal_lower_bounds->length());
 
    // inverse(D) * blx
-   blx->componentDiv(scVector);
+   primal_lower_bounds->componentDiv(scVector);
 
 }
 
@@ -120,23 +120,23 @@ double Problem::datanorm() const {
    if (componentNorm > norm)
       norm = componentNorm;
 
-   assert(blx->matchesNonZeroPattern(*ixlow));
-   componentNorm = blx->inf_norm();
+   assert(primal_lower_bounds->matchesNonZeroPattern(*primal_lower_bound_indicators));
+   componentNorm = primal_lower_bounds->inf_norm();
    if (componentNorm > norm)
       norm = componentNorm;
 
-   assert(bux->matchesNonZeroPattern(*ixupp));
-   componentNorm = bux->inf_norm();
+   assert(primal_upper_bounds->matchesNonZeroPattern(*primal_upper_bound_indicators));
+   componentNorm = primal_upper_bounds->inf_norm();
    if (componentNorm > norm)
       norm = componentNorm;
 
-   assert(bl->matchesNonZeroPattern(*iclow));
-   componentNorm = bl->inf_norm();
+   assert(inequality_lower_bounds->matchesNonZeroPattern(*inequality_lower_bound_indicators));
+   componentNorm = inequality_lower_bounds->inf_norm();
    if (componentNorm > norm)
       norm = componentNorm;
 
-   assert(bu->matchesNonZeroPattern(*icupp));
-   componentNorm = bu->inf_norm();
+   assert(inequality_upper_bounds->matchesNonZeroPattern(*inequality_upper_bound_indicators));
+   componentNorm = inequality_upper_bounds->inf_norm();
    if (componentNorm > norm)
       norm = componentNorm;
 
@@ -149,17 +149,17 @@ void Problem::print() {
    std::cout << "end c\n";
 
    std::cout << "begin xlow\n";
-   blx->write_to_stream(std::cout);
+   primal_lower_bounds->write_to_stream(std::cout);
    std::cout << "end xlow\n";
    std::cout << "begin ixlow\n";
-   ixlow->write_to_stream(std::cout);
+   primal_lower_bound_indicators->write_to_stream(std::cout);
    std::cout << "end ixlow\n";
 
    std::cout << "begin xupp\n";
-   bux->write_to_stream(std::cout);
+   primal_upper_bounds->write_to_stream(std::cout);
    std::cout << "end xupp\n";
    std::cout << "begin ixupp\n";
-   ixupp->write_to_stream(std::cout);
+   primal_upper_bound_indicators->write_to_stream(std::cout);
    std::cout << "end ixupp\n";
    std::cout << "begin A\n";
 
@@ -173,16 +173,16 @@ void Problem::print() {
    std::cout << "end C\n";
 
    std::cout << "begin clow\n";
-   bl->write_to_stream(std::cout);
+   inequality_lower_bounds->write_to_stream(std::cout);
    std::cout << "end clow\n";
    std::cout << "begin iclow\n";
-   iclow->write_to_stream(std::cout);
+   inequality_lower_bound_indicators->write_to_stream(std::cout);
    std::cout << "end iclow\n";
 
    std::cout << "begin cupp\n";
-   bu->write_to_stream(std::cout);
+   inequality_upper_bounds->write_to_stream(std::cout);
    std::cout << "end cupp\n";
    std::cout << "begin icupp\n";
-   icupp->write_to_stream(std::cout);
+   inequality_upper_bound_indicators->write_to_stream(std::cout);
    std::cout << "end icupp\n";
 }

@@ -6,7 +6,7 @@
 
 #include "MumpsSolverLeaf.h"
 #include <stdlib.h>
-#include "SimpleVector.h"
+#include "SimpleVector.hpp"
 #include "SparseMatrix.h"
 
 MumpsSolverLeaf::MumpsSolverLeaf(const SparseSymmetricMatrix* sgm) : MumpsSolverBase(sgm) {

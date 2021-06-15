@@ -7,7 +7,7 @@
 #include "DenseStorage.h"
 #include "SparseStorage.h"
 #include "Vector.hpp"
-#include "SimpleVector.h"
+#include "SimpleVector.hpp"
 
 int DenseStorageInstances = 0;
 

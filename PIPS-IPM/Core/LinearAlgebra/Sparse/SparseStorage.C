@@ -4,7 +4,7 @@
 
 #include "SparseStorage.h"
 #include "Vector.hpp"
-#include "SimpleVector.h"
+#include "SimpleVector.hpp"
 #include "pipsdef.h"
 #include "sort.h"
 

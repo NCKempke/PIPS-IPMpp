@@ -4,7 +4,7 @@
 
 #include "PIPSIPMppInterface.hpp"
 #include "PreprocessType.h"
-#include "DistributedFactory.h"
+#include "DistributedFactory.hpp"
 #include "DistributedQP.hpp"
 #include "DistributedResiduals.hpp"
 #include "DistributedVariables.h"

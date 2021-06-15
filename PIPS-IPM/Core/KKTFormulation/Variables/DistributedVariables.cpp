@@ -1,6 +1,6 @@
 #include "DistributedVariables.h"
 #include "Vector.hpp"
-#include "Problem.h"
+#include "Problem.hpp"
 #include "DistributedVector.h"
 #include "DistributedTree.h"
 #include "DistributedTreeCallbacks.h"

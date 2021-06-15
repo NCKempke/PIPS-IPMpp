@@ -5,7 +5,7 @@
 #include "DistributedTree.h"
 #include "DistributedQP.hpp"
 #include "DistributedVector.h"
-#include "SimpleVector.h"
+#include "SimpleVector.hpp"
 #include <numeric>
 #include <algorithm>
 #include <cmath>

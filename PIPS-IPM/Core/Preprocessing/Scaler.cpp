@@ -22,10 +22,10 @@ Scaler::Scaler(const Problem& problem, bool bitshifting, bool usesides) : do_bit
    C = problem.C;
    obj = problem.g;
    bA = problem.bA;
-   bux = problem.bux; // upper bound of x
-   blx = problem.blx; // lower bound of x
-   rhsC = problem.bu; // RHS of C
-   lhsC = problem.bl; // LHS of C
+   bux = problem.primal_upper_bounds; // upper bound of x
+   blx = problem.primal_lower_bounds; // lower bound of x
+   rhsC = problem.inequality_upper_bounds; // RHS of C
+   lhsC = problem.inequality_lower_bounds; // LHS of C
    factor_objscale = 1.;
 }
 

@@ -1,7 +1,7 @@
 #include <InteriorPointMethod.hpp>
 #include "FilterLineSearch.hpp"
 #include "FilterStrategy.hpp"
-#include "Problem.h"
+#include "Problem.hpp"
 #include "Residuals.h"
 #include "Variables.h"
 
@@ -16,7 +16,7 @@ void FilterLineSearch::initialize(Residuals& initial_residuals) {
 }
 
 void FilterLineSearch::compute_acceptable_iterate(Problem& problem, Variables& current_iterate, Variables& direction, Residuals& current_residuals,
-      double primal_step_length, double dual_step_length) {
+      double& primal_step_length, double& dual_step_length) {
    bool is_accepted = false;
    this->number_iterations = 0;
 
@@ -32,7 +32,7 @@ void FilterLineSearch::compute_acceptable_iterate(Problem& problem, Variables& c
       trial_residuals.evaluate(problem, trial_iterate);
       trial_residuals.recompute_residual_norm();
 
-      double predicted_reduction = InteriorPointMethod::predicted_reduction(problem, direction, primal_step_length);
+      double predicted_reduction = InteriorPointMethod::predicted_reduction(problem, current_iterate, direction, primal_step_length);
 
       /* check whether the trial step is accepted */
       is_accepted = this->filter_strategy.check_acceptance(current_iterate, current_residuals, trial_iterate, trial_residuals, predicted_reduction,

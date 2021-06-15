@@ -13,7 +13,7 @@
 #include "DistributedMatrixUtilities.h"
 #include "pipsdef.h"
 #include "DistributedVectorUtilities.h"
-#include "SimpleVector.h"
+#include "SimpleVector.hpp"
 
 #include <memory>
 #include <limits>
@@ -35,7 +35,7 @@ PresolveData::PresolveData(const DistributedQP& sorigprob, StochPostsolver* post
       outdated_nnzs(array_outdated_indicators[1]), outdated_linking_var_bounds(array_outdated_indicators[2]),
       outdated_activities(array_outdated_indicators[3]), outdated_obj_vector(array_outdated_indicators[4]),
       postsolve_linking_row_propagation_needed(array_outdated_indicators[5]), nnzs_row_A{cloneStochVector<double, int>(*sorigprob.bA)},
-      nnzs_row_C{cloneStochVector<double, int>(*sorigprob.icupp)}, nnzs_col{cloneStochVector<double, int>(*sorigprob.g)},
+      nnzs_row_C{cloneStochVector<double, int>(*sorigprob.inequality_upper_bound_indicators)}, nnzs_col{cloneStochVector<double, int>(*sorigprob.g)},
       actmax_eq_part{cloneStochVector<int, double>(*nnzs_row_A)}, actmin_eq_part{dynamic_cast<DistributedVector<double>*>(actmax_eq_part->clone())},
       actmax_eq_ubndd{dynamic_cast<DistributedVector<int>*>(nnzs_row_A->clone())},
       actmin_eq_ubndd{dynamic_cast<DistributedVector<int>*>(nnzs_row_A->clone())}, actmax_ineq_part{cloneStochVector<int, double>(*nnzs_row_C)},
@@ -141,20 +141,20 @@ PresolveData::~PresolveData() {
 
 /* set non existent bounds on all variables to +/- value */
 void PresolveData::setUndefinedVarboundsTo(double value) {
-   auto& xlow = dynamic_cast<DistributedVector<double>&>(*presProb->blx);
-   auto& ixlow = dynamic_cast<DistributedVector<double>&>(*presProb->ixlow);
-   auto& xupp = dynamic_cast<DistributedVector<double>&>(*presProb->bux);
-   auto& ixupp = dynamic_cast<DistributedVector<double>&>(*presProb->ixupp);
+   auto& xlow = dynamic_cast<DistributedVector<double>&>(*presProb->primal_lower_bounds);
+   auto& ixlow = dynamic_cast<DistributedVector<double>&>(*presProb->primal_lower_bound_indicators);
+   auto& xupp = dynamic_cast<DistributedVector<double>&>(*presProb->primal_upper_bounds);
+   auto& ixupp = dynamic_cast<DistributedVector<double>&>(*presProb->primal_upper_bound_indicators);
 
    xlow.setNotIndicatedEntriesToVal(-value, ixlow);
    xupp.setNotIndicatedEntriesToVal(value, ixupp);
 }
 
 void PresolveData::setUndefinedRowboundsTo(double value) {
-   auto& clow = dynamic_cast<DistributedVector<double>&>(*presProb->bl);
-   auto& iclow = dynamic_cast<DistributedVector<double>&>(*presProb->iclow);
-   auto& cupp = dynamic_cast<DistributedVector<double>&>(*presProb->bu);
-   auto& icupp = dynamic_cast<DistributedVector<double>&>(*presProb->icupp);
+   auto& clow = dynamic_cast<DistributedVector<double>&>(*presProb->inequality_lower_bounds);
+   auto& iclow = dynamic_cast<DistributedVector<double>&>(*presProb->inequality_lower_bound_indicators);
+   auto& cupp = dynamic_cast<DistributedVector<double>&>(*presProb->inequality_upper_bounds);
+   auto& icupp = dynamic_cast<DistributedVector<double>&>(*presProb->inequality_upper_bound_indicators);
 
    clow.setNotIndicatedEntriesToVal(-value, iclow);
    cupp.setNotIndicatedEntriesToVal(value, icupp);
@@ -228,10 +228,10 @@ void PresolveData::markColumnRemoved(const INDEX& col) {
    assert(wasColumnRemoved(col));
 
    getSimpleVecFromColStochVec(*presProb->g, col) = 0.0;
-   getSimpleVecFromColStochVec(*presProb->ixlow, col) = 0.0;
-   getSimpleVecFromColStochVec(*presProb->ixupp, col) = 0.0;
-   getSimpleVecFromColStochVec(*presProb->blx, col) = 0.0;
-   getSimpleVecFromColStochVec(*presProb->bux, col) = 0.0;
+   getSimpleVecFromColStochVec(*presProb->primal_lower_bound_indicators, col) = 0.0;
+   getSimpleVecFromColStochVec(*presProb->primal_upper_bound_indicators, col) = 0.0;
+   getSimpleVecFromColStochVec(*presProb->primal_lower_bounds, col) = 0.0;
+   getSimpleVecFromColStochVec(*presProb->primal_upper_bounds, col) = 0.0;
 }
 
 bool PresolveData::wasRowRemoved(const INDEX& row) const {
@@ -269,10 +269,10 @@ void PresolveData::recomputeActivities(bool linking_only, DistributedVector<doub
    const DistributedMatrix& mat_A = getSystemMatrix(EQUALITY_SYSTEM);
    const DistributedMatrix& mat_C = getSystemMatrix(INEQUALITY_SYSTEM);
 
-   const DistributedVector<double>& xupp = dynamic_cast<DistributedVector<double>&>(*presProb->bux);
-   const DistributedVector<double>& ixupp = dynamic_cast<DistributedVector<double>&>(*presProb->ixupp);
-   const DistributedVector<double>& xlow = dynamic_cast<DistributedVector<double>&>(*presProb->blx);
-   const DistributedVector<double>& ixlow = dynamic_cast<DistributedVector<double>&>(*presProb->ixlow);
+   const DistributedVector<double>& xupp = dynamic_cast<DistributedVector<double>&>(*presProb->primal_upper_bounds);
+   const DistributedVector<double>& ixupp = dynamic_cast<DistributedVector<double>&>(*presProb->primal_upper_bound_indicators);
+   const DistributedVector<double>& xlow = dynamic_cast<DistributedVector<double>&>(*presProb->primal_lower_bounds);
+   const DistributedVector<double>& ixlow = dynamic_cast<DistributedVector<double>&>(*presProb->primal_lower_bound_indicators);
 
    /* reset vectors keeping track of activities */
    if (!linking_only) {
@@ -525,10 +525,10 @@ void PresolveData::allreduceLinkingVarBounds() {
       return;
 
    if (distributed) {
-      SimpleVector<double>& xlow_new_vec = getSimpleVecFromColStochVec(*presProb->blx, -1);
-      SimpleVector<double>& xupp_new_vec = getSimpleVecFromColStochVec(*presProb->bux, -1);
-      SimpleVector<double>& ixlow_new_vec = getSimpleVecFromColStochVec(*presProb->ixlow, -1);
-      SimpleVector<double>& ixupp_new_vec = getSimpleVecFromColStochVec(*presProb->ixupp, -1);
+      SimpleVector<double>& xlow_new_vec = getSimpleVecFromColStochVec(*presProb->primal_lower_bounds, -1);
+      SimpleVector<double>& xupp_new_vec = getSimpleVecFromColStochVec(*presProb->primal_upper_bounds, -1);
+      SimpleVector<double>& ixlow_new_vec = getSimpleVecFromColStochVec(*presProb->primal_lower_bound_indicators, -1);
+      SimpleVector<double>& ixupp_new_vec = getSimpleVecFromColStochVec(*presProb->primal_upper_bound_indicators, -1);
 
       /* copy old values for later compairson */
       std::unique_ptr<SimpleVector<double>> xlow_old_vec{dynamic_cast<SimpleVector<double>*>(xlow_new_vec.cloneFull())};
@@ -717,8 +717,8 @@ void PresolveData::allreduceAndApplyBoundChanges() {
       PIPS_MPIsumArrayInPlace(array_bound_chgs);
 
    dynamic_cast<SimpleVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*presProb->bA).last).axpy(1.0, *bound_chgs_A);
-   dynamic_cast<SimpleVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*presProb->bl).last).axpy(1.0, *bound_chgs_C);
-   dynamic_cast<SimpleVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*presProb->bu).last).axpy(1.0, *bound_chgs_C);
+   dynamic_cast<SimpleVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*presProb->inequality_lower_bounds).last).axpy(1.0, *bound_chgs_C);
+   dynamic_cast<SimpleVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*presProb->inequality_upper_bounds).last).axpy(1.0, *bound_chgs_C);
 
    bound_chgs_A->setToZero();
    bound_chgs_C->setToZero();
@@ -884,7 +884,7 @@ void PresolveData::deleteEntryAtIndex(const INDEX& row, const INDEX& col, int co
 
    getSparseGenMatrix(row, col)->removeEntryAtRowColIndex(row.getIndex(), col_index);
 
-   double& xlow = getSimpleVecFromColStochVec(*presProb->blx, col);
+   double& xlow = getSimpleVecFromColStochVec(*presProb->primal_lower_bounds, col);
 
    if (row.isLinkingRow() || col.isLinkingCol())
       outdated_nnzs = true;
@@ -912,7 +912,7 @@ void PresolveData::resetOriginallyFreeVarsBounds(const DistributedQP& orig_prob)
 
    long long n = 0;
    for (int node = -1; node < nChildren; ++node) {
-      n += resetOriginallyFreeVarsBounds(getSimpleVecFromColStochVec(*orig_prob.ixlow, node), getSimpleVecFromColStochVec(*orig_prob.ixupp, node),
+      n += resetOriginallyFreeVarsBounds(getSimpleVecFromColStochVec(*orig_prob.primal_lower_bound_indicators, node), getSimpleVecFromColStochVec(*orig_prob.primal_upper_bound_indicators, node),
             node);
       if (my_rank != 0 && node == -1)
          n = 0;
@@ -932,11 +932,11 @@ long PresolveData::resetOriginallyFreeVarsBounds(const SimpleVector<double>& ixl
    if (nodeIsDummy(node))
       return reset_bounds;
 
-   SimpleVector<double>& ixlow = getSimpleVecFromColStochVec(*presProb->ixlow, node);
-   SimpleVector<double>& ixupp = getSimpleVecFromColStochVec(*presProb->ixupp, node);
+   SimpleVector<double>& ixlow = getSimpleVecFromColStochVec(*presProb->primal_lower_bound_indicators, node);
+   SimpleVector<double>& ixupp = getSimpleVecFromColStochVec(*presProb->primal_upper_bound_indicators, node);
 
-   SimpleVector<double>& xlow = getSimpleVecFromColStochVec(*presProb->blx, node);
-   SimpleVector<double>& xupp = getSimpleVecFromColStochVec(*presProb->bux, node);
+   SimpleVector<double>& xlow = getSimpleVecFromColStochVec(*presProb->primal_lower_bounds, node);
+   SimpleVector<double>& xupp = getSimpleVecFromColStochVec(*presProb->primal_upper_bounds, node);
 
    SimpleVector<int>& nnzs_col_vec = getSimpleVecFromColStochVec(*nnzs_col, node);
 
@@ -1120,14 +1120,14 @@ void PresolveData::varboundImpliedFreeFullCheck(bool& upper_implied, bool& lower
          --max_ubndd;
    }
 
-   const double rhs = row.inEqSys() ? getSimpleVecFromRowStochVec(*presProb->bA, row) : getSimpleVecFromRowStochVec(*presProb->bu, row);
-   const double lhs = row.inEqSys() ? getSimpleVecFromRowStochVec(*presProb->bA, row) : getSimpleVecFromRowStochVec(*presProb->bl, row);
+   const double rhs = row.inEqSys() ? getSimpleVecFromRowStochVec(*presProb->bA, row) : getSimpleVecFromRowStochVec(*presProb->inequality_upper_bounds, row);
+   const double lhs = row.inEqSys() ? getSimpleVecFromRowStochVec(*presProb->bA, row) : getSimpleVecFromRowStochVec(*presProb->inequality_lower_bounds, row);
 
    /* check bound implied by row */
    /* calculate an check implied upper bound */
    if (max_ubndd == 0 && lhs != INF_NEG) {
       /* lhs <= ax + y */
-      assert(row.inEqSys() || !PIPSisZero(getSimpleVecFromRowStochVec(*presProb->iclow, row)));
+      assert(row.inEqSys() || !PIPSisZero(getSimpleVecFromRowStochVec(*presProb->inequality_lower_bound_indicators, row)));
 
       if (0.0 < coeff) {
          /* [lhs - max(y)] / a <= x */
@@ -1144,7 +1144,7 @@ void PresolveData::varboundImpliedFreeFullCheck(bool& upper_implied, bool& lower
    /* calculate an check implied lower bound */
    if (min_ubndd == 0 && rhs != INF_POS) {
       /* ax + y <= rhs */
-      assert(row.inEqSys() || !PIPSisZero(getSimpleVecFromRowStochVec(*presProb->icupp, row)));
+      assert(row.inEqSys() || !PIPSisZero(getSimpleVecFromRowStochVec(*presProb->inequality_upper_bound_indicators, row)));
 
       if (0.0 < coeff) {
          /* x <= [rhs - min(y)] / a */
@@ -1500,13 +1500,13 @@ void PresolveData::tightenRowBoundsParallelRow(const INDEX& row1, const INDEX& r
       postsolver->notifyParallelRowsBoundsTightened(row1, row2, clow, cupp, clow_new, cupp_new, factor);
 
    if (clow_new != INF_NEG) {
-      getSimpleVecFromRowStochVec(*presProb->iclow, row1) = 1.0;
-      getSimpleVecFromRowStochVec(*presProb->bl, row1) = clow_new;
+      getSimpleVecFromRowStochVec(*presProb->inequality_lower_bound_indicators, row1) = 1.0;
+      getSimpleVecFromRowStochVec(*presProb->inequality_lower_bounds, row1) = clow_new;
    }
 
    if (cupp_new != INF_POS) {
-      getSimpleVecFromRowStochVec(*presProb->icupp, row1) = 1.0;
-      getSimpleVecFromRowStochVec(*presProb->bu, row1) = cupp_new;
+      getSimpleVecFromRowStochVec(*presProb->inequality_upper_bound_indicators, row1) = 1.0;
+      getSimpleVecFromRowStochVec(*presProb->inequality_upper_bounds, row1) = cupp_new;
    }
 
    if (track_row && tracked_row == row1) {
@@ -1537,11 +1537,11 @@ void PresolveData::adjustMatrixRhsLhsBy(const INDEX& row, double value, bool at_
       getSimpleVecFromRowStochVec(*presProb->bA, row) += value;
    }
    else {
-      if (PIPSisEQ(getSimpleVecFromRowStochVec(*presProb->icupp, row), 1.0))
-         getSimpleVecFromRowStochVec(*presProb->bu, row) += value;
+      if (PIPSisEQ(getSimpleVecFromRowStochVec(*presProb->inequality_upper_bound_indicators, row), 1.0))
+         getSimpleVecFromRowStochVec(*presProb->inequality_upper_bounds, row) += value;
 
-      if (PIPSisEQ(getSimpleVecFromRowStochVec(*presProb->iclow, row), 1.0))
-         getSimpleVecFromRowStochVec(*presProb->bl, row) += value;
+      if (PIPSisEQ(getSimpleVecFromRowStochVec(*presProb->inequality_lower_bound_indicators, row), 1.0))
+         getSimpleVecFromRowStochVec(*presProb->inequality_lower_bounds, row) += value;
    }
 
    if (track_row && tracked_row == row) {
@@ -1783,14 +1783,14 @@ void PresolveData::tightenBoundsNearlyParallelRows(const INDEX& row1, const INDE
    if (xlow_new == INF_NEG && xupp_new == INF_POS)
       return;
 
-   const double xlow_col1 = col1.isCol() ? getSimpleVecFromColStochVec(*presProb->blx, col1) : INF_NEG;
-   const double xupp_col1 = col1.isCol() ? getSimpleVecFromColStochVec(*presProb->bux, col1) : INF_POS;
+   const double xlow_col1 = col1.isCol() ? getSimpleVecFromColStochVec(*presProb->primal_lower_bounds, col1) : INF_NEG;
+   const double xupp_col1 = col1.isCol() ? getSimpleVecFromColStochVec(*presProb->primal_upper_bounds, col1) : INF_POS;
    if(xlow_col1 > xlow_new && xupp_col1 < xupp_new)
       return;
 
    if (postsolver) {
-      const double xlow_col2 = col2.isCol() ? getSimpleVecFromColStochVec(*presProb->blx, col2) : INF_NEG;
-      const double xupp_col2 = col2.isCol() ? getSimpleVecFromColStochVec(*presProb->bux, col2) : INF_POS;
+      const double xlow_col2 = col2.isCol() ? getSimpleVecFromColStochVec(*presProb->primal_lower_bounds, col2) : INF_NEG;
+      const double xupp_col2 = col2.isCol() ? getSimpleVecFromColStochVec(*presProb->primal_upper_bounds, col2) : INF_POS;
 
       /* one of the bounds has to be a tightening one */
       assert(PIPSisLE(xlow_col1, xlow_new) || PIPSisLE(xupp_new, xupp_col1));
@@ -1803,10 +1803,10 @@ void PresolveData::tightenBoundsNearlyParallelRows(const INDEX& row1, const INDE
 
       const double rhs = row2.inInEqSys() ? getSimpleVecFromRowStochVec(*presProb->bA, row1) : 0.0;
 
-      const double clow = row2.inInEqSys() ? (PIPSisZero(getSimpleVecFromRowStochVec(*presProb->iclow, row2)) ? INF_NEG : getSimpleVecFromRowStochVec(
-            *presProb->bl, row2)) : 0.0;
-      const double cupp = row2.inInEqSys() ? (PIPSisZero(getSimpleVecFromRowStochVec(*presProb->icupp, row2)) ? INF_POS : getSimpleVecFromRowStochVec(
-            *presProb->bu, row2)) : 0.0;
+      const double clow = row2.inInEqSys() ? (PIPSisZero(getSimpleVecFromRowStochVec(*presProb->inequality_lower_bound_indicators, row2)) ? INF_NEG : getSimpleVecFromRowStochVec(
+            *presProb->inequality_lower_bounds, row2)) : 0.0;
+      const double cupp = row2.inInEqSys() ? (PIPSisZero(getSimpleVecFromRowStochVec(*presProb->inequality_upper_bound_indicators, row2)) ? INF_POS : getSimpleVecFromRowStochVec(
+            *presProb->inequality_upper_bounds, row2)) : 0.0;
 
       postsolver->notifyNearlyParallelRowBoundsTightened(row1, row2, col1, col2, xlow_col1, xupp_col1, xlow_col2, xupp_col2, coeff_col1, coeff_col2,
             scalar, translation, parallel_factor, rhs, clow, cupp);
@@ -1838,15 +1838,15 @@ void PresolveData::substituteVariableNearlyParallelRows(const INDEX& row1, const
    const double obj_col2 = getSimpleVecFromColStochVec(*presProb->g, col2);
 
    if (postsolver) {
-      const double xlow_col2 = getSimpleVecFromColStochVec(*presProb->blx, col2);
-      const double xupp_col2 = getSimpleVecFromColStochVec(*presProb->bux, col2);
+      const double xlow_col2 = getSimpleVecFromColStochVec(*presProb->primal_lower_bounds, col2);
+      const double xupp_col2 = getSimpleVecFromColStochVec(*presProb->primal_upper_bounds, col2);
 
       const double coeff_col1 = col1.isCol() ? getRowCoeff(row1, col1) : 0.0;
       const double coeff_col2 = getRowCoeff(row2, col2);
 
-      if (PIPSisZero(getSimpleVecFromColStochVec(*presProb->ixlow, col2)))
+      if (PIPSisZero(getSimpleVecFromColStochVec(*presProb->primal_lower_bound_indicators, col2)))
          assert(xlow_col2 == INF_NEG);
-      if (PIPSisZero(getSimpleVecFromColStochVec(*presProb->ixupp, col2)))
+      if (PIPSisZero(getSimpleVecFromColStochVec(*presProb->primal_upper_bound_indicators, col2)))
          assert(xupp_col2 == INF_POS);
 
       postsolver->notifyNearlyParallelRowSubstitution(row1, row2, col1, col2, scalar, translation, obj_col1, obj_col2, xlow_col2, xupp_col2,
@@ -1878,10 +1878,10 @@ void PresolveData::substituteVariableNearlyParallelRows(const INDEX& row1, const
 
    /* adjust right hand side / left hand side by  -d * coeff_col2 */
    if (row2.inInEqSys()) {
-      if (!PIPSisZero(getSimpleVecFromRowStochVec(*presProb->iclow, row2)))
-         getSimpleVecFromRowStochVec(*presProb->blx, row2) -= offset;
-      if (!PIPSisZero(getSimpleVecFromRowStochVec(*presProb->icupp, row2)))
-         getSimpleVecFromRowStochVec(*presProb->bux, row2) -= offset;
+      if (!PIPSisZero(getSimpleVecFromRowStochVec(*presProb->inequality_lower_bound_indicators, row2)))
+         getSimpleVecFromRowStochVec(*presProb->primal_lower_bounds, row2) -= offset;
+      if (!PIPSisZero(getSimpleVecFromRowStochVec(*presProb->inequality_upper_bound_indicators, row2)))
+         getSimpleVecFromRowStochVec(*presProb->primal_upper_bounds, row2) -= offset;
    }
    else
       getSimpleVecFromRowStochVec(*presProb->bA, row2) -= offset;
@@ -1915,11 +1915,11 @@ void PresolveData::removeRedundantParallelRow(const INDEX& rm_row, const INDEX& 
    assert(!wasRowRemoved(par_row));
 
    if (postsolver) {
-      const double cupp_row1 = rm_row.inEqSys() ? getSimpleVecFromRowStochVec(*presProb->bA, rm_row) : getSimpleVecFromRowStochVec(*presProb->bu,
+      const double cupp_row1 = rm_row.inEqSys() ? getSimpleVecFromRowStochVec(*presProb->bA, rm_row) : getSimpleVecFromRowStochVec(*presProb->inequality_upper_bounds,
             rm_row);
-      const double clow_row1 = rm_row.inEqSys() ? cupp_row1 : getSimpleVecFromRowStochVec(*presProb->bl, rm_row);
-      const int iclow_row1 = rm_row.inEqSys() ? 1 : getSimpleVecFromRowStochVec(*presProb->iclow, rm_row);
-      const int icupp_row1 = rm_row.inEqSys() ? 1 : getSimpleVecFromRowStochVec(*presProb->icupp, rm_row);
+      const double clow_row1 = rm_row.inEqSys() ? cupp_row1 : getSimpleVecFromRowStochVec(*presProb->inequality_lower_bounds, rm_row);
+      const int iclow_row1 = rm_row.inEqSys() ? 1 : getSimpleVecFromRowStochVec(*presProb->inequality_lower_bound_indicators, rm_row);
+      const int icupp_row1 = rm_row.inEqSys() ? 1 : getSimpleVecFromRowStochVec(*presProb->inequality_upper_bound_indicators, rm_row);
 
 #ifndef NDEBUG
       // TODO : assert that rows are actually parallel...
@@ -1942,11 +1942,11 @@ void PresolveData::removeRedundantSide(const INDEX& row, bool is_upper_side) {
    if (postsolver) {
       assert(!wasRowRemoved(row));
 
-      assert(PIPSisEQ(1.0, getSimpleVecFromRowStochVec(*presProb->icupp, row)));
-      assert(PIPSisEQ(1.0, getSimpleVecFromRowStochVec(*presProb->iclow, row)));
+      assert(PIPSisEQ(1.0, getSimpleVecFromRowStochVec(*presProb->inequality_upper_bound_indicators, row)));
+      assert(PIPSisEQ(1.0, getSimpleVecFromRowStochVec(*presProb->inequality_lower_bound_indicators, row)));
 
-      postsolver->notifyRedundantSide(row, is_upper_side, getSimpleVecFromRowStochVec(*presProb->bl, row),
-            getSimpleVecFromRowStochVec(*presProb->bu, row));
+      postsolver->notifyRedundantSide(row, is_upper_side, getSimpleVecFromRowStochVec(*presProb->inequality_lower_bounds, row),
+            getSimpleVecFromRowStochVec(*presProb->inequality_upper_bounds, row));
    }
 
    if (track_row && tracked_row == row)
@@ -1960,10 +1960,10 @@ void PresolveData::removeRedundantRow(const INDEX& row) {
    if (postsolver) {
       assert(!wasRowRemoved(row));
 
-      const double rhs = row.inEqSys() ? getSimpleVecFromRowStochVec(*presProb->bA, row) : getSimpleVecFromRowStochVec(*presProb->bu, row);
-      const double lhs = row.inEqSys() ? rhs : getSimpleVecFromRowStochVec(*presProb->bl, row);
-      const int iclow = row.inEqSys() ? 1 : getSimpleVecFromRowStochVec(*presProb->iclow, row);
-      const int icupp = row.inEqSys() ? 1 : getSimpleVecFromRowStochVec(*presProb->icupp, row);
+      const double rhs = row.inEqSys() ? getSimpleVecFromRowStochVec(*presProb->bA, row) : getSimpleVecFromRowStochVec(*presProb->inequality_upper_bounds, row);
+      const double lhs = row.inEqSys() ? rhs : getSimpleVecFromRowStochVec(*presProb->inequality_lower_bounds, row);
+      const int iclow = row.inEqSys() ? 1 : getSimpleVecFromRowStochVec(*presProb->inequality_lower_bound_indicators, row);
+      const int icupp = row.inEqSys() ? 1 : getSimpleVecFromRowStochVec(*presProb->inequality_upper_bound_indicators, row);
 
 #ifndef NDEBUG
       /// singelton rows can get removed as redundant even when the bounds on x do not seem to match the current rhs/lhs
@@ -2018,10 +2018,10 @@ void PresolveData::startSingletonColumnPresolve() {
 void PresolveData::fixColumnInequalitySingleton(const INDEX& col, const INDEX& row, double value, double coeff) {
    assert(col.isCol());
 
-   const double ixlow = getSimpleVecFromColStochVec(*presProb->ixlow, col);
-   const double ixupp = getSimpleVecFromColStochVec(*presProb->ixupp, col);
-   const double xlow = getSimpleVecFromColStochVec(*presProb->blx, col);
-   const double xupp = getSimpleVecFromColStochVec(*presProb->bux, col);
+   const double ixlow = getSimpleVecFromColStochVec(*presProb->primal_lower_bound_indicators, col);
+   const double ixupp = getSimpleVecFromColStochVec(*presProb->primal_upper_bound_indicators, col);
+   const double xlow = getSimpleVecFromColStochVec(*presProb->primal_lower_bounds, col);
+   const double xupp = getSimpleVecFromColStochVec(*presProb->primal_upper_bounds, col);
 
    if (PIPSisZero(ixlow))
       assert(xlow == INF_NEG);
@@ -2064,10 +2064,10 @@ void PresolveData::removeFreeColumnSingletonInequalityRow(const INDEX& row, cons
    if (track_row && tracked_row == row)
       std::cout << "TRACKING_ROW: removal of " << row << " since it contained a free column singleton\n";
 
-   double& ixlow = getSimpleVecFromColStochVec(*(presProb->ixlow), col);
-   double& xlow = getSimpleVecFromColStochVec(*(presProb->blx), col);
-   double& ixupp = getSimpleVecFromColStochVec(*(presProb->ixupp), col);
-   double& xupp = getSimpleVecFromColStochVec(*(presProb->bux), col);
+   double& ixlow = getSimpleVecFromColStochVec(*(presProb->primal_lower_bound_indicators), col);
+   double& xlow = getSimpleVecFromColStochVec(*(presProb->primal_lower_bounds), col);
+   double& ixupp = getSimpleVecFromColStochVec(*(presProb->primal_upper_bound_indicators), col);
+   double& xupp = getSimpleVecFromColStochVec(*(presProb->primal_upper_bounds), col);
 
    if (PIPSisZero(ixlow))
       assert(xlow == INF_NEG);
@@ -2109,8 +2109,8 @@ void PresolveData::removeFreeColumnSingletonInequalityRowSynced(const INDEX& row
    if (col.isEmpty())
       assert(coeff == 0.0);
 
-   const double clow = getSimpleVecFromRowStochVec(*presProb->bl, row);
-   const double cupp = getSimpleVecFromRowStochVec(*presProb->bu, row);
+   const double clow = getSimpleVecFromRowStochVec(*presProb->inequality_lower_bounds, row);
+   const double cupp = getSimpleVecFromRowStochVec(*presProb->inequality_upper_bounds, row);
 
    assert(clow != INF_NEG || cupp != INF_POS);
    if (clow != INF_NEG)
@@ -2130,10 +2130,10 @@ void PresolveData::removeFreeColumnSingletonInequalityRowSynced(const INDEX& row
    PIPS_MPIgetSumInPlace(coeff);
 
    if (col.isCol()) {
-      double& ixlow = getSimpleVecFromColStochVec(*(presProb->ixlow), col);
-      double& xlow = getSimpleVecFromColStochVec(*(presProb->blx), col);
-      double& ixupp = getSimpleVecFromColStochVec(*(presProb->ixupp), col);
-      double& xupp = getSimpleVecFromColStochVec(*(presProb->bux), col);
+      double& ixlow = getSimpleVecFromColStochVec(*(presProb->primal_lower_bound_indicators), col);
+      double& xlow = getSimpleVecFromColStochVec(*(presProb->primal_lower_bounds), col);
+      double& ixupp = getSimpleVecFromColStochVec(*(presProb->primal_upper_bound_indicators), col);
+      double& xupp = getSimpleVecFromColStochVec(*(presProb->primal_upper_bounds), col);
 
       if (PIPSisZero(ixlow))
          assert(xlow == INF_NEG);
@@ -2193,12 +2193,12 @@ void PresolveData::removeImpliedFreeColumnSingletonEqualityRowSynced(const INDEX
    }
 
    if (row.inInEqSys()) {
-      assert(PIPSisEQ(getSimpleVecFromRowStochVec(*presProb->bl, row), getSimpleVecFromRowStochVec(*presProb->bu, row)));
-      assert(!PIPSisZero(getSimpleVecFromRowStochVec(*presProb->iclow, row)));
-      assert(!PIPSisZero(getSimpleVecFromRowStochVec(*presProb->icupp, row)));
+      assert(PIPSisEQ(getSimpleVecFromRowStochVec(*presProb->inequality_lower_bounds, row), getSimpleVecFromRowStochVec(*presProb->inequality_upper_bounds, row)));
+      assert(!PIPSisZero(getSimpleVecFromRowStochVec(*presProb->inequality_lower_bound_indicators, row)));
+      assert(!PIPSisZero(getSimpleVecFromRowStochVec(*presProb->inequality_upper_bound_indicators, row)));
    }
 
-   const double rhs = row.inEqSys() ? getSimpleVecFromRowStochVec(*presProb->bA, row) : getSimpleVecFromRowStochVec(*presProb->bl, row);
+   const double rhs = row.inEqSys() ? getSimpleVecFromRowStochVec(*presProb->bA, row) : getSimpleVecFromRowStochVec(*presProb->inequality_lower_bounds, row);
 
    double obj_coeff = 0.0;
    double col_coeff = 0.0;
@@ -2215,10 +2215,10 @@ void PresolveData::removeImpliedFreeColumnSingletonEqualityRowSynced(const INDEX
    PIPS_MPIgetSumInPlace(obj_coeff);
 
    if (col.isCol()) {
-      const double& ixlow = getSimpleVecFromColStochVec(*(presProb->ixlow), col);
-      const double& xlow = getSimpleVecFromColStochVec(*(presProb->blx), col);
-      const double& ixupp = getSimpleVecFromColStochVec(*(presProb->ixupp), col);
-      const double& xupp = getSimpleVecFromColStochVec(*(presProb->bux), col);
+      const double& ixlow = getSimpleVecFromColStochVec(*(presProb->primal_lower_bound_indicators), col);
+      const double& xlow = getSimpleVecFromColStochVec(*(presProb->primal_lower_bounds), col);
+      const double& ixupp = getSimpleVecFromColStochVec(*(presProb->primal_upper_bound_indicators), col);
+      const double& xupp = getSimpleVecFromColStochVec(*(presProb->primal_upper_bounds), col);
 
       if (PIPSisZero(ixlow))
          assert(xlow == INF_NEG);
@@ -2237,10 +2237,10 @@ void PresolveData::removeImpliedFreeColumnSingletonEqualityRowSynced(const INDEX
    removeRow(row);
 
    if (col.isCol()) {
-      double& ixlow = getSimpleVecFromColStochVec(*(presProb->ixlow), col);
-      double& xlow = getSimpleVecFromColStochVec(*(presProb->blx), col);
-      double& ixupp = getSimpleVecFromColStochVec(*(presProb->ixupp), col);
-      double& xupp = getSimpleVecFromColStochVec(*(presProb->bux), col);
+      double& ixlow = getSimpleVecFromColStochVec(*(presProb->primal_lower_bound_indicators), col);
+      double& xlow = getSimpleVecFromColStochVec(*(presProb->primal_lower_bounds), col);
+      double& ixupp = getSimpleVecFromColStochVec(*(presProb->primal_upper_bound_indicators), col);
+      double& xupp = getSimpleVecFromColStochVec(*(presProb->primal_upper_bounds), col);
 
       /* remove col and mark it for the fix empty columns presolver */
       ixlow = xlow = xupp = ixupp = 0;
@@ -2269,20 +2269,20 @@ void PresolveData::removeImpliedFreeColumnSingletonEqualityRow(const INDEX& row,
    }
 
    if (row.inInEqSys()) {
-      assert(PIPSisEQ(getSimpleVecFromRowStochVec(*presProb->bl, row), getSimpleVecFromRowStochVec(*presProb->bu, row)));
-      assert(!PIPSisZero(getSimpleVecFromRowStochVec(*presProb->iclow, row)));
-      assert(!PIPSisZero(getSimpleVecFromRowStochVec(*presProb->icupp, row)));
+      assert(PIPSisEQ(getSimpleVecFromRowStochVec(*presProb->inequality_lower_bounds, row), getSimpleVecFromRowStochVec(*presProb->inequality_upper_bounds, row)));
+      assert(!PIPSisZero(getSimpleVecFromRowStochVec(*presProb->inequality_lower_bound_indicators, row)));
+      assert(!PIPSisZero(getSimpleVecFromRowStochVec(*presProb->inequality_upper_bound_indicators, row)));
    }
 
-   const double rhs = row.inEqSys() ? getSimpleVecFromRowStochVec(*presProb->bA, row) : getSimpleVecFromRowStochVec(*presProb->bl, row);
+   const double rhs = row.inEqSys() ? getSimpleVecFromRowStochVec(*presProb->bA, row) : getSimpleVecFromRowStochVec(*presProb->inequality_lower_bounds, row);
    const double obj_coeff = col.isLinkingCol() ? getSimpleVecFromColStochVec(*presProb->g, col) + (*objective_vec_chgs)[col.getIndex()]
                                                : getSimpleVecFromColStochVec(*presProb->g, col);
    const double col_coeff = getRowCoeff(row, col);
 
-   double& ixlow = getSimpleVecFromColStochVec(*(presProb->ixlow), col);
-   double& xlow = getSimpleVecFromColStochVec(*(presProb->blx), col);
-   double& ixupp = getSimpleVecFromColStochVec(*(presProb->ixupp), col);
-   double& xupp = getSimpleVecFromColStochVec(*(presProb->bux), col);
+   double& ixlow = getSimpleVecFromColStochVec(*(presProb->primal_lower_bound_indicators), col);
+   double& xlow = getSimpleVecFromColStochVec(*(presProb->primal_lower_bounds), col);
+   double& ixupp = getSimpleVecFromColStochVec(*(presProb->primal_upper_bound_indicators), col);
+   double& xupp = getSimpleVecFromColStochVec(*(presProb->primal_upper_bounds), col);
 
    if (PIPSisZero(ixlow))
       assert(xlow == INF_NEG);
@@ -2413,12 +2413,12 @@ void PresolveData::adaptObjectiveSubstitutedRow(const INDEX& row, const INDEX& c
 
    /* rhs/clow == cupp */
    if (row.inInEqSys()) {
-      assert(PIPSisEQ(getSimpleVecFromRowStochVec(*presProb->bl, row), getSimpleVecFromRowStochVec(*presProb->bu, row)));
-      assert(!PIPSisZero(getSimpleVecFromRowStochVec(*presProb->iclow, row)));
-      assert(!PIPSisZero(getSimpleVecFromRowStochVec(*presProb->icupp, row)));
+      assert(PIPSisEQ(getSimpleVecFromRowStochVec(*presProb->inequality_lower_bounds, row), getSimpleVecFromRowStochVec(*presProb->inequality_upper_bounds, row)));
+      assert(!PIPSisZero(getSimpleVecFromRowStochVec(*presProb->inequality_lower_bound_indicators, row)));
+      assert(!PIPSisZero(getSimpleVecFromRowStochVec(*presProb->inequality_upper_bound_indicators, row)));
    }
 
-   const double rhs = row.inEqSys() ? getSimpleVecFromRowStochVec(*presProb->bA, row) : getSimpleVecFromRowStochVec(*presProb->bu, row);
+   const double rhs = row.inEqSys() ? getSimpleVecFromRowStochVec(*presProb->bA, row) : getSimpleVecFromRowStochVec(*presProb->inequality_upper_bounds, row);
 
    /* this is the case where everyone removes the same row in parallel */
    if (col.isCol()) {
@@ -2518,8 +2518,8 @@ void PresolveData::removeRow(const INDEX& row) {
    if (row.inEqSys())
       getSimpleVecFromRowStochVec(*presProb->bA, row) = 0.0;
    else {
-      getSimpleVecFromRowStochVec(*presProb->bl, row) = 0.0;
-      getSimpleVecFromRowStochVec(*presProb->bu, row) = 0.0;
+      getSimpleVecFromRowStochVec(*presProb->inequality_lower_bounds, row) = 0.0;
+      getSimpleVecFromRowStochVec(*presProb->inequality_upper_bounds, row) = 0.0;
    }
 
    /* set activities and unbounded counters to zero */
@@ -2836,17 +2836,17 @@ bool PresolveData::nodeIsDummy(int node) const {
    DistributedMatrix& matrix = getSystemMatrix(EQUALITY_SYSTEM);
    // todo : asserts
    if (matrix.children[node]->is_a(kStochGenDummyMatrix)) {
-      assert(dynamic_cast<DistributedVector<double>&>(*(presProb->bux)).children[node]->isKindOf(kStochDummy));
-      assert(dynamic_cast<DistributedVector<double>&>(*(presProb->blx)).children[node]->isKindOf(kStochDummy));
+      assert(dynamic_cast<DistributedVector<double>&>(*(presProb->primal_upper_bounds)).children[node]->isKindOf(kStochDummy));
+      assert(dynamic_cast<DistributedVector<double>&>(*(presProb->primal_lower_bounds)).children[node]->isKindOf(kStochDummy));
 
       assert(dynamic_cast<DistributedVector<double>&>(*(presProb->bA)).children[node]->isKindOf(kStochDummy));
-      assert(dynamic_cast<DistributedVector<double>&>(*(presProb->bux)).children[node]->isKindOf(kStochDummy));
-      assert(dynamic_cast<DistributedVector<double>&>(*(presProb->blx)).children[node]->isKindOf(kStochDummy));
+      assert(dynamic_cast<DistributedVector<double>&>(*(presProb->primal_upper_bounds)).children[node]->isKindOf(kStochDummy));
+      assert(dynamic_cast<DistributedVector<double>&>(*(presProb->primal_lower_bounds)).children[node]->isKindOf(kStochDummy));
       assert(nnzs_row_A->children[node]->isKindOf(kStochDummy));
-      assert(dynamic_cast<DistributedVector<double>&>(*(presProb->bu)).children[node]->isKindOf(kStochDummy));
-      assert(dynamic_cast<DistributedVector<double>&>(*(presProb->bl)).children[node]->isKindOf(kStochDummy));
-      assert(dynamic_cast<DistributedVector<double>&>(*(presProb->icupp)).children[node]->isKindOf(kStochDummy));
-      assert(dynamic_cast<DistributedVector<double>&>(*(presProb->iclow)).children[node]->isKindOf(kStochDummy));
+      assert(dynamic_cast<DistributedVector<double>&>(*(presProb->inequality_upper_bounds)).children[node]->isKindOf(kStochDummy));
+      assert(dynamic_cast<DistributedVector<double>&>(*(presProb->inequality_lower_bounds)).children[node]->isKindOf(kStochDummy));
+      assert(dynamic_cast<DistributedVector<double>&>(*(presProb->inequality_upper_bound_indicators)).children[node]->isKindOf(kStochDummy));
+      assert(dynamic_cast<DistributedVector<double>&>(*(presProb->inequality_lower_bound_indicators)).children[node]->isKindOf(kStochDummy));
       assert(nnzs_row_C->children[node]->isKindOf(kStochDummy));
 
       return true;
@@ -2975,10 +2975,10 @@ double PresolveData::computeLocalLinkingRowMinOrMaxActivity(const INDEX& row, bo
          continue;
 
       /* get upper, lower bounds */
-      const SimpleVector<double>& ixlow = getSimpleVecFromColStochVec(*(presProb->ixlow), node);
-      const SimpleVector<double>& xlow = getSimpleVecFromColStochVec(*(presProb->blx), node);
-      const SimpleVector<double>& ixupp = getSimpleVecFromColStochVec(*(presProb->ixupp), node);
-      const SimpleVector<double>& xupp = getSimpleVecFromColStochVec(*(presProb->bux), node);
+      const SimpleVector<double>& ixlow = getSimpleVecFromColStochVec(*(presProb->primal_lower_bound_indicators), node);
+      const SimpleVector<double>& xlow = getSimpleVecFromColStochVec(*(presProb->primal_lower_bounds), node);
+      const SimpleVector<double>& ixupp = getSimpleVecFromColStochVec(*(presProb->primal_upper_bound_indicators), node);
+      const SimpleVector<double>& xupp = getSimpleVecFromColStochVec(*(presProb->primal_upper_bounds), node);
 
       /* get matrix */
       const INDEX dummy_col(COL, node, dummy_index);
@@ -3031,16 +3031,16 @@ void PresolveData::computeRowMinOrMaxActivity(const INDEX& row, bool upper) {
    }
 
    /* upper lower bounds linking vars */
-   const SimpleVector<double>& ixlow_root = getSimpleVecFromColStochVec(*(presProb->ixlow), -1);
-   const SimpleVector<double>& xlow_root = getSimpleVecFromColStochVec(*(presProb->blx), -1);
-   const SimpleVector<double>& ixupp_root = getSimpleVecFromColStochVec(*(presProb->ixupp), -1);
-   const SimpleVector<double>& xupp_root = getSimpleVecFromColStochVec(*(presProb->bux), -1);
+   const SimpleVector<double>& ixlow_root = getSimpleVecFromColStochVec(*(presProb->primal_lower_bound_indicators), -1);
+   const SimpleVector<double>& xlow_root = getSimpleVecFromColStochVec(*(presProb->primal_lower_bounds), -1);
+   const SimpleVector<double>& ixupp_root = getSimpleVecFromColStochVec(*(presProb->primal_upper_bound_indicators), -1);
+   const SimpleVector<double>& xupp_root = getSimpleVecFromColStochVec(*(presProb->primal_upper_bounds), -1);
 
    /* get upper, lower bounds */
-   const SimpleVector<double>& ixlow = getSimpleVecFromColStochVec(*(presProb->ixlow), row.getNode());
-   const SimpleVector<double>& xlow = getSimpleVecFromColStochVec(*(presProb->blx), row.getNode());
-   const SimpleVector<double>& ixupp = getSimpleVecFromColStochVec(*(presProb->ixupp), row.getNode());
-   const SimpleVector<double>& xupp = getSimpleVecFromColStochVec(*(presProb->bux), row.getNode());
+   const SimpleVector<double>& ixlow = getSimpleVecFromColStochVec(*(presProb->primal_lower_bound_indicators), row.getNode());
+   const SimpleVector<double>& xlow = getSimpleVecFromColStochVec(*(presProb->primal_lower_bounds), row.getNode());
+   const SimpleVector<double>& ixupp = getSimpleVecFromColStochVec(*(presProb->primal_upper_bound_indicators), row.getNode());
+   const SimpleVector<double>& xupp = getSimpleVecFromColStochVec(*(presProb->primal_upper_bounds), row.getNode());
 
    /* get matrix */
    const SparseStorageDynamic& Bmat = getSparseGenMatrix(row, INDEX(COL, row.getNode(), dummy_index))->getStorageDynamic();
@@ -3394,8 +3394,8 @@ std::pair<double,double> PresolveData::getRowBounds(const INDEX& row) const {
       assert(std::fabs(rhs) != INF_POS);
    }
    else {
-      rhs = getSimpleVecFromRowStochVec(*presProb->bu, row);
-      lhs = getSimpleVecFromRowStochVec(*presProb->bl, row);
+      rhs = getSimpleVecFromRowStochVec(*presProb->inequality_upper_bounds, row);
+      lhs = getSimpleVecFromRowStochVec(*presProb->inequality_lower_bounds, row);
 
       if (row.isLinkingRow() && outdated_lhsrhs) {
          rhs += (*bound_chgs_C)[row.getIndex()];
@@ -3403,12 +3403,12 @@ std::pair<double,double> PresolveData::getRowBounds(const INDEX& row) const {
       }
 
 #ifndef NDEBUG
-      if (PIPSisZero(getSimpleVecFromRowStochVec(*presProb->iclow, row)))
+      if (PIPSisZero(getSimpleVecFromRowStochVec(*presProb->inequality_lower_bound_indicators, row)))
          assert(lhs == INF_NEG);
       else
          assert(std::fabs(lhs) != INF_POS);
 
-      if (PIPSisZero(getSimpleVecFromRowStochVec(*presProb->icupp, row)))
+      if (PIPSisZero(getSimpleVecFromRowStochVec(*presProb->inequality_upper_bound_indicators, row)))
          assert(rhs == INF_POS);
       else
          assert(std::fabs(rhs) != INF_POS);
@@ -3443,11 +3443,11 @@ void PresolveData::setRowBounds(const INDEX& row, double clow, double cupp) {
          const int row_index = row.getIndex();
          // TODO : this needs tow arrays for synchronization if it is supposed to work..
          if (clow != INF_NEG) {
-            const double old_clow = getSimpleVecFromRowStochVec(*presProb->bl, row);
+            const double old_clow = getSimpleVecFromRowStochVec(*presProb->inequality_lower_bounds, row);
             double& clow_chgs = (*bound_chgs_C)[row_index];
 
             if (old_clow == INF_NEG) {
-               getSimpleVecFromRowStochVec(*presProb->iclow, row) = 1;
+               getSimpleVecFromRowStochVec(*presProb->inequality_lower_bound_indicators, row) = 1;
                clow_chgs = clow;
             }
             else
@@ -3457,11 +3457,11 @@ void PresolveData::setRowBounds(const INDEX& row, double clow, double cupp) {
          }
 
          if (cupp != INF_POS) {
-            const double old_cupp = getSimpleVecFromRowStochVec(*presProb->bu, row);
+            const double old_cupp = getSimpleVecFromRowStochVec(*presProb->inequality_upper_bounds, row);
             double& cupp_chgs = (*bound_chgs_C)[row_index];
 
             if (old_cupp == INF_NEG) {
-               getSimpleVecFromRowStochVec(*presProb->icupp, row) = 1;
+               getSimpleVecFromRowStochVec(*presProb->inequality_upper_bound_indicators, row) = 1;
                cupp_chgs = cupp;
             }
             else
@@ -3470,25 +3470,25 @@ void PresolveData::setRowBounds(const INDEX& row, double clow, double cupp) {
             outdated_lhsrhs = true;
          }
 
-         if (getSimpleVecFromRowStochVec(*presProb->bl, row) != INF_NEG)
-            assert(PIPSisEQ(getSimpleVecFromRowStochVec(*presProb->bl, row) + (*bound_chgs_C)[row_index], clow));
+         if (getSimpleVecFromRowStochVec(*presProb->inequality_lower_bounds, row) != INF_NEG)
+            assert(PIPSisEQ(getSimpleVecFromRowStochVec(*presProb->inequality_lower_bounds, row) + (*bound_chgs_C)[row_index], clow));
          else
             assert(PIPSisEQ((*bound_chgs_C)[row_index], clow));
 
-         if (getSimpleVecFromRowStochVec(*presProb->bu, row) != INF_POS)
-            assert(PIPSisEQ(getSimpleVecFromRowStochVec(*presProb->bl, row) + (*bound_chgs_C)[row_index], clow));
+         if (getSimpleVecFromRowStochVec(*presProb->inequality_upper_bounds, row) != INF_POS)
+            assert(PIPSisEQ(getSimpleVecFromRowStochVec(*presProb->inequality_lower_bounds, row) + (*bound_chgs_C)[row_index], clow));
          else
             assert(PIPSisEQ((*bound_chgs_C)[row_index], cupp));
       }
       else {
          if (clow != INF_NEG) {
-            getSimpleVecFromRowStochVec(*presProb->iclow, row) = 1;
-            getSimpleVecFromRowStochVec(*presProb->bl, row) = clow;
+            getSimpleVecFromRowStochVec(*presProb->inequality_lower_bound_indicators, row) = 1;
+            getSimpleVecFromRowStochVec(*presProb->inequality_lower_bounds, row) = clow;
          }
 
          if (cupp != INF_POS) {
-            getSimpleVecFromRowStochVec(*presProb->icupp, row) = 1;
-            getSimpleVecFromRowStochVec(*presProb->bu, row) = cupp;
+            getSimpleVecFromRowStochVec(*presProb->inequality_upper_bound_indicators, row) = 1;
+            getSimpleVecFromRowStochVec(*presProb->inequality_upper_bounds, row) = cupp;
          }
       }
    }
@@ -3497,15 +3497,15 @@ void PresolveData::setRowBounds(const INDEX& row, double clow, double cupp) {
 std::pair<double,double> PresolveData::getColBounds(const INDEX& col) const {
    assert(col.isCol());
 
-   const double xlow = getSimpleVecFromColStochVec(*presProb->blx, col);
-   const double xupp = getSimpleVecFromColStochVec(*presProb->bux, col);
+   const double xlow = getSimpleVecFromColStochVec(*presProb->primal_lower_bounds, col);
+   const double xupp = getSimpleVecFromColStochVec(*presProb->primal_upper_bounds, col);
 
 #ifndef NDBEUG
-   if (PIPSisZero(getSimpleVecFromColStochVec(*presProb->ixupp, col)))
+   if (PIPSisZero(getSimpleVecFromColStochVec(*presProb->primal_upper_bound_indicators, col)))
       assert(xupp == INF_POS);
    else
       assert(std::fabs(xupp) != INF_POS);
-   if (PIPSisZero(getSimpleVecFromColStochVec(*presProb->ixlow, col)))
+   if (PIPSisZero(getSimpleVecFromColStochVec(*presProb->primal_lower_bound_indicators, col)))
       assert(xlow == INF_NEG);
    else
       assert(std::fabs(xlow) != INF_POS);
@@ -3530,15 +3530,15 @@ bool PresolveData::updateColBounds(const INDEX& col, double xlow, double xupp) {
    if (xupp < INF_POS && xupp < xupp_old) {
       updated = true;
 
-      getSimpleVecFromColStochVec(*presProb->bux, col) = xupp;
-      getSimpleVecFromColStochVec(*presProb->ixupp, col) = 1.0;
+      getSimpleVecFromColStochVec(*presProb->primal_upper_bounds, col) = xupp;
+      getSimpleVecFromColStochVec(*presProb->primal_upper_bound_indicators, col) = 1.0;
    }
 
    if (INF_NEG < xlow && xlow_old < xlow) {
       updated = true;
 
-      getSimpleVecFromColStochVec(*presProb->blx, col) = xlow;
-      getSimpleVecFromColStochVec(*presProb->ixlow, col) = 1.0;
+      getSimpleVecFromColStochVec(*presProb->primal_lower_bounds, col) = xlow;
+      getSimpleVecFromColStochVec(*presProb->primal_lower_bound_indicators, col) = 1.0;
    }
 
    if (updated) {
@@ -3637,8 +3637,8 @@ void PresolveData::writeRowLocalToStreamDense(std::ostream& out, const INDEX& ro
    if (row.inEqSys())
       out << getSimpleVecFromRowStochVec(*presProb->bA, row) << " = ";
    else {
-      double iclow = getSimpleVecFromRowStochVec(*presProb->iclow, row);
-      double clow = PIPSisEQ(iclow, 1.0) ? getSimpleVecFromRowStochVec(*presProb->bl, row) : INF_NEG;
+      double iclow = getSimpleVecFromRowStochVec(*presProb->inequality_lower_bound_indicators, row);
+      double clow = PIPSisEQ(iclow, 1.0) ? getSimpleVecFromRowStochVec(*presProb->inequality_lower_bounds, row) : INF_NEG;
 
       out << clow << " <= ";
    }
@@ -3647,31 +3647,31 @@ void PresolveData::writeRowLocalToStreamDense(std::ostream& out, const INDEX& ro
    if (!row.isLinkingRow()) {
       if (node != -1) {
          writeMatrixRowToStreamDense(out, *getSparseGenMatrix(row, INDEX(COL, -1, dummy_index)), -1, row_index,
-               getSimpleVecFromColStochVec(*presProb->ixupp, -1), getSimpleVecFromColStochVec(*presProb->bux, -1),
-               getSimpleVecFromColStochVec(*presProb->ixlow, -1), getSimpleVecFromColStochVec(*presProb->blx, -1));
+               getSimpleVecFromColStochVec(*presProb->primal_upper_bound_indicators, -1), getSimpleVecFromColStochVec(*presProb->primal_upper_bounds, -1),
+               getSimpleVecFromColStochVec(*presProb->primal_lower_bound_indicators, -1), getSimpleVecFromColStochVec(*presProb->primal_lower_bounds, -1));
       }
 
       writeMatrixRowToStreamDense(out, *getSparseGenMatrix(row, INDEX(COL, row.getNode(), dummy_index)), node, row_index,
-            getSimpleVecFromColStochVec(*presProb->ixupp, node), getSimpleVecFromColStochVec(*presProb->bux, node),
-            getSimpleVecFromColStochVec(*presProb->ixlow, node), getSimpleVecFromColStochVec(*presProb->blx, node));
+            getSimpleVecFromColStochVec(*presProb->primal_upper_bound_indicators, node), getSimpleVecFromColStochVec(*presProb->primal_upper_bounds, node),
+            getSimpleVecFromColStochVec(*presProb->primal_lower_bound_indicators, node), getSimpleVecFromColStochVec(*presProb->primal_lower_bounds, node));
    }
    else if (row.isLinkingRow()) {
       assert(node == -1);
       writeMatrixRowToStreamDense(out, *getSparseGenMatrix(row, INDEX(COL, row.getNode(), dummy_index)), node, row_index,
-            getSimpleVecFromColStochVec(*presProb->ixupp, node), getSimpleVecFromColStochVec(*presProb->bux, node),
-            getSimpleVecFromColStochVec(*presProb->ixlow, node), getSimpleVecFromColStochVec(*presProb->blx, node));
+            getSimpleVecFromColStochVec(*presProb->primal_upper_bound_indicators, node), getSimpleVecFromColStochVec(*presProb->primal_upper_bounds, node),
+            getSimpleVecFromColStochVec(*presProb->primal_lower_bound_indicators, node), getSimpleVecFromColStochVec(*presProb->primal_lower_bounds, node));
 
       for (int child = 0; child < nChildren; ++child) {
          if (!nodeIsDummy(child))
             writeMatrixRowToStreamDense(out, *getSparseGenMatrix(row, INDEX(COL, row.getNode(), dummy_index)), child, row_index,
-                  getSimpleVecFromColStochVec(*presProb->ixupp, child), getSimpleVecFromColStochVec(*presProb->bux, child),
-                  getSimpleVecFromColStochVec(*presProb->ixlow, child), getSimpleVecFromColStochVec(*presProb->blx, child));
+                  getSimpleVecFromColStochVec(*presProb->primal_upper_bound_indicators, child), getSimpleVecFromColStochVec(*presProb->primal_upper_bounds, child),
+                  getSimpleVecFromColStochVec(*presProb->primal_lower_bound_indicators, child), getSimpleVecFromColStochVec(*presProb->primal_lower_bounds, child));
       }
    }
 
    if (system_type == INEQUALITY_SYSTEM) {
-      double icupp = getSimpleVecFromRowStochVec(*presProb->icupp, row);
-      double cupp = PIPSisEQ(icupp, 1.0) ? getSimpleVecFromRowStochVec(*presProb->bu, row) : INF_POS;
+      double icupp = getSimpleVecFromRowStochVec(*presProb->inequality_upper_bound_indicators, row);
+      double cupp = PIPSisEQ(icupp, 1.0) ? getSimpleVecFromRowStochVec(*presProb->inequality_upper_bounds, row) : INF_POS;
 
       out << " <= " << cupp;
    }
@@ -3696,10 +3696,10 @@ void PresolveData::writeMatrixRowToStreamDense(std::ostream& out, const SparseMa
 }
 
 void PresolveData::printVarBoundStatistics(std::ostream& out) const {
-   const auto& xupp = dynamic_cast<const DistributedVector<double>&>(*presProb->bux);
-   const auto& xlow = dynamic_cast<const DistributedVector<double>&>(*presProb->blx);
-   const auto& ixupp = dynamic_cast<const DistributedVector<double>&>(*presProb->ixupp);
-   const auto& ixlow = dynamic_cast<const DistributedVector<double>&>(*presProb->ixlow);
+   const auto& xupp = dynamic_cast<const DistributedVector<double>&>(*presProb->primal_upper_bounds);
+   const auto& xlow = dynamic_cast<const DistributedVector<double>&>(*presProb->primal_lower_bounds);
+   const auto& ixupp = dynamic_cast<const DistributedVector<double>&>(*presProb->primal_upper_bound_indicators);
+   const auto& ixlow = dynamic_cast<const DistributedVector<double>&>(*presProb->primal_lower_bound_indicators);
 
    std::unique_ptr<DistributedVector<double>> xlow_def (dynamic_cast<DistributedVector<double>*>(xlow.cloneFull()));
    std::unique_ptr<DistributedVector<double>> xupp_def (dynamic_cast<DistributedVector<double>*>(xupp.cloneFull()));
@@ -3847,15 +3847,15 @@ void PresolveData::append_bounds_inequalities_to_equalities_transformation(int n
    SimpleVector<double>& bA = getSimpleVecFromRowStochVec(*presProb->bA, node, linking);
    bA.appendToBack(n_slack_variables, 0.0);
 
-   SimpleVector<double>& ixlow = getSimpleVecFromColStochVec(*presProb->ixlow, node);
-   SimpleVector<double>& ixupp = getSimpleVecFromColStochVec(*presProb->ixupp, node);
-   SimpleVector<double>& xlow = getSimpleVecFromColStochVec(*presProb->blx, node);
-   SimpleVector<double>& xupp = getSimpleVecFromColStochVec(*presProb->bux, node);
+   SimpleVector<double>& ixlow = getSimpleVecFromColStochVec(*presProb->primal_lower_bound_indicators, node);
+   SimpleVector<double>& ixupp = getSimpleVecFromColStochVec(*presProb->primal_upper_bound_indicators, node);
+   SimpleVector<double>& xlow = getSimpleVecFromColStochVec(*presProb->primal_lower_bounds, node);
+   SimpleVector<double>& xupp = getSimpleVecFromColStochVec(*presProb->primal_upper_bounds, node);
 
-   SimpleVector<double>& iclow = getSimpleVecFromRowStochVec(*presProb->iclow, node, linking);
-   SimpleVector<double>& icupp = getSimpleVecFromRowStochVec(*presProb->icupp, node, linking);
-   SimpleVector<double>& clow = getSimpleVecFromRowStochVec(*presProb->bl, node, linking);
-   SimpleVector<double>& cupp = getSimpleVecFromRowStochVec(*presProb->bu, node, linking);
+   SimpleVector<double>& iclow = getSimpleVecFromRowStochVec(*presProb->inequality_lower_bound_indicators, node, linking);
+   SimpleVector<double>& icupp = getSimpleVecFromRowStochVec(*presProb->inequality_upper_bound_indicators, node, linking);
+   SimpleVector<double>& clow = getSimpleVecFromRowStochVec(*presProb->inequality_lower_bounds, node, linking);
+   SimpleVector<double>& cupp = getSimpleVecFromRowStochVec(*presProb->inequality_upper_bounds, node, linking);
 
    ixlow.appendToBack(iclow);
    xlow.appendToBack(clow);

@@ -8,7 +8,7 @@
 #include "sLinsysRootBordered.h"
 #include "BorderedSymmetricMatrix.h"
 #include "PIPSIPMppOptions.h"
-#include "DistributedFactory.h"
+#include "DistributedFactory.hpp"
 
 sLinsysRootBordered::sLinsysRootBordered(DistributedFactory* factory_, DistributedQP* prob_) : sLinsysRootAug(factory_, prob_, true) {
    assert(locmz == 0);

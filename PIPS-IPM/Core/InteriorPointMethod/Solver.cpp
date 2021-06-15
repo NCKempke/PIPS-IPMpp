@@ -1,10 +1,10 @@
 #include "Solver.hpp"
-#include "Problem.h"
+#include "Problem.hpp"
 #include "Variables.h"
 #include "Residuals.h"
 #include "AbstractLinearSystem.h"
 #include "AbstractOptions.h"
-#include "DistributedFactory.h"
+#include "DistributedFactory.hpp"
 #include <cmath>
 
 double g_iterNumber = 0.;

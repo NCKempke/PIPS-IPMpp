@@ -6,7 +6,7 @@
  */
 #include "Mc30Scaler.h"
 
-#include "../LinearAlgebra/Dense/SimpleVector.h"
+#include "../LinearAlgebra/Dense/SimpleVector.hpp"
 
 #include <algorithm>
 

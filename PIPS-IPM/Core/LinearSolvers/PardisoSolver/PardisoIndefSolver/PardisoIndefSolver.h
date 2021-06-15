@@ -10,7 +10,7 @@
 
 #include <memory>
 #include "../../DoubleLinearSolver.h"
-#include "../../../LinearAlgebra/Dense/SimpleVector.h"
+#include "../../../LinearAlgebra/Dense/SimpleVector.hpp"
 #include "../../../LinearAlgebra/Dense/DenseSymmetricMatrix.h"
 #include "../../../LinearAlgebra/Sparse/SparseSymmetricMatrix.h"
 

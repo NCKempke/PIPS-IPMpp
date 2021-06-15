@@ -30,7 +30,7 @@ public:
 
    void initialize(Residuals& initial_residuals);
    void compute_acceptable_iterate(Problem& problem, Variables& current_iterate, Variables& direction, Residuals& current_residuals,
-         double primal_step_length, double dual_step_length);
+         double& primal_step_length, double& dual_step_length);
 
 private:
    const Scaler* scaler{};

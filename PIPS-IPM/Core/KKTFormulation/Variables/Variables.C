@@ -1,9 +1,9 @@
 #include <iostream>
 #include <utility>
-#include <SimpleVector.h>
+#include <SimpleVector.hpp>
 #include "Variables.h"
 #include "Vector.hpp"
-#include "Problem.h"
+#include "Problem.hpp"
 #include "MpsReader.h"
 
 Variables::Variables(std::unique_ptr<Vector<double>> x_in, std::unique_ptr<Vector<double>> s_in, std::unique_ptr<Vector<double>> y_in, std::unique_ptr<Vector<double>> z_in, std::unique_ptr<Vector<double>> v_in,

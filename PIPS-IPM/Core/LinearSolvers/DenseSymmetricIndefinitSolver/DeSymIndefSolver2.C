@@ -3,7 +3,7 @@
  * (C) 2001 University of Chicago. See Copyright Notification in OOQP */
 
 #include "DeSymIndefSolver2.h"
-#include "SimpleVector.h"
+#include "SimpleVector.hpp"
 #include <cassert>
 
 #include "OoqpBlas.h"

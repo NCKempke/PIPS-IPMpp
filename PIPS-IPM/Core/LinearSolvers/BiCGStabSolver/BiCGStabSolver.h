@@ -3,7 +3,7 @@
 
 #include "DoubleLinearSolver.h"
 #include "AbstractMatrix.h"
-#include "SimpleVector.h"
+#include "SimpleVector.hpp"
 
 class MatTimesVec;
 

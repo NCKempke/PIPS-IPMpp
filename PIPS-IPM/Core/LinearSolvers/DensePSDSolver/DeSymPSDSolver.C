@@ -6,7 +6,7 @@
 #include <cassert>
 
 #include "DenseSymmetricMatrix.h"
-#include "SimpleVector.h"
+#include "SimpleVector.hpp"
 
 // declarations for LAPACK functions used to factor/solve:
 

@@ -1,5 +1,5 @@
 #include "CGSolver.h"
-#include "SimpleVector.h"
+#include "SimpleVector.hpp"
 
 extern int print_level;
 

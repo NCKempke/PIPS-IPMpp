@@ -46,7 +46,7 @@ class Residuals;
 
 class AbstractLinearSystem;
 
-#include "StochResourcesMonitor.h"
+#include "StochResourcesMonitor.hpp"
 
 class DistributedFactory {
 public:

@@ -6,7 +6,7 @@
 #include <algorithm>
 
 #include "PardisoSolver.h"
-#include "../../../LinearAlgebra/Dense/SimpleVector.h"
+#include "../../../LinearAlgebra/Dense/SimpleVector.hpp"
 #include "../../../LinearAlgebra/Dense/DenseMatrix.h"
 
 #include "mpi.h"
