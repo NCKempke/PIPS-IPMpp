@@ -512,7 +512,7 @@ void SimpleVector<T>::axzpy(T alpha, const Vector<T>& xvec, const Vector<T>& zve
 
 template<typename T>
 void SimpleVector<T>::axdzpy(T alpha, const Vector<T>& xvec, const Vector<T>& zvec) {
-   const SimpleVector<T>& sxvec = dynamic_cast<const SimpleVector<T>&>(xvec);
+   const auto& sxvec = dynamic_cast<const SimpleVector<T>&>(xvec);
    T* x = sxvec.v;
    const auto& szvec = dynamic_cast<const SimpleVector<T>&>(zvec);
    T* z = szvec.v;
