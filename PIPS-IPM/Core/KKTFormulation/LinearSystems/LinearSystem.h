@@ -125,8 +125,6 @@ protected:
    long long mcupp{0};
    long long mclow{0};
 
-   bool useRefs{false};
-
    /** Work vectors for iterative refinement of the XYZ linear system */
    std::unique_ptr<Vector<double>> sol{};
    std::unique_ptr<Vector<double>> sol2{};
