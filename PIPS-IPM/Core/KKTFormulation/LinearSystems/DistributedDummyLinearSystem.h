@@ -9,9 +9,7 @@
 class DistributedDummyLinearSystem : public DistributedLinearSystem {
 public:
    DistributedDummyLinearSystem(DistributedFactory* factory, DistributedQP* prob) : DistributedLinearSystem(factory, prob, nullptr, nullptr, nullptr, nullptr,
-         nullptr, nullptr, nullptr, false) {
-      mpiComm = MPI_COMM_NULL;
-   };
+         nullptr, nullptr, nullptr, false) {};
 
    ~DistributedDummyLinearSystem() override = default;
 
@@ -33,7 +31,6 @@ public:
 
    void add_regularization_local_kkt(double, double, double) override {};
 
-   void addLnizi(Vector<double>&, Vector<double>&) override {};
    void addLniziLinkCons(Vector<double>&, Vector<double>&, bool) override {};
 
    /** y += alpha * Lni^T * x */
