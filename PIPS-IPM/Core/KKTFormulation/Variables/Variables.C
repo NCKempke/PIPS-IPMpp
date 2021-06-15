@@ -54,34 +54,6 @@ Variables::Variables(const Variables& other)  :
    slack_upper_bound_gap{other.slack_upper_bound_gap->cloneFull()}, slack_upper_bound_gap_dual{other.slack_upper_bound_gap_dual->cloneFull()}
    {}
 
-double Variables::get_average_distance_to_bound_for_converged_vars(const Problem&, double tol) const {
-   assert(0 < tol);
-
-   double sum_small_distance = 0.0;
-   int n_close = 0;
-   primal_lower_bound_gap->getSumCountIfSmall(tol, sum_small_distance, n_close, &*ixlow);
-   primal_upper_bound_gap->getSumCountIfSmall(tol, sum_small_distance, n_close, &*ixupp);
-   slack_upper_bound_gap->getSumCountIfSmall(tol, sum_small_distance, n_close, &*icupp);
-   slack_lower_bound_gap->getSumCountIfSmall(tol, sum_small_distance, n_close, &*iclow);
-
-   if (n_close == 0)
-      return std::numeric_limits<double>::infinity();
-   else
-      return sum_small_distance / (double) n_close;
-}
-
-void Variables::push_slacks_from_bound(double tol, double amount) {
-   if (nxlow > 0)
-      primal_lower_bound_gap->pushAwayFromZero(tol, amount, &*ixlow);
-   if (nxupp > 0)
-      primal_upper_bound_gap->pushAwayFromZero(tol, amount, &*ixupp);
-   if (mclow > 0)
-      slack_lower_bound_gap->pushAwayFromZero(tol, amount, &*iclow);
-   if (mcupp > 0)
-      slack_upper_bound_gap->pushAwayFromZero(tol, amount, &*icupp);
-}
-
-
 double Variables::mu() const {
    double mu = 0.;
    if (number_complementarity_pairs == 0) {
@@ -98,12 +70,12 @@ double Variables::mu() const {
       if (nxupp > 0)
          mu += primal_upper_bound_gap->dotProductWith(*primal_upper_bound_gap_dual);
 
-      mu /= number_complementarity_pairs;
+      mu /= (double) number_complementarity_pairs;
       return mu;
    }
 }
 
-double Variables::mustep_pd(const Variables& iterate, double alpha_primal, double alpha_dual) {
+double Variables::mustep_pd(const Variables& iterate, double alpha_primal, double alpha_dual) const {
    double mu = 0.;
    if (number_complementarity_pairs == 0) {
       return 0.;
@@ -121,7 +93,7 @@ double Variables::mustep_pd(const Variables& iterate, double alpha_primal, doubl
       if (nxupp > 0) {
          mu += primal_upper_bound_gap->shiftedDotProductWith(alpha_primal, *iterate.primal_upper_bound_gap, *primal_upper_bound_gap_dual, alpha_dual, *iterate.primal_upper_bound_gap_dual);
       }
-      mu /= number_complementarity_pairs;
+      mu /= (double) number_complementarity_pairs;
       return mu;
    }
 }
@@ -372,7 +344,7 @@ void Variables::push_to_interior(double alpha, double beta) {
 }
 
 double Variables::violation() const {
-   double viol = 0.0, cmin = 0.0;
+   double viol = 0., cmin = 0.;
    int iblock;
 
    if (nxlow > 0) {
@@ -586,8 +558,8 @@ void Variables::unscale_solution(Problem* problem) {
 }
 
 void Variables::unscale_bounds(Problem* problem) {
-   auto& sxlow = (SimpleVector<double>&) problem->xlowerBound();
-   auto& sxupp = (SimpleVector<double>&) problem->xupperBound();
+   auto& sxlow = (SimpleVector<double>&) problem->x_lower_bound();
+   auto& sxupp = (SimpleVector<double>&) problem->x_upper_bound();
 
 // l = D * l'
    sxlow.componentMult(problem->scale());
@@ -605,10 +577,10 @@ void Variables::print_solution(MpsReader* reader, Problem* problem, int& iErr) {
    double objective = g.dotProductWith(*primals);
 
    auto& sx = dynamic_cast<SimpleVector<double>&>(*this->primals);
-   auto& sxlow = dynamic_cast<SimpleVector<double>&>(problem->xlowerBound());
-   auto& sixlow = dynamic_cast<SimpleVector<double>&>(problem->ixlowerBound());
-   auto& sxupp = dynamic_cast<SimpleVector<double>&>(problem->xupperBound());
-   auto& sixupp = dynamic_cast<SimpleVector<double>&>(problem->ixupperBound());
+   auto& sxlow = dynamic_cast<SimpleVector<double>&>(problem->x_lower_bound());
+   auto& sixlow = dynamic_cast<SimpleVector<double>&>(problem->has_x_lower_bound());
+   auto& sxupp = dynamic_cast<SimpleVector<double>&>(problem->x_upper_bound());
+   auto& sixupp = dynamic_cast<SimpleVector<double>&>(problem->has_x_upper_bound());
    auto& sgamma = dynamic_cast<SimpleVector<double>&>(*this->primal_lower_bound_gap_dual);
    auto& sphi = dynamic_cast<SimpleVector<double>&>(*this->primal_upper_bound_gap_dual);
    auto& sy = dynamic_cast<SimpleVector<double>&>(*this->equality_duals);
@@ -616,10 +588,10 @@ void Variables::print_solution(MpsReader* reader, Problem* problem, int& iErr) {
    auto& slambda = dynamic_cast<SimpleVector<double>&>(*this->slack_lower_bound_gap_dual);
    auto& spi = dynamic_cast<SimpleVector<double>&>(*this->slack_upper_bound_gap_dual);
    auto& sz = dynamic_cast<SimpleVector<double>&>(*this->inequality_duals);
-   auto& sclow = dynamic_cast<SimpleVector<double>&>(problem->slowerBound());
-   auto& siclow = dynamic_cast<SimpleVector<double>&>(problem->islowerBound());
-   auto& scupp = dynamic_cast<SimpleVector<double>&>(problem->supperBound());
-   auto& sicupp = dynamic_cast<SimpleVector<double>&>(problem->isupperBound());
+   auto& sclow = dynamic_cast<SimpleVector<double>&>(problem->s_lower_bound());
+   auto& siclow = dynamic_cast<SimpleVector<double>&>(problem->has_s_lower_bound());
+   auto& scupp = dynamic_cast<SimpleVector<double>&>(problem->s_upper_bound());
+   auto& sicupp = dynamic_cast<SimpleVector<double>&>(problem->has_s_upper_bound());
 
    char* cxupp = new char[nx];
    char* cxlow = new char[nx];

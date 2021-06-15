@@ -35,8 +35,7 @@ void FilterLineSearch::compute_acceptable_iterate(Problem& problem, Variables& c
       double predicted_reduction = InteriorPointMethod::predicted_reduction(problem, current_iterate, direction, primal_step_length);
 
       /* check whether the trial step is accepted */
-      is_accepted = this->filter_strategy.check_acceptance(current_iterate, current_residuals, trial_iterate, trial_residuals, predicted_reduction,
-            primal_step_length);
+      is_accepted = this->filter_strategy.check_acceptance(current_iterate, current_residuals, trial_iterate, trial_residuals, predicted_reduction);
       // if the trial iterate was accepted, current_iterate was overwritten
       if (is_accepted) {
          current_iterate.copy(trial_iterate);

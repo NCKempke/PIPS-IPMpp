@@ -35,11 +35,11 @@ public:
 
    Filter filter;
    FilterStrategyParameters parameters; /*!< Set of parameters */
-   bool verbose{false};
+   bool verbose{true};
 
    void initialize(Residuals& initial_residuals);
    bool check_acceptance(Variables& current_iterate, Residuals& current_residuals, Variables& trial_iterate, Residuals& trial_residuals,
-         double predicted_reduction, double step_length);
+         double predicted_reduction);
 };
 
 #endif // FILTERSTRATEGY_H

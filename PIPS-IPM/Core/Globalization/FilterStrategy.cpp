@@ -23,7 +23,7 @@ void FilterStrategy::initialize(Residuals& initial_residuals) {
  * precondition: feasible step
  * */
 bool FilterStrategy::check_acceptance(Variables& current_iterate, Residuals& current_residuals, Variables& trial_iterate, Residuals& trial_residuals,
-      double predicted_reduction, double step_length) {
+      double predicted_reduction) {
    const double current_feasibility = current_residuals.feasibility_measure();
    const double current_optimality = current_residuals.optimality_measure();
    const double trial_feasibility = trial_residuals.feasibility_measure();
@@ -50,7 +50,7 @@ bool FilterStrategy::check_acceptance(Variables& current_iterate, Residuals& cur
 
          if (verbose) std::cout << "Switching condition: " << predicted_reduction << " >= " << this->parameters.Delta * std::pow(current_feasibility, 2) << " ?\n";
          if (verbose) std::cout << "Armijo condition: " << actual_reduction << " >= "
-                   << this->parameters.Sigma * step_length * std::max(0., predicted_reduction - 1e-9) << " ?\n";
+                   << this->parameters.Sigma * std::max(0., predicted_reduction - 1e-9) << " ?\n";
 
          /* switching condition: predicted reduction is not promising, accept */
          if (predicted_reduction < this->parameters.Delta * std::pow(current_feasibility, 2)) {

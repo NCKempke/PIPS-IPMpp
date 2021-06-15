@@ -79,14 +79,25 @@ TerminationStatus InteriorPointMethod::solve(Problem& problem, Variables& iterat
 }
 
 double InteriorPointMethod::barrier_directional_derivative(Problem& problem, Variables& iterate, Variables& direction) {
-   double mu = iterate.mu();
-   double result = problem.g->dotProductWith(*direction.primals);
+   double result = 0.;
    if (0 < problem.number_primal_lower_bounds) {
-      result -= direction.primals->special_operation(*iterate.primals, *problem.primal_lower_bounds, *problem.primal_lower_bound_indicators, mu);
+      result -= direction.primal_lower_bound_gap->barrier_directional_derivative(*iterate.primal_lower_bound_gap, 0.,
+            *problem.primal_lower_bound_indicators);
    }
    if (0 < problem.number_primal_upper_bounds) {
-      result -= direction.primals->special_operation(*iterate.primals, *problem.primal_upper_bounds, *problem.primal_upper_bound_indicators, mu);
+      result -= direction.primal_upper_bound_gap->barrier_directional_derivative(*iterate.primal_upper_bound_gap, 0.,
+            *problem.primal_upper_bound_indicators);
    }
+   if (0 < problem.number_inequality_lower_bounds) { // t
+      result -= direction.slack_lower_bound_gap->barrier_directional_derivative(*iterate.slack_lower_bound_gap, 0.,
+            *problem.inequality_lower_bound_indicators);
+   }
+   if (0 < problem.number_inequality_upper_bounds) { // u
+      result -= direction.slack_upper_bound_gap->barrier_directional_derivative(*iterate.slack_upper_bound_gap, 0.,
+            *problem.inequality_upper_bound_indicators);
+   }
+   result *= iterate.mu();
+   result += problem.g->dotProductWith(*direction.primals);
    return result;
 }
 

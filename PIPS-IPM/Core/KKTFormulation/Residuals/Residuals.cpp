@@ -109,7 +109,7 @@ void Residuals::evaluate(Problem& problem, Variables& iterate, bool print_residu
    if (mclow > 0) {
       /*** rt = s - d - t ***/
       this->rt->copyFrom(*iterate.slacks);
-      this->rt->axpy(-1.0, problem.slowerBound());
+      this->rt->axpy(-1.0, problem.s_lower_bound());
       this->rt->selectNonZeros(*iclow);
       this->rt->axpy(-1.0, *iterate.slack_lower_bound_gap);
 
@@ -123,7 +123,7 @@ void Residuals::evaluate(Problem& problem, Variables& iterate, bool print_residu
    if (mcupp > 0) {
       /*** ru = s - f + u ***/
       this->ru->copyFrom(*iterate.slacks);
-      this->ru->axpy(-1.0, problem.supperBound());
+      this->ru->axpy(-1.0, problem.s_upper_bound());
       this->ru->selectNonZeros(*icupp);
       this->ru->axpy(1.0, *iterate.slack_upper_bound_gap);
 
@@ -137,7 +137,7 @@ void Residuals::evaluate(Problem& problem, Variables& iterate, bool print_residu
    if (nxlow > 0) {
       /*** rv = x - lx - v ***/
       this->rv->copyFrom(*iterate.primals);
-      this->rv->axpy(-1.0, problem.xlowerBound());
+      this->rv->axpy(-1.0, problem.x_lower_bound());
       this->rv->selectNonZeros(*ixlow);
       this->rv->axpy(-1.0, *iterate.primal_lower_bound_gap);
 
@@ -151,7 +151,7 @@ void Residuals::evaluate(Problem& problem, Variables& iterate, bool print_residu
    if (nxupp > 0) {
       /*** rw = x - ux + w ***/
       this->rw->copyFrom(*iterate.primals);
-      this->rw->axpy(-1.0, problem.xupperBound());
+      this->rw->axpy(-1.0, problem.x_upper_bound());
       this->rw->selectNonZeros(*ixupp);
       this->rw->axpy(1.0, *iterate.primal_upper_bound_gap);
 
