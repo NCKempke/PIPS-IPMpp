@@ -150,7 +150,7 @@ public:
 
    int valid_non_zero_pattern();
 
-   void write_to_stream(std::ostream& out);
+   void write_to_stream(std::ostream& out) const;
 
    [[nodiscard]] const long long& getNxupp() const { return nxupp; };
 
@@ -164,7 +164,7 @@ public:
 
    double optimality_measure() const;
 
-   double feasibility_measure();
+   double feasibility_measure() const;
 };
 
 #endif

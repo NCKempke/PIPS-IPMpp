@@ -684,3 +684,46 @@ void Variables::print() const {
    std::cout << " Complementary Variables = " << number_complementarity_pairs << std::endl;
    std::cout << "(Cannot tell you more at this level)" << std::endl;
 }
+
+void Variables::print_norms(bool print_bound_gaps_and_duals) const {
+
+   const double primals_infnorm = this->primals->inf_norm();
+   const double slacks_infnorm = this->slacks->inf_norm();
+   const double equality_duals_infnorm = this->equality_duals->inf_norm();
+   const double inequality_duals_infnorm = this->inequality_duals->inf_norm();
+
+   if (PIPS_MPIgetRank() == 0) {
+      std::cout << "Inf norm of x: " << primals_infnorm << "\n";
+      std::cout << "Inf norm of s: " << slacks_infnorm << "\n";
+      std::cout << "Inf norm of eq. duals: " << equality_duals_infnorm << "\n";
+      std::cout << "Inf norm of ineq. duals: " << inequality_duals_infnorm << "\n";
+   }
+
+   if (print_bound_gaps_and_duals) {
+      const double primal_lower_bound_gap_infnorm = primal_lower_bound_gap->inf_norm();
+      const double primal_lower_bound_gap_dual_infnorm = primal_lower_bound_gap_dual->inf_norm();
+
+      const double primal_upper_bound_gap_infnorm = primal_upper_bound_gap->inf_norm();
+      const double primal_upper_bound_gap_dual_infnorm = primal_upper_bound_gap_dual->inf_norm();
+
+      const double slack_lower_bound_gap_infnorm = slack_lower_bound_gap->inf_norm();
+      const double slack_lower_bound_gap_dual_infnorm = slack_lower_bound_gap_dual->inf_norm();
+
+      const double slack_upper_bound_gap_infnorm = slack_upper_bound_gap->inf_norm();
+      const double slack_upper_bound_gap_dual_infnorm = slack_upper_bound_gap_dual->inf_norm();
+
+      if (PIPS_MPIgetRank() == 0) {
+         std::cout << "Inf norm of x lower bound: " << primal_lower_bound_gap_infnorm << "\n";
+         std::cout << "Inf norm of x lower bound dual: " << primal_lower_bound_gap_dual_infnorm << "\n";
+
+         std::cout << "Inf norm of x upper bound: " << primal_upper_bound_gap_infnorm << "\n";
+         std::cout << "Inf norm of x upper bound dual: " << primal_upper_bound_gap_dual_infnorm << "\n";
+
+         std::cout << "Inf norm of s lower bound gap: " << slack_lower_bound_gap_infnorm << "\n";
+         std::cout << "Inf norm of s lower bound gap dual: " << slack_lower_bound_gap_dual_infnorm << "\n";
+
+         std::cout << "Inf norm of s upper bound gap: " << slack_upper_bound_gap_infnorm << "\n";
+         std::cout << "Inf norm of s upper bound gap dual: " << slack_upper_bound_gap_dual_infnorm << "\n";
+      }
+   }
+}
