@@ -144,6 +144,7 @@ public:
 
    void print() const;
    void print_solution(MpsReader* reader, Problem* problem, int& iErr);
+   void print_norms(bool print_bound_gaps_and_duals = false) const;
 
    void unscale_solution(Problem* problem);
    void unscale_bounds(Problem* problem);

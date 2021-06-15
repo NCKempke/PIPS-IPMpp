@@ -20,6 +20,7 @@ public:
    ~InteriorPointMethod() override;
 
 protected:
+   bool verbose{false};
    const Scaler* scaler{};
    int max_iterations{0};
 

@@ -50,12 +50,12 @@ TerminationStatus InteriorPointMethod::solve(Problem& problem, Variables& iterat
       }
       else {
          residuals.evaluate(problem, iterate);
-         double mu = iterate.mu();
+         const double mu = iterate.mu();
          assert(!PIPSisZero(mu));
-         std::cout << "Norm of x: " << iterate.primals->inf_norm() << "\n";
-         std::cout << "Norm of s: " << iterate.slacks->inf_norm() << "\n";
-         std::cout << "Norm of eq. duals: " << iterate.equality_duals->inf_norm() << "\n";
-         std::cout << "Norm of ineq. duals: " << iterate.inequality_duals->inf_norm() << "\n";
+
+         if (this->verbose) {
+            iterate.print_norms();
+         }
 
          // termination test
          const auto [duality_gap, residual_norm] = this->compute_unscaled_gap_and_residual_norm(residuals);
@@ -73,8 +73,7 @@ TerminationStatus InteriorPointMethod::solve(Problem& problem, Variables& iterat
             termination = true;
             residuals.evaluate(problem, iterate);
             if (print_level >= 10) {
-               double mu = iterate.mu();
-               this->mehrotra_strategy->print_statistics(&problem, &iterate, &residuals, dnorm, this->mehrotra_strategy->sigma, iteration, mu, status, 1);
+               this->mehrotra_strategy->print_statistics(&problem, &iterate, &residuals, dnorm, this->mehrotra_strategy->sigma, iteration, iterate.mu(), status, 1);
             }
          }
       }
