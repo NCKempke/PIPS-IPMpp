@@ -342,7 +342,7 @@ void Residuals::copy(const Residuals& residuals) {
    rpi->copyFrom(*residuals.rpi);
 }
 
-void Residuals::write_to_stream(std::ostream& out) {
+void Residuals::write_to_stream(std::ostream& out) const {
    /*
    printf("--------------rQ\n");
    rQ->write_to_stream(out);printf("---------------------------\n");
@@ -370,7 +370,7 @@ double Residuals::optimality_measure(/*Problem& problem, Variables& iterate, Sca
    return this->primal_objective;
 }
 
-double Residuals::feasibility_measure() {
+double Residuals::feasibility_measure() const {
    return this->constraint_violation();
 }
 

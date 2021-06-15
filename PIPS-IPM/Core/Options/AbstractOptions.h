@@ -37,24 +37,24 @@ namespace abstract_options {
       friend bool get_bool_parameter(const std::string& identifier);
 
       AbstractOptions();
-      virtual ~AbstractOptions() = default;
+      ~AbstractOptions() override = default;
 
       static AbstractOptions& get_instance() {
          static AbstractOptions opt;
          return opt;
       }
 
-      bool is_identifier_unique(const std::string& identifier) const;
-      bool identifier_exists(const std::string& identifier) const;
-      void load_options_from_file(const std::string& filename);
+      static bool is_identifier_unique(const std::string& identifier);
+      static bool identifier_exists(const std::string& identifier);
+      static void load_options_from_file(const std::string& filename);
 
-      int get_int_param(const std::string& identifier) const;
-      double get_double_param(const std::string& identifier) const;
-      bool get_bool_param(const std::string& identifier) const;
+      static int get_int_param(const std::string& identifier) ;
+      static double get_double_param(const std::string& identifier) ;
+      static bool get_bool_param(const std::string& identifier) ;
 
-      void set_int_param(const std::string& param, int value);
-      void set_bool_param(const std::string& param, bool value);
-      void set_double_param(const std::string& param, double value);
+      static void set_int_param(const std::string& param, int value);
+      static void set_bool_param(const std::string& param, bool value);
+      static void set_double_param(const std::string& param, double value);
    };
 
    inline int get_int_parameter(const std::string& identifier) {
