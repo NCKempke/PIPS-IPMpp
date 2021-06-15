@@ -316,6 +316,8 @@ namespace pipsipmpp_options {
       double_options["FRIEDLANDER_ORBAN_REGULARIZATION_INITIAL_PRIMAL"] = 1;
       double_options["FRIEDLANDER_ORBAN_REGULARIZATION_INITIAL_DUAL_Y"] = 1;
       double_options["FRIEDLANDER_ORBAN_REGULARIZATION_INITIAL_DUAL_Z"] = 1;
+      double_options["FRIEDLANDER_ORBAN_REGULARIZATION_PRIMAL_MIN"] = 1;
+      double_options["FRIEDLANDER_ORBAN_REGULARIZATION_DUAL_MIN"] = 1;
 
       double_options["IPOPT_REGULARIZATION_MIN_PRIMAL"] = 1e-20;
       double_options["IPOPT_REGULARIZATION_MAX_PRIMAL"] = 1e40;

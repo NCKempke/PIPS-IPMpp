@@ -8,6 +8,9 @@
 FriedlanderOrbanRegularization::FriedlanderOrbanRegularization(unsigned int positive_eigenvalues_expected,
    unsigned int negaitve_eigenvalues_expected, MPI_Comm mpi_comm) :
    RegularizationStrategy(positive_eigenvalues_expected, negaitve_eigenvalues_expected, mpi_comm),
+   primal_regularization_minimum{
+      pipsipmpp_options::get_double_parameter("FRIEDLANDER_ORBAN_REGULARIZATION_PRIMAL_MIN")},
+   dual_regularization_minimum{pipsipmpp_options::get_double_parameter("FRIEDLANDER_ORBAN_REGULARIZATION_PRIMAL_MIN")},
    primal_regularization_initial{
       pipsipmpp_options::get_double_parameter("FRIEDLANDER_ORBAN_REGULARIZATION_INITIAL_PRIMAL")},
    dual_equality_regularization_initial{
@@ -37,13 +40,15 @@ Regularization FriedlanderOrbanRegularization::get_regularization_parameters() {
       dual_inequality_regularization_current = std::max(dual_regularization_minimum,
          dual_inequality_regularization_current);
 
-      return {primal_regularization_current, dual_equality_regularization_current, dual_inequality_regularization_current};
+      return {primal_regularization_current, dual_equality_regularization_current,
+         dual_inequality_regularization_current};
    } else {
       primal_regularization_current *= primal_increase_factor;
       dual_equality_regularization_current *= dual_increase_factor;
       dual_inequality_regularization_current *= dual_increase_factor;
 
-      return {primal_regularization_current, dual_equality_regularization_current, dual_inequality_regularization_current};
+      return {primal_regularization_current, dual_equality_regularization_current,
+         dual_inequality_regularization_current};
    }
 }
 
