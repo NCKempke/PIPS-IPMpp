@@ -221,6 +221,9 @@ public:
     * augmented system matrix */
    virtual void put_primal_diagonal() = 0;
 
+   /** reset Schur complements and regularization from last iteration */
+   void reset_regularization();
+
    /** set diagonal in kkt system associated with equalities to zero (necessary after regularization) */
    virtual void clear_dual_equality_diagonal() = 0;
 

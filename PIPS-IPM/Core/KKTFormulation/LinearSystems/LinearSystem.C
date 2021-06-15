@@ -188,17 +188,26 @@ void LinearSystem::factorize(Variables& vars) {
       nomegaInv->setToConstant(1.0);
    }
 
+   reset_regularization();
+
    if (nxlow + nxupp > 0) {
       put_primal_diagonal();
    }
-
-   clear_dual_equality_diagonal();
 
    if (mclow + mcupp > 0) {
       put_dual_inequalites_diagonal();
    }
 
    printDiagonalNorms();
+}
+
+void LinearSystem::reset_regularization() {
+
+   primal_regularization_diagonal->setToZero();
+   dual_equality_regularization_diagonal->setToZero();
+   dual_inequality_regularization_diagonal->setToZero();
+
+   clear_dual_equality_diagonal();
 }
 
 void LinearSystem::printDiagonalNorms() const {

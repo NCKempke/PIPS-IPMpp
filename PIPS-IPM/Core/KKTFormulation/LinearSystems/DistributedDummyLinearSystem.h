@@ -32,7 +32,6 @@ public:
    void clear_dual_equality_diagonal() override {};
 
    void add_regularization_local_kkt(double, double, double) override {};
-   void reset_regularization_local_kkt() override {};
 
    void addLnizi(Vector<double>&, Vector<double>&) override {};
    void addLniziLinkCons(Vector<double>&, Vector<double>&, bool) override {};

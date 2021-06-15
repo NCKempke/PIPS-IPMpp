@@ -117,24 +117,6 @@ void DistributedLeafLinearSystem::add_regularization_diagonal(int offset, double
    kkt->diagonal_add_constant_from(offset, regularization_vector.length(), regularization);
 }
 
-void DistributedLeafLinearSystem::reset_regularization_local_kkt() {
-   assert(this->primal_regularization_diagonal);
-   assert(this->dual_equality_regularization_diagonal);
-   assert(this->dual_inequality_regularization_diagonal);
-
-   if (locnx > 0) {
-      this->primal_regularization_diagonal->setToZero();
-   }
-
-   if (locmy > 0) {
-      this->dual_equality_regularization_diagonal->setToZero();
-   }
-
-   if (locmz > 0) {
-      this->dual_inequality_regularization_diagonal->setToZero();
-   }
-}
-
 /** adds regularization terms to primal, dualy and dualz vectors - these might depend on the level of linsys we are in */
 void
 DistributedLeafLinearSystem::add_regularization_local_kkt(double primal_regularization,

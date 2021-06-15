@@ -1574,48 +1574,6 @@ void sLinsysRootAug::clear_CtDC_from_schur_complement(const SymmetricMatrix& CtD
    }
 }
 
-void sLinsysRootAug::reset_regularization_local_kkt() {
-   assert(apply_regularization);
-   assert(primal_regularization_diagonal);
-
-   /* primal diagonal */
-   if (locnx > 0) {
-      const auto& primal_regularization_vec = dynamic_cast<DistributedVector<double>&>(*this->primal_regularization_diagonal).first;
-      assert(primal_regularization_vec);
-
-      primal_regularization_vec->setToZero();
-   }
-
-   /* C^T reg^-1 C block */
-   if (locmz > 0) {
-      const auto& dual_inequality_regularization_vec = dynamic_cast<DistributedVector<double>&>(*this->dual_inequality_regularization_diagonal).first;
-      assert(dual_inequality_regularization_vec);
-
-      dual_inequality_regularization_vec->setToZero();
-   }
-
-   if (locmy > 0) {
-      const auto& dual_equality_regularization_vec = dynamic_cast<DistributedVector<double>&>(*this->dual_equality_regularization_diagonal).first;
-      assert(dual_equality_regularization_vec);
-
-      dual_equality_regularization_vec->setToZero();
-   }
-
-   if (locmyl > 0) {
-      const auto& dual_equality_regularization_link_cons = dynamic_cast<DistributedVector<double>&>(*this->dual_equality_regularization_diagonal).last;
-      assert(dual_equality_regularization_link_cons);
-
-      dual_equality_regularization_link_cons->setToZero();
-   }
-
-   if (locmzl > 0) {
-      const auto& dual_inequality_regularization_link_cons = dynamic_cast<DistributedVector<double>&>(*this->dual_inequality_regularization_diagonal).last;
-      assert(dual_inequality_regularization_link_cons);
-
-      dual_inequality_regularization_link_cons->setToZero();
-   }
-}
-
 void sLinsysRootAug::add_regularization_local_kkt(double primal_regularization, double dual_equality_regularization,
    double dual_inequality_regularization) {
    assert(apply_regularization);
@@ -1694,7 +1652,7 @@ void sLinsysRootAug::put_dual_inequalites_diagonal() {
    DistributedRootLinearSystem::put_dual_inequalites_diagonal();
 
    if (!dual_inequality_diagonal_regularized) {
-      dual_inequality_diagonal_regularized.reset(dynamic_cast<SimpleVector<double>*>(zDiag->clone()));
+      dual_inequality_diagonal_regularized.reset(dynamic_cast<SimpleVector<double>*>(zDiag->cloneFull()));
    } else {
       dual_inequality_diagonal_regularized->copyFrom(*zDiag);
    }
