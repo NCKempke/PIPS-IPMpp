@@ -9,6 +9,8 @@
 #include "Vector.hpp"
 #include "DoubleLinearSolver.h"
 #include "PIPSIPMppOptions.h"
+
+// TODO : reintroduce abstract Factory class - pattern is kindof useless now
 #include "DistributedFactory.h"
 
 #include "mpi.h"
