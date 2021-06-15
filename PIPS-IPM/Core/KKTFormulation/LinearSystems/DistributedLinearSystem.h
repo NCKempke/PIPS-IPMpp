@@ -98,8 +98,6 @@ protected:
    int allocateAndZeroBlockedComputationsBuffer(int buffer_m, int buffer_n);
 
 public:
-   virtual void addLnizi(Vector<double>& z0, Vector<double>& zi);
-
    virtual void addLniziLinkCons(Vector<double>& /*z0*/, Vector<double>& /*zi*/, bool /*use_local_RAC*/) {
       assert(false && "not implemented here");
    };

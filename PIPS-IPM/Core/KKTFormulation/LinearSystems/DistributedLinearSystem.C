@@ -82,39 +82,6 @@ void DistributedLinearSystem::factorize(Variables& vars) {
 #endif
 }
 
-/**
- *       [ R^i^T Ai^T Ci^T ]          [    ]
- * z0 -= [ 0      0   0    ] * Li\Di\ [ zi ]
- *       [ 0      0   0    ]          [    ]
- *
- * 
- */
-void DistributedLinearSystem::addLnizi(Vector<double>& z0_, Vector<double>& zi_) {
-   auto& z0 = dynamic_cast<SimpleVector<double>&>(z0_);
-   auto& zi = dynamic_cast<SimpleVector<double>&>(zi_);
-
-   solver->Dsolve(zi);
-   solver->Ltsolve(zi);
-
-   const SparseMatrix& A = data->getLocalA();
-   const SparseMatrix& C = data->getLocalC();
-   const SparseMatrix& R = data->getLocalCrossHessian();
-
-   //get n0= nx(parent)= #cols of A or C
-   const auto n0 = A.n_columns();
-
-   // zi2 and zi3 are just references to fragments of zi
-   SimpleVector<double> zi1(&zi[0], locnx);
-   SimpleVector<double> zi2(&zi[locnx], locmy);
-   SimpleVector<double> zi3(&zi[locnx + locmy], locmz);
-   // same for z01 (only the first n0 entries in the output z0 are computed)
-   SimpleVector<double> z01(&z0[0], n0);
-
-   R.transMult(1.0, z01, -1.0, zi1);
-   A.transMult(1.0, z01, -1.0, zi2);
-   C.transMult(1.0, z01, -1.0, zi3);
-}
-
 void
 DistributedLinearSystem::finalizeDenseBorderModBlocked(std::vector<BorderMod>& border_mod, DenseMatrix& result,
    int begin_rows, int end_rows) {
