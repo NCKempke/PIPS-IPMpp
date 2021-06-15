@@ -58,7 +58,7 @@ bool FilterStrategy::check_acceptance(Variables& current_iterate, Residuals& cur
             accept = true;
          }
             /* Armijo sufficient decrease condition: predicted_reduction should be positive */
-         else if (true || actual_reduction >= this->parameters.Sigma * step_length * std::max(0., predicted_reduction - 1e-9)) {
+         else if (actual_reduction >= this->parameters.Sigma * std::max(0., predicted_reduction - 1e-9)) {
             accept = true;
          }
          else {
