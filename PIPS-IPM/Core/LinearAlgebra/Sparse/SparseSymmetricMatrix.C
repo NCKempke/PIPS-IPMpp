@@ -7,7 +7,7 @@
 #include "SparseStorage.h"
 #include <cassert>
 #include <cmath>
-#include "SimpleVector.h"
+#include "SimpleVector.hpp"
 #include "DoubleMatrixTypes.h"
 
 int SparseSymmetricMatrix::is_a(int type) const {

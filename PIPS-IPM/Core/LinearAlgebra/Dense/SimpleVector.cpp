@@ -3,7 +3,7 @@
  * (C) 2001 University of Chicago. See Copyright Notification in OOQP */
 
 #include "VectorUtilities.h"
-#include "SimpleVector.h"
+#include "SimpleVector.hpp"
 #include "OoqpBlas.h"
 #include <pipsdef.h>
 #include <cassert>
@@ -1067,6 +1067,23 @@ void SimpleVector<T>::pushSmallComplementarityPairs(Vector<T>& other_vec_in, con
    }
 }
 
+template<typename T>
+double SimpleVector<T>::special_operation(const Vector<T>& x_in, const Vector<T>& bound_in, const Vector<T>& bound_indicator_in, double scaling)
+const {
+   const auto& x = dynamic_cast<const SimpleVector<T>&>(x_in);
+   const auto& bound = dynamic_cast<const SimpleVector<T>&>(bound_in);
+   const auto& bound_indicator = dynamic_cast<const SimpleVector<T>&>(bound_indicator_in);
+   assert(this->n == x.length());
+   assert(this->n == bound.length());
+
+   double result = 0.;
+   for (int i = 0; i < this->n; i++) {
+      if (0 < bound_indicator[i]) {
+         result += scaling * this->v[i] / (x[i] - bound[i]);
+      }
+   }
+   return result;
+}
 
 template
 class SimpleVector<int>;

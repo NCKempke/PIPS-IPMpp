@@ -48,7 +48,7 @@ class AbstractLinearSystem;
 
 class RegularizationStrategy;
 
-#include "StochResourcesMonitor.h"
+#include "StochResourcesMonitor.hpp"
 
 class DistributedFactory {
 public:

@@ -5,7 +5,7 @@
 #ifndef STOCH_TREE_BASE
 #define STOCH_TREE_BASE
 
-#include "StochResourcesMonitor.h"
+#include "StochResourcesMonitor.hpp"
 #include "DistributedVector.h"
 #include "DistributedMatrix.h"
 #include "DistributedSymmetricMatrix.h"

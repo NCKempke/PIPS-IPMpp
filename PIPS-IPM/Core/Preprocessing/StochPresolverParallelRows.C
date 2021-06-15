@@ -263,10 +263,10 @@ void StochPresolverParallelRows::setNormalizedPointersMatrixBounds(int node) {
 
    norm_b.reset(dynamic_cast<SimpleVector<double>*>(getSimpleVecFromRowStochVec(*presolve_data.getPresProb().bA, node, false).cloneFull()));
 
-   norm_cupp.reset(dynamic_cast<SimpleVector<double>*>(getSimpleVecFromRowStochVec(*presolve_data.getPresProb().bu, node, false).cloneFull()));
-   norm_icupp.reset(dynamic_cast<SimpleVector<double>*>(getSimpleVecFromRowStochVec(*presolve_data.getPresProb().icupp, node, false).cloneFull()));
-   norm_clow.reset(dynamic_cast<SimpleVector<double>*>(getSimpleVecFromRowStochVec(*presolve_data.getPresProb().bl, node, false).cloneFull()));
-   norm_iclow.reset(dynamic_cast<SimpleVector<double>*>(getSimpleVecFromRowStochVec(*presolve_data.getPresProb().iclow, node, false).cloneFull()));
+   norm_cupp.reset(dynamic_cast<SimpleVector<double>*>(getSimpleVecFromRowStochVec(*presolve_data.getPresProb().inequality_upper_bounds, node, false).cloneFull()));
+   norm_icupp.reset(dynamic_cast<SimpleVector<double>*>(getSimpleVecFromRowStochVec(*presolve_data.getPresProb().inequality_upper_bound_indicators, node, false).cloneFull()));
+   norm_clow.reset(dynamic_cast<SimpleVector<double>*>(getSimpleVecFromRowStochVec(*presolve_data.getPresProb().inequality_lower_bounds, node, false).cloneFull()));
+   norm_iclow.reset(dynamic_cast<SimpleVector<double>*>(getSimpleVecFromRowStochVec(*presolve_data.getPresProb().inequality_lower_bound_indicators, node, false).cloneFull()));
 }
 
 // TODO : does not yet set any pointers for linking constraints of the other system - necessary when trying to process parallel linking constraints
@@ -285,10 +285,10 @@ void StochPresolverParallelRows::updateExtendedPointersForCurrentNode(int node) 
       currDmat = nullptr;
       currDmatTrans = nullptr;
 
-      currIneqRhs = dynamic_cast<const SimpleVector<double>*>(dynamic_cast<const DistributedVector<double>&>(*(presolve_data.getPresProb().bu)).first.get());
-      currIneqLhs = dynamic_cast<const SimpleVector<double>*>(dynamic_cast<const DistributedVector<double>&>(*(presolve_data.getPresProb().bl)).first.get());
-      currIcupp = dynamic_cast<const SimpleVector<double>*>(dynamic_cast<const DistributedVector<double>&>(*(presolve_data.getPresProb().icupp)).first.get());
-      currIclow = dynamic_cast<const SimpleVector<double>*>(dynamic_cast<const DistributedVector<double>&>(*(presolve_data.getPresProb().iclow)).first.get());
+      currIneqRhs = dynamic_cast<const SimpleVector<double>*>(dynamic_cast<const DistributedVector<double>&>(*(presolve_data.getPresProb().inequality_upper_bounds)).first.get());
+      currIneqLhs = dynamic_cast<const SimpleVector<double>*>(dynamic_cast<const DistributedVector<double>&>(*(presolve_data.getPresProb().inequality_lower_bounds)).first.get());
+      currIcupp = dynamic_cast<const SimpleVector<double>*>(dynamic_cast<const DistributedVector<double>&>(*(presolve_data.getPresProb().inequality_upper_bound_indicators)).first.get());
+      currIclow = dynamic_cast<const SimpleVector<double>*>(dynamic_cast<const DistributedVector<double>&>(*(presolve_data.getPresProb().inequality_lower_bound_indicators)).first.get());
 
       currNnzRowC = dynamic_cast<const SimpleVector<int>*>(presolve_data.getNnzsRowC().first.get());
    }
@@ -301,10 +301,10 @@ void StochPresolverParallelRows::updateExtendedPointersForCurrentNode(int node) 
       currDmat = dynamic_cast<SparseMatrix&>(*dynamic_cast<const DistributedMatrix&>(*(presolve_data.getPresProb().C)).children[node]->Bmat).getStorageDynamicPtr();
       currDmatTrans = dynamic_cast<SparseMatrix&>(*dynamic_cast<const DistributedMatrix&>(*(presolve_data.getPresProb().C)).children[node]->Bmat).getStorageDynamicTransposedPtr();
 
-      currIneqRhs = dynamic_cast<const SimpleVector<double>*>(dynamic_cast<const DistributedVector<double>&>(*(presolve_data.getPresProb().bu)).children[node]->first.get());
-      currIneqLhs = dynamic_cast<const SimpleVector<double>*>(dynamic_cast<const DistributedVector<double>&>(*(presolve_data.getPresProb().bl)).children[node]->first.get());
-      currIcupp = dynamic_cast<const SimpleVector<double>*>(dynamic_cast<const DistributedVector<double>&>(*(presolve_data.getPresProb().icupp)).children[node]->first.get());
-      currIclow = dynamic_cast<const SimpleVector<double>*>(dynamic_cast<const DistributedVector<double>&>(*(presolve_data.getPresProb().iclow)).children[node]->first.get());
+      currIneqRhs = dynamic_cast<const SimpleVector<double>*>(dynamic_cast<const DistributedVector<double>&>(*(presolve_data.getPresProb().inequality_upper_bounds)).children[node]->first.get());
+      currIneqLhs = dynamic_cast<const SimpleVector<double>*>(dynamic_cast<const DistributedVector<double>&>(*(presolve_data.getPresProb().inequality_lower_bounds)).children[node]->first.get());
+      currIcupp = dynamic_cast<const SimpleVector<double>*>(dynamic_cast<const DistributedVector<double>&>(*(presolve_data.getPresProb().inequality_upper_bound_indicators)).children[node]->first.get());
+      currIclow = dynamic_cast<const SimpleVector<double>*>(dynamic_cast<const DistributedVector<double>&>(*(presolve_data.getPresProb().inequality_lower_bound_indicators)).children[node]->first.get());
 
       currNnzRowC = dynamic_cast<const SimpleVector<int>*>(presolve_data.getNnzsRowC().children[node]->first.get());
    }
@@ -317,7 +317,7 @@ void StochPresolverParallelRows::setNormalizedNormFactors(int node) {
 
    norm_factorA.reset(dynamic_cast<SimpleVector<double>*>(getSimpleVecFromRowStochVec(*presolve_data.getPresProb().bA, node, false).clone()));
    norm_factorA->setToZero();
-   norm_factorC.reset(dynamic_cast<SimpleVector<double>*>(getSimpleVecFromRowStochVec(*presolve_data.getPresProb().bu, node, false).clone()));
+   norm_factorC.reset(dynamic_cast<SimpleVector<double>*>(getSimpleVecFromRowStochVec(*presolve_data.getPresProb().inequality_upper_bounds, node, false).clone()));
    norm_factorC->setToZero();
 }
 

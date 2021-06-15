@@ -8,7 +8,7 @@
 #include "../Abstract/Vector.hpp"
 #include "../Abstract/AbstractMatrix.h"
 
-#include "../Dense/SimpleVector.h"
+#include "../Dense/SimpleVector.hpp"
 
 #include "SparseStorage.h"
 #include "SparseStorageDynamic.h"

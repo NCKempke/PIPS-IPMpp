@@ -9,7 +9,7 @@
 #include "DistributedQP.hpp"
 #include "BorderedSymmetricMatrix.h"
 #include "PIPSIPMppOptions.h"
-#include "DistributedFactory.h"
+#include "DistributedFactory.hpp"
 #include <memory>
 #include <unistd.h>
 #include <cmath>

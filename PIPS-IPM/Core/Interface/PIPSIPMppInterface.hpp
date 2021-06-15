@@ -9,7 +9,7 @@
 #include <string>
 #include <memory>
 
-#include "TerminationStatus.h"
+#include "TerminationStatus.hpp"
 #include "MehrotraStrategyType.h"
 #include "pipsdef.h"
 #include "PreprocessType.h"

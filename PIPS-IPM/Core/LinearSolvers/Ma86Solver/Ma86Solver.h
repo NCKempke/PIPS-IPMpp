@@ -9,7 +9,7 @@
 #include "DoubleLinearSolver.h"
 #include "Vector.hpp"
 #include "SparseStorage.h"
-#include "SimpleVector.h"
+#include "SimpleVector.hpp"
 
 
 #ifndef FNAME

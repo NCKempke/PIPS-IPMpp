@@ -11,7 +11,7 @@
 #include "DenseSymmetricMatrix.h"
 #include "SparseSymmetricMatrix.h"
 #include "DenseMatrix.h"
-#include "SimpleVector.h"
+#include "SimpleVector.hpp"
 #include "DistributedVector.h"
 #include "StripMatrix.h"
 

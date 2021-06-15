@@ -5,7 +5,7 @@
 #include "SparseMatrix.h"
 #include "SparseStorage.h"
 #include <cassert>
-#include "SimpleVector.h"
+#include "SimpleVector.hpp"
 #include "DoubleMatrixTypes.h"
 #include <limits>
 #include "SparseSymmetricMatrix.h"

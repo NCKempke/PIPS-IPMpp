@@ -1,5 +1,5 @@
 #include "BiCGStabSolver.h"
-#include "SimpleVector.h"
+#include "SimpleVector.hpp"
 
 #include <cmath>
 

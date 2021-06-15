@@ -6,7 +6,7 @@
 
 #include "Vector.hpp"
 #include "AbstractMatrix.h"
-#include "SimpleVector.h"
+#include "SimpleVector.hpp"
 #include "sort.h"
 
 #include <cstring>

@@ -5,7 +5,7 @@
 #ifndef MPSREADER
 #define MPSREADER
 
-#include "SimpleVector.h"
+#include "SimpleVector.hpp"
 #include "Vector.hpp"
 #include <cstdio>
 #include "hash.h"

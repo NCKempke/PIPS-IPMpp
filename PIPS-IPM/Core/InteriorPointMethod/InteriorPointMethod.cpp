@@ -3,21 +3,18 @@
 #include "Variables.h"
 #include "Residuals.h"
 #include "AbstractLinearSystem.h"
-#include "Problem.h"
-#include "DistributedFactory.h"
+#include "Problem.hpp"
+#include "DistributedFactory.hpp"
 
 int gLackOfAccuracy = 0;
 extern int print_level;
 
 InteriorPointMethod::InteriorPointMethod(DistributedFactory& factory, Problem& problem, MehrotraStrategyType mehrotra_strategy_type, const Scaler* scaler)
 : Solver(factory, problem), scaler(scaler), max_iterations(300), dnorm(problem.datanorm()), dnorm_orig(scaler ? scaler->getDnormOrig() : dnorm),
-mehrotra_strategy(MehrotraFactory::create(factory, problem, dnorm, mehrotra_strategy_type, scaler)) {
-   // allocate space to track the sequence problem_formulation complementarity gaps, residual norms, and merit functions.
-   mu_history = new double[max_iterations];
-   residual_norm_history = new double[max_iterations];
-   phi_history = new double[max_iterations];
-   phi_min_history = new double[max_iterations];
-
+mehrotra_strategy(MehrotraFactory::create(factory, problem, dnorm, mehrotra_strategy_type, scaler)),
+      // allocate space to track the sequence problem_formulation complementarity gaps, residual norms, and merit functions.
+      mu_history(max_iterations), residual_norm_history(max_iterations), phi_history(max_iterations), phi_min_history(max_iterations)
+{
    if (abstract_options::get_bool_parameter("IP_PRINT_TIMESTAMP")) {
       print_timestamp = true;
       start_time = MPI_Wtime();
@@ -81,9 +78,21 @@ TerminationStatus InteriorPointMethod::solve(Problem& problem, Variables& iterat
    return status;
 }
 
-double InteriorPointMethod::predicted_reduction(Problem& problem, Variables& direction, double step_length) {
+double InteriorPointMethod::barrier_directional_derivative(Problem& problem, Variables& iterate, Variables& direction) {
+   double mu = iterate.mu();
+   double result = problem.g->dotProductWith(*direction.primals);
+   if (0 < problem.number_primal_lower_bounds) {
+      result -= direction.primals->special_operation(*iterate.primals, *problem.primal_lower_bounds, *problem.primal_lower_bound_indicators, mu);
+   }
+   if (0 < problem.number_primal_upper_bounds) {
+      result -= direction.primals->special_operation(*iterate.primals, *problem.primal_upper_bounds, *problem.primal_upper_bound_indicators, mu);
+   }
+   return result;
+}
+
+double InteriorPointMethod::predicted_reduction(Problem& problem, Variables& iterate, Variables& direction, double step_length) {
    // scale it with the step length and return the (positive) predicted reduction
-   return -step_length * problem.g->dotProductWith(*direction.primals);
+   return -step_length * InteriorPointMethod::barrier_directional_derivative(problem, iterate, direction);
 }
 
 std::pair<double, double> InteriorPointMethod::compute_unscaled_gap_and_residual_norm(const Residuals& residuals) {
@@ -168,11 +177,4 @@ TerminationStatus InteriorPointMethod::compute_status(double duality_gap, double
       gLackOfAccuracy = 1;
    }
    return status;
-}
-
-InteriorPointMethod::~InteriorPointMethod() {
-   delete[] mu_history;
-   delete[] residual_norm_history;
-   delete[] phi_history;
-   delete[] phi_min_history;
 }

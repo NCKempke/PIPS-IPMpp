@@ -2,7 +2,7 @@
 #define DISTRIBUTEDVECTOR_H
 
 #include "Vector.hpp"
-#include "SimpleVector.h"
+#include "SimpleVector.hpp"
 #include "mpi.h"
 #include <vector>
 #include <memory>
@@ -152,6 +152,10 @@ public:
 
    void pushAwayFromZero(double tol, double amount, const Vector<T>* select) override;
    void getSumCountIfSmall(double tol, double& sum_small, int& n_close, const Vector<T>* select) const override;
+
+   [[nodiscard]] double special_operation(const Vector<T>& x, const Vector<T>& bound, const Vector<T>& bound_indicator, double scaling) const
+   override;
+
 protected:
    DistributedVector() = default;
 
@@ -280,6 +284,9 @@ public:
    void getSumCountIfSmall(double, double&, int&, const Vector<T>*) const override {};
 
    void pushSmallComplementarityPairs(Vector<T>&, const Vector<T>&, double, double, double) override {};
+
+   [[nodiscard]] double special_operation(const Vector<T>& x, const Vector<T>& bound, const Vector<T>& bound_indicator, double scaling) const
+   override { return 0.;};
 };
 
 #endif

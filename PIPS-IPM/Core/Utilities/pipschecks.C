@@ -6,7 +6,7 @@
  */
 
 #include "pipsdef.h"
-#include "SimpleVector.h"
+#include "SimpleVector.hpp"
 #include <cmath>
 #include <vector>
 #include <cassert>

@@ -6,7 +6,7 @@
 #include "Variables.h"
 #include "AbstractMatrix.h"
 #include <cmath>
-#include "SimpleVector.h"
+#include "SimpleVector.hpp"
 #include "MpsReader.h"
 
 QP::QP(std::shared_ptr<Vector<double>> c_in, std::shared_ptr<SymmetricMatrix> Q_in,
@@ -33,7 +33,7 @@ double QP::datanorm() const {
 }
 
 void QP::datainput(MpsReader* reader, int& iErr) {
-   reader->readQpGen(*g, *Q, *blx, *ixlow, *bux, *ixupp, *A, *bA, *C, *bl, *iclow, *bu, *icupp, iErr);
+   reader->readQpGen(*g, *Q, *primal_lower_bounds, *primal_lower_bound_indicators, *primal_upper_bounds, *primal_upper_bound_indicators, *A, *bA, *C, *inequality_lower_bounds, *inequality_lower_bound_indicators, *inequality_upper_bounds, *inequality_upper_bound_indicators, iErr);
 
    if (reader->scalingOption == 1) {
       // Create the scaling vector

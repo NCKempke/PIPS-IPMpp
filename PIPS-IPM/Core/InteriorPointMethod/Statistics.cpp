@@ -2,9 +2,9 @@
 #include <cstdio>
 #include "Statistics.hpp"
 #include "Residuals.h"
-#include "Problem.h"
+#include "Problem.hpp"
 #include "Variables.h"
-#include "TerminationStatus.h"
+#include "TerminationStatus.hpp"
 
 Statistics::Statistics(Scaler* scaler) : scaler{scaler}, mpi_comm{MPI_COMM_WORLD}, rank{PIPS_MPIgetRank(mpi_comm)}, global_rank{rank} {
 }

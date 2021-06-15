@@ -7,7 +7,7 @@
 
 #include <stdlib.h>
 #include "MumpsSolverBase.h"
-#include "SimpleVector.h"
+#include "SimpleVector.hpp"
 #include "SparseMatrix.h"
 #include "pipsport.h"
 
