@@ -130,6 +130,10 @@ public:
          double& primalStep_d, double& dualValue_d, double& dualStep_d, double& alphaPrimal, double& alphaDual, bool& primalBlocking,
          bool& dualBlocking) const;
 
+   double get_average_distance_to_bound_for_converged_vars(const Problem&, double tol) const;
+
+   void push_slacks_from_bound(double tol, double amount);
+
    /** sets components of (u,t,v,w) to alpha and of (lambda,pi,phi,gamma) to beta */
    void push_to_interior(double alpha, double beta);
 

@@ -54,6 +54,33 @@ Variables::Variables(const Variables& other)  :
    slack_upper_bound_gap{other.slack_upper_bound_gap->cloneFull()}, slack_upper_bound_gap_dual{other.slack_upper_bound_gap_dual->cloneFull()}
    {}
 
+double Variables::get_average_distance_to_bound_for_converged_vars(const Problem&, double tol) const {
+   assert(0 < tol);
+
+   double sum_small_distance = 0.0;
+   int n_close = 0;
+   primal_lower_bound_gap->getSumCountIfSmall(tol, sum_small_distance, n_close, &*ixlow);
+   primal_upper_bound_gap->getSumCountIfSmall(tol, sum_small_distance, n_close, &*ixupp);
+   slack_upper_bound_gap->getSumCountIfSmall(tol, sum_small_distance, n_close, &*icupp);
+   slack_lower_bound_gap->getSumCountIfSmall(tol, sum_small_distance, n_close, &*iclow);
+
+   if (n_close == 0)
+      return std::numeric_limits<double>::infinity();
+   else
+      return sum_small_distance / (double) n_close;
+}
+
+void Variables::push_slacks_from_bound(double tol, double amount) {
+   if (nxlow > 0)
+      primal_lower_bound_gap->pushAwayFromZero(tol, amount, &*ixlow);
+   if (nxupp > 0)
+      primal_upper_bound_gap->pushAwayFromZero(tol, amount, &*ixupp);
+   if (mclow > 0)
+      slack_lower_bound_gap->pushAwayFromZero(tol, amount, &*iclow);
+   if (mcupp > 0)
+      slack_upper_bound_gap->pushAwayFromZero(tol, amount, &*icupp);
+}
+
 double Variables::mu() const {
    double mu = 0.;
    if (number_complementarity_pairs == 0) {
