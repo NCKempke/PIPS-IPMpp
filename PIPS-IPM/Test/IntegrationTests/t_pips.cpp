@@ -6,6 +6,7 @@
  */
 #include "gtest/gtest.h"
 #include "gmock/gmock.h"
+#include "../Verbosity.hpp"
 
 #include "InteriorPointMethod.hpp"
 #include "PIPSIPMppInterface.hpp"
@@ -68,7 +69,10 @@ std::vector<Instance> getInstances() {
 std::tuple<TerminationStatus, double, std::string>
 ScenarioTests::solveInstance(const std::string& path_instance, size_t n_blocks, PresolverType presolver,
    ScalerType scaler, MehrotraStrategyType primal_dual_type) const {
-   testing::internal::CaptureStdout();
+
+   if (!verbose) {
+      testing::internal::CaptureStdout();
+   }
 
    gmspips_reader reader(path_instance, gams_path, n_blocks);
    std::unique_ptr<DistributedInputTree> tree(reader.read_problem());
@@ -87,8 +91,14 @@ ScenarioTests::solveInstance(const std::string& path_instance, size_t n_blocks, 
    catch (...) {
       EXPECT_TRUE(false) << " PIPS threw while solving " << path_instance;
    }
-   std::string output = testing::internal::GetCapturedStdout();
-   return {result, objective, output};
+
+   if (!verbose) {
+      const std::string output = testing::internal::GetCapturedStdout();
+      return {result, objective, output};
+   } else {
+      const std::string output = "";
+      return {result, objective, output};
+   }
 };
 
 void ScenarioTests::solveInstanceAndCheckResult(double expected_objective, const std::string& path, size_t n_blocks,
