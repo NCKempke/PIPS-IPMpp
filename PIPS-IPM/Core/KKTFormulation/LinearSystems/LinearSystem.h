@@ -144,6 +144,8 @@ protected:
    const int outerSolve;
    const int innerSCSolve;
 
+   /// do iterative refinement/BiCGStab with the original or regularized system
+   const bool outer_solve_refine_original_system{false};
    /// parameters for the bicg solve
    const bool outer_bicg_print_statistics;
 

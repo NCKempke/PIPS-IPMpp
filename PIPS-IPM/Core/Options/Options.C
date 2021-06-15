@@ -38,6 +38,8 @@ namespace options {
       // the dense Schur complement
       // - 2:BiCGStab with the factorization as preconditioner
       int_options["OUTER_SOLVE"] = 0;
+      bool_options["OUTER_SOLVE_REFINE_ORIGINAL_SYSTEM"] = true;
+
       // controls the type of error absortion/correction at the inner level when solving
       //with the dense Schur complement
       // - 0: no error correction

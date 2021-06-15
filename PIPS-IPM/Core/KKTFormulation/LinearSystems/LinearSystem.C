@@ -30,7 +30,9 @@ static std::vector<int> bicgIters;
 
 LinearSystem::LinearSystem(DistributedFactory* factory_, const Problem& problem, bool create_iter_ref_vecs) : factory(factory_),
       apply_regularization(options::getBoolParameter("REGULARIZATION")), outerSolve(options::getIntParameter("OUTER_SOLVE")),
-      innerSCSolve(options::getIntParameter("INNER_SC_SOLVE")), outer_bicg_print_statistics(options::getBoolParameter("OUTER_BICG_PRINT_STATISTICS")),
+      innerSCSolve(options::getIntParameter("INNER_SC_SOLVE")),
+      outer_solve_refine_original_system{options::getBoolParameter("OUTER_SOLVE_REFINE_ORIGINAL_SYSTEM")},
+      outer_bicg_print_statistics(options::getBoolParameter("OUTER_BICG_PRINT_STATISTICS")),
       outer_bicg_eps(options::getDoubleParameter("OUTER_BICG_EPSILON")), outer_bicg_max_iter(options::getIntParameter("OUTER_BICG_MAX_ITER")),
       outer_bicg_max_normr_divergences(options::getIntParameter("OUTER_BICG_MAX_NORMR_DIVERGENCES")),
       outer_bicg_max_stagnations(options::getIntParameter("OUTER_BICG_MAX_STAGNATIONS")),
@@ -468,22 +470,25 @@ void LinearSystem::solveXYZS(Vector<double>& stepx, Vector<double>& stepy, Vecto
       ///////////////////////////////////////////////////////////////
       // Iterative refinement
       ///////////////////////////////////////////////////////////////
-      auto computeResiduals = [this, &stepx, &stepy, &stepz, &capture0 = problem](auto&& PH1, auto&& PH2) {
-         compute_regularized_system_residuals(std::forward<decltype(PH1)>(PH1), std::forward<decltype(PH2)>(PH2), stepx, stepy, stepz, capture0);
-      };
+      if (outer_solve_refine_original_system) {
+         auto computeResiduals = [this, &stepx, &stepy, &stepz, &capture0 = problem](auto&& PH1, auto&& PH2) {
+            compute_system_residuals(std::forward<decltype(PH1)>(PH1), std::forward<decltype(PH2)>(PH2), stepx, stepy, stepz, capture0);
+         };
 
-      solveCompressedIterRefin(computeResiduals);
+         solveCompressedIterRefin(computeResiduals);
+      } else {
+         auto computeResiduals = [this, &stepx, &stepy, &stepz, &capture0 = problem](auto&& PH1, auto&& PH2) {
+            compute_regularized_system_residuals(std::forward<decltype(PH1)>(PH1), std::forward<decltype(PH2)>(PH2), stepx, stepy, stepz, capture0);
+         };
 
-      LinearSystem::separateVars(stepx, stepy, stepz, *sol);
-
+         solveCompressedIterRefin(computeResiduals);
+      }
    }
    else if (outerSolve == 0) {
       ///////////////////////////////////////////////////////////////
       // Default solve - Schur complement based decomposition
       ///////////////////////////////////////////////////////////////
       solveCompressed(*rhs);
-      separateVars(stepx, stepy, stepz, *rhs);
-
    }
    else {
       assert(outerSolve == 2);
@@ -491,23 +496,22 @@ void LinearSystem::solveXYZS(Vector<double>& stepx, Vector<double>& stepy, Vecto
       // BiCGStab
       ///////////////////////////////////////////////////////////////
 
-      const bool use_regularized_system = true;
+      const bool use_regularized_system = !outer_solve_refine_original_system;
       auto matMult = [this, &capture0 = problem, &stepx, &stepy, &stepz, use_regularized_system](auto&& PH1, auto&& PH2, auto&& PH3, auto&& PH4) {
          system_mult(std::forward<decltype(PH1)>(PH1), std::forward<decltype(PH2)>(PH2), std::forward<decltype(PH3)>(PH3),
                std::forward<decltype(PH4)>(PH4), capture0, stepx, stepy, stepz, use_regularized_system);
       };
 
-      auto matInfnorm = [this, &capture0 = problem, &stepx, &stepy, &stepz] {
+      auto matInfnorm = [this, &capture0 = problem, &stepx, &stepy, &stepz, use_regularized_system] {
          return matXYZinfnorm(capture0, stepx, stepy, stepz, use_regularized_system);
       };
 
       solveCompressedBiCGStab(matMult, matInfnorm);
-
-      LinearSystem::separateVars(stepx, stepy, stepz, *sol);
-
       /* notify observers about result of BiCGStab */
       notifyObservers();
    }
+
+   LinearSystem::separateVars(stepx, stepy, stepz, *sol);
 
    if (xyzs_solve_print_residuals) {
       assert(sol);
