@@ -86,6 +86,7 @@ void DistributedLinearSystem::factorize(Variables& vars) {
 
 void DistributedLinearSystem::factorize_with_correct_inertia() {
    regularization_strategy->notify_new_step();
+   this->reset_regularization_local_kkt();
 
    auto [last_primal_regularization, last_dual_equality_regularization, last_dual_inequality_regularization] =
     this->regularization_strategy->get_default_regularization();

@@ -836,7 +836,6 @@ void DistributedRootLinearSystem::put_dual_inequalites_diagonal() {
    const auto& nomegaInv_stoch = dynamic_cast<const DistributedVector<double>&>(*nomegaInv);
    assert(children.size() == nomegaInv_stoch.children.size());
 
-   //kkt->atPutDiagonal( locnx+locmy, *zdiag.first );
    zDiag = nomegaInv_stoch.first.get();
    zDiagLinkCons = nomegaInv_stoch.last.get();
 

@@ -6,6 +6,7 @@
 #define PIPSIPMPP_REGULARIZATIONSTRATEGY_H
 
 #include <tuple>
+#include <mpi.h>
 
 using Inertia = std::tuple<unsigned int, unsigned int, unsigned int>;
 using Regularization = std::tuple<double, double, double>;
@@ -13,7 +14,7 @@ using Regularization = std::tuple<double, double, double>;
 class RegularizationStrategy {
 
 public:
-   RegularizationStrategy(unsigned int positive_eigenvalues_expected, unsigned int negaitve_eigenvalues_expected);
+   RegularizationStrategy(unsigned int positive_eigenvalues_expected, unsigned int negaitve_eigenvalues_expected, MPI_Comm mpi_comm = MPI_COMM_WORLD);
 
    [[nodiscard]] bool is_inertia_correct(const Inertia& inertia) const;
    virtual void notify_new_step();
@@ -22,6 +23,8 @@ public:
 
    virtual ~RegularizationStrategy() = default;
 protected:
+   const MPI_Comm mpi_comm;
+
    double primal_regularization_current{-1.0};
    double dual_equality_regularization_current{-1.0};
    double dual_inequality_regularization_current{-1.0};

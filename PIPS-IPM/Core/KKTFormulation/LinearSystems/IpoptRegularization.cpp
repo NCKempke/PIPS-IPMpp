@@ -10,8 +10,8 @@
 #include "PIPSIPMppOptions.h"
 
 IpoptRegularization::IpoptRegularization(unsigned int positive_eigenvalues_expected,
-   unsigned int negaitve_eigenvalues_expected) :
-   RegularizationStrategy(positive_eigenvalues_expected, negaitve_eigenvalues_expected),
+   unsigned int negaitve_eigenvalues_expected, MPI_Comm mpi_comm) :
+   RegularizationStrategy(positive_eigenvalues_expected, negaitve_eigenvalues_expected, mpi_comm),
    primal_regularization_absolute_minimum{pipsipmpp_options::get_double_parameter("IPOPT_REGULARIZATION_MIN_PRIMAL")},
    primal_regularization_absolute_maximum{pipsipmpp_options::get_double_parameter("IPOPT_REGULARIZATION_MAX_PRIMAL")} {
 }
@@ -61,7 +61,10 @@ Regularization IpoptRegularization::get_regularization_new_matrix(const Inertia&
 
    dual_inequality_regularization_current = dual_equality_regularization_current;
 
-   std::cout << "returning suggested regularization : " << primal_regularization_current << " " << dual_equality_regularization_current << " " << dual_inequality_regularization_current << std::endl;
+   if (pipsipmpp_options::get_bool_parameter("REGULARIZATION_VERBOSE") && PIPS_MPIgetRank(mpi_comm) == 0) {
+      std::cout << "IPOPT regularization: returning suggested regularization : " << primal_regularization_current
+         << " " << dual_equality_regularization_current << " " << dual_inequality_regularization_current << "\n";
+   }
    return {primal_regularization_current, dual_equality_regularization_current, dual_inequality_regularization_current};
 }
 
@@ -80,7 +83,11 @@ Regularization IpoptRegularization::get_regularization_nth_try(const Inertia& in
 
    PIPS_MPIabortIf(primal_regularization_current > primal_regularization_absolute_maximum,
       "ERROR : cannot factorize matrix after excessive error correction");
-   std::cout << "returning suggested regularization : " << primal_regularization_current << " " << dual_equality_regularization_current << " " << dual_inequality_regularization_current << std::endl;
+
+   if (pipsipmpp_options::get_bool_parameter("REGULARIZATION_VERBOSE") && PIPS_MPIgetRank(mpi_comm) == 0) {
+      std::cout << "IPOPT regularization: returning suggested regularization : " << primal_regularization_current
+         << " " << dual_equality_regularization_current << " " << dual_inequality_regularization_current << "\n";
+   }
 
    return {primal_regularization_current, dual_equality_regularization_current, dual_inequality_regularization_current};
 }

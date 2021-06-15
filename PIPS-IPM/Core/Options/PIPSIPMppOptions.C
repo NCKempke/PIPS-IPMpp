@@ -310,7 +310,7 @@ namespace pipsipmpp_options {
 
       /// REGULARIZATION FOR LINEAR SYSTEM
       bool_options["REGULARIZATION"] = true;
-
+      bool_options["REGULARIZATION_VERBOSE"] = false;
       int_options["REGULARIZATION_STRATEGY"] = 1; // 0 -> Ipopt, 1 -> FriedlanderOrban
 
       double_options["FRIEDLANDER_ORBAN_REGULARIZATION_INITIAL_PRIMAL"] = 1;

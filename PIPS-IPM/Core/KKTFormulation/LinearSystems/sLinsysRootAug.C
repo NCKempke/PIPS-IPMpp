@@ -43,8 +43,10 @@ sLinsysRootAug::sLinsysRootAug(DistributedFactory* factory_, DistributedQP* prob
    createSolversAndKKts();
 
    if (apply_regularization) {
-      std::cout << "setting up root regularization : " << locnx << " " << locmy << " " << locmz << " " << locmyl << " "
-                << locmzl << std::endl;
+      if (pipsipmpp_options::get_bool_parameter("REGULARIZATION_VERBOSE") && PIPS_MPIgetRank(mpiComm) == 0) {
+         std::cout << "setting up root regularization : " << locnx << " " << locmy << " " << locmz << " " << locmyl << " "
+            << locmzl << "\n";
+      }
       regularization_strategy = factory_->make_regularization_strategy(locnx, locmy + locmyl + locmzl);
    }
 
@@ -68,8 +70,10 @@ sLinsysRootAug::sLinsysRootAug(DistributedFactory* factory_, DistributedQP* prob
    }
 
    if (apply_regularization) {
-      std::cout << "setting up root regularization : " << locnx << " " << locmy << " " << locmz << " " << locmyl << " "
-                << locmzl << std::endl;
+      if (pipsipmpp_options::get_bool_parameter("REGULARIZATION_VERBOSE") && PIPS_MPIgetRank(mpiComm) == 0) {
+         std::cout << "setting up root regularization : " << locnx << " " << locmy << " " << locmz << " " << locmyl
+                   << " " << locmzl << "\n";
+      }
       regularization_strategy = factory_->make_regularization_strategy(locnx, locmy + locmyl + locmzl);
    }
 
@@ -555,11 +559,6 @@ sLinsysRootAug::LtsolveHierarchyBorder(AbstractMatrix& res, const DenseMatrix& X
 extern int gLackOfAccuracy;
 
 void sLinsysRootAug::solveReducedLinkCons(SimpleVector<double>& b_vec) {
-#ifdef TIMING
-   t_start = MPI_Wtime();
-   troot_total = tchild_total = tcomm_total = 0.0;
-#endif
-
    assert(locmyl >= 0 && locmzl >= 0);
    assert(locnx + locmy + locmz + locmyl + locmzl == b_vec.length());
 
@@ -574,7 +573,7 @@ void sLinsysRootAug::solveReducedLinkCons(SimpleVector<double>& b_vec) {
    ///////////////////////////////////////////////////////////////////////
    // b = [b1; b2; b3; b4; b5] is a locnx + locmy + locmz + locmyl + locmz vector
    // the new rhs should be
-   //           r = [b1-C^T*(zDiagReg)^{-1}*b3; b2; b4; b5]
+   //           r = [b1-C^T*((Diag + regularization)^{-1}*b3; b2; b4; b5]
    ///////////////////////////////////////////////////////////////////////
    double* b = b_vec.elements();
 
@@ -592,35 +591,15 @@ void sLinsysRootAug::solveReducedLinkCons(SimpleVector<double>& b_vec) {
    SimpleVector<double> rhs_reduced_b3(rhs_reduced + locnx + locmy + locmyl + locmzl, locmz);
 
    ///////////////////////////////////////////////////////////////////////
-   // compute r1 = b1 - C^T * (zDiag)^{-1} * rhs_reduced_b3
+   // compute r1 = b1 - C^T * (zDiag + regularization)^{-1} * rhs_reduced_b3
    ///////////////////////////////////////////////////////////////////////
    // if we have C part
    if (locmz > 0) {
-      assert(zDiag);
-      assert(rhs_reduced_b3.length() == zDiag->length());
+      assert(dual_inequality_diagonal_regularized);
+      assert(rhs_reduced_b3.length() == dual_inequality_diagonal_regularized->length());
 
-      rhs_reduced_b3.componentDiv(*zDiag);
+      rhs_reduced_b3.componentDiv(*dual_inequality_diagonal_regularized);
       C.transMult(1.0, rhs1, -1.0, rhs_reduced_b3);
-   }
-
-   ///////////////////////////////////////////////////////////////////////
-   // compute r1 = b1 - C^T * (regularization)^{-1} * rhs_reduced_b3
-   ///////////////////////////////////////////////////////////////////////
-   // if we have C part
-   if (locmz > 0) {
-      assert(dual_inequality_regularization_diagonal);
-      assert(dynamic_cast<DistributedVector<double>&>(*dual_inequality_regularization_diagonal).first);
-
-      const auto& ineq_regularization = *dynamic_cast<DistributedVector<double>&>(*dual_inequality_regularization_diagonal).first;
-
-      if (!ineq_regularization.isZero()) {
-         /* reset rhs_reduced_b3 */
-         std::copy(b + locnx + locmy, b + locnx + locmy + locmz, rhs_reduced + locnx + locmy + locmyl + locmzl);
-         assert(rhs_reduced_b3.length() == ineq_regularization.length());
-
-         rhs_reduced_b3.componentDiv(ineq_regularization);
-         C.transMult(1.0, rhs1, -1.0, rhs_reduced_b3);
-      }
    }
 
    ///////////////////////////////////////////////////////////////////////
@@ -656,28 +635,14 @@ void sLinsysRootAug::solveReducedLinkCons(SimpleVector<double>& b_vec) {
       SimpleVector<double> b3(b + locnx + locmy, locmz);
       C.mult(1.0, b3, -1.0, rhs1);
 
-      // TODO : remove temp vector
-      std::unique_ptr<SimpleVector<double>> tmp(dynamic_cast<SimpleVector<double>*>(zDiag->cloneFull()));
-      tmp->axpy(1.0, *dynamic_cast<DistributedVector<double>&>(*dual_inequality_regularization_diagonal).first);
-      b3.componentDiv(*tmp);
+      b3.componentDiv(*dual_inequality_diagonal_regularized);
    }
 
    // copy rhs3 and rhs4
    std::copy(rhs_reduced + locnx + locmy, rhs_reduced + locnx + locmy + locmyl + locmzl, b + locnx + locmy + locmz);
-
-#ifdef TIMING
-   if( myRank == 0 && innerSCSolve >= 1 )
-     std::cout << "Root - Refin times: child=" << tchild_total << " root=" << troot_total
-        << " comm=" << tcomm_total << " total=" << MPI_Wtime()-t_start << "\n";
-#endif
 }
 
 void sLinsysRootAug::solveReducedLinkConsBlocked(DenseMatrix& rhs_mat_transp, int rhs_start, int n_rhs) {
-#ifdef TIMING
-   t_start = MPI_Wtime();
-   troot_total = tchild_total = tcomm_total = 0.0;
-#endif
-
    const int length_rhs = rhs_mat_transp.n_columns();
 
    assert(locmyl >= 0 && locmzl >= 0);
@@ -692,7 +657,7 @@ void sLinsysRootAug::solveReducedLinkConsBlocked(DenseMatrix& rhs_mat_transp, in
    ///////////////////////////////////////////////////////////////////////
    const SparseMatrix& C = data->getLocalD();
 
-#pragma omp parallel for schedule(dynamic, 1)
+   #pragma omp parallel for schedule(dynamic, 1)
    for (int rhs_i = rhs_start; rhs_i < rhs_start + n_rhs; ++rhs_i) {
       assert(rhs_i < rhs_mat_transp.n_rows());
 
@@ -705,7 +670,7 @@ void sLinsysRootAug::solveReducedLinkConsBlocked(DenseMatrix& rhs_mat_transp, in
       ///////////////////////////////////////////////////////////////////////
       // b = [b1; b2; b3; b4; b5] is a locnx + locmy + locmz + locmyl + locmz vector
       // the new rhs should be
-      //           r = [b1-C^T*(zDiag)^{-1}*b3; b2; b4; b5]
+      //           r = [b1-C^T*(zDiag + regularization)^{-1}*b3; b2; b4; b5]
       ///////////////////////////////////////////////////////////////////////
 
       //copy all elements from b into r except for the the residual values corresponding to z0 = b3
@@ -722,18 +687,17 @@ void sLinsysRootAug::solveReducedLinkConsBlocked(DenseMatrix& rhs_mat_transp, in
       SimpleVector<double> b3(b + locnx + locmy, locmz);
 
       ///////////////////////////////////////////////////////////////////////
-      // compute r1 = b1 - C^T * (zDiag)^{-1} * b3
+      // compute r1 = b1 - C^T * (zDiag + regularization)^{-1} * b3
       ///////////////////////////////////////////////////////////////////////
       // if we have C part
       if (locmz > 0) {
-         assert(zDiag);
-         assert(b3.length() == zDiag->length());
-         b3.componentDiv(*zDiag);
+         assert(dual_inequality_diagonal_regularized);
+         assert(b3.length() == dual_inequality_diagonal_regularized->length());
+         b3.componentDiv(*dual_inequality_diagonal_regularized);
          C.transMult(1.0, rhs1, -1.0, b3);
-//         C.transMultD(1.0, rhs1, -1.0, b3, *zDiag);
+//         C.transMultD(1.0, rhs1, -1.0, b3, *dual_inequality_diagonal_regularized);
       }
    }
-
 
    ///////////////////////////////////////////////////////////////////////
    // reduced_rhss_blocked now contains all reduced rhs -> solve for it
@@ -746,13 +710,13 @@ void sLinsysRootAug::solveReducedLinkConsBlocked(DenseMatrix& rhs_mat_transp, in
    ///////////////////////////////////////////////////////////////////////
    // rhs_small is now the solution to the reduced system
    // the solution to the augmented system can now be computed as
-   //      x = [rhs1; rhs2; zDiag^{-1} * (b3 - C * r1); rhs3; rhs4]
+   //      x = [rhs1; rhs2; (zDiag + regularization)^{-1} * (b3 - C * r1); rhs3; rhs4]
    ///////////////////////////////////////////////////////////////////////
 
 
    // copy the solution components and calculate r3
    // copy rhs1 and rhs2
-#pragma omp parallel for schedule(dynamic, 1)
+   #pragma omp parallel for schedule(dynamic, 1)
    for (int rhs_i = rhs_start; rhs_i < rhs_start + n_rhs; ++rhs_i) {
       double* rhs_reduced = reduced_rhss_blocked.data() + (rhs_i - rhs_start) * length_reduced;
 
@@ -765,18 +729,12 @@ void sLinsysRootAug::solveReducedLinkConsBlocked(DenseMatrix& rhs_mat_transp, in
          SimpleVector<double> rhs1(rhs_reduced, locnx);
          SimpleVector<double> b3(b + locnx + locmy, locmz);
          C.mult(1.0, b3, -1.0, rhs1);
-         b3.componentDiv(*zDiag);
+         b3.componentDiv(*dual_inequality_diagonal_regularized);
       }
 
       // copy rhs3 and rhs4
       std::copy(rhs_reduced + locnx + locmy, rhs_reduced + locnx + locmy + locmyl + locmzl, b + locnx + locmy + locmz);
    }
-#ifdef TIMING
-   // TODO
-  if( myRank == 0 && innerSCSolve >= 1 )
-    std::cout << "Root - Refin times: child=" << tchild_total << " root=" << troot_total
-       << " comm=" << tcomm_total << " total=" << MPI_Wtime()-t_start << "\n";
-#endif
 }
 
 
@@ -1616,6 +1574,48 @@ void sLinsysRootAug::clear_CtDC_from_schur_complement(const SymmetricMatrix& CtD
    }
 }
 
+void sLinsysRootAug::reset_regularization_local_kkt() {
+   assert(apply_regularization);
+   assert(primal_regularization_diagonal);
+
+   /* primal diagonal */
+   if (locnx > 0) {
+      const auto& primal_regularization_vec = dynamic_cast<DistributedVector<double>&>(*this->primal_regularization_diagonal).first;
+      assert(primal_regularization_vec);
+
+      primal_regularization_vec->setToZero();
+   }
+
+   /* C^T reg^-1 C block */
+   if (locmz > 0) {
+      const auto& dual_inequality_regularization_vec = dynamic_cast<DistributedVector<double>&>(*this->dual_inequality_regularization_diagonal).first;
+      assert(dual_inequality_regularization_vec);
+
+      dual_inequality_regularization_vec->setToZero();
+   }
+
+   if (locmy > 0) {
+      const auto& dual_equality_regularization_vec = dynamic_cast<DistributedVector<double>&>(*this->dual_equality_regularization_diagonal).first;
+      assert(dual_equality_regularization_vec);
+
+      dual_equality_regularization_vec->setToZero();
+   }
+
+   if (locmyl > 0) {
+      const auto& dual_equality_regularization_link_cons = dynamic_cast<DistributedVector<double>&>(*this->dual_equality_regularization_diagonal).last;
+      assert(dual_equality_regularization_link_cons);
+
+      dual_equality_regularization_link_cons->setToZero();
+   }
+
+   if (locmzl > 0) {
+      const auto& dual_inequality_regularization_link_cons = dynamic_cast<DistributedVector<double>&>(*this->dual_inequality_regularization_diagonal).last;
+      assert(dual_inequality_regularization_link_cons);
+
+      dual_inequality_regularization_link_cons->setToZero();
+   }
+}
+
 void sLinsysRootAug::add_regularization_local_kkt(double primal_regularization, double dual_equality_regularization,
    double dual_inequality_regularization) {
    assert(apply_regularization);
@@ -1629,7 +1629,7 @@ void sLinsysRootAug::add_regularization_local_kkt(double primal_regularization, 
    assert(dual_inequality_regularization >= 0);
    assert(dual_equality_regularization >= 0);
 
-   if (PIPS_MPIgetRank() == 0) {
+   if (pipsipmpp_options::get_bool_parameter("REGULARIZATION_VERBOSE") && PIPS_MPIgetRank(mpiComm) == 0) {
       std::cout << "regularizing with root " << primal_regularization << " " << dual_equality_regularization << " "
                 << dual_inequality_regularization << "\n";
    }
@@ -1651,17 +1651,14 @@ void sLinsysRootAug::add_regularization_local_kkt(double primal_regularization, 
 
       assert(zDiag);
       assert(CtDC);
-
-      if (!dual_inequality_diagonal_regularized)
-         dual_inequality_diagonal_regularized.reset(dynamic_cast<SimpleVector<double>*>(zDiag->clone()));
+      assert(dual_inequality_diagonal_regularized);
 
       assert(std::all_of(dynamic_cast<const SimpleVector<double>&>(*zDiag).elements(),
          dynamic_cast<const SimpleVector<double>&>(*zDiag).elements(), [](const double& d) {
             return d <= 0;
          }));
 
-      dual_inequality_diagonal_regularized->copyFrom(*zDiag);
-      dual_inequality_diagonal_regularized->axpy(1.0, *dual_inequality_regularization_vec);
+      dual_inequality_diagonal_regularized->addConstant(-dual_inequality_regularization);
 
       SymmetricMatrix* CTDC_ptr = CtDC.get();
       clear_CtDC_from_schur_complement(*CtDC);
@@ -1690,6 +1687,16 @@ void sLinsysRootAug::add_regularization_local_kkt(double primal_regularization, 
 
       dual_inequality_regularization_link_cons->addConstant(-dual_inequality_regularization);
       kkt->diagonal_add_constant_from(locnx + locmy + locmyl, locmzl, -dual_inequality_regularization);
+   }
+}
+
+void sLinsysRootAug::put_dual_inequalites_diagonal() {
+   DistributedRootLinearSystem::put_dual_inequalites_diagonal();
+
+   if (!dual_inequality_diagonal_regularized) {
+      dual_inequality_diagonal_regularized.reset(dynamic_cast<SimpleVector<double>*>(zDiag->clone()));
+   } else {
+      dual_inequality_diagonal_regularized->copyFrom(*zDiag);
    }
 }
 
@@ -1830,7 +1837,6 @@ void sLinsysRootAug::finalizeKKTsparse() {
    myfile.close();
 
    assert(0);
-
 #endif
 }
 
@@ -1883,9 +1889,6 @@ void sLinsysRootAug::finalizeKKTdense() {
 void sLinsysRootAug::DsolveHierarchyBorder(DenseMatrix& rhs_mat_transp, int n_cols) {
    /* b holds all rhs in transposed form - C part from schur complement is already missing in b */
    const int my_rank = PIPS_MPIgetRank(mpiComm);
-#ifdef TIMING
-   // TODO
-#endif
 
    const auto[m, n] = rhs_mat_transp.n_rows_columns();
 #ifndef NDEBUG
@@ -1901,7 +1904,7 @@ void sLinsysRootAug::DsolveHierarchyBorder(DenseMatrix& rhs_mat_transp, int n_co
     * Every process has to do n_rhs / n_procs right hand sides while the first few might have to solve with one additional one
     */
    const int size = PIPS_MPIgetSize(mpiComm);
-   const int n_blockrhs = static_cast<int>( n_cols / size );
+   const int n_blockrhs = static_cast<int>(n_cols / size);
    const int leftover = n_cols % size;
 
    const int n_rhs = (my_rank < leftover) ? n_blockrhs + 1 : n_blockrhs;

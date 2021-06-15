@@ -9,7 +9,7 @@
 
 class FriedlanderOrbanRegularization : public RegularizationStrategy {
 public:
-   FriedlanderOrbanRegularization(unsigned int positive_eigenvalues_expected, unsigned int negaitve_eigenvalues_expected);
+   FriedlanderOrbanRegularization(unsigned int positive_eigenvalues_expected, unsigned int negaitve_eigenvalues_expected, MPI_Comm mpi_comm = MPI_COMM_WORLD);
 
    [[nodiscard]] Regularization get_default_regularization() override;
    Regularization get_regularization_parameters(const Inertia&, double) override;

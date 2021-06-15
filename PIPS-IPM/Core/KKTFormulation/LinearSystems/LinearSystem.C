@@ -198,10 +198,6 @@ void LinearSystem::factorize(Variables& vars) {
       put_dual_inequalites_diagonal();
    }
 
-   primal_regularization_diagonal->setToZero();
-   dual_equality_regularization_diagonal->setToZero();
-   dual_inequality_regularization_diagonal->setToZero();
-
    printDiagonalNorms();
 }
 

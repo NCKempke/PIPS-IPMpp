@@ -6,8 +6,8 @@
 #include "PIPSIPMppOptions.h"
 
 FriedlanderOrbanRegularization::FriedlanderOrbanRegularization(unsigned int positive_eigenvalues_expected,
-   unsigned int negaitve_eigenvalues_expected) :
-   RegularizationStrategy(positive_eigenvalues_expected, negaitve_eigenvalues_expected),
+   unsigned int negaitve_eigenvalues_expected, MPI_Comm mpi_comm) :
+   RegularizationStrategy(positive_eigenvalues_expected, negaitve_eigenvalues_expected, mpi_comm),
    primal_regularization_initial{
       pipsipmpp_options::get_double_parameter("FRIEDLANDER_ORBAN_REGULARIZATION_INITIAL_PRIMAL")},
    dual_equality_regularization_initial{

@@ -19,6 +19,8 @@ public:
    void
    add_regularization_local_kkt(double primal_regularization, double dual_equality_regularization, double dual_inequality_regularization) override;
 
+   void reset_regularization_local_kkt() override;
+
    void finalizeKKT() override;
 
    void Lsolve(Vector<double>& x) override;

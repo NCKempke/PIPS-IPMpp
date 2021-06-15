@@ -9,7 +9,7 @@
 
 class IpoptRegularization : public RegularizationStrategy {
 public:
-   IpoptRegularization(unsigned int positive_eigenvalues_expected, unsigned int negaitve_eigenvalues_expected);
+   IpoptRegularization(unsigned int positive_eigenvalues_expected, unsigned int negaitve_eigenvalues_expected, MPI_Comm mpi_comm = MPI_COMM_WORLD);
    ~IpoptRegularization() override = default;
 
    [[nodiscard]] Regularization get_default_regularization() override;

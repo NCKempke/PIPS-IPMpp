@@ -122,6 +122,8 @@ public:
    virtual void
    add_regularization_local_kkt(double primal_regularization, double dual_equality_regularization, double dual_inequality_regularization) = 0;
 
+   virtual void reset_regularization_local_kkt() = 0;
+
    virtual void factor2() = 0;
 
    virtual void assembleKKT() = 0;

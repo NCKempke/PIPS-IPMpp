@@ -24,6 +24,10 @@ sLinsysRootBordered::sLinsysRootBordered(DistributedFactory* factory_, Distribut
    solver.reset(createSolver(kkt.get()));
 }
 
+void sLinsysRootBordered::reset_regularization_local_kkt() {
+   assert(false && "TODO : implement");
+}
+
 void sLinsysRootBordered::add_regularization_local_kkt(double primal_regularization, double dual_equality_regularization,
       double dual_inequality_regularization) {
    assert(dynamic_cast<DistributedVector<double>*>(primal_regularization_diagonal.get()));

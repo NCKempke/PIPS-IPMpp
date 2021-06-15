@@ -138,7 +138,7 @@ void PrimalMehrotraStrategy::corrector_predictor(Problem& problem, Variables& it
       do_probing(problem, iterate, residuals, step);
       if (is_poor_step(pure_centering_step, precond_decreased))
          return;
-   }
+      }
    pure_centering_step = false;
    numerical_troubles = false;
 
