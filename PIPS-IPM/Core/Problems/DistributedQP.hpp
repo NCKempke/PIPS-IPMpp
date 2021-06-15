@@ -205,7 +205,7 @@ private:
    /* a constraint is global if it is in more than threshold_global_cons blocks */
    constexpr static int threshold_global_cons{2};
    constexpr static bool shave_nonlocal_2links{true};
-   constexpr static int threshold_global_vars{-1}; // TODO: adapt properly
+   constexpr static int threshold_global_vars{1}; // TODO: adapt properly
    constexpr static int nLinkStats{6};
    constexpr static double minStructuredLinksRatio{0.5};
 
