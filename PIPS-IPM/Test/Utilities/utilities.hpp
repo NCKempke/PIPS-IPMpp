@@ -18,6 +18,7 @@ struct Instance {
    const std::string name;
    const size_t n_blocks;
    const double result;
+   const int n_iterations;
 };
 
 std::vector<Instance> readInstancesFromFile(const std::string& file_name);

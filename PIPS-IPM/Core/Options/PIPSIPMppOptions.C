@@ -401,6 +401,9 @@ namespace pipsipmpp_options {
 
       /** should the residuals before unscaling, after unscaling before postsolve, after postsolve be printed */
       bool_options["POSTSOLVE_PRINT_RESIDS"] = true;
+
+      /// FILTER
+      bool_options["FILTER_VERBOSE"] = false;
    }
 
 

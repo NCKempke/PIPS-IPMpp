@@ -1,45 +1,47 @@
 ### if you want to add a (gams read) test put is as [path from root directory] [blocks] [expected objective] ###
 ################################################################################################################
 ## Bound strengthening
-/PIPS-IPM/Drivers/simple/GAMSsmall/examples_boundTightening/run_exampleAC_boundStrength/exampleAC_boundStrength 3 17.0
+/PIPS-IPM/Drivers/simple/GAMSsmall/examples_boundTightening/run_exampleAC_boundStrength/exampleAC_boundStrength 3 17.0 8
 # TODO: /PIPS-IPM/Drivers/simple/GAMSsmall/examples_dualfixing/run_dual_fixing_A2/exampleAC_boundStrength 3 0.0
 ### Tests hierarchical approach
-/PIPS-IPM/Drivers/simple/GAMSsmall/examples_hierarchical_approach/run_hier_approach_2blocks_2by2/hier_approach_2blocks_2by2 4 10.0
-/PIPS-IPM/Drivers/simple/GAMSsmall/examples_hierarchical_approach/run_hier_approach_4blocks_2by2/hier_approach_4blocks_2by2 5 14.0
-/PIPS-IPM/Drivers/simple/GAMSsmall/examples_hierarchical_approach/run_hier_approach_4blocks_2by3/hier_approach_4blocks_2by3 5 20.0
-/PIPS-IPM/Drivers/simple/GAMSsmall/examples_hierarchical_approach/run_hier_approach_8blocks_2by3/hier_approach_8blocks_2by3 9 32.0
+/PIPS-IPM/Drivers/simple/GAMSsmall/examples_hierarchical_approach/run_hier_approach_2blocks_2by2/hier_approach_2blocks_2by2 4 10.0 4
+/PIPS-IPM/Drivers/simple/GAMSsmall/examples_hierarchical_approach/run_hier_approach_4blocks_2by2/hier_approach_4blocks_2by2 5 14.0 4
+# TODO : below instance has 9 iterations actually but DISTRIBUTED preconditioning kills it FIXME
+/PIPS-IPM/Drivers/simple/GAMSsmall/examples_hierarchical_approach/run_hier_approach_4blocks_2by3/hier_approach_4blocks_2by3 5 20.0 11
+/PIPS-IPM/Drivers/simple/GAMSsmall/examples_hierarchical_approach/run_hier_approach_8blocks_2by3/hier_approach_8blocks_2by3 9 32.0 10
 ### Tests nearly parallel rows
-/PIPS-IPM/Drivers/simple/GAMSsmall/examples_nearlyParallelRows/run_nearlyParallelEqualityAndInequalityRows_B0A2/nearlyParallelEqualityAndInequalityRows_B0A2 4 -21.6
+/PIPS-IPM/Drivers/simple/GAMSsmall/examples_nearlyParallelRows/run_nearlyParallelEqualityAndInequalityRows_B0A2/nearlyParallelEqualityAndInequalityRows_B0A2 4 -21.6 8
 # TODO : /PIPS-IPM/Drivers/simple/GAMSsmall/examples_nearlyParallelRows/run_nearlyParallelEqualityInequalityRowsMixed/nearlyParallelEqualityInequalityRowsMixed 8 0.0
-/PIPS-IPM/Drivers/simple/GAMSsmall/examples_nearlyParallelRows/run_nearlyParallelEqualityRowsBothSingletons_B0A2/nearlyParallelEqualityRowsBothSingletons_B0A2 4 17.9
-/PIPS-IPM/Drivers/simple/GAMSsmall/examples_nearlyParallelRows/run_nearlyParallelEqualityRowsOneRowNoSingleton_B0A2/nearlyParallelEqualityRowsOneRowNoSingleton_B0A2 4 17.5
-/PIPS-IPM/Drivers/simple/GAMSsmall/examples_nearlyParallelRows/run_nearlyParallelInequalityRows_B0A2/nearlyParallelInequalityRows_B0A2 4 -72.7
+/PIPS-IPM/Drivers/simple/GAMSsmall/examples_nearlyParallelRows/run_nearlyParallelEqualityRowsBothSingletons_B0A2/nearlyParallelEqualityRowsBothSingletons_B0A2 4 17.9 9
+/PIPS-IPM/Drivers/simple/GAMSsmall/examples_nearlyParallelRows/run_nearlyParallelEqualityRowsOneRowNoSingleton_B0A2/nearlyParallelEqualityRowsOneRowNoSingleton_B0A2 4 17.5 7
+/PIPS-IPM/Drivers/simple/GAMSsmall/examples_nearlyParallelRows/run_nearlyParallelInequalityRows_B0A2/nearlyParallelInequalityRows_B0A2 4 -72.7 10
 ### Tests parallel rows
-/PIPS-IPM/Drivers/simple/GAMSsmall/examples_parallelRows/run_parallelEqualityAndInequalityRow_B0A2/parallelEqualityAndInequalityRow_B0A2 4 -12.0
+/PIPS-IPM/Drivers/simple/GAMSsmall/examples_parallelRows/run_parallelEqualityAndInequalityRow_B0A2/parallelEqualityAndInequalityRow_B0A2 4 -12.0 4
 # TODO : fails without presolve /PIPS-IPM/Drivers/simple/GAMSsmall/examples_parallelRows/run_parallelEqualityInequalityRowsMixed/parallelEqualityInequalityRowsMixed 4 0.0
-/PIPS-IPM/Drivers/simple/GAMSsmall/examples_parallelRows/run_parallelEqualityRows_B0A2/parallelEqualityRows_B0A2 4 -12.0
-/PIPS-IPM/Drivers/simple/GAMSsmall/examples_parallelRows/run_parallelInequalityRows_B0A2/parallelInequalityRows_B0A2 4 -12.0
+/PIPS-IPM/Drivers/simple/GAMSsmall/examples_parallelRows/run_parallelEqualityRows_B0A2/parallelEqualityRows_B0A2 4 -12.0 4
+/PIPS-IPM/Drivers/simple/GAMSsmall/examples_parallelRows/run_parallelInequalityRows_B0A2/parallelInequalityRows_B0A2 4 -12.0 5
 ### Tests singleton equality column
-/PIPS-IPM/Drivers/simple/GAMSsmall/examples_singletonEqualityColumn/run_singletonEqualityColumn_A2/singletonEqualityColumn_A2 4 -12.0
-/PIPS-IPM/Drivers/simple/GAMSsmall/examples_singletonEqualityColumn/run_singletonEqualityColumn_B0B1A2/singletonEqualityColumn_B0B1A2 4 -12.0
-/PIPS-IPM/Drivers/simple/GAMSsmall/examples_singletonEqualityColumn/run_singletonEqualityColumn_B0Bl0/singletonEqualityColumn_B0Bl0 4 -14.0
+/PIPS-IPM/Drivers/simple/GAMSsmall/examples_singletonEqualityColumn/run_singletonEqualityColumn_A2/singletonEqualityColumn_A2 4 -12.0 4
+/PIPS-IPM/Drivers/simple/GAMSsmall/examples_singletonEqualityColumn/run_singletonEqualityColumn_B0B1A2/singletonEqualityColumn_B0B1A2 4 -12.0 4
+/PIPS-IPM/Drivers/simple/GAMSsmall/examples_singletonEqualityColumn/run_singletonEqualityColumn_B0Bl0/singletonEqualityColumn_B0Bl0 4 -14.0 5
 # TODO assert fails in posstsolve .. /PIPS-IPM/Drivers/simple/GAMSsmall/examples_singletonEqualityColumn/run_singletonEqualityColumn_B0Bl2/singletonEqualityColumn_B0Bl2 4 -14.0
-/PIPS-IPM/Drivers/simple/GAMSsmall/examples_singletonEqualityColumn/run_singletonEqualityColumn_B0/singletonEqualityColumn_B0 4 -12.0
-/PIPS-IPM/Drivers/simple/GAMSsmall/examples_singletonEqualityColumn/run_singletonEqualityColumn_B1/singletonEqualityColumn_B1 4 -12.0
-/PIPS-IPM/Drivers/simple/GAMSsmall/examples_singletonEqualityColumn/run_singletonEqualityColumn_multiple_noLink/singletonEqualityColumn_multiple_noLink 4 -9.0
+/PIPS-IPM/Drivers/simple/GAMSsmall/examples_singletonEqualityColumn/run_singletonEqualityColumn_B0/singletonEqualityColumn_B0 4 -12.0 5
+/PIPS-IPM/Drivers/simple/GAMSsmall/examples_singletonEqualityColumn/run_singletonEqualityColumn_B1/singletonEqualityColumn_B1 4 -12.0 5
+/PIPS-IPM/Drivers/simple/GAMSsmall/examples_singletonEqualityColumn/run_singletonEqualityColumn_multiple_noLink/singletonEqualityColumn_multiple_noLink 4 -9.0 4
 # TODO assert in postsolve /PIPS-IPM/Drivers/simple/GAMSsmall/examples_singletonEqualityColumn/run_singletonEqualityColumn_multiple_resulting/singletonEqualityColumn_multiple_resulting 4 8.0
-/PIPS-IPM/Drivers/simple/GAMSsmall/examples_singletonEqualityColumn/run_singletonEqualityColumn_multiple_resulting_noLink/singletonEqualityColumn_multiple_resulting_noLink 4 -12.0
+/PIPS-IPM/Drivers/simple/GAMSsmall/examples_singletonEqualityColumn/run_singletonEqualityColumn_multiple_resulting_noLink/singletonEqualityColumn_multiple_resulting_noLink 4 -12.0 4
 ### Tests singleton inequality column
 # TODO : fails without presolve /PIPS-IPM/Drivers/simple/GAMSsmall/examples_singletonInequalityColumn/run_singletonInequalityColumn_A2/singletonInequalityColumn_A2 4 0.0
-/PIPS-IPM/Drivers/simple/GAMSsmall/examples_singletonInequalityColumn/run_singletonInequalityColumn_B0B2A1/singletonInequalityColumn_B0B2A1 4 -62.0
-/PIPS-IPM/Drivers/simple/GAMSsmall/examples_singletonInequalityColumn/run_singletonInequalityColumn_B0Bl0/singletonInequalityColumn_B0Bl0 4 -52.0
+/PIPS-IPM/Drivers/simple/GAMSsmall/examples_singletonInequalityColumn/run_singletonInequalityColumn_B0B2A1/singletonInequalityColumn_B0B2A1 4 -62.0 9
+# TODO : below instance has actually 8 iterations as limit but distirbuted preconditioning kills it somehow FIXME
+/PIPS-IPM/Drivers/simple/GAMSsmall/examples_singletonInequalityColumn/run_singletonInequalityColumn_B0Bl0/singletonInequalityColumn_B0Bl0 4 -52.0 14
 # TODO : /PIPS-IPM/Drivers/simple/GAMSsmall/examples_singletonInequalityColumn/run_singletonInequalityColumn_B0Bl2/singletonInequalityColumn_B0Bl2 4 -52.0
-/PIPS-IPM/Drivers/simple/GAMSsmall/examples_singletonInequalityColumn/run_singletonInequalityColumn_B0/singletonInequalityColumn_B0 4 -32.0
-/PIPS-IPM/Drivers/simple/GAMSsmall/examples_singletonInequalityColumn/run_singletonInequalityColumn_B1/singletonInequalityColumn_B1 4 -32.0
+/PIPS-IPM/Drivers/simple/GAMSsmall/examples_singletonInequalityColumn/run_singletonInequalityColumn_B0/singletonInequalityColumn_B0 4 -32.0 7
+/PIPS-IPM/Drivers/simple/GAMSsmall/examples_singletonInequalityColumn/run_singletonInequalityColumn_B1/singletonInequalityColumn_B1 4 -32.0 7
 # TODO : assert fail in postsolve /PIPS-IPM/Drivers/simple/GAMSsmall/examples_singletonInequalityColumn/run_singletonInequalityColumn_multipleLinkingFixationsAndSingletonCols/singletonInequalityColumn_multipleLinkingFixationsAndSingletonCols 4 -32.0
 # TODO : assert fail in postsolve /PIPS-IPM/Drivers/simple/GAMSsmall/examples_singletonInequalityColumn/run_singletonInequalityColumn_multiple_resulting/singletonInequalityColumn_multiple_resulting 4 -34.0
 ### Tests singleton row
-/PIPS-IPM/Drivers/simple/GAMSsmall/examples_singletonRow/run_exampleAC_singletonRow2/exampleAC_singletonRow2 3 16.0
-/PIPS-IPM/Drivers/simple/GAMSsmall/examples_singletonRow/run_exampleAC_singletonRow3_singletonLinkingRow/exampleAC_singletonRow3_singletonLinkingRow 3 18.0
+/PIPS-IPM/Drivers/simple/GAMSsmall/examples_singletonRow/run_exampleAC_singletonRow2/exampleAC_singletonRow2 3 16.0 5
+/PIPS-IPM/Drivers/simple/GAMSsmall/examples_singletonRow/run_exampleAC_singletonRow3_singletonLinkingRow/exampleAC_singletonRow3_singletonLinkingRow 3 18.0 7
 # TODO : fails without presolve /PIPS-IPM/Drivers/simple/GAMSsmall/examples_singletonRow/run_exampleAC_singletonRow/exampleAC_singletonRow 3 0.0
-/PIPS-IPM/Drivers/simple/GAMSsmall/examples_singletonRow/run_example_breakSingletonRows/example_breakSingletonRows 4 -12.0
+/PIPS-IPM/Drivers/simple/GAMSsmall/examples_singletonRow/run_example_breakSingletonRows/example_breakSingletonRows 4 -12.0 5

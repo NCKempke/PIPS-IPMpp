@@ -35,10 +35,12 @@ public:
 
    Filter filter;
    FilterStrategyParameters parameters; /*!< Set of parameters */
-   bool verbose{true};
-
    void initialize(Residuals& initial_residuals);
+
    bool check_acceptance(Residuals& current_residuals, Residuals& trial_residuals, double predicted_reduction);
+
+private:
+   const bool verbose{false};
 };
 
 #endif // FILTERSTRATEGY_H
