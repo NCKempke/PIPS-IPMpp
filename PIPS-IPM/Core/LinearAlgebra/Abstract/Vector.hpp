@@ -273,8 +273,8 @@ public:
    /** copy [vx, vy, vz] = [this] */
    virtual void jointCopyTo(Vector<T>& vx, Vector<T>& vy, Vector<T>& vz) const = 0;
 
-   [[nodiscard]] virtual double special_operation(const Vector<T>& x, const Vector<T>& bound, const Vector<T>& bound_indicator, double scaling) const
-   = 0;
+   [[nodiscard]] virtual double barrier_directional_derivative(const Vector<T>& x, const Vector<T>& bound, const Vector<T>& bound_indicator) const = 0;
+   [[nodiscard]] virtual double barrier_directional_derivative(const Vector<T>& x, double bound, const Vector<T>& bound_indicator) const = 0;
 };
 
 // TODO : should be a proper enum class..

@@ -2225,7 +2225,7 @@ void DistributedVector<T>::pushSmallComplementarityPairs(Vector<T>& other_vec_in
 }
 
 template<typename T>
-double DistributedVector<T>::special_operation(const Vector<T>& x_in, const Vector<T>& bound_in, const Vector<T>& bound_indicator_in, double scaling)
+double DistributedVector<T>::barrier_directional_derivative(const Vector<T>& x_in, const Vector<T>& bound_in, const Vector<T>& bound_indicator_in)
 const {
    const auto& x = dynamic_cast<const DistributedVector<T>&>(x_in);
    const auto& bound = dynamic_cast<const DistributedVector<T>&>(bound_in);
@@ -2235,15 +2235,37 @@ const {
 
    double result = 0.0;
    for (size_t i = 0; i < children.size(); i++) {
-      result += children[i]->special_operation(*x.children[i], *bound.children[i], *bound_indicator.children[i], scaling);
+      result += children[i]->barrier_directional_derivative(*x.children[i], *bound.children[i], *bound_indicator.children[i]);
    }
 
    if (first && x.first && bound.first && bound_indicator.first) {
-      result += first->special_operation(*x.first, *bound.first, *bound_indicator.first, scaling);
+      result += first->barrier_directional_derivative(*x.first, *bound.first, *bound_indicator.first);
    }
 
    if (last && x.last && bound.last && bound_indicator.last) {
-      result += last->special_operation(*x.last, *bound.last, *bound_indicator.last, scaling);
+      result += last->barrier_directional_derivative(*x.last, *bound.last, *bound_indicator.last);
+   }
+   return result;
+}
+
+template<typename T>
+double DistributedVector<T>::barrier_directional_derivative(const Vector<T>& x_in, double bound, const Vector<T>& bound_indicator_in)
+const {
+   const auto& x = dynamic_cast<const DistributedVector<T>&>(x_in);
+   const auto& bound_indicator = dynamic_cast<const DistributedVector<T>&>(bound_indicator_in);
+   assert(this->children.size() == x.children.size());
+
+   double result = 0.0;
+   for (size_t i = 0; i < children.size(); i++) {
+      result += children[i]->barrier_directional_derivative(*x.children[i], bound, *bound_indicator.children[i]);
+   }
+
+   if (first && x.first && bound_indicator.first) {
+      result += first->barrier_directional_derivative(*x.first, bound, *bound_indicator.first);
+   }
+
+   if (last && x.last && bound_indicator.last) {
+      result += last->barrier_directional_derivative(*x.last, bound, *bound_indicator.last);
    }
    return result;
 }

@@ -1068,8 +1068,7 @@ void SimpleVector<T>::pushSmallComplementarityPairs(Vector<T>& other_vec_in, con
 }
 
 template<typename T>
-double SimpleVector<T>::special_operation(const Vector<T>& x_in, const Vector<T>& bound_in, const Vector<T>& bound_indicator_in, double scaling)
-const {
+double SimpleVector<T>::barrier_directional_derivative(const Vector<T>& x_in, const Vector<T>& bound_in, const Vector<T>& bound_indicator_in) const {
    const auto& x = dynamic_cast<const SimpleVector<T>&>(x_in);
    const auto& bound = dynamic_cast<const SimpleVector<T>&>(bound_in);
    const auto& bound_indicator = dynamic_cast<const SimpleVector<T>&>(bound_indicator_in);
@@ -1079,7 +1078,22 @@ const {
    double result = 0.;
    for (int i = 0; i < this->n; i++) {
       if (0 < bound_indicator[i]) {
-         result += scaling * this->v[i] / (x[i] - bound[i]);
+         result += this->v[i] / (x[i] - bound[i]);
+      }
+   }
+   return result;
+}
+
+template<typename T>
+double SimpleVector<T>::barrier_directional_derivative(const Vector<T>& x_in, double bound, const Vector<T>& bound_indicator_in) const {
+   const auto& x = dynamic_cast<const SimpleVector<T>&>(x_in);
+   const auto& bound_indicator = dynamic_cast<const SimpleVector<T>&>(bound_indicator_in);
+   assert(this->n == x.length());
+
+   double result = 0.;
+   for (int i = 0; i < this->n; i++) {
+      if (0 < bound_indicator[i]) {
+         result += this->v[i] / (x[i] - bound);
       }
    }
    return result;

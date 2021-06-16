@@ -15,19 +15,22 @@ class Scaler;
 class InteriorPointMethod : public Solver {
 public:
    InteriorPointMethod(DistributedFactory& factory, Problem& problem, MehrotraStrategyType mehrotra_strategy_type, const Scaler* scaler = nullptr);
-   TerminationStatus solve(Problem& problem, Variables& iterate, Residuals& residuals) override;
-   static double predicted_reduction(Problem& problem, Variables& iterate, Variables& direction, double step_length);
    ~InteriorPointMethod() override = default;
 
+   TerminationStatus solve(Problem& problem, Variables& iterate, Residuals& residuals) override;
+
+   static double predicted_reduction(Problem& problem, Variables& iterate, Variables& direction, double step_length);
+
+   [[nodiscard]] int n_iterations() const { return iteration; };
 protected:
    bool verbose{false};
    const Scaler* scaler{};
-   int max_iterations{0};
+   const int max_iterations{0};
 
    /** norm of problem data */
-   double dnorm{0.};
+   const double dnorm{0.};
    /** norm of original unscaled problem */
-   double dnorm_orig{0.};
+   const double dnorm_orig{0.};
 
    std::unique_ptr<MehrotraStrategy> mehrotra_strategy;
    std::unique_ptr<Residuals> residuals_unscaled;
@@ -40,6 +43,10 @@ protected:
    std::vector<double> phi_history{};
    /** the i-th entry of this array contains the minimum value of phi encountered by the algorithm on or before iteration i */
    std::vector<double> phi_min_history{};
+
+   /** iterations in last run */
+   int iteration{-1};
+
 
    bool print_timestamp{true};
    double start_time{-1.};

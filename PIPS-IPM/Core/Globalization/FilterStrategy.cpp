@@ -4,12 +4,13 @@
 #include "Filter.hpp"
 #include "Residuals.h"
 #include "Variables.h"
+#include "PIPSIPMppOptions.h"
 
 FilterStrategy::FilterStrategy(FilterStrategyParameters& filter_strategy_parameters, FilterParameters& filter_parameters) :
-filter(filter_parameters), parameters(filter_strategy_parameters) {
+filter(filter_parameters), parameters(filter_strategy_parameters), verbose{PIPS_MPIgetRank() == 0 && pipsipmpp_options::get_bool_parameter("FILTER_VERBOSE")} {
 }
 
-FilterStrategy::FilterStrategy() : filter(), parameters({0.1, 0.999, 1e2, 1.25}) {
+FilterStrategy::FilterStrategy() : filter(), parameters({0.1, 0.999, 1e2, 1.25}), verbose{PIPS_MPIgetRank() == 0 && pipsipmpp_options::get_bool_parameter("FILTER_VERBOSE")} {
 }
 
 void FilterStrategy::initialize(Residuals& initial_residuals) {
@@ -23,7 +24,7 @@ void FilterStrategy::initialize(Residuals& initial_residuals) {
  * precondition: feasible step
  * */
 bool FilterStrategy::check_acceptance(Variables& current_iterate, Residuals& current_residuals, Variables& trial_iterate, Residuals& trial_residuals,
-      double predicted_reduction, double step_length) {
+      double predicted_reduction) {
    const double current_feasibility = current_residuals.feasibility_measure();
    const double current_optimality = current_residuals.optimality_measure();
    const double trial_feasibility = trial_residuals.feasibility_measure();
@@ -50,7 +51,7 @@ bool FilterStrategy::check_acceptance(Variables& current_iterate, Residuals& cur
 
          if (verbose) std::cout << "Switching condition: " << predicted_reduction << " >= " << this->parameters.Delta * std::pow(current_feasibility, 2) << " ?\n";
          if (verbose) std::cout << "Armijo condition: " << actual_reduction << " >= "
-                   << this->parameters.Sigma * step_length * std::max(0., predicted_reduction - 1e-9) << " ?\n";
+                   << this->parameters.Sigma * std::max(0., predicted_reduction - 1e-9) << " ?\n";
 
          /* switching condition: predicted reduction is not promising, accept */
          if (predicted_reduction < this->parameters.Delta * std::pow(current_feasibility, 2)) {
@@ -58,7 +59,7 @@ bool FilterStrategy::check_acceptance(Variables& current_iterate, Residuals& cur
             accept = true;
          }
             /* Armijo sufficient decrease condition: predicted_reduction should be positive */
-         else if (true || actual_reduction >= this->parameters.Sigma * step_length * std::max(0., predicted_reduction - 1e-9)) {
+         else if (actual_reduction >= this->parameters.Sigma * std::max(0., predicted_reduction - 1e-9)) {
             accept = true;
          }
          else {

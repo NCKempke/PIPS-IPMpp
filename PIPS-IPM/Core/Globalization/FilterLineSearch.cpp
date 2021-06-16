@@ -4,10 +4,11 @@
 #include "Problem.hpp"
 #include "Residuals.h"
 #include "Variables.h"
+#include "PIPSIPMppOptions.h"
 
 FilterLineSearch::FilterLineSearch(const Scaler* scaler, int max_iterations, double backtracking_ratio, double min_step_length) :
 filter_strategy(FilterStrategy()), backtracking_ratio(backtracking_ratio), scaler(scaler), min_step_length(min_step_length),
-max_iterations(max_iterations) {
+max_iterations(max_iterations), verbose{PIPS_MPIgetRank() == 0 && pipsipmpp_options::get_bool_parameter("FILTER_VERBOSE")} {
 }
 
 void FilterLineSearch::initialize(Residuals& initial_residuals) {
@@ -35,8 +36,7 @@ void FilterLineSearch::compute_acceptable_iterate(Problem& problem, Variables& c
       double predicted_reduction = InteriorPointMethod::predicted_reduction(problem, current_iterate, direction, primal_step_length);
 
       /* check whether the trial step is accepted */
-      is_accepted = this->filter_strategy.check_acceptance(current_iterate, current_residuals, trial_iterate, trial_residuals, predicted_reduction,
-            primal_step_length);
+      is_accepted = this->filter_strategy.check_acceptance(current_iterate, current_residuals, trial_iterate, trial_residuals, predicted_reduction);
       // if the trial iterate was accepted, current_iterate was overwritten
       if (is_accepted) {
          current_iterate.copy(trial_iterate);
@@ -54,7 +54,7 @@ void FilterLineSearch::compute_acceptable_iterate(Problem& problem, Variables& c
    }
 }
 
-bool FilterLineSearch::termination_(bool is_accepted) {
+bool FilterLineSearch::termination_(bool is_accepted) const {
    if (is_accepted) {
       return true;
    }

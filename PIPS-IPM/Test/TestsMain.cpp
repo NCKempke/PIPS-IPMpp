@@ -17,6 +17,7 @@ public:
    }
 };
 
+bool verbose;
 
 int main(int argc, char** argv) {
 #ifndef NDEBUG
@@ -25,9 +26,19 @@ int main(int argc, char** argv) {
 #else
    MPI_Init(&argc, &argv);
 #endif
-
    testing::InitGoogleTest(&argc, argv);
 //  testing::FLAGS_gtest_death_test_style = "fast";
+
+   verbose = false;
+   if (argc > 1) {
+      for (int i = 1; i < argc; ++i) {
+         if ( strcmp(argv[i], "VERBOSE") == 0) {
+            verbose = true;
+         } else {
+            std::cout << "Unknown command line argument " << argv[i] << "\n";
+         }
+      }
+   }
 
    /* supress all test output except for rank 0 */
    int myrank;
@@ -42,7 +53,7 @@ int main(int argc, char** argv) {
    else
       std::cout << "Running tests with " << size << " MPI processes\n";
 
-   testing::AddGlobalTestEnvironment(new MPITestingEnvironment);
+   testing::AddGlobalTestEnvironment(new MPITestingEnvironment());
 
    const int test_result = RUN_ALL_TESTS();
 
