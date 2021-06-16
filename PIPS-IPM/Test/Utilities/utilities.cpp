@@ -45,13 +45,14 @@ std::vector<Instance> readInstancesFromFile(const std::string& file_name) {
       std::string instance_path;
       size_t n_blocks;
       double objective;
-      if (!(iss >> instance_path >> n_blocks >> objective)) {
+      int n_iterations;
+      if (!(iss >> instance_path >> n_blocks >> objective >> n_iterations)) {
          /* some error while reading that line occured */
          std::cout << "Error while reading line \"" << line << "\" from options file - skipping that line\n";
          continue;
       }
 
-      instances.push_back({instance_path, n_blocks, objective});
+      instances.push_back({instance_path, n_blocks, objective, n_iterations});
    }
    return instances;
 }

@@ -39,7 +39,7 @@ TerminationStatus InteriorPointMethod::solve(Problem& problem, Variables& iterat
 
    TerminationStatus status;
    bool termination = false;
-   int iteration = 0;
+   this->iteration = 0;
    while (!termination) {
       if (iteration >= max_iterations - 1) {
          status = TerminationStatus::MAX_ITS_EXCEEDED;
@@ -56,21 +56,21 @@ TerminationStatus InteriorPointMethod::solve(Problem& problem, Variables& iterat
 
          // termination test
          const auto [duality_gap, residual_norm] = this->compute_unscaled_gap_and_residual_norm(residuals);
-         this->update_history(duality_gap, residual_norm, iteration, mu);
-         status = this->compute_status(duality_gap, residual_norm, iteration, mu);
+         this->update_history(duality_gap, residual_norm, this->iteration, mu);
+         status = this->compute_status(duality_gap, residual_norm, this->iteration, mu);
 
          if (status == TerminationStatus::NOT_FINISHED) {
             // run Gondzio's multiple corrector scheme
             this->factory.iterate_started();
-            this->mehrotra_strategy->corrector_predictor(problem, iterate, residuals, *step, *linear_system, iteration);
+            this->mehrotra_strategy->corrector_predictor(problem, iterate, residuals, *step, *linear_system, this->iteration);
             this->factory.iterate_ended();
-            iteration++;
+            this->iteration++;
          }
          else {
             termination = true;
             residuals.evaluate(problem, iterate);
             if (print_level >= 10) {
-               this->mehrotra_strategy->print_statistics(&problem, &iterate, &residuals, dnorm, this->mehrotra_strategy->sigma, iteration, iterate.mu(), status, 1);
+               this->mehrotra_strategy->print_statistics(&problem, &iterate, &residuals, dnorm, this->mehrotra_strategy->sigma, this->iteration, iterate.mu(), status, 1);
             }
          }
       }

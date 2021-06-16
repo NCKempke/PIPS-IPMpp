@@ -39,6 +39,8 @@ public:
 
    double getObjective();
 
+   [[nodiscard]] int n_iterations() const;
+
    [[nodiscard]] double getFirstStageObjective() const;
 
    std::vector<double> gatherPrimalSolution();
