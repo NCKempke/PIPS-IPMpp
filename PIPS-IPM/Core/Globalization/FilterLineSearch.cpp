@@ -4,10 +4,11 @@
 #include "Problem.hpp"
 #include "Residuals.h"
 #include "Variables.h"
+#include "PIPSIPMppOptions.h"
 
 FilterLineSearch::FilterLineSearch(const Scaler* scaler, int max_iterations, double backtracking_ratio, double min_step_length) :
 filter_strategy(FilterStrategy()), backtracking_ratio(backtracking_ratio), scaler(scaler), min_step_length(min_step_length),
-max_iterations(max_iterations) {
+max_iterations(max_iterations), verbose{PIPS_MPIgetRank() == 0 && pipsipmpp_options::get_bool_parameter("FILTER_VERBOSE")} {
 }
 
 void FilterLineSearch::initialize(Residuals& initial_residuals) {
@@ -53,7 +54,7 @@ void FilterLineSearch::compute_acceptable_iterate(Problem& problem, Variables& c
    }
 }
 
-bool FilterLineSearch::termination_(bool is_accepted) {
+bool FilterLineSearch::termination_(bool is_accepted) const {
    if (is_accepted) {
       return true;
    }
