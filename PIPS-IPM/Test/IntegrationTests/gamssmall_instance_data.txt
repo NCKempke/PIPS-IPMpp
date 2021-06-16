@@ -15,7 +15,7 @@
 # TODO : /PIPS-IPM/Drivers/simple/GAMSsmall/examples_nearlyParallelRows/run_nearlyParallelEqualityInequalityRowsMixed/nearlyParallelEqualityInequalityRowsMixed 8 0.0
 /PIPS-IPM/Drivers/simple/GAMSsmall/examples_nearlyParallelRows/run_nearlyParallelEqualityRowsBothSingletons_B0A2/nearlyParallelEqualityRowsBothSingletons_B0A2 4 17.9 9
 /PIPS-IPM/Drivers/simple/GAMSsmall/examples_nearlyParallelRows/run_nearlyParallelEqualityRowsOneRowNoSingleton_B0A2/nearlyParallelEqualityRowsOneRowNoSingleton_B0A2 4 17.5 7
-/PIPS-IPM/Drivers/simple/GAMSsmall/examples_nearlyParallelRows/run_nearlyParallelInequalityRows_B0A2/nearlyParallelInequalityRows_B0A2 4 -72.7 10
+/PIPS-IPM/Drivers/simple/GAMSsmall/examples_nearlyParallelRows/run_nearlyParallelInequalityRows_B0A2/nearlyParallelInequalityRows_B0A2 4 -72.7 12
 ### Tests parallel rows
 /PIPS-IPM/Drivers/simple/GAMSsmall/examples_parallelRows/run_parallelEqualityAndInequalityRow_B0A2/parallelEqualityAndInequalityRow_B0A2 4 -12.0 4
 # TODO : fails without presolve /PIPS-IPM/Drivers/simple/GAMSsmall/examples_parallelRows/run_parallelEqualityInequalityRowsMixed/parallelEqualityInequalityRowsMixed 4 0.0
