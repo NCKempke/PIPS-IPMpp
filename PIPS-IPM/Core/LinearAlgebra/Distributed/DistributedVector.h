@@ -154,8 +154,8 @@ public:
    void pushAwayFromZero(double tol, double amount, const Vector<T>* select) override;
    void getSumCountIfSmall(double tol, double& sum_small, int& n_close, const Vector<T>* select) const override;
 
-   [[nodiscard]] double special_operation(const Vector<T>& x, const Vector<T>& bound, const Vector<T>& bound_indicator, double scaling) const
-   override;
+   [[nodiscard]] double barrier_directional_derivative(const Vector<T>& x, const Vector<T>& bound, const Vector<T>& bound_indicator) const override;
+   [[nodiscard]] double barrier_directional_derivative(const Vector<T>& x, double bound, const Vector<T>& bound_indicator) const override;
 
 protected:
    DistributedVector() = default;
@@ -286,8 +286,8 @@ public:
 
    void pushSmallComplementarityPairs(Vector<T>&, const Vector<T>&, double, double, double) override {};
 
-   [[nodiscard]] double special_operation(const Vector<T>& x, const Vector<T>& bound, const Vector<T>& bound_indicator, double scaling) const
-   override { return 0.;};
+   [[nodiscard]] double barrier_directional_derivative(const Vector<T>& x, const Vector<T>& bound, const Vector<T>& bound_indicator) const override { return 0.;};
+   [[nodiscard]] double barrier_directional_derivative(const Vector<T>& x, double bound, const Vector<T>& bound_indicator) const override { return 0.; };
 };
 
 #endif

@@ -54,17 +54,17 @@ public:
    std::unique_ptr<Vector<double>> equality_duals;
    std::unique_ptr<Vector<double>> inequality_duals;
 
-   std::unique_ptr<Vector<double>> primal_lower_bound_gap;
-   std::unique_ptr<Vector<double>> primal_lower_bound_gap_dual;
+   std::unique_ptr<Vector<double>> primal_lower_bound_gap; // v
+   std::unique_ptr<Vector<double>> primal_lower_bound_gap_dual; // gamma
 
-   std::unique_ptr<Vector<double>> primal_upper_bound_gap;
-   std::unique_ptr<Vector<double>> primal_upper_bound_gap_dual;
+   std::unique_ptr<Vector<double>> primal_upper_bound_gap; // w
+   std::unique_ptr<Vector<double>> primal_upper_bound_gap_dual; // phi
 
-   std::unique_ptr<Vector<double>> slack_lower_bound_gap;
-   std::unique_ptr<Vector<double>> slack_lower_bound_gap_dual;
+   std::unique_ptr<Vector<double>> slack_lower_bound_gap; // t
+   std::unique_ptr<Vector<double>> slack_lower_bound_gap_dual; // lambda
 
-   std::unique_ptr<Vector<double>> slack_upper_bound_gap;
-   std::unique_ptr<Vector<double>> slack_upper_bound_gap_dual;
+   std::unique_ptr<Vector<double>> slack_upper_bound_gap; // u
+   std::unique_ptr<Vector<double>> slack_upper_bound_gap_dual; // pi
 
    /** constructor in which the data and variable pointers are set to point to the given arguments */
    Variables(std::unique_ptr<Vector<double>> x_in, std::unique_ptr<Vector<double>> s_in, std::unique_ptr<Vector<double>> y_in, std::unique_ptr<Vector<double>> z_in, std::unique_ptr<Vector<double>> v_in,
@@ -77,7 +77,7 @@ public:
    /** computes mu = (t'lambda +u'pi + v'gamma + w'phi)/(mclow+mcupp+nxlow+nxupp) */
    [[nodiscard]] double mu() const;
 
-   double mustep_pd(const Variables& step, double alpha_primal, double alpha_dual);
+   double mustep_pd(const Variables& step, double alpha_primal, double alpha_dual) const;
 
    void saxpy(const Variables& b, double alpha);
    void saxpy_pd(const Variables& b, double alpha_primal, double alpha_dual);

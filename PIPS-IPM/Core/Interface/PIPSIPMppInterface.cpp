@@ -202,10 +202,17 @@ TerminationStatus PIPSIPMppInterface::run() {
    return result;
 }
 
+int PIPSIPMppInterface::n_iterations() const {
+   if(!ran_solver)
+      throw std::logic_error("Must call run() and start solution process before trying to retrieve the iteration count!");
+
+   return solver->n_iterations();
+}
+
 double PIPSIPMppInterface::getObjective() {
 
    if (!ran_solver)
-      throw std::logic_error("Must call go() and start solution process before trying to retrieve original solution");
+      throw std::logic_error("Must call run() and start solution process before trying to retrieve original solution");
 
    if (postsolver != nullptr && postsolved_variables == nullptr)
       this->postsolveComputedSolution();
@@ -233,7 +240,7 @@ void PIPSIPMppInterface::getVarsUnscaledUnperm() {
    assert(dataUnpermNotHier);
 
    if (!ran_solver)
-      throw std::logic_error("Must call go() and start solution process before trying to retrieve unscaled unpermuted solution");
+      throw std::logic_error("Must call run() and start solution process before trying to retrieve unscaled unpermuted solution");
    if (scaler) {
       std::unique_ptr<DistributedVariables> unscaled_vars{dynamic_cast<DistributedVariables*>(scaler->get_unscaled_variables(*variables))};
       unscaleUnpermNotHierVars.reset(presolved_problem->getVarsUnperm(*unscaled_vars, *dataUnpermNotHier));
@@ -248,7 +255,7 @@ void PIPSIPMppInterface::getResidsUnscaledUnperm() {
    assert(dataUnpermNotHier);
 
    if (!ran_solver)
-      throw std::logic_error("Must call go() and start solution process before trying to retrieve unscaled unpermuted residuals");
+      throw std::logic_error("Must call run() and start solution process before trying to retrieve unscaled unpermuted residuals");
    if (scaler) {
       std::unique_ptr<DistributedResiduals> unscaled_resids{dynamic_cast<DistributedResiduals*>(scaler->get_unscaled_residuals(*residuals))};
       unscaleUnpermNotHierResids.reset(presolved_problem->getResidsUnperm(*unscaled_resids, *dataUnpermNotHier));

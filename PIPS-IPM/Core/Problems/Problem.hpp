@@ -55,25 +55,15 @@ public:
    /** print the problem data */
    virtual void print();
 
-   Vector<double>& xupperBound() { return *primal_upper_bounds; };
+   Vector<double>& x_lower_bound() { return *primal_lower_bounds; };
+   Vector<double>& x_upper_bound() { return *primal_upper_bounds; };
+   Vector<double>& s_lower_bound() { return *inequality_lower_bounds; };
+   Vector<double>& s_upper_bound() { return *inequality_upper_bounds; };
 
-   [[nodiscard]] const Vector<double>& xupperBound() const { return *primal_upper_bounds; };
-
-   Vector<double>& ixupperBound() { return *primal_upper_bound_indicators; };
-
-   Vector<double>& xlowerBound() { return *primal_lower_bounds; };
-
-   [[nodiscard]] const Vector<double>& xlowerBound() const { return *primal_lower_bounds; };
-
-   Vector<double>& ixlowerBound() { return *primal_lower_bound_indicators; };
-
-   Vector<double>& supperBound() { return *inequality_upper_bounds; };
-
-   Vector<double>& isupperBound() { return *inequality_upper_bound_indicators; };
-
-   Vector<double>& slowerBound() { return *inequality_lower_bounds; };
-
-   Vector<double>& islowerBound() { return *inequality_lower_bound_indicators; };
+   Vector<double>& has_x_lower_bound() { return *primal_lower_bound_indicators; };
+   Vector<double>& has_x_upper_bound() { return *primal_upper_bound_indicators; };
+   Vector<double>& has_s_lower_bound() { return *inequality_lower_bound_indicators; };
+   Vector<double>& has_s_upper_bound() { return *inequality_upper_bound_indicators; };
 
    Vector<double>& scale() { return *sc; };
 

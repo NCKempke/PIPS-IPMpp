@@ -39,7 +39,7 @@ TerminationStatus InteriorPointMethod::solve(Problem& problem, Variables& iterat
 
    TerminationStatus status;
    bool termination = false;
-   int iteration = 0;
+   this->iteration = 0;
    while (!termination) {
       if (iteration >= max_iterations - 1) {
          status = TerminationStatus::MAX_ITS_EXCEEDED;
@@ -56,21 +56,21 @@ TerminationStatus InteriorPointMethod::solve(Problem& problem, Variables& iterat
 
          // termination test
          const auto [duality_gap, residual_norm] = this->compute_unscaled_gap_and_residual_norm(residuals);
-         this->update_history(duality_gap, residual_norm, iteration, mu);
-         status = this->compute_status(duality_gap, residual_norm, iteration, mu);
+         this->update_history(duality_gap, residual_norm, this->iteration, mu);
+         status = this->compute_status(duality_gap, residual_norm, this->iteration, mu);
 
          if (status == TerminationStatus::NOT_FINISHED) {
             // run Gondzio's multiple corrector scheme
             this->factory.iterate_started();
-            this->mehrotra_strategy->corrector_predictor(problem, iterate, residuals, *step, *linear_system, iteration);
+            this->mehrotra_strategy->corrector_predictor(problem, iterate, residuals, *step, *linear_system, this->iteration);
             this->factory.iterate_ended();
-            iteration++;
+            this->iteration++;
          }
          else {
             termination = true;
             residuals.evaluate(problem, iterate);
             if (print_level >= 10) {
-               this->mehrotra_strategy->print_statistics(&problem, &iterate, &residuals, dnorm, this->mehrotra_strategy->sigma, iteration, iterate.mu(), status, 1);
+               this->mehrotra_strategy->print_statistics(&problem, &iterate, &residuals, dnorm, this->mehrotra_strategy->sigma, this->iteration, iterate.mu(), status, 1);
             }
          }
       }
@@ -79,14 +79,25 @@ TerminationStatus InteriorPointMethod::solve(Problem& problem, Variables& iterat
 }
 
 double InteriorPointMethod::barrier_directional_derivative(Problem& problem, Variables& iterate, Variables& direction) {
-   double mu = iterate.mu();
-   double result = problem.g->dotProductWith(*direction.primals);
+   double result = 0.;
    if (0 < problem.number_primal_lower_bounds) {
-      result -= direction.primals->special_operation(*iterate.primals, *problem.primal_lower_bounds, *problem.primal_lower_bound_indicators, mu);
+      result -= direction.primal_lower_bound_gap->barrier_directional_derivative(*iterate.primal_lower_bound_gap, 0.,
+            *problem.primal_lower_bound_indicators);
    }
    if (0 < problem.number_primal_upper_bounds) {
-      result -= direction.primals->special_operation(*iterate.primals, *problem.primal_upper_bounds, *problem.primal_upper_bound_indicators, mu);
+      result -= direction.primal_upper_bound_gap->barrier_directional_derivative(*iterate.primal_upper_bound_gap, 0.,
+            *problem.primal_upper_bound_indicators);
    }
+   if (0 < problem.number_inequality_lower_bounds) { // t
+      result -= direction.slack_lower_bound_gap->barrier_directional_derivative(*iterate.slack_lower_bound_gap, 0.,
+            *problem.inequality_lower_bound_indicators);
+   }
+   if (0 < problem.number_inequality_upper_bounds) { // u
+      result -= direction.slack_upper_bound_gap->barrier_directional_derivative(*iterate.slack_upper_bound_gap, 0.,
+            *problem.inequality_upper_bound_indicators);
+   }
+   result *= iterate.mu();
+   result += problem.g->dotProductWith(*direction.primals);
    return result;
 }
 
