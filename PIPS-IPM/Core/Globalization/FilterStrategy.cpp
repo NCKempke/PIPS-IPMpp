@@ -22,8 +22,7 @@ void FilterStrategy::initialize(Residuals& initial_residuals) {
 /* check acceptability of step(s) (filter & sufficient reduction)
  * precondition: feasible step
  * */
-bool FilterStrategy::check_acceptance(Variables& current_iterate, Residuals& current_residuals, Variables& trial_iterate, Residuals& trial_residuals,
-      double predicted_reduction) {
+bool FilterStrategy::check_acceptance(Residuals& current_residuals, Residuals& trial_residuals, double predicted_reduction) {
    const double current_feasibility = current_residuals.feasibility_measure();
    const double current_optimality = current_residuals.optimality_measure();
    const double trial_feasibility = trial_residuals.feasibility_measure();
@@ -31,9 +30,6 @@ bool FilterStrategy::check_acceptance(Variables& current_iterate, Residuals& cur
 
    if (verbose) std::cout << "Filter strategy: feasibility " << trial_feasibility << " vs " << current_feasibility << "\n";
    if (verbose) std::cout << "Filter strategy: objective " << trial_optimality << " vs " << current_optimality << "\n";
-
-   // double current_mu = current_iterate.mu();
-   // double trial_mu = trial_iterate.mu();
 
    bool accept = false;
    /* check acceptance */
