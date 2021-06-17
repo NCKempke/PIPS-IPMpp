@@ -736,6 +736,43 @@ void DistributedMatrix::getNnzPerRow(Vector<int>& nnzVec, Vector<int>* linkParen
    }
 }
 
+void DistributedMatrix::sum_transform_rows(Vector<double>& result_, const std::function<double(const double&)>& transform) const {
+   const bool at_root = !children.empty();
+
+   auto& result = dynamic_cast<DistributedVector<double>&>(result_);
+
+   if (at_root)
+   {
+      assert(amatEmpty());
+      assert(result.children.size() == children.size());
+   }
+
+   const bool has_linking = at_root ? result.last != nullptr : result.parent->last != nullptr;
+
+   Bmat->sum_transform_rows(*result.first, transform);
+
+   if (!amatEmpty()) {
+      assert(!Bmat->is_a(kDistributedMatrix));
+      Amat->sum_transform_rows(*result.first, transform);
+   }
+
+   if (has_linking) {
+      if (at_root && iAmSpecial(iAmDistrib, mpiComm)) {
+         Blmat->sum_transform_rows(*result.last, transform);
+      } else {
+         Blmat->sum_transform_rows(*result.parent->last, transform);
+      }
+   }
+
+   for (size_t it = 0; it < children.size(); it++){
+      children[it]->sum_transform_rows(*(result.children[it]), transform);
+   }
+
+   if (at_root && iAmDistrib) {
+      PIPS_MPIsumArrayInPlace(dynamic_cast<SimpleVector<double>&>(*result.last).elements(), result.last->length(), mpiComm);
+   }
+}
+
 void DistributedMatrix::getNnzPerCol(Vector<int>& nnzVec, Vector<int>* linkParent) const {
    assert(hasSparseMatrices());
    auto& nnzVecStoch = dynamic_cast<DistributedVector<int>&>(nnzVec);
@@ -894,7 +931,6 @@ void DistributedMatrix::getColMinMaxVecChild(bool getMin, bool initializeVec, co
    if (has_linking)
       Blmat->getColMinMaxVec(getMin, false, rowScaleParent, *minmaxVec.first);
 }
-
 
 void DistributedMatrix::addRowSums(Vector<double>& sumVec, Vector<double>* linkParent) const {
    if (pipsipmpp_options::get_bool_parameter("HIERARCHICAL"))

@@ -39,6 +39,8 @@ public:
 
    void putZeros();
 
+   void sum_transform_rows(Vector<double>& result, const std::function<double(const double&)>& transform) const override;
+
    void getDiagonal(Vector<double>& vec) const override;
    void setToDiagonal(const Vector<double>& vec) override;
 
