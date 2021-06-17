@@ -245,19 +245,15 @@ int main(int argc, char** argv) {
    FNNZ fsni = &fsizeni;
    FNNZ fsmA = &fsizemA;
    FNNZ fsmC = &fsizemC;
-#if defined(LINKCONSTR)
    FNNZ fsmBL = &fsizemBL;
    FNNZ fsmDL = &fsizemDL;
-#endif
    FNNZ fnnzQ = &fnonzeroQ;
    FNNZ fnnzA = &fnonzeroA;
    FNNZ fnnzB = &fnonzeroB;
    FNNZ fnnzC = &fnonzeroC;
    FNNZ fnnzD = &fnonzeroD;
-#if defined(LINKCONSTR)
    FNNZ fnnzBL = &fnonzeroBL;
    FNNZ fnnzDL = &fnonzeroDL;
-#endif
    FVEC fc = &fvecc;
    FVEC fxlow = &fvecxlow;
    FVEC fixlow = &fvecixlow;
@@ -268,76 +264,48 @@ int main(int argc, char** argv) {
    FVEC ficlow = &fveciclow;
    FVEC fcupp = &fveccupp;
    FVEC ficupp = &fvecicupp;
-#if defined(LINKCONSTR)
    FVEC fbL = &fvecbL;
    FVEC fdlow = &fvecdlow;
    FVEC fidlow = &fvecidlow;
    FVEC fdupp = &fvecdupp;
    FVEC fidupp = &fvecidupp;
-#endif
 
    FMAT fA = &fmatA;
    FMAT fB = &fmatB;
    FMAT fC = &fmatC;
    FMAT fD = &fmatD;
-#if defined(LINKCONSTR)
    FMAT fBL = &fmatBL;
    FMAT fDL = &fmatDL;
-#endif
    FMAT fQ = &fmatQ;
 
 #if defined(GMS_PIPS)
    //build the problem tree
    DistributedInputTree::DistributedInputNode data(blocks, 0,
-#if defined(LINKCONSTR)
          fsni, fsmA, fsmBL, fsmC, fsmDL,
-#else
-         fsni, fsmA, fsmC,
-#endif
          fQ, fnnzQ, fc, fA, fnnzA, fB, fnnzB,
-#if defined(LINKCONSTR)
          fBL, fnnzBL,
-#endif
          fb,
-#if defined(LINKCONSTR)
          fbL,
-#endif
          fC, fnnzC, fD, fnnzD,
-#if defined(LINKCONSTR)
          fDL, fnnzDL,
-#endif
          fclow, ficlow, fcupp, ficupp,
-#if defined(LINKCONSTR)
          fdlow, fidlow, fdupp, fidupp,
-#endif
          fxlow, fixlow, fxupp, fixupp, false);
-   auto* root = new DistributedInputTree(data);
+   std::unique_ptr<DistributedInputTree> root = std::make_unique<DistributedInputTree>(data);
 #endif
    for (int blk = 1; blk < numBlocks; blk++) {
 
 #if defined(GMS_PIPS)
       DistributedInputTree::DistributedInputNode data(blocks, blk,
-#if defined(LINKCONSTR)
             fsni, fsmA, fsmBL, fsmC, fsmDL,
-#else
-            fsni, fsmA, fsmC,
-#endif
             fQ, fnnzQ, fc, fA, fnnzA, fB, fnnzB,
-#if defined(LINKCONSTR)
             fBL, fnnzBL,
-#endif
             fb,
-#if defined(LINKCONSTR)
             fbL,
-#endif
             fC, fnnzC, fD, fnnzD,
-#if defined(LINKCONSTR)
             fDL, fnnzDL,
-#endif
             fclow, ficlow, fcupp, ficupp,
-#if defined(LINKCONSTR)
             fdlow, fidlow, fdupp, fidupp,
-#endif
             fxlow, fixlow, fxupp, fixupp, false);
 
       root->AddChild(new DistributedInputTree(data));
@@ -357,12 +325,7 @@ int main(int argc, char** argv) {
    fLog = fopen(fbuf, "w+");
    fprintf(fLog, "PIPS Log for gmsRank %d\n", gmsRank);
 #endif
-   if (gmsRank == 0)
-#if defined(LINKCONSTR)
-      std::cout << "Using version with linking constraint.\n";
-#else
-   std::cout << "Using version without linking constraint.\n";
-#endif
+
    if (gmsRank == 0)
       std::cout << "Using a total of " << size << " MPI processes.\n";
 
@@ -395,7 +358,7 @@ int main(int argc, char** argv) {
    }
 
    // create the PIPS-IPM++ interface
-   PIPSIPMppInterface pipsIpm(root, primal_dual_step_length ? MehrotraStrategyType::PRIMAL_DUAL : MehrotraStrategyType::PRIMAL, MPI_COMM_WORLD, scaler_type,
+   PIPSIPMppInterface pipsIpm(root.get(), primal_dual_step_length ? MehrotraStrategyType::PRIMAL_DUAL : MehrotraStrategyType::PRIMAL, MPI_COMM_WORLD, scaler_type,
          presolve ? PresolverType::PRESOLVER_STOCH : PresolverType::PRESOLVER_NONE);
 
    if (gmsRank == 0) {
@@ -435,10 +398,6 @@ int main(int argc, char** argv) {
       else
          std::cout << "Other error writing solution: rc=" << rc << "\n";
    }
-
-   // free memory
-   delete root;
-
 #endif
 
 

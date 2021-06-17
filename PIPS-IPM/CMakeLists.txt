@@ -140,7 +140,6 @@ target_compile_options(gmspips
 target_compile_definitions(gmspips
         PRIVATE GMS_PIPS
         PRIVATE GMS_MPI
-        PRIVATE LINKCONSTR
         ) # -DGMS_LOG
 
 target_link_libraries(gmspips
