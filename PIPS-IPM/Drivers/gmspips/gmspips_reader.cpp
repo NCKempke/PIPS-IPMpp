@@ -19,7 +19,7 @@ extern "C" typedef int (* FVEC)(void* user_data, int id, double* vec, int len);
 
 extern "C" {
 
-static int gmsRank{0};
+static int gms_rank{0};
 static bool allGDX{false};
 static char fileName[MAX_PATH_LENGHT];
 static char GDXDirectory[MAX_PATH_LENGHT];
@@ -30,7 +30,7 @@ FILE* fLog;
    if (!blocks[blk])                                                                 \
    {                                                                                 \
       int rc;                                                                        \
-      fprintf(fLog,"Block %d read on gms_rank %d\n", blk, gmsRank);                   \
+      fprintf(fLog,"Block %d read on gms_rank %d\n", blk, gms_rank);                   \
       blocks[blk] = (GMSPIPSBlockData_t*) malloc(sizeof(GMSPIPSBlockData_t));        \
       if ( !allGDX )                                                                 \
       {                                                                              \
@@ -41,7 +41,7 @@ FILE* fLog;
       }                                                                              \
       else                                                                           \
          rc = readBlock(numBlocks,blk,0,1,fileName,&GDXDirectory[0],blocks[blk]);    \
-      if (rc) {fprintf(fLog,"Block %d read on gms_rank %d failed rc=%d\n", blk, gmsRank, rc); return rc;} \
+      if (rc) {fprintf(fLog,"Block %d read on gms_rank %d failed rc=%d\n", blk, gms_rank, rc); return rc;} \
    }
 
 #define nCB(nType)                                                   \
@@ -173,7 +173,7 @@ gmspips_reader::gmspips_reader(const std::string& path_to_problem, const std::st
 
    blocks.resize(n_blocks);
 
-   gmsRank = PIPS_MPIgetRank();
+   gms_rank = PIPS_MPIgetRank();
 
    const std::string gdx_end = ".gdx";
    if (gdx_end.size() <= path_to_problem.size() && std::equal(gdx_end.rbegin(), gdx_end.rend(), path_to_problem.rbegin()))
@@ -186,9 +186,9 @@ gmspips_reader::gmspips_reader(const std::string& path_to_problem, const std::st
    strcpy(GDXDirectory, path_to_gams.c_str());
 
 
-   const std::string log_file = log_reading ? "log%d.txt" + gmsRank : "/dev/null";
+   const std::string log_file = log_reading ? "log%d.txt" + gms_rank : "/dev/null";
    fLog = fopen(log_file.c_str(), "w+");
-   fprintf(fLog, "PIPS Log for gms_rank %d\n", gmsRank);
+   fprintf(fLog, "PIPS Log for gms_rank %d\n", gms_rank);
 
    numBlocks = n_blocks;
 }
@@ -238,15 +238,15 @@ DistributedInputTree* gmspips_reader::read_problem() {
    FMAT fQ = &fmatQ;
 
    //build the problem tree
-   DistributedInputTree::DistributedInputNode data(blocks.data(), 0, fsni, fsmA, fsmBL, fsmC, fsmDL, fQ, fnnzQ, fc, fA, fnnzA, fB, fnnzB, fBL, fnnzBL, fb, fbL,
+   std::unique_ptr<DistributedInputTree::DistributedInputNode> data_root = std::make_unique<DistributedInputTree::DistributedInputNode>(blocks.data(), 0, fsni, fsmA, fsmBL, fsmC, fsmDL, fQ, fnnzQ, fc, fA, fnnzA, fB, fnnzB, fBL, fnnzBL, fb, fbL,
          fC, fnnzC, fD, fnnzD, fDL, fnnzDL, fclow, ficlow, fcupp, ficupp, fdlow, fidlow, fdupp, fidupp, fxlow, fixlow, fxupp, fixupp, false);
-   DistributedInputTree* root = new DistributedInputTree(data);
+   auto* root = new DistributedInputTree(std::move(data_root));
 
    for (int blk = 1; blk < numBlocks; blk++) {
-      DistributedInputTree::DistributedInputNode data(blocks.data(), blk, fsni, fsmA, fsmBL, fsmC, fsmDL, fQ, fnnzQ, fc, fA, fnnzA, fB, fnnzB, fBL, fnnzBL, fb,
+      std::unique_ptr<DistributedInputTree::DistributedInputNode> data = std::make_unique<DistributedInputTree::DistributedInputNode>(blocks.data(), blk, fsni, fsmA, fsmBL, fsmC, fsmDL, fQ, fnnzQ, fc, fA, fnnzA, fB, fnnzB, fBL, fnnzBL, fb,
             fbL, fC, fnnzC, fD, fnnzD, fDL, fnnzDL, fclow, ficlow, fcupp, ficupp, fdlow, fidlow, fdupp, fidupp, fxlow, fixlow, fxupp, fixupp, false);
 
-      root->AddChild(new DistributedInputTree(data));
+      root->add_child(std::make_unique<DistributedInputTree>(std::move(data)));
    }
 
    return root;

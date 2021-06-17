@@ -2,6 +2,7 @@
 #define STOCH_INPUT_TREE
 
 #include <vector>
+#include <memory>
 
 /**
  * The following types define callback functions passed by user to pass 
@@ -117,22 +118,16 @@ public:
 
 public:
 
-   explicit DistributedInputTree(const DistributedInputNode& root);
+   explicit DistributedInputTree(std::unique_ptr<DistributedInputNode> root);
+   ~DistributedInputTree() = default;
 
-   explicit DistributedInputTree(DistributedInputNode* root);
+   void add_child(std::unique_ptr<DistributedInputNode> node);
 
-   virtual ~DistributedInputTree();
+   void add_child(std::unique_ptr<DistributedInputTree> subTree);
 
-   void AddChild(const DistributedInputNode& node);
-
-   void AddChild(DistributedInputTree* subTree);
-
-   std::vector<DistributedInputTree*> children;
 protected:
-   DistributedInputTree();
-
-   DistributedInputNode* nodeInput{};
-
+   std::unique_ptr<DistributedInputNode> nodeInput{};
+   std::vector<std::unique_ptr<DistributedInputTree>> children;
 };
 
 #endif

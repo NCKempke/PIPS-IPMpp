@@ -264,7 +264,7 @@ int main(int argc, char** argv) {
    FMAT fQ = &fmatQ;
 
    //build the problem tree
-   DistributedInputTree::DistributedInputNode root_data(blocks, 0,
+   std::unique_ptr<DistributedInputTree::DistributedInputNode> root_data = std::make_unique<DistributedInputTree::DistributedInputNode>(blocks, 0,
          fsni, fsmA, fsmBL, fsmC, fsmDL,
          fQ, fnnzQ, fc, fA, fnnzA, fB, fnnzB,
          fBL, fnnzBL,
@@ -275,9 +275,11 @@ int main(int argc, char** argv) {
          fclow, ficlow, fcupp, ficupp,
          fdlow, fidlow, fdupp, fidupp,
          fxlow, fixlow, fxupp, fixupp, false);
-   std::unique_ptr<DistributedInputTree> root = std::make_unique<DistributedInputTree>(root_data);
+
+   std::unique_ptr<DistributedInputTree> root = std::make_unique<DistributedInputTree>(std::move(root_data));
+
    for (int blk = 1; blk < numBlocks; blk++) {
-      DistributedInputTree::DistributedInputNode data(blocks, blk,
+      std::unique_ptr<DistributedInputTree::DistributedInputNode> data = std::make_unique<DistributedInputTree::DistributedInputNode>(blocks, blk,
             fsni, fsmA, fsmBL, fsmC, fsmDL,
             fQ, fnnzQ, fc, fA, fnnzA, fB, fnnzB,
             fBL, fnnzBL,
@@ -289,7 +291,7 @@ int main(int argc, char** argv) {
             fdlow, fidlow, fdupp, fidupp,
             fxlow, fixlow, fxupp, fixupp, false);
 
-      root->AddChild(new DistributedInputTree(data));
+      root->add_child(std::make_unique<DistributedInputTree>(std::move(data)));
    }
 
    gms_rank = PIPS_MPIgetRank();

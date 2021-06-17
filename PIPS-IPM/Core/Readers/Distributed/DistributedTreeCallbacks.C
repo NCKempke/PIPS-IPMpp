@@ -34,14 +34,14 @@ DistributedTreeCallbacks::DistributedTreeCallbacks() : print_tree_sizes_on_readi
 }
 
 DistributedTreeCallbacks::DistributedTreeCallbacks(DistributedInputTree* inputTree)
-      : DistributedTree(), print_tree_sizes_on_reading{pipsipmpp_options::get_bool_parameter("PRINT_TREESIZES_ON_READ")}, data{inputTree->nodeInput} {
+      : DistributedTree(), print_tree_sizes_on_reading{pipsipmpp_options::get_bool_parameter("PRINT_TREESIZES_ON_READ")}, data{inputTree->nodeInput.get()} {
    if (-1 == rankMe)
       rankMe = PIPS_MPIgetRank();
    if (-1 == numProcs)
       numProcs = PIPS_MPIgetSize();
 
    for (auto & it : inputTree->children)
-      children.push_back(new DistributedTreeCallbacks(it));
+      children.push_back(new DistributedTreeCallbacks(it.get()));
 }
 
 void DistributedTreeCallbacks::addChild(DistributedTreeCallbacks* child) {

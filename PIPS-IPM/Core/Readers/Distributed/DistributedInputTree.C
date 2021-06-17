@@ -4,29 +4,15 @@
 //***********************************************************
 //************************** TREE ***************************
 //***********************************************************
-DistributedInputTree::DistributedInputTree() : nodeInput(nullptr) {}
-
-DistributedInputTree::DistributedInputTree(const DistributedInputNode& root) {
-   nodeInput = new DistributedInputNode(root);
+DistributedInputTree::DistributedInputTree(std::unique_ptr<DistributedInputNode> root) : nodeInput{std::move(root)} {
 }
 
-DistributedInputTree::DistributedInputTree(DistributedInputNode* root) {
-   nodeInput = root;
+void DistributedInputTree::add_child(std::unique_ptr<DistributedInputNode> node) {
+   children.push_back(std::make_unique<DistributedInputTree>(std::move(node)));
 }
 
-DistributedInputTree::~DistributedInputTree() {
-   if (nodeInput)
-      delete nodeInput;
-   for (size_t it = 0; it < children.size(); it++)
-      delete children[it];
-}
-
-void DistributedInputTree::AddChild(const DistributedInputNode& node) {
-   children.push_back(new DistributedInputTree(node));
-}
-
-void DistributedInputTree::AddChild(DistributedInputTree* subTree) {
-   children.push_back(subTree);
+void DistributedInputTree::add_child(std::unique_ptr<DistributedInputTree> subTree) {
+   children.push_back(std::move(subTree));
 }
 
 //***********************************************************
