@@ -198,6 +198,8 @@ gmspips_reader::~gmspips_reader() {
       freeBlock(block);
       free(block);
    }
+
+   fclose(fLog);
 }
 
 DistributedInputTree* gmspips_reader::read_problem() {

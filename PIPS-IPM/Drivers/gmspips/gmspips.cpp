@@ -8,6 +8,7 @@
 #include "mpi.h"
 
 #include "pipsdef.h"
+#include "gmspips_reader.hpp"
 #include "gmspipsio.h"
 
 #include <cstdio>
@@ -15,164 +16,6 @@
 #include <cassert>
 #include <cstring>
 #include <iostream>
-
-extern "C" typedef int (* FNNZ)(void* user_data, int id, int* nnz);
-
-/* Row-major format */
-extern "C" typedef int (* FMAT)(void* user_data, int id, int* krowM, int* jcolM, double* M);
-
-extern "C" typedef int (* FVEC)(void* user_data, int id, double* vec, int len);
-
-extern "C" {
-
-static int gms_rank = 0;
-static bool allGDX = false;
-static char fileName[256];
-static char GDXDirectory[256];
-static char* pGDXDirectory{};
-static int numBlocks = 0;
-FILE* fLog;
-
-#define checkAndAlloc(blk)                                                        \
-if (!blocks[blk])                                                                 \
-{                                                                                 \
-   int rc;                                                                        \
-   fprintf(fLog,"Block %d read on gms_rank %d\n", blk, gms_rank);                   \
-   blocks[blk] = (GMSPIPSBlockData_t*) malloc(sizeof(GMSPIPSBlockData_t));        \
-   if ( !allGDX )                                                                 \
-   {                                                                              \
-      char fname[256];                                                            \
-      int r = snprintf(fname, 256, "%s%d.gdx", fileName, blk);                    \
-      if( r < 0 )  abort();                                                       \
-      rc = readBlock(numBlocks,blk,0,1,fname,pGDXDirectory,blocks[blk]);          \
-   }                                                                              \
-   else                                                                           \
-      rc = readBlock(numBlocks,blk,0,1,fileName,pGDXDirectory,blocks[blk]);       \
-   if (rc) {fprintf(fLog,"Block %d read on gms_rank %d failed rc=%d\n", blk, gms_rank, rc); return rc;} \
-}
-
-#define nCB(nType)                                                   \
-int fsize##nType(void* user_data, int id, int* nnz)                  \
-{                                                                    \
-   GMSPIPSBlockData_t** blocks = (GMSPIPSBlockData_t**) user_data;   \
-   checkAndAlloc(id);                                                \
-   GMSPIPSBlockData_t* blk = blocks[id];                             \
-   assert(blk);                                                      \
-   *nnz = blk->nType;                                                \
-   fprintf(fLog,"nCB blk=%d " #nType " %d\n",id,*nnz);               \
-   return 0;                                                         \
-}
-
-nCB(ni)
-nCB(mA)
-nCB(mC)
-nCB(mBL)
-nCB(mDL)
-
-#define nnzCB(nnzType)                                               \
-int fnonzero##nnzType(void* user_data, int id, int* nnz)             \
-{                                                                    \
-   GMSPIPSBlockData_t** blocks = (GMSPIPSBlockData_t**) user_data;   \
-   checkAndAlloc(id);                                                \
-   GMSPIPSBlockData_t* blk = blocks[id];                             \
-   assert(blk);                                                      \
-   *nnz = blk->nnz##nnzType;                                         \
-   fprintf(fLog,"nnzCB blk=%d " #nnzType " %d\n",id,*nnz);           \
-   return 0;                                                         \
-}
-
-nnzCB(A)
-nnzCB(B)
-nnzCB(C)
-nnzCB(D)
-nnzCB(BL)
-nnzCB(DL)
-
-#define vecCB(vecType, size)                                         \
-int fvec##vecType(void* user_data, int id, double* vec, int len)     \
-{                                                                    \
-   GMSPIPSBlockData_t** blocks = (GMSPIPSBlockData_t**) user_data;   \
-   checkAndAlloc(id);                                                \
-   GMSPIPSBlockData_t* blk = blocks[id];                             \
-   assert(blk);                                                      \
-   fprintf(fLog,"vecCB blk=%d " #vecType " len=%d allocLen %d\n",id,blk->size,len); \
-   assert(len == blk->size);                                         \
-   for( int i = 0; i < len; i++ ) {                                  \
-      vec[i] = blk->vecType[i];                                      \
-      fprintf(fLog,"  i=%d val=%g\n",i,vec[i]);                      \
-   }                                                                 \
-   return 0;                                                         \
-}
-
-vecCB(c, ni)
-vecCB(xlow, ni)
-vecCB(ixlow, ni)
-vecCB(xupp, ni)
-vecCB(ixupp, ni)
-vecCB(b, mA)
-vecCB(clow, mC)
-vecCB(iclow, mC)
-vecCB(cupp, mC)
-vecCB(icupp, mC)
-vecCB(bL, mBL)
-vecCB(dlow, mDL)
-vecCB(idlow, mDL)
-vecCB(dupp, mDL)
-vecCB(idupp, mDL)
-
-
-#define matCB(mat, mmat)                                                   \
-int fmat##mat(void* user_data, int id, int* krowM, int* jcolM, double* M) \
-{                                                                         \
-   GMSPIPSBlockData_t** blocks = (GMSPIPSBlockData_t**) user_data;        \
-   checkAndAlloc(id);                                                     \
-   GMSPIPSBlockData_t* blk = blocks[id];                                  \
-   assert(blk);                                                           \
-   fprintf(fLog,"matCB blk=%d " #mat " mLen %d nzLen %ld\n",id,blk->m##mmat,blk->nnz##mat); \
-   if ( 0==blk->m##mmat )                                                 \
-   {                                                                      \
-     fprintf(fLog," empty\n"); \
-     krowM[0] = 0;                                                        \
-     return 0;                                                            \
-   }                                                                      \
-                                                                          \
-   assert(blk->rm##mat);                                                  \
-   for( int i = 0; i <= blk->m##mmat; i++ ) {                             \
-      krowM[i] = blk->rm##mat[i];                                         \
-      fprintf(fLog,"  i=%d krowM=%d\n",i,krowM[i]);                       \
-   }                                                                      \
-                                                                          \
-   for( int k = 0; k < blk->nnz##mat; k++ ) {                             \
-      jcolM[k] = blk->ci##mat[k];                                         \
-      M[k] = blk->val##mat[k];                                            \
-      fprintf(fLog,"  k=%d jcolM=%d M=%g\n",k,jcolM[k],M[k]);             \
-   }                                                                      \
-   return 0;                                                              \
-}
-
-matCB(A, A)
-matCB(B, A)
-matCB(C, C)
-matCB(D, C)
-matCB(BL, BL)
-matCB(DL, DL)
-
-int fnonzeroQ(void*, int, int* nnz) {
-   *nnz = 0;
-   return 0;
-}
-
-int fmatQ(void* user_data, int id, int* krowM, int*, double*) {
-   GMSPIPSBlockData_t* blk = ((GMSPIPSBlockData_t**) user_data)[id];
-   assert(blk);
-
-   for (int i = 0; i <= blk->ni; i++)
-      krowM[i] = 0;
-
-   return 0;
-}
-
-}
 
 static void setParams(ScalerType& scaler_type, bool& stepDiffLp, bool& presolve, bool& printsol, bool& hierarchical, const char* paramname) {
    if (strcmp(paramname, "scale") == 0 || strcmp(paramname, "scaleEqui") == 0)
@@ -194,13 +37,12 @@ static void setParams(ScalerType& scaler_type, bool& stepDiffLp, bool& presolve,
 int main(int argc, char** argv) {
 
    MPI_Init(&argc, &argv);
+   const int my_rank = PIPS_MPIgetRank();
+
    MPI_Barrier(MPI_COMM_WORLD);
 
    const double t0 = MPI_Wtime();
 
-   initGMSPIPSIO();
-
-   GMSPIPSBlockData_t** blocks;
    ScalerType scaler_type = ScalerType::SCALER_NONE;
 
    bool primal_dual_step_length = false;
@@ -214,113 +56,37 @@ int main(int argc, char** argv) {
       exit(1);
    }
 
-   allGDX = strstr(argv[2], ".gdx") != nullptr;
-   numBlocks = atoi(argv[1]);
-   strcpy(fileName, argv[2]);
-   if (argc >= 4) {
-      strcpy(GDXDirectory, argv[3]);
-      pGDXDirectory = &GDXDirectory[0];
-   }
+   const int numBlocks = atoi(argv[1]);
+   const std::string file_name{argv[2]};
+   const std::string path_to_gams{argv[3]};
 
-   for (int i = 5; i <= argc; i++)
+   for (int i = 5; i <= argc; i++) {
       setParams(scaler_type, primal_dual_step_length, presolve, printsol, hierarchical, argv[i - 1]);
-
-   blocks = (GMSPIPSBlockData_t**) calloc(numBlocks, sizeof(GMSPIPSBlockData_t*));
-
-   FNNZ fsni = &fsizeni;
-   FNNZ fsmA = &fsizemA;
-   FNNZ fsmC = &fsizemC;
-   FNNZ fsmBL = &fsizemBL;
-   FNNZ fsmDL = &fsizemDL;
-   FNNZ fnnzQ = &fnonzeroQ;
-   FNNZ fnnzA = &fnonzeroA;
-   FNNZ fnnzB = &fnonzeroB;
-   FNNZ fnnzC = &fnonzeroC;
-   FNNZ fnnzD = &fnonzeroD;
-   FNNZ fnnzBL = &fnonzeroBL;
-   FNNZ fnnzDL = &fnonzeroDL;
-   FVEC fc = &fvecc;
-   FVEC fxlow = &fvecxlow;
-   FVEC fixlow = &fvecixlow;
-   FVEC fxupp = &fvecxupp;
-   FVEC fixupp = &fvecixupp;
-   FVEC fb = &fvecb;
-   FVEC fclow = &fvecclow;
-   FVEC ficlow = &fveciclow;
-   FVEC fcupp = &fveccupp;
-   FVEC ficupp = &fvecicupp;
-   FVEC fbL = &fvecbL;
-   FVEC fdlow = &fvecdlow;
-   FVEC fidlow = &fvecidlow;
-   FVEC fdupp = &fvecdupp;
-   FVEC fidupp = &fvecidupp;
-
-   FMAT fA = &fmatA;
-   FMAT fB = &fmatB;
-   FMAT fC = &fmatC;
-   FMAT fD = &fmatD;
-   FMAT fBL = &fmatBL;
-   FMAT fDL = &fmatDL;
-   FMAT fQ = &fmatQ;
-
-   //build the problem tree
-   std::unique_ptr<DistributedInputTree::DistributedInputNode> root_data = std::make_unique<DistributedInputTree::DistributedInputNode>(blocks, 0,
-         fsni, fsmA, fsmBL, fsmC, fsmDL,
-         fQ, fnnzQ, fc, fA, fnnzA, fB, fnnzB,
-         fBL, fnnzBL,
-         fb,
-         fbL,
-         fC, fnnzC, fD, fnnzD,
-         fDL, fnnzDL,
-         fclow, ficlow, fcupp, ficupp,
-         fdlow, fidlow, fdupp, fidupp,
-         fxlow, fixlow, fxupp, fixupp, false);
-
-   std::unique_ptr<DistributedInputTree> root = std::make_unique<DistributedInputTree>(std::move(root_data));
-
-   for (int blk = 1; blk < numBlocks; blk++) {
-      std::unique_ptr<DistributedInputTree::DistributedInputNode> data = std::make_unique<DistributedInputTree::DistributedInputNode>(blocks, blk,
-            fsni, fsmA, fsmBL, fsmC, fsmDL,
-            fQ, fnnzQ, fc, fA, fnnzA, fB, fnnzB,
-            fBL, fnnzBL,
-            fb,
-            fbL,
-            fC, fnnzC, fD, fnnzD,
-            fDL, fnnzDL,
-            fclow, ficlow, fcupp, ficupp,
-            fdlow, fidlow, fdupp, fidupp,
-            fxlow, fixlow, fxupp, fixupp, false);
-
-      root->add_child(std::make_unique<DistributedInputTree>(std::move(data)));
    }
 
-   gms_rank = PIPS_MPIgetRank();
-   const int size = PIPS_MPIgetSize();
+   if (my_rank == 0) {
+      std::cout << "reading " << file_name << "\n";
+      std::cout << "GAMS located at " << path_to_gams << "\n";
+   }
 
-   char fbuf[256];
-#if defined (GMS_LOG)
-   sprintf(fbuf,"log%d.txt", gms_rank);
-#else
-   sprintf(fbuf, "/dev/null");
-#endif
-   fLog = fopen(fbuf, "w+");
-   fprintf(fLog, "PIPS Log for gms_rank %d\n", gms_rank);
+   gmspips_reader reader(file_name, path_to_gams, numBlocks);
 
-   if (gms_rank == 0)
-      std::cout << "Using a total of " << size << " MPI processes.\n";
+   std::unique_ptr<DistributedInputTree> root{reader.read_problem()};
 
+   if (my_rank == 0)
+      std::cout << "Using a total of " << PIPS_MPIgetSize() << " MPI processes.\n";
 
    if (hierarchical) {
-      if (gms_rank == 0)
+      if (my_rank == 0)
          std::cout << "Using Hierarchical approach\n";
       pipsipmpp_options::activate_hierarchial_approach();
    }
 
    pipsipmpp_options::set_int_parameter("OUTER_SOLVE", 2);
-   if (gms_rank == 0)
+   if (my_rank == 0)
       std::cout << "Using outer BICGSTAB\n";
 
-   if (gms_rank == 0 && pipsipmpp_options::get_int_parameter("INNER_SC_SOLVE") == 2)
+   if (my_rank == 0 && pipsipmpp_options::get_int_parameter("INNER_SC_SOLVE") == 2)
       std::cout << "Using inner BICGSTAB\n";
 
    std::vector<double> primalSolVec;
@@ -332,7 +98,7 @@ int main(int argc, char** argv) {
    std::vector<double> ineqValues;
 
    pipsipmpp_options::set_bool_parameter("GONDZIO_ADAPTIVE_LINESEARCH", !primal_dual_step_length);
-   if (primal_dual_step_length && gms_rank == 0) {
+   if (primal_dual_step_length && my_rank == 0) {
       std::cout << "Different steplengths in primal and dual direction are used.\n";
    }
 
@@ -340,7 +106,7 @@ int main(int argc, char** argv) {
    PIPSIPMppInterface pipsIpm(root.get(), primal_dual_step_length ? MehrotraStrategyType::PRIMAL_DUAL : MehrotraStrategyType::PRIMAL, MPI_COMM_WORLD, scaler_type,
          presolve ? PresolverType::PRESOLVER_STOCH : PresolverType::PRESOLVER_NONE);
 
-   if (gms_rank == 0) {
+   if (my_rank == 0) {
       std::cout << "PIPSIPMppInterface created\n";
       std::cout << "solving...\n";
    }
@@ -362,36 +128,27 @@ int main(int argc, char** argv) {
       ineqValues = pipsIpm.gatherInequalityConsValues();
    }
 
-
-   if (gms_rank == 0)
+   if (my_rank == 0)
       std::cout << "solving finished. \n ---Objective value: " << objective << "\n";
 
-   if (printsol && gms_rank == 0) {
-      const int rc = writeSolution(fileName, primalSolVec.size(), dualSolEqVec.size(), dualSolIneqVec.size(), objective, &primalSolVec[0], &dualSolVarBounds[0],
-            &eqValues[0], &ineqValues[0], &dualSolEqVec[0], &dualSolIneqVec[0], pGDXDirectory);
+   if (printsol && my_rank == 0) {
+      const int rc = writeSolution(file_name.c_str(), primalSolVec.size(), dualSolEqVec.size(), dualSolIneqVec.size(), objective, &primalSolVec[0], &dualSolVarBounds[0],
+            &eqValues[0], &ineqValues[0], &dualSolEqVec[0], &dualSolIneqVec[0], path_to_gams.c_str());
       if (0 == rc)
-         std::cout << "Solution written to " << fileName << "_sol.gdx\n";
+         std::cout << "Solution written to " << file_name << "_sol.gdx\n";
       else if (-1 == rc)
-         std::cout << "Could not access " << fileName << ".map\n";
+         std::cout << "Could not access " << file_name << ".map\n";
       else
          std::cout << "Other error writing solution: rc=" << rc << "\n";
    }
 
-
-   for (int blk = 0; blk < numBlocks; blk++) {
-      freeBlock(blocks[blk]);
-      free(blocks[blk]);
-   }
-   free(blocks);
-
    MPI_Barrier(MPI_COMM_WORLD);
    const double t1 = MPI_Wtime();
 
-   if (gms_rank == 0)
+   if (my_rank == 0)
       std::cout << "---total time (in sec.): " << t1 - t0 << "\n";
 
    MPI_Finalize();
-   fclose(fLog);
 
    return 0;
 }
