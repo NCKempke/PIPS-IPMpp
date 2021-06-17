@@ -7,6 +7,7 @@
 
 #include "mpi.h"
 
+#include "pipsdef.h"
 #include "gmspipsio.h"
 
 #include <cstdio>
@@ -24,12 +25,11 @@ extern "C" typedef int (* FVEC)(void* user_data, int id, double* vec, int len);
 
 extern "C" {
 
-static int gmsRank = 0;
-static int size = 1;
+static int gms_rank = 0;
 static bool allGDX = false;
 static char fileName[256];
 static char GDXDirectory[256];
-static char* pGDXDirectory = NULL;
+static char* pGDXDirectory{};
 static int numBlocks = 0;
 FILE* fLog;
 
@@ -37,7 +37,7 @@ FILE* fLog;
 if (!blocks[blk])                                                                 \
 {                                                                                 \
    int rc;                                                                        \
-   fprintf(fLog,"Block %d read on gmsRank %d\n", blk, gmsRank);                   \
+   fprintf(fLog,"Block %d read on gms_rank %d\n", blk, gms_rank);                   \
    blocks[blk] = (GMSPIPSBlockData_t*) malloc(sizeof(GMSPIPSBlockData_t));        \
    if ( !allGDX )                                                                 \
    {                                                                              \
@@ -48,7 +48,7 @@ if (!blocks[blk])                                                               
    }                                                                              \
    else                                                                           \
       rc = readBlock(numBlocks,blk,0,1,fileName,pGDXDirectory,blocks[blk]);       \
-   if (rc) {fprintf(fLog,"Block %d read on gmsRank %d failed rc=%d\n", blk, gmsRank, rc); return rc;} \
+   if (rc) {fprintf(fLog,"Block %d read on gms_rank %d failed rc=%d\n", blk, gms_rank, rc); return rc;} \
 }
 
 #define nCB(nType)                                                   \
@@ -292,33 +292,33 @@ int main(int argc, char** argv) {
       root->AddChild(new DistributedInputTree(data));
    }
 
-   MPI_Comm_rank(MPI_COMM_WORLD, &gmsRank);
-   MPI_Comm_size(MPI_COMM_WORLD, &size);
+   gms_rank = PIPS_MPIgetRank();
+   const int size = PIPS_MPIgetSize();
 
    char fbuf[256];
 #if defined (GMS_LOG)
-   sprintf(fbuf,"log%d.txt", gmsRank);
+   sprintf(fbuf,"log%d.txt", gms_rank);
 #else
    sprintf(fbuf, "/dev/null");
 #endif
    fLog = fopen(fbuf, "w+");
-   fprintf(fLog, "PIPS Log for gmsRank %d\n", gmsRank);
+   fprintf(fLog, "PIPS Log for gms_rank %d\n", gms_rank);
 
-   if (gmsRank == 0)
+   if (gms_rank == 0)
       std::cout << "Using a total of " << size << " MPI processes.\n";
 
 
    if (hierarchical) {
-      if (gmsRank == 0)
+      if (gms_rank == 0)
          std::cout << "Using Hierarchical approach\n";
       pipsipmpp_options::activate_hierarchial_approach();
    }
 
    pipsipmpp_options::set_int_parameter("OUTER_SOLVE", 2);
-   if (gmsRank == 0)
+   if (gms_rank == 0)
       std::cout << "Using outer BICGSTAB\n";
 
-   if (gmsRank == 0 && pipsipmpp_options::get_int_parameter("INNER_SC_SOLVE") == 2)
+   if (gms_rank == 0 && pipsipmpp_options::get_int_parameter("INNER_SC_SOLVE") == 2)
       std::cout << "Using inner BICGSTAB\n";
 
    std::vector<double> primalSolVec;
@@ -330,7 +330,7 @@ int main(int argc, char** argv) {
    std::vector<double> ineqValues;
 
    pipsipmpp_options::set_bool_parameter("GONDZIO_ADAPTIVE_LINESEARCH", !primal_dual_step_length);
-   if (primal_dual_step_length && gmsRank == 0) {
+   if (primal_dual_step_length && gms_rank == 0) {
       std::cout << "Different steplengths in primal and dual direction are used.\n";
    }
 
@@ -338,7 +338,7 @@ int main(int argc, char** argv) {
    PIPSIPMppInterface pipsIpm(root.get(), primal_dual_step_length ? MehrotraStrategyType::PRIMAL_DUAL : MehrotraStrategyType::PRIMAL, MPI_COMM_WORLD, scaler_type,
          presolve ? PresolverType::PRESOLVER_STOCH : PresolverType::PRESOLVER_NONE);
 
-   if (gmsRank == 0) {
+   if (gms_rank == 0) {
       std::cout << "PIPSIPMppInterface created\n";
       std::cout << "solving...\n";
    }
@@ -350,6 +350,7 @@ int main(int argc, char** argv) {
    if (presolve) {
       pipsIpm.postsolveComputedSolution();
    }
+
    if (printsol) {
       primalSolVec = pipsIpm.gatherPrimalSolution();
       dualSolEqVec = pipsIpm.gatherDualSolutionEq();
@@ -360,13 +361,11 @@ int main(int argc, char** argv) {
    }
 
 
-   if (gmsRank == 0)
+   if (gms_rank == 0)
       std::cout << "solving finished. \n ---Objective value: " << objective << "\n";
 
-   if (printsol && gmsRank == 0) {
-      int rc;
-
-      rc = writeSolution(fileName, primalSolVec.size(), dualSolEqVec.size(), dualSolIneqVec.size(), objective, &primalSolVec[0], &dualSolVarBounds[0],
+   if (printsol && gms_rank == 0) {
+      const int rc = writeSolution(fileName, primalSolVec.size(), dualSolEqVec.size(), dualSolIneqVec.size(), objective, &primalSolVec[0], &dualSolVarBounds[0],
             &eqValues[0], &ineqValues[0], &dualSolEqVec[0], &dualSolIneqVec[0], pGDXDirectory);
       if (0 == rc)
          std::cout << "Solution written to " << fileName << "_sol.gdx\n";
@@ -386,7 +385,7 @@ int main(int argc, char** argv) {
    MPI_Barrier(MPI_COMM_WORLD);
    const double t1 = MPI_Wtime();
 
-   if (gmsRank == 0)
+   if (gms_rank == 0)
       std::cout << "---total time (in sec.): " << t1 - t0 << "\n";
 
    MPI_Finalize();

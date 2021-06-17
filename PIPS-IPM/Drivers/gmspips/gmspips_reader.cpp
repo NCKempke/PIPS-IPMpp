@@ -30,7 +30,7 @@ FILE* fLog;
    if (!blocks[blk])                                                                 \
    {                                                                                 \
       int rc;                                                                        \
-      fprintf(fLog,"Block %d read on gmsRank %d\n", blk, gmsRank);                   \
+      fprintf(fLog,"Block %d read on gms_rank %d\n", blk, gmsRank);                   \
       blocks[blk] = (GMSPIPSBlockData_t*) malloc(sizeof(GMSPIPSBlockData_t));        \
       if ( !allGDX )                                                                 \
       {                                                                              \
@@ -41,7 +41,7 @@ FILE* fLog;
       }                                                                              \
       else                                                                           \
          rc = readBlock(numBlocks,blk,0,1,fileName,&GDXDirectory[0],blocks[blk]);    \
-      if (rc) {fprintf(fLog,"Block %d read on gmsRank %d failed rc=%d\n", blk, gmsRank, rc); return rc;} \
+      if (rc) {fprintf(fLog,"Block %d read on gms_rank %d failed rc=%d\n", blk, gmsRank, rc); return rc;} \
    }
 
 #define nCB(nType)                                                   \
@@ -188,7 +188,7 @@ gmspips_reader::gmspips_reader(const std::string& path_to_problem, const std::st
 
    const std::string log_file = log_reading ? "log%d.txt" + gmsRank : "/dev/null";
    fLog = fopen(log_file.c_str(), "w+");
-   fprintf(fLog, "PIPS Log for gmsRank %d\n", gmsRank);
+   fprintf(fLog, "PIPS Log for gms_rank %d\n", gmsRank);
 
    numBlocks = n_blocks;
 }
