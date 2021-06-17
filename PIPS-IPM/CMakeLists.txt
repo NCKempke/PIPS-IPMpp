@@ -137,10 +137,9 @@ target_compile_options(gmspips
         PRIVATE "$<$<COMPILE_LANGUAGE:CXX>:-Wsuggest-override>"
         )
 
-target_compile_definitions(gmspips
-        PRIVATE GMS_PIPS
-        PRIVATE GMS_MPI
-        ) # -DGMS_LOG
+#target_compile_definitions(gmspips
+#        PRIVATE GMS_LOG
+#        )
 
 target_link_libraries(gmspips
         PRIVATE gmspipsio

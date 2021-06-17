@@ -1,5 +1,3 @@
-#if defined(GMS_PIPS)
-
 #include "PIPSIPMppInterface.hpp"
 #include "DistributedInputTree.h"
 
@@ -7,19 +5,14 @@
 #include "PreprocessType.h"
 #include "MehrotraStrategyType.h"
 
-#endif
-#if defined(GMS_MPI)
-
 #include "mpi.h"
 
-#endif
-
 #include "gmspipsio.h"
+
 #include <cstdio>
 #include <cstdlib>
 #include <cassert>
 #include <cstring>
-
 #include <iostream>
 
 extern "C" typedef int (* FNNZ)(void* user_data, int id, int* nnz);
@@ -181,7 +174,6 @@ int fmatQ(void* user_data, int id, int* krowM, int*, double*) {
 
 }
 
-#if defined(GMS_PIPS)
 static void setParams(ScalerType& scaler_type, bool& stepDiffLp, bool& presolve, bool& printsol, bool& hierarchical, const char* paramname) {
    if (strcmp(paramname, "scale") == 0 || strcmp(paramname, "scaleEqui") == 0)
       scaler_type = ScalerType::SCALER_EQUI_STOCH;
@@ -199,22 +191,17 @@ static void setParams(ScalerType& scaler_type, bool& stepDiffLp, bool& presolve,
       hierarchical = true;
 }
 
-#endif
 int main(int argc, char** argv) {
 
-#if defined(GMS_MPI)
    MPI_Init(&argc, &argv);
    MPI_Barrier(MPI_COMM_WORLD);
 
    const double t0 = MPI_Wtime();
-#endif
 
    initGMSPIPSIO();
 
    GMSPIPSBlockData_t** blocks;
-#if defined(GMS_PIPS)
    ScalerType scaler_type = ScalerType::SCALER_NONE;
-#endif
 
    bool primal_dual_step_length = false;
    bool presolve = false;
@@ -235,10 +222,8 @@ int main(int argc, char** argv) {
       pGDXDirectory = &GDXDirectory[0];
    }
 
-#if defined(GMS_PIPS)
    for (int i = 5; i <= argc; i++)
       setParams(scaler_type, primal_dual_step_length, presolve, printsol, hierarchical, argv[i - 1]);
-#endif
 
    blocks = (GMSPIPSBlockData_t**) calloc(numBlocks, sizeof(GMSPIPSBlockData_t*));
 
@@ -278,9 +263,8 @@ int main(int argc, char** argv) {
    FMAT fDL = &fmatDL;
    FMAT fQ = &fmatQ;
 
-#if defined(GMS_PIPS)
    //build the problem tree
-   DistributedInputTree::DistributedInputNode data(blocks, 0,
+   DistributedInputTree::DistributedInputNode root_data(blocks, 0,
          fsni, fsmA, fsmBL, fsmC, fsmDL,
          fQ, fnnzQ, fc, fA, fnnzA, fB, fnnzB,
          fBL, fnnzBL,
@@ -291,11 +275,8 @@ int main(int argc, char** argv) {
          fclow, ficlow, fcupp, ficupp,
          fdlow, fidlow, fdupp, fidupp,
          fxlow, fixlow, fxupp, fixupp, false);
-   std::unique_ptr<DistributedInputTree> root = std::make_unique<DistributedInputTree>(data);
-#endif
+   std::unique_ptr<DistributedInputTree> root = std::make_unique<DistributedInputTree>(root_data);
    for (int blk = 1; blk < numBlocks; blk++) {
-
-#if defined(GMS_PIPS)
       DistributedInputTree::DistributedInputNode data(blocks, blk,
             fsni, fsmA, fsmBL, fsmC, fsmDL,
             fQ, fnnzQ, fc, fA, fnnzA, fB, fnnzB,
@@ -309,10 +290,8 @@ int main(int argc, char** argv) {
             fxlow, fixlow, fxupp, fixupp, false);
 
       root->AddChild(new DistributedInputTree(data));
-#endif
    }
 
-#if defined(GMS_MPI)
    MPI_Comm_rank(MPI_COMM_WORLD, &gmsRank);
    MPI_Comm_size(MPI_COMM_WORLD, &size);
 
@@ -324,13 +303,11 @@ int main(int argc, char** argv) {
 #endif
    fLog = fopen(fbuf, "w+");
    fprintf(fLog, "PIPS Log for gmsRank %d\n", gmsRank);
-#endif
 
    if (gmsRank == 0)
       std::cout << "Using a total of " << size << " MPI processes.\n";
 
 
-#if defined(GMS_PIPS)
    if (hierarchical) {
       if (gmsRank == 0)
          std::cout << "Using Hierarchical approach\n";
@@ -398,7 +375,6 @@ int main(int argc, char** argv) {
       else
          std::cout << "Other error writing solution: rc=" << rc << "\n";
    }
-#endif
 
 
    for (int blk = 0; blk < numBlocks; blk++) {
@@ -407,7 +383,6 @@ int main(int argc, char** argv) {
    }
    free(blocks);
 
-#if defined(GMS_MPI)
    MPI_Barrier(MPI_COMM_WORLD);
    const double t1 = MPI_Wtime();
 
@@ -415,7 +390,6 @@ int main(int argc, char** argv) {
       std::cout << "---total time (in sec.): " << t1 - t0 << "\n";
 
    MPI_Finalize();
-#endif
    fclose(fLog);
 
    return 0;
