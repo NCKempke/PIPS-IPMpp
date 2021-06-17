@@ -59,9 +59,28 @@ public:
 
    std::vector<double> gatherDualSolutionVarBoundsLow();
 
+   std::vector<double> gatherSlacksInequalityUp();
+
+   std::vector<double> gatherSlacksInequalityLow();
+
+   std::vector<double> gatherSlacksVarsUp();
+
+   std::vector<double> gatherSlacksVarsLow();
+
+   std::vector<double> gatherPrimalResidsEQ();
+
+   std::vector<double> gatherPrimalResidsIneqUp();
+
+   std::vector<double> gatherPrimalResidsIneqLow();
+
+   std::vector<double> gatherDualResids();
+
    [[nodiscard]] std::vector<double> getFirstStagePrimalColSolution() const;
 
    [[nodiscard]] std::vector<double> getSecondStagePrimalColSolution(int scen) const;
+
+   void allgatherBlocksizes(std::vector<unsigned int>& block_lengths_col,
+      std::vector<unsigned int>& block_lengths_A, std::vector<unsigned int>& block_lengths_C) const;
 
    void postsolveComputedSolution();
 
@@ -78,6 +97,7 @@ private:
    static void printComplementarityResiduals(const DistributedVariables& vars) ;
 
    std::vector<double> gatherFromSolution(std::unique_ptr<Vector<double>> DistributedVariables::* member_to_gather);
+   std::vector<double> gatherFromResiduals(std::unique_ptr<Vector<double>> DistributedResiduals::* member_to_gather);
 
 protected:
    std::unique_ptr<DistributedFactory> factory;
