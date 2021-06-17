@@ -13,23 +13,19 @@
 #include <cassert>
 #include "pipsdef.h"
 
+#include "../pips_reader.h"
 #include "gmspipsio.h"
 #include "DistributedInputTree.h"
 
-class gmspips_reader {
+class gmspips_reader : pips_reader {
 public:
    gmspips_reader(const std::string& path_to_problem, const std::string& path_to_gams, size_t n_blocks);
-   virtual ~gmspips_reader();
+   ~gmspips_reader() override;
 
-   DistributedInputTree* read_problem();
+   std::unique_ptr<DistributedInputTree> read_problem() override;
 
 protected:
-   gmspips_reader() = default;
-
-
    std::vector<GMSPIPSBlockData_t*> blocks;
-
-   size_t n_blocks{};
    bool log_reading{false};
 };
 

@@ -23,7 +23,7 @@ static int gms_rank{0};
 static bool allGDX{false};
 static char fileName[MAX_PATH_LENGHT];
 static char GDXDirectory[MAX_PATH_LENGHT];
-static int numBlocks = 0;
+static int numBlocks = 0; // TODO make size_t?
 FILE* fLog;
 
 #define checkAndAlloc(blk)                                                        \
@@ -168,7 +168,7 @@ int fmatQ(void* user_data, int id, int* krowM, int*, double*) {
 } /* extern C */
 
 
-gmspips_reader::gmspips_reader(const std::string& path_to_problem, const std::string& path_to_gams, size_t n_blocks_) : n_blocks{n_blocks_} {
+gmspips_reader::gmspips_reader(const std::string& path_to_problem_, const std::string& path_to_gams, size_t n_blocks_) : pips_reader(path_to_problem_, n_blocks_) {
    initGMSPIPSIO();
 
    blocks.resize(n_blocks);
@@ -202,7 +202,7 @@ gmspips_reader::~gmspips_reader() {
    fclose(fLog);
 }
 
-DistributedInputTree* gmspips_reader::read_problem() {
+std::unique_ptr<DistributedInputTree> gmspips_reader::read_problem() {
    FNNZ fsni = &fsizeni;
    FNNZ fsmA = &fsizemA;
    FNNZ fsmC = &fsizemC;
@@ -242,7 +242,7 @@ DistributedInputTree* gmspips_reader::read_problem() {
    //build the problem tree
    std::unique_ptr<DistributedInputTree::DistributedInputNode> data_root = std::make_unique<DistributedInputTree::DistributedInputNode>(blocks.data(), 0, fsni, fsmA, fsmBL, fsmC, fsmDL, fQ, fnnzQ, fc, fA, fnnzA, fB, fnnzB, fBL, fnnzBL, fb, fbL,
          fC, fnnzC, fD, fnnzD, fDL, fnnzDL, fclow, ficlow, fcupp, ficupp, fdlow, fidlow, fdupp, fidupp, fxlow, fixlow, fxupp, fixupp, false);
-   auto* root = new DistributedInputTree(std::move(data_root));
+   std::unique_ptr<DistributedInputTree> root = std::make_unique<DistributedInputTree>(std::move(data_root));
 
    for (int blk = 1; blk < numBlocks; blk++) {
       std::unique_ptr<DistributedInputTree::DistributedInputNode> data = std::make_unique<DistributedInputTree::DistributedInputNode>(blocks.data(), blk, fsni, fsmA, fsmBL, fsmC, fsmDL, fQ, fnnzQ, fc, fA, fnnzA, fB, fnnzB, fBL, fnnzBL, fb,
