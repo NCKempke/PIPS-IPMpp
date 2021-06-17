@@ -50,13 +50,13 @@ DistributedLeafLinearSystem::DistributedLeafLinearSystem(DistributedFactory* fac
 
    kkt_sp->symAtPutSubmatrix(0, 0, prob->getLocalQ(), 0, 0, locnx, locnx);
 
-   // TODO this logic or is flawed - requires Bi to exist..
+   if (locmy > 0) {
+      kkt_sp->symAtPutSubmatrix(locnx, 0, prob->getLocalB(), 0, 0, locmy, locnx);
+   }
+
    if (locmz > 0) {
-      kkt_sp->symAtPutSubmatrix(locnx, 0, prob->getLocalB(), 0, 0, locmy, locnx);
       kkt_sp->symAtPutSubmatrix(locnx + locmy, 0, prob->getLocalD(), 0, 0, locmz, locnx);
-   } else
-      kkt_sp->symAtPutSubmatrix(locnx, 0, prob->getLocalB(), 0, 0, locmy, locnx);
-//      mySymAtPutSubmatrix(*kkt_sp, data->getLocalB(), locnx, locmy, locmz);
+   }
 
 #ifdef TIMING
    if( myRank == 0 ) std::cout << "Rank 0: finished " << std::endl;
