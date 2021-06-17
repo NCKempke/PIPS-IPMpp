@@ -73,10 +73,10 @@ protected:
    Residuals() = default;
 
 public:
-   std::unique_ptr<Vector<double>> lagrangian_gradient;
-   std::unique_ptr<Vector<double>> equality_residuals;
-   std::unique_ptr<Vector<double>> inequality_residuals;
-   std::unique_ptr<Vector<double>> inequality_dual_residuals;
+   std::unique_ptr<Vector<double>> lagrangian_gradient; //rQ
+   std::unique_ptr<Vector<double>> equality_residuals; //rA
+   std::unique_ptr<Vector<double>> inequality_residuals; //rC
+   std::unique_ptr<Vector<double>> inequality_dual_residuals; //rz
    std::unique_ptr<Vector<double>> rv;
    std::unique_ptr<Vector<double>> rw;
    std::unique_ptr<Vector<double>> rt;
