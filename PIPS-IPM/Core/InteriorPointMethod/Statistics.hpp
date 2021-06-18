@@ -20,7 +20,7 @@ public:
 
    void
    print(const Problem* problem, const Variables* variables, const Residuals* residuals, double dnorm, double alpha, double sigma, int i, double mu,
-      TerminationStatus status_code, int level);
+      TerminationStatus status_code, int level) const;
 
    void print(const Problem* problem, const Variables* variables, const Residuals* residuals, double dnorm, double alpha_primal, double alpha_dual,
          double sigma, int i, double mu, TerminationStatus status_code, int level) const;

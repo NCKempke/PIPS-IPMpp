@@ -7,6 +7,9 @@
 
 //#define PIPS_DEBUG
 #include "GeoStochScaler.h"
+#include "Vector.hpp"
+#include "AbstractMatrix.h"
+#include "ProblemFactory.h"
 #include "pipsdef.h"
 #include <memory>
 #include <cmath>
@@ -14,18 +17,13 @@
 static const double maxobjscale = 100.0;
 
 
-GeoStochScaler::GeoStochScaler(const Problem& problem, bool equiScaling, bool bitshifting) : StochScaler(problem, bitshifting) {
+GeoStochScaler::GeoStochScaler(const ProblemFactory& problem_factory, const Problem& problem, bool equiScaling, bool bitshifting) :
+   Scaler(problem_factory, problem, bitshifting), minImpr{0.85}, goodEnough{500.}, maxIters{10}, equilibrate{equiScaling} {
    if (PIPS_MPIgetRank() == 0 && scaling_output)
       std::cout << "Creating GeoStochScaler... bitshifting=" << bitshifting << " equiscaling=" << equiScaling << "\n";
-   equilibrate = equiScaling;
-
-   // todo: adjust parameters
-   maxIters = 10;
-   minImpr = 0.85;
-   goodEnough = 500;
 }
 
-void GeoStochScaler::doObjScaling() {
+void GeoStochScaler::doObjScaling() const {
    assert(vec_colscale != nullptr);
 
    obj->componentMult(*vec_colscale);
@@ -66,17 +64,14 @@ void GeoStochScaler::doObjScaling() {
 }
 
 void GeoStochScaler::scale() {
-   assert(!vec_rowscaleA && !vec_rowscaleC && !vec_colscale);
+   create_scaling_vectors();
 
    /* We want to do the direction with lower maximal ratio first,
     * since the absolute smallest value in the scaled matrix is bounded from below by
     * the inverse of the maximum ratio of the direction that is done first */
-   vec_rowscaleA.reset(dynamic_cast<DistributedVector<double>*>(bA->clone()));
-   std::unique_ptr<DistributedVector<double>> rowminA{dynamic_cast<DistributedVector<double>*>(bA->clone())};
-   vec_rowscaleC.reset(dynamic_cast<DistributedVector<double>*>(rhsC->clone()));
-   std::unique_ptr<DistributedVector<double>> rowminC{dynamic_cast<DistributedVector<double>*>(rhsC->clone())};
-   vec_colscale.reset(dynamic_cast<DistributedVector<double>*>(bux->clone()));
-   std::unique_ptr<DistributedVector<double>> colmin{dynamic_cast<DistributedVector<double>*>(bux->clone())};
+   std::unique_ptr<Vector<double>> rowminA{problem_factory.make_equalities_dual_vector()};
+   std::unique_ptr<Vector<double>> rowminC{problem_factory.make_inequalities_dual_vector()};
+   std::unique_ptr<Vector<double>> colmin{problem_factory.make_primal_vector()};
 
    const double rowratio = maxRowRatio(*vec_rowscaleA, *vec_rowscaleC, *rowminA, *rowminC, nullptr);
    const double colratio = maxColRatio(*vec_colscale, *colmin, nullptr, nullptr);
@@ -225,14 +220,14 @@ void GeoStochScaler::applyGeoMean(Vector<double>& maxvec, const Vector<double>& 
  * the previously determined scaling factors.
  */
 void GeoStochScaler::postEquiScale() {
-   assert(vec_rowscaleA != nullptr && vec_rowscaleC != nullptr && vec_colscale != nullptr);
+   assert(vec_rowscaleA && vec_rowscaleC && vec_colscale);
 
-   DistributedVector<double>* rowmaxA = dynamic_cast<DistributedVector<double>*>(bA->clone());
-   std::unique_ptr<DistributedVector<double>> rowminA{dynamic_cast<DistributedVector<double>*>(bA->clone())};
-   DistributedVector<double>* rowmaxC = dynamic_cast<DistributedVector<double>*>(rhsC->clone());
-   std::unique_ptr<DistributedVector<double>> rowminC{dynamic_cast<DistributedVector<double>*>(rhsC->clone())};
-   DistributedVector<double>* colmax = dynamic_cast<DistributedVector<double>*>(bux->clone());
-   std::unique_ptr<DistributedVector<double>> colmin{dynamic_cast<DistributedVector<double>*>(bux->clone())};
+   std::unique_ptr<Vector<double>> rowmaxA{problem_factory.make_equalities_dual_vector()};
+   std::unique_ptr<Vector<double>> rowminA{problem_factory.make_equalities_dual_vector()};
+   std::unique_ptr<Vector<double>> rowmaxC{problem_factory.make_inequalities_dual_vector()};
+   std::unique_ptr<Vector<double>> rowminC{problem_factory.make_inequalities_dual_vector()};
+   std::unique_ptr<Vector<double>> colmax{problem_factory.make_primal_vector()};
+   std::unique_ptr<Vector<double>> colmin{problem_factory.make_primal_vector()};
 
    const double rowratio = maxRowRatio(*rowmaxA, *rowmaxC, *rowminA, *rowminC, vec_colscale.get());
    const double colratio = maxColRatio(*colmax, *colmin, vec_rowscaleA.get(), vec_rowscaleC.get());
@@ -240,9 +235,9 @@ void GeoStochScaler::postEquiScale() {
    PIPSdebugMessage("rowratio before Post-EquiScale %f \n", rowratio);
    PIPSdebugMessage("colratio before Post-EquiScale %f \n", colratio);
 
-   vec_colscale.reset(colmax);
-   vec_rowscaleA.reset(rowmaxA);
-   vec_rowscaleC.reset(rowmaxC);
+   std::swap(vec_colscale, colmax);
+   std::swap(vec_rowscaleA, rowmaxA);
+   std::swap(vec_rowscaleC, rowmaxC);
 
    // column scaling first?
    if (colratio < rowratio && !with_sides) {
@@ -264,7 +259,6 @@ void GeoStochScaler::postEquiScale() {
 
       invertAndRound(do_bitshifting, *vec_colscale);
    }
-
 }
 
 

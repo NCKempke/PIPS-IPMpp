@@ -19,5 +19,4 @@ target_sources(pips-ipmpp
         PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/StochPresolverSingletonColumns.C
         PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/StochPresolverSingletonRows.C
         PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/StochRowStorage.C
-        PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/StochScaler.C
         )

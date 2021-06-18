@@ -6,6 +6,7 @@
 #define DISTRIBUTEDFACTORY_H
 
 #include "DistributedTree.h"
+#include "ProblemFactory.h"
 
 // save diagnostic state
 #pragma GCC diagnostic push
@@ -48,56 +49,56 @@ class AbstractLinearSystem;
 
 #include "StochResourcesMonitor.hpp"
 
-class DistributedFactory {
+class DistributedFactory : public ProblemFactory {
 public:
-   DistributedFactory(DistributedInputTree* tree, MPI_Comm comm = MPI_COMM_WORLD);
+   explicit DistributedFactory(DistributedInputTree* tree, MPI_Comm comm = MPI_COMM_WORLD);
 
-   Problem* make_problem() const;
+   [[nodiscard]] std::unique_ptr<Problem> make_problem() const override;
 
-   Residuals* make_residuals(Problem& problem) const;
+   [[nodiscard]] std::unique_ptr<Residuals> make_residuals(const Problem& problem) const override;
 
-   Variables* make_variables(Problem& problem) const;
+   [[nodiscard]] std::unique_ptr<Variables> make_variables(const Problem& problem) const override;
 
-   std::unique_ptr<AbstractLinearSystem> make_linear_system(Problem& problem);
+   [[nodiscard]] std::unique_ptr<AbstractLinearSystem> make_linear_system(Problem& problem) const override;
 
    /** create x shaped vector using tree */
-   Vector<double>* make_primal_vector() const;
+   [[nodiscard]] std::unique_ptr<Vector<double>> make_primal_vector() const override;
 
    /** create dual A shaped vector using tree */
-   Vector<double>* make_equalities_dual_vector() const;
+   [[nodiscard]] std::unique_ptr<Vector<double>> make_equalities_dual_vector() const override;
 
    /** create dual C shaped vector using tree */
-   Vector<double>* make_inequalities_dual_vector() const;
+   [[nodiscard]] std::unique_ptr<Vector<double>> make_inequalities_dual_vector() const override;
 
    /** create rhs for augmented system using tree */
-   Vector<double>* make_right_hand_side() const;
+   [[nodiscard]] std::unique_ptr<Vector<double>> make_right_hand_side() const override;
 
-   std::unique_ptr<DistributedRootLinearSystem> make_linear_system_root(DistributedQP* problem);
+   [[nodiscard]] std::unique_ptr<DistributedRootLinearSystem> make_linear_system_root(DistributedQP* problem) const;
 
-   std::unique_ptr<DistributedRootLinearSystem> make_root_hierarchical_linear_system(DistributedQP* problem);
+   [[nodiscard]] std::unique_ptr<DistributedRootLinearSystem> make_root_hierarchical_linear_system(DistributedQP* problem) const;
 
-   DistributedRootLinearSystem*
+   [[nodiscard]] std::unique_ptr<DistributedRootLinearSystem>
    make_linear_system_root(DistributedQP* problem, std::shared_ptr<Vector<double>> primal_diagonal,
       std::shared_ptr<Vector<double>> dq, std::shared_ptr<Vector<double>> nomegaInv,
       std::shared_ptr<Vector<double>> primal_regularization,
       std::shared_ptr<Vector<double>> dual_equality_regularization,
       std::shared_ptr<Vector<double>> dual_inequality_regularization,
-      std::shared_ptr<Vector<double>> rhs);
+      std::shared_ptr<Vector<double>> rhs) const;
 
    DistributedQP* switchToHierarchicalData(DistributedQP* problem);
 
    void switchToOriginalTree();
 
-   DistributedLeafLinearSystem*
+   [[nodiscard]] std::unique_ptr<DistributedLeafLinearSystem>
    make_linear_system_leaf(DistributedQP* problem, std::shared_ptr<Vector<double>> primal_diagonal, std::shared_ptr<Vector<double>> dq,
       std::shared_ptr<Vector<double>> nomegaInv,
       std::shared_ptr<Vector<double>> primal_regularization, std::shared_ptr<Vector<double>> dual_equality_regularization,
       std::shared_ptr<Vector<double>> dual_inequality_regularization,
-      std::shared_ptr<Vector<double>> rhs);
+      std::shared_ptr<Vector<double>> rhs) const;
 
-   static DoubleLinearSolver* make_leaf_solver(const AbstractMatrix* kkt);
+   static std::unique_ptr<DoubleLinearSolver> make_leaf_solver(const AbstractMatrix* kkt);
 
-   DistributedTree* tree{};
+   std::unique_ptr<DistributedTree> tree{};
 
    void iterate_started();
 
@@ -110,7 +111,7 @@ public:
    Timer timer;
    double total_time{0.0};
 
-   ~DistributedFactory();
+   ~DistributedFactory() override = default;
 
 protected:
    /** number of elements in x */

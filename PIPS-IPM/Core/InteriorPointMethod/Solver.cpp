@@ -16,9 +16,6 @@ double gOuterBiCGIterAvg = 0.;
 int gInnerBiCGFails = 0;
 int gInnerBiCGIter = 0;
 
-// gmu is needed by MA57!
-double gmu;
-
 Solver::Solver(DistributedFactory& factory, Problem& problem) : factory(factory), step(factory.make_variables(problem)) {
 }
 
@@ -37,8 +34,4 @@ void Solver::solve_linear_system(Variables& iterate, Problem& problem, Residuals
    iterate.saxpy(step, 1.);
    double shift = 1e3 + 2 * iterate.violation();
    iterate.shift_bound_variables(shift, shift);
-}
-
-Solver::~Solver() {
-   delete step;
 }

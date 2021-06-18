@@ -23,7 +23,7 @@
 #include "StochPresolverSingletonColumns.h"
 #include "StochPresolverParallelRows.h"
 
-StochPresolver::StochPresolver(DistributedTree* tree_, const Problem& prob, Postsolver* postsolver = nullptr) : Presolver(prob, postsolver),
+StochPresolver::StochPresolver(DistributedTree& tree_, const Problem& prob, Postsolver* postsolver = nullptr) : Presolver(prob, postsolver),
       my_rank(PIPS_MPIgetRank(MPI_COMM_WORLD)), limit_max_rounds(pipsipmpp_options::get_int_parameter("PRESOLVE_MAX_ROUNDS")),
       reset_free_variables_after_presolve(pipsipmpp_options::get_bool_parameter("PRESOLVE_RESET_FREE_VARIABLES")),
       print_problem(pipsipmpp_options::get_bool_parameter("PRESOLVE_PRINT_PROBLEM")),
@@ -77,10 +77,9 @@ Problem* StochPresolver::presolve() {
    /* finalize data and switch tree to new presolved data */
    auto* finalPreDistributedQP = dynamic_cast<DistributedQP*>(presolve_data.finalize());
 
-   assert(tree != nullptr);
-   assert(tree == finalPreDistributedQP->stochNode);
+   assert(&tree == finalPreDistributedQP->stochNode);
 
-   auto& callbackTree = dynamic_cast<DistributedTreeCallbacks&>(*tree);
+   auto& callbackTree = dynamic_cast<DistributedTreeCallbacks&>(tree);
    callbackTree.initPresolvedData(*finalPreDistributedQP);
    callbackTree.switchToPresolvedData();
 
@@ -126,7 +125,7 @@ void StochPresolver::resetFreeVariables() {
    presolve_data.resetOriginallyFreeVarsBounds(sorigprob);
 }
 
-void StochPresolver::write_presolved_problem_to_file() {
+void StochPresolver::write_presolved_problem_to_file() const {
    if (PIPS_MPIgetSize() > 1) {
       if (my_rank == 0)
          std::cout << "MPS format writer only available using one process!\n";

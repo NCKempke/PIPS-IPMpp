@@ -8,7 +8,7 @@
  */
 class DistributedDummyLinearSystem : public DistributedLinearSystem {
 public:
-   DistributedDummyLinearSystem(DistributedFactory* factory, DistributedQP* prob) : DistributedLinearSystem(factory, prob, nullptr, nullptr, nullptr, nullptr,
+   DistributedDummyLinearSystem(const DistributedFactory& factory, DistributedQP* prob) : DistributedLinearSystem(factory, prob, nullptr, nullptr, nullptr, nullptr,
          nullptr, nullptr, nullptr, false) {
       mpiComm = MPI_COMM_NULL;
    };

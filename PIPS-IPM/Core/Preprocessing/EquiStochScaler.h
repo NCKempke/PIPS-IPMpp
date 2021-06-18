@@ -8,7 +8,7 @@
 #ifndef PIPS_IPM_CORE_QPPREPROCESS_EQUISTOCHSCALER_H_
 #define PIPS_IPM_CORE_QPPREPROCESS_EQUISTOCHSCALER_H_
 
-#include "StochScaler.h"
+#include "Scaler.hpp"
 
 class Problem;
 
@@ -18,12 +18,12 @@ class Problem;
  * @{
  */
 
-class EquiStochScaler : public StochScaler {
+class EquiStochScaler : public Scaler {
 protected:
-   void doObjScaling() override;
+   void doObjScaling() const override;
 
 public:
-   EquiStochScaler(const Problem& problem, bool bitshifting = true);
+   EquiStochScaler(const ProblemFactory& problem_factory, const Problem& problem, bool bitshifting = true);
    ~EquiStochScaler() override = default;
 
    /** scale */

@@ -24,13 +24,13 @@ public:
    StochNodeResourcesMonitor resMon;
    static Timer iterMon;
 
-   long long getN() const { return N; };
-   long long getMY() const { return MY; };
-   long long getMYL() const { return MYL; };
-   long long getMZ() const { return MZ; };
-   long long getMZL() const { return MZL; };
+   [[nodiscard]] long long getN() const { return N; };
+   [[nodiscard]] long long getMY() const { return MY; };
+   [[nodiscard]] long long getMYL() const { return MYL; };
+   [[nodiscard]] long long getMZ() const { return MZ; };
+   [[nodiscard]] long long getMZL() const { return MZL; };
 
-   virtual DistributedTree* clone() const = 0;
+   [[nodiscard]] virtual std::unique_ptr<DistributedTree> clone() const = 0;
 protected:
 
    DistributedTree(const DistributedTree& other);
@@ -52,9 +52,9 @@ protected:
    int np{-1}; //n for the parent
 
    double IPMIterExecTIME{-1.0}; // not used since we currently do not compute loads for nodes and processes...
-   std::vector<DistributedTree*> children;
+   std::vector<std::unique_ptr<DistributedTree>> children;
    /* used for hierarchical approach - implies sub structure inside the current Bmat */
-   DistributedTree* sub_root{};
+   std::unique_ptr<DistributedTree> sub_root{};
 
    /* global number of all processes available */
    static int numProcs;
@@ -71,7 +71,7 @@ public:
 
    void assignProcesses(MPI_Comm comm = MPI_COMM_WORLD);
 
-   virtual ~DistributedTree();
+   virtual ~DistributedTree() = default;
 
    [[nodiscard]] bool distributedPreconditionerActive() const;
 
@@ -79,72 +79,70 @@ public:
    void startNodeMonitors();
    void stopMonitors();
    void stopNodeMonitors();
-   bool balanceLoad();
-   bool balanceLoadPrecond();
+   static bool balanceLoad();
 
    void getSyncInfo(int myRank, int& syncNeeded, int& sendOrRecv, int& toFromCPU);
 
-   virtual DistributedSymmetricMatrix* createQ() const = 0;
-   virtual DistributedVector<double>* createc() const = 0;
+   [[nodiscard]] virtual std::unique_ptr<DistributedSymmetricMatrix> createQ() const = 0;
+   [[nodiscard]] virtual std::unique_ptr<DistributedVector<double>> createc() const = 0;
 
-   virtual DistributedVector<double>* createxlow() const = 0;
-   virtual DistributedVector<double>* createixlow() const = 0;
-   virtual DistributedVector<double>* createxupp() const = 0;
-   virtual DistributedVector<double>* createixupp() const = 0;
+   [[nodiscard]] virtual std::unique_ptr<DistributedVector<double>> createxlow() const = 0;
+   [[nodiscard]] virtual std::unique_ptr<DistributedVector<double>> createixlow() const = 0;
+   [[nodiscard]] virtual std::unique_ptr<DistributedVector<double>> createxupp() const = 0;
+   [[nodiscard]] virtual std::unique_ptr<DistributedVector<double>> createixupp() const = 0;
 
-   virtual DistributedMatrix* createA() const = 0;
-   virtual DistributedVector<double>* createb() const = 0;
+   [[nodiscard]] virtual std::unique_ptr<DistributedMatrix> createA() const = 0;
+   [[nodiscard]] virtual std::unique_ptr<DistributedVector<double>> createb() const = 0;
 
 
-   virtual DistributedMatrix* createC() const = 0;
-   virtual DistributedVector<double>* createclow() const = 0;
-   virtual DistributedVector<double>* createiclow() const = 0;
-   virtual DistributedVector<double>* createcupp() const = 0;
-   virtual DistributedVector<double>* createicupp() const = 0;
+   [[nodiscard]] virtual std::unique_ptr<DistributedMatrix> createC() const = 0;
+   [[nodiscard]] virtual std::unique_ptr<DistributedVector<double>> createclow() const = 0;
+   [[nodiscard]] virtual std::unique_ptr<DistributedVector<double>> createiclow() const = 0;
+   [[nodiscard]] virtual std::unique_ptr<DistributedVector<double>> createcupp() const = 0;
+   [[nodiscard]] virtual std::unique_ptr<DistributedVector<double>> createicupp() const = 0;
 
-   DistributedVector<double>* new_primal_vector(bool empty = false) const;
-   DistributedVector<double>* newDualYVector(bool empty = false) const;
-   DistributedVector<double>* newDualZVector(bool empty = false) const;
+   [[nodiscard]] std::unique_ptr<DistributedVector<double>> new_primal_vector(bool empty = false) const;
+   [[nodiscard]] std::unique_ptr<DistributedVector<double>> newDualYVector(bool empty = false) const;
+   [[nodiscard]] std::unique_ptr<DistributedVector<double>> newDualZVector(bool empty = false) const;
 
-   DistributedVector<double>* newRhs() const;
+   [[nodiscard]] std::unique_ptr<DistributedVector<double>> newRhs() const;
 
-   const DistributedTree* getSubRoot() const { return sub_root; };
-   const std::vector<DistributedTree*>& getChildren() const { return children; };
-   unsigned int nChildren() const { return children.size(); }
-   MPI_Comm getCommWorkers() const { return commWrkrs; };
+   [[nodiscard]] const DistributedTree* getSubRoot() const { return sub_root.get(); };
+   [[nodiscard]] const std::vector<std::unique_ptr<DistributedTree>>& getChildren() const { return children; };
+   [[nodiscard]] unsigned int nChildren() const { return children.size(); }
+   [[nodiscard]] MPI_Comm getCommWorkers() const { return commWrkrs; };
 
-   virtual int nx() const = 0;
-   virtual int my() const = 0;
-   virtual int myl() const;
-   virtual int mzl() const;
-   virtual int mz() const = 0;
-   virtual int id() const = 0;
+   [[nodiscard]] virtual int nx() const = 0;
+   [[nodiscard]] virtual int my() const = 0;
+   [[nodiscard]] virtual int myl() const;
+   [[nodiscard]] virtual int mzl() const;
+   [[nodiscard]] virtual int mz() const = 0;
+   [[nodiscard]] virtual int id() const = 0;
 
    //returns the global load, i.e. statistic based on the NNZs and
    //dimensions of the node (and subnodes) subproblem before any iteration or the CPU
    //time of this node and its subnodes  after the first iteration.
-   double processLoad() const;
+   [[nodiscard]] double processLoad() const;
 
-   bool isHierarchicalRoot() const { return is_hierarchical_root; };
+   [[nodiscard]] bool isHierarchicalRoot() const { return is_hierarchical_root; };
 
    void setHierarchicalInnerRoot() { is_hierarchical_inner_root = true; };
-   bool isHierarchicalInnerRoot() const { return is_hierarchical_inner_root; };
+   [[nodiscard]] bool isHierarchicalInnerRoot() const { return is_hierarchical_inner_root; };
 
    void setHierarchicalInnerLeaf() { is_hierarchical_inner_leaf = true; };
-   bool isHierarchicalInnerLeaf() const { return is_hierarchical_inner_leaf; };
+   [[nodiscard]] bool isHierarchicalInnerLeaf() const { return is_hierarchical_inner_leaf; };
 
    /* shave tree and add an additional top layer */
-   virtual DistributedTree* shaveDenseBorder(int nx_to_shave, int myl_to_shave, int mzl_to_shave) = 0;
+   [[nodiscard]] virtual std::unique_ptr<DistributedTree> shaveDenseBorder(int nx_to_shave, int myl_to_shave, int mzl_to_shave, std::unique_ptr<DistributedTree> pointer_to_this) = 0;
    /* add an additional layer below this one by adding sqrt(nChildren) children each with sqrt(nChildren) of our current children */
-   virtual std::pair<int, int> splitTree(int n_layers, DistributedQP* data) = 0;
+   [[nodiscard]] virtual std::pair<int, int> splitTree(int n_layers, DistributedQP* data) = 0;
 
    // TODO : make sure that none of the not suitable methods get called...
-   virtual DistributedTree* switchToHierarchicalTree(DistributedQP*& data) = 0;
+   [[nodiscard]] virtual std::unique_ptr<DistributedTree> switchToHierarchicalTree(DistributedQP*& data, std::unique_ptr<DistributedTree> pointer_to_this) = 0;
 
    void printProcessTree() const;
 protected:
    void appendPrintTreeLayer(std::vector<std::string>& layer_outputs, unsigned int level) const;
-   void assignProcesses(MPI_Comm, std::vector<int>&);
 
    DistributedTree() = default;
 

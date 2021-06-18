@@ -7,7 +7,7 @@
 
 #include "DistributedLeafLinearSystem.h"
 
-DistributedLeafLinearSystem::DistributedLeafLinearSystem(DistributedFactory* factory_, DistributedQP* prob,
+DistributedLeafLinearSystem::DistributedLeafLinearSystem(const DistributedFactory& factory_, DistributedQP* prob,
    std::shared_ptr<Vector<double>> dd_, std::shared_ptr<Vector<double>> dq_, std::shared_ptr<Vector<double>> nomegaInv_,
    std::shared_ptr<Vector<double>> primal_reg_, std::shared_ptr<Vector<double>> dual_y_reg_,
    std::shared_ptr<Vector<double>> dual_z_reg_, std::shared_ptr<Vector<double>> rhs_) : DistributedLinearSystem(
@@ -63,7 +63,7 @@ DistributedLeafLinearSystem::DistributedLeafLinearSystem(DistributedFactory* fac
 #endif
 
    kkt.reset(kkt_sp);
-   solver.reset(DistributedFactory::make_leaf_solver(kkt_sp));
+   solver = DistributedFactory::make_leaf_solver(kkt_sp);
 
 #ifdef TIMING
    const double t1 = MPI_Wtime() - t0;

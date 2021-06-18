@@ -7,17 +7,21 @@
 
 //#define PIPS_DEBUG
 #include "EquiStochScaler.h"
-#include "DistributedVector.h"
+#include "Vector.hpp"
+#include "ProblemFactory.h"
+#include "AbstractMatrix.h"
+
 #include "pipsdef.h"
 #include <cmath>
 #include <memory>
 
-EquiStochScaler::EquiStochScaler(const Problem& problem, bool bitshifting) : StochScaler(problem, bitshifting) {
+EquiStochScaler::EquiStochScaler(const ProblemFactory& problem_factory, const Problem& problem, bool bitshifting) :
+   Scaler(problem_factory, problem, bitshifting) {
    if (PIPS_MPIgetRank() == 0 && scaling_output)
       std::cout << "Creating EquiStochScaler...\n";
 }
 
-void EquiStochScaler::doObjScaling() {
+void EquiStochScaler::doObjScaling() const {
    assert(vec_colscale != nullptr);
 
    obj->componentMult(*vec_colscale);
@@ -32,17 +36,15 @@ void EquiStochScaler::doObjScaling() {
 
 // todo scale Q
 void EquiStochScaler::scale() {
-   assert(!vec_rowscaleA && !vec_rowscaleC && !vec_colscale);
+   create_scaling_vectors();
 
    /* We want to do the direction with lower maximal ratio first,
     * since the absolute smallest value in the scaled matrix is bounded from below by
-    * the inverse of the maximum ratio of the direction that is done first */
-   vec_rowscaleA.reset(dynamic_cast<DistributedVector<double>*>(bA->clone()));
-   std::unique_ptr<DistributedVector<double>> rowminA{dynamic_cast<DistributedVector<double>*>(bA->clone())};
-   vec_rowscaleC.reset(dynamic_cast<DistributedVector<double>*>(rhsC->clone()));
-   std::unique_ptr<DistributedVector<double>> rowminC{dynamic_cast<DistributedVector<double>*>(rhsC->clone())};
-   vec_colscale.reset(dynamic_cast<DistributedVector<double>*>(bux->clone()));
-   std::unique_ptr<DistributedVector<double>> colmin{dynamic_cast<DistributedVector<double>*>(bux->clone())};
+    * the inverse of the maximum ratio of the direction that is done first
+    */
+   std::unique_ptr<Vector<double>> rowminA{problem_factory.make_equalities_dual_vector()};
+   std::unique_ptr<Vector<double>> rowminC{problem_factory.make_inequalities_dual_vector()};
+   std::unique_ptr<Vector<double>> colmin{problem_factory.make_primal_vector()};
 
    const double rowratio = maxRowRatio(*vec_rowscaleA, *vec_rowscaleC, *rowminA, *rowminC, nullptr);
    const double colratio = maxColRatio(*vec_colscale, *colmin, nullptr, nullptr);

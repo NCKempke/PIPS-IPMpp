@@ -42,8 +42,8 @@ class DistributedQP;
 class sLinsysRootAug : public DistributedRootLinearSystem {
 
 public:
-   sLinsysRootAug(DistributedFactory* factory_, DistributedQP* prob_);
-   sLinsysRootAug(DistributedFactory* factory, DistributedQP* prob_, std::shared_ptr<Vector<double>> dd_, std::shared_ptr<Vector<double>> dq_, std::shared_ptr<Vector<double>> nomegaInv_,
+   sLinsysRootAug(const DistributedFactory& factory_, DistributedQP* prob_);
+   sLinsysRootAug(const DistributedFactory& factory, DistributedQP* prob_, std::shared_ptr<Vector<double>> dd_, std::shared_ptr<Vector<double>> dq_, std::shared_ptr<Vector<double>> nomegaInv_,
          std::shared_ptr<Vector<double>> regP, std::shared_ptr<Vector<double>> regDy, std::shared_ptr<Vector<double>> regDz, std::shared_ptr<Vector<double>> rhs_, bool creat_solvers);
    ~sLinsysRootAug() override = default;
 

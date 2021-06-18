@@ -67,6 +67,9 @@ public:
 
    Vector<double>& scale() { return *sc; };
 
+   [[nodiscard]] virtual std::unique_ptr<Problem> cloneFull() const = 0;
+   virtual void write_to_streamDense(std::ostream& out) const = 0;
+
    virtual void hessian_multiplication(double beta, Vector<double>& y, double alpha, const Vector<double>& x) const = 0;
 
    virtual void hessian_diagonal(Vector<double>& hessian_diagonal) const = 0;

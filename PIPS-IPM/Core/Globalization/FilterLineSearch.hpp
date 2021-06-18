@@ -25,7 +25,7 @@ public:
    FilterStrategy filter_strategy;
    /* ratio of step length update in ]0, 1[ */
    const double backtracking_ratio;
-   int number_iterations;
+   int number_iterations{};
    void initialize(Residuals& initial_residuals);
 
    void compute_acceptable_iterate(Problem& problem, Variables& current_iterate, Variables& direction, Residuals& current_residuals,

@@ -11,7 +11,7 @@
 #include "DistributedFactory.hpp"
 #include "DistributedQP.hpp"
 
-DistributedLinearSystem::DistributedLinearSystem(DistributedFactory* factory_, DistributedQP* problem,
+DistributedLinearSystem::DistributedLinearSystem(const DistributedFactory& factory_, DistributedQP* problem,
    bool is_hierarchy_root) : LinearSystem(
    factory_, *problem), data{problem},
    computeBlockwiseSC(pipsipmpp_options::get_bool_parameter("SC_COMPUTE_BLOCKWISE")),
@@ -19,7 +19,7 @@ DistributedLinearSystem::DistributedLinearSystem(DistributedFactory* factory_, D
    is_hierarchy_root(is_hierarchy_root),
    blocksize_hierarchical(pipsipmpp_options::get_int_parameter("SC_BLOCKSIZE_HIERARCHICAL")),
    sc_compute_blockwise_hierarchical{pipsipmpp_options::get_bool_parameter("SC_HIERARCHICAL_COMPUTE_BLOCKWISE")},
-   stochNode{factory_->tree} {
+   stochNode{factory_.tree.get()} {
    if (sc_compute_blockwise_hierarchical && PIPS_MPIgetRank() == 0)
       std::cout << "Computing hierarchical Schur complements blockwise with buffersize " << blocksize_hierarchical
                 << " (times # of available OMP threads)\n";
@@ -35,7 +35,7 @@ DistributedLinearSystem::DistributedLinearSystem(DistributedFactory* factory_, D
    this->iAmDistrib = dds.iAmDistrib;
 }
 
-DistributedLinearSystem::DistributedLinearSystem(DistributedFactory* factory_, DistributedQP* problem,
+DistributedLinearSystem::DistributedLinearSystem(const DistributedFactory& factory_, DistributedQP* problem,
    std::shared_ptr<Vector<double>> dd_, std::shared_ptr<Vector<double>> dq_,
    std::shared_ptr<Vector<double>> nomegaInv_, std::shared_ptr<Vector<double>> primal_reg_,
    std::shared_ptr<Vector<double>> dual_y_reg_, std::shared_ptr<Vector<double>> dual_z_reg_,
@@ -46,7 +46,7 @@ DistributedLinearSystem::DistributedLinearSystem(DistributedFactory* factory_, D
    blocksizemax(pipsipmpp_options::get_int_parameter("SC_BLOCKWISE_BLOCKSIZE_MAX")),
    blocksize_hierarchical(pipsipmpp_options::get_int_parameter("SC_BLOCKSIZE_HIERARCHICAL")),
    sc_compute_blockwise_hierarchical{pipsipmpp_options::get_bool_parameter("SC_HIERARCHICAL_COMPUTE_BLOCKWISE")},
-   stochNode{factory_->tree} {
+   stochNode{factory_.tree.get()} {
    problem->getLocalSizes(locnx, locmy, locmz, locmyl, locmzl);
 
    if (primal_diagonal) {

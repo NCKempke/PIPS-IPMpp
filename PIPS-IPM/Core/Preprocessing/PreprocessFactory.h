@@ -15,23 +15,25 @@
 #include "StochPostsolver.h"
 #include "DistributedQP.hpp"
 
+class ProblemFactory;
+
 class PreprocessFactory {
 public:
 
-   static Scaler* make_scaler(const Problem& problem, ScalerType type) {
+   static Scaler* make_scaler(const ProblemFactory& problem_factory, const Problem& problem, ScalerType type) {
       switch (type) {
          case ScalerType::SCALER_EQUI_STOCH:
-            return new EquiStochScaler(problem, false);
+            return new EquiStochScaler(problem_factory, problem, false);
          case ScalerType::SCALER_GEO_STOCH:
-            return new GeoStochScaler(problem, false, false);
+            return new GeoStochScaler(problem_factory, problem, false, false);
          case ScalerType::SCALER_GEO_EQUI_STOCH:
-            return new GeoStochScaler(problem, true, false);
+            return new GeoStochScaler(problem_factory, problem, true, false);
          default:
             return nullptr;
       }
    };
 
-   static Presolver* make_presolver(DistributedTree* tree, const Problem* data, PresolverType type, Postsolver* postsolver = nullptr) {
+   static Presolver* make_presolver(DistributedTree& tree, const Problem* data, PresolverType type, Postsolver* postsolver = nullptr) {
       assert(data);
       switch (type) {
          case PresolverType::PRESOLVER_STOCH:

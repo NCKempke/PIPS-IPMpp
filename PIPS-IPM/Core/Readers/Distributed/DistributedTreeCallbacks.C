@@ -22,8 +22,8 @@ DistributedTreeCallbacks::DistributedTreeCallbacks(const DistributedTreeCallback
       map_node_sub_root(other.map_node_sub_root.begin(), other.map_node_sub_root.end()), data{other.data} {
 }
 
-DistributedTree* DistributedTreeCallbacks::clone() const {
-   return new DistributedTreeCallbacks(*this);
+std::unique_ptr<DistributedTree> DistributedTreeCallbacks::clone() const {
+   return std::make_unique<DistributedTreeCallbacks>(*this);
 }
 
 DistributedTreeCallbacks::DistributedTreeCallbacks() : print_tree_sizes_on_reading{pipsipmpp_options::get_bool_parameter("PRINT_TREESIZES_ON_READ")} {
@@ -41,34 +41,36 @@ DistributedTreeCallbacks::DistributedTreeCallbacks(DistributedInputTree* inputTr
       numProcs = PIPS_MPIgetSize();
 
    for (auto & it : inputTree->children)
-      children.push_back(new DistributedTreeCallbacks(it.get()));
+      children.push_back(std::make_unique<DistributedTreeCallbacks>(it.get()));
 }
 
-void DistributedTreeCallbacks::addChild(DistributedTreeCallbacks* child) {
-   N += child->N;
+void DistributedTreeCallbacks::addChild(std::unique_ptr<DistributedTree> child_in) {
 
-   if (child->MY > 0)
-      MY += child->MY;
+   auto& child = dynamic_cast<DistributedTreeCallbacks&>(*child_in);
+   N += child.N;
 
-   if (child->MZ > 0)
-      MZ += child->MZ;
+   if (child.MY > 0)
+      MY += child.MY;
 
-   child->np = nx_active;
+   if (child.MZ > 0)
+      MZ += child.MZ;
 
-   if (child->commWrkrs != MPI_COMM_NULL) {
-      MYL = child->MYL;
-      MZL = child->MZL;
-      myl_active = child->myl_active;
-      mzl_active = child->mzl_active;
+   child.np = nx_active;
+
+   if (child.commWrkrs != MPI_COMM_NULL) {
+      MYL = child.MYL;
+      MZL = child.MZL;
+      myl_active = child.myl_active;
+      mzl_active = child.mzl_active;
    }
 
-   if (child->commWrkrs != MPI_COMM_NULL) {
-      assert(containsSorted(child->myProcs, myProcs));
-      assert(child->myl_active <= child->MYL);
-      assert(child->mzl_active <= child->MZL);
+   if (child.commWrkrs != MPI_COMM_NULL) {
+      assert(containsSorted(child.myProcs, myProcs));
+      assert(child.myl_active <= child.MYL);
+      assert(child.mzl_active <= child.MZL);
    }
 
-   this->children.push_back(child);
+   this->children.push_back(std::move(child_in));
 }
 
 
@@ -91,7 +93,7 @@ void DistributedTreeCallbacks::switchToPresolvedData() {
 
    for (auto & it : children) {
       it->np = this->nx_active;
-      dynamic_cast<DistributedTreeCallbacks*>(it)->switchToPresolvedData();
+      dynamic_cast<DistributedTreeCallbacks&>(*it).switchToPresolvedData();
    }
 
    is_data_presolved = true;
@@ -117,7 +119,7 @@ void DistributedTreeCallbacks::switchToOriginalData() {
 
    for (auto & it : children) {
       it->np = this->nx_active;
-      dynamic_cast<DistributedTreeCallbacks*>(it)->switchToOriginalData();
+      dynamic_cast<DistributedTreeCallbacks&>(*it).switchToOriginalData();
    }
 
    is_data_presolved = false;
@@ -212,14 +214,14 @@ DistributedTreeCallbacks::initPresolvedData(const DistributedSymmetricMatrix& Q,
 
    for (size_t it = 0; it < children.size(); it++) {
       assert(children[it]->np == this->nx_active);
-      auto* DistributedTreeCallbacksChild = dynamic_cast<DistributedTreeCallbacks*>(children[it]);
+      auto& child = dynamic_cast<DistributedTreeCallbacks&>(*children[it]);
 
-      DistributedTreeCallbacksChild->initPresolvedData(*Q.children[it], *A.children[it], *C.children[it], *nxVec.children[it], *myVec.children[it],
+      child.initPresolvedData(*Q.children[it], *A.children[it], *C.children[it], *nxVec.children[it], *myVec.children[it],
             *mzVec.children[it], myl_inactive, mzl_inactive);
 
-      N_INACTIVE += DistributedTreeCallbacksChild->N_INACTIVE;
-      MY_INACTIVE += DistributedTreeCallbacksChild->MY_INACTIVE;
-      MZ_INACTIVE += DistributedTreeCallbacksChild->MZ_INACTIVE;
+      N_INACTIVE += child.N_INACTIVE;
+      MY_INACTIVE += child.MY_INACTIVE;
+      MZ_INACTIVE += child.MZ_INACTIVE;
    }
 
    has_presolved_data = true;
@@ -246,13 +248,13 @@ void DistributedTreeCallbacks::writeSizes(std::ostream& sout) const {
 
    if (sub_root) {
       sout << "subroot: \n";
-      dynamic_cast<DistributedTreeCallbacks*>(sub_root)->writeSizes(sout);
+      dynamic_cast<DistributedTreeCallbacks&>(*sub_root).writeSizes(sout);
    }
 
    for (size_t it = 0; it < children.size(); it++) {
       if (children[it]->commWrkrs != MPI_COMM_NULL) {
          sout << "child " << it << ": \n\n";
-         dynamic_cast<DistributedTreeCallbacks*>(children[it])->writeSizes(sout);
+         dynamic_cast<DistributedTreeCallbacks&>(*children[it]).writeSizes(sout);
       }
       MPI_Barrier(commWrkrs);
    }
@@ -319,8 +321,8 @@ void DistributedTreeCallbacks::computeGlobalSizes() {
 }
 
 void DistributedTreeCallbacks::assertTreeStructureChildren() const {
-   for (const DistributedTree* child : children) {
-      dynamic_cast<const DistributedTreeCallbacks*>(child)->assertTreeStructureCorrect();
+   for (const auto& child : children) {
+      dynamic_cast<const DistributedTreeCallbacks*>(child.get())->assertTreeStructureCorrect();
 
       if (child->commWrkrs != MPI_COMM_NULL) {
          assert(isInVector(rankMe, child->myProcs));
@@ -335,7 +337,7 @@ void DistributedTreeCallbacks::assertTreeStructureChildren() const {
 void DistributedTreeCallbacks::assertSubRoot() const {
    if (sub_root) {
       assert(children.empty());
-      dynamic_cast<const DistributedTreeCallbacks*>(sub_root)->assertTreeStructureCorrect();
+      dynamic_cast<const DistributedTreeCallbacks&>(*sub_root).assertTreeStructureCorrect();
    }
 }
 
@@ -366,8 +368,8 @@ void DistributedTreeCallbacks::assertTreeStructureIsMyNodeChildren() const {
    int MYL_children{0};
    int MZL_children{0};
 
-   for (const DistributedTree* child_ : children) {
-      const auto* child = dynamic_cast<const DistributedTreeCallbacks*>(child_);
+   for (const auto& child_ : children) {
+      const auto* child = dynamic_cast<const DistributedTreeCallbacks*>(child_.get());
 
       if (isInVector(rankMe, child->myProcs)) {
          NX_children += child->N;
@@ -385,16 +387,8 @@ void DistributedTreeCallbacks::assertTreeStructureIsMyNodeChildren() const {
             MZL_children += child->MZL - mzl_active;
          }
          else if (!is_hierarchical_root) {
-            if (child->is_hierarchical_inner_leaf) {
-               assert(MZL >= child->MZL);
-               assert(MYL >= child->MYL);
-            }
-            else {
-               assert(MZL == child->MZL);
-               assert(MYL == child->MYL);
-            }
-
-
+            assert(MZL >= child->MZL);
+            assert(MYL >= child->MYL);
             assert(myl_active <= child->MYL);
             assert(mzl_active <= child->MZL);
             assert(child->myl_active == myl_active);
@@ -451,36 +445,36 @@ void DistributedTreeCallbacks::assertTreeStructureCorrect() const {
       assertTreeStructureIsMyNode();
 }
 
-DistributedSymmetricMatrix* DistributedTreeCallbacks::createQ() const {
+std::unique_ptr<DistributedSymmetricMatrix> DistributedTreeCallbacks::createQ() const {
    assert(!is_hierarchical_root && !is_hierarchical_inner_root && !is_hierarchical_inner_leaf);
 
    //is this node a dead-end for this process?
    if (commWrkrs == MPI_COMM_NULL)
-      return new StochSymDummyMatrix();
+      return std::make_unique<StochSymDummyMatrix>();
 
    if (data->nnzQ < 0)
       data->fnnzQ(data->user_data, data->id, &data->nnzQ);
 
-   auto* Q = new DistributedSymmetricMatrix(N, data->n, data->nnzQ, commWrkrs);
+   std::unique_ptr<DistributedSymmetricMatrix> Q = std::make_unique<DistributedSymmetricMatrix>(N, data->n, data->nnzQ, commWrkrs);
 
    data->fQ(data->user_data, data->id, dynamic_cast<SparseSymmetricMatrix&>(*Q->diag).krowM(), dynamic_cast<SparseSymmetricMatrix&>(*Q->diag).jcolM(),
          dynamic_cast<SparseSymmetricMatrix&>(*Q->diag).M());
 
-   for (auto it : children) {
+   for (const auto& it : children) {
       std::shared_ptr<DistributedSymmetricMatrix> child{it->createQ()};
       Q->AddChild(child);
    }
    return Q;
 }
 
-DistributedMatrix*
+std::unique_ptr<DistributedMatrix>
 DistributedTreeCallbacks::createMatrix(TREE_SIZE MY, TREE_SIZE MYL, DATA_INT m_ABmat, DATA_INT n_Mat, DATA_INT nnzAmat, DATA_NNZ fnnzAmat, DATA_MAT Amat,
       DATA_INT nnzBmat, DATA_NNZ fnnzBmat, DATA_MAT Bmat, DATA_INT m_Blmat, DATA_INT nnzBlmat, DATA_NNZ fnnzBlmat, DATA_MAT Blmat,
       const std::string& prefix_for_print) const {
    assert(!is_hierarchical_root && !is_hierarchical_inner_root && !is_hierarchical_inner_leaf);
 
    if (commWrkrs == MPI_COMM_NULL)
-      return new StochGenDummyMatrix();
+      return std::make_unique<StochGenDummyMatrix>();
 
    const bool root = (np == -1);
    const bool has_linking = (data->*fnnzBlmat != nullptr);
@@ -491,7 +485,7 @@ DistributedTreeCallbacks::createMatrix(TREE_SIZE MY, TREE_SIZE MYL, DATA_INT m_A
    if (data->*nnzAmat < 0)
       (data->*fnnzAmat)(data->user_data, data->id, &(data->*nnzAmat));
 
-   DistributedMatrix* A = nullptr;
+   std::unique_ptr<DistributedMatrix> A;
 
    if (root) {
       data->*nnzBmat = 0;
@@ -499,12 +493,12 @@ DistributedTreeCallbacks::createMatrix(TREE_SIZE MY, TREE_SIZE MYL, DATA_INT m_A
       if (data->*fnnzBlmat != nullptr) {
          // populate B with A's data B_0 is the A_0 from the theoretical form; also fill Bl
          // (i.e. the first block of linking constraints)
-         A = new DistributedMatrix(this->*MY + this->*MYL, N, data->*m_ABmat, np, data->*nnzBmat, data->*m_ABmat, data->*n_Mat, data->*nnzAmat,
+         A = std::make_unique<DistributedMatrix>(this->*MY + this->*MYL, N, data->*m_ABmat, np, data->*nnzBmat, data->*m_ABmat, data->*n_Mat, data->*nnzAmat,
                data->*m_Blmat, data->*n_Mat, data->*nnzBlmat, commWrkrs);
       }
       else {
          // populate B with A's data B_0 is the A_0 from the theoretical form
-         A = new DistributedMatrix(this->*MY + this->*MYL, N, data->*m_ABmat, np, data->*nnzBmat, data->*m_ABmat, data->*n_Mat, data->*nnzAmat,
+         A = std::make_unique<DistributedMatrix>(this->*MY + this->*MYL, N, data->*m_ABmat, np, data->*nnzBmat, data->*m_ABmat, data->*n_Mat, data->*nnzAmat,
                commWrkrs);
       }
 
@@ -523,11 +517,11 @@ DistributedTreeCallbacks::createMatrix(TREE_SIZE MY, TREE_SIZE MYL, DATA_INT m_A
          (data->*fnnzBmat)(data->user_data, data->id, &(data->*nnzBmat));
 
       if (data->fnnzBl != nullptr) {
-         A = new DistributedMatrix(this->*MY, N, data->*m_ABmat, np, data->*nnzAmat, data->*m_ABmat, data->*n_Mat, data->*nnzBmat, data->*m_Blmat,
+         A = std::make_unique<DistributedMatrix>(this->*MY, N, data->*m_ABmat, np, data->*nnzAmat, data->*m_ABmat, data->*n_Mat, data->*nnzBmat, data->*m_Blmat,
                data->*n_Mat, data->*nnzBlmat, commWrkrs);
       }
       else {
-         A = new DistributedMatrix(this->*MY, N, data->*m_ABmat, np, data->*nnzAmat, data->*m_ABmat, data->*n_Mat, data->*nnzBmat, commWrkrs);
+         A = std::make_unique<DistributedMatrix>(this->*MY, N, data->*m_ABmat, np, data->*nnzAmat, data->*m_ABmat, data->*n_Mat, data->*nnzBmat, commWrkrs);
       }
 
       //populate the submatrices A, B
@@ -546,15 +540,15 @@ DistributedTreeCallbacks::createMatrix(TREE_SIZE MY, TREE_SIZE MYL, DATA_INT m_A
       (data->*Blmat)(data->user_data, data->id, dynamic_cast<SparseMatrix&>(*A->Blmat).krowM(), dynamic_cast<SparseMatrix&>(*A->Blmat).jcolM(),
             dynamic_cast<SparseMatrix&>(*A->Blmat).M());
 
-   for (auto it : children) {
-      std::shared_ptr<DistributedMatrix> child{dynamic_cast<DistributedTreeCallbacks*>(it)->createMatrix(MY, MYL, m_ABmat, n_Mat, nnzAmat, fnnzAmat, Amat, nnzBmat,
+   for (const auto& it : children) {
+      std::shared_ptr<DistributedMatrix> child{dynamic_cast<DistributedTreeCallbacks*>(it.get())->createMatrix(MY, MYL, m_ABmat, n_Mat, nnzAmat, fnnzAmat, Amat, nnzBmat,
             fnnzBmat, Bmat, m_Blmat, nnzBlmat, fnnzBlmat, Blmat, prefix_for_print)};
       A->AddChild(child);
    }
    return A;
 }
 
-DistributedMatrix* DistributedTreeCallbacks::createA() const {
+std::unique_ptr<DistributedMatrix> DistributedTreeCallbacks::createA() const {
    TREE_SIZE MY = &DistributedTree::MY;
    TREE_SIZE MYL = &DistributedTree::MYL;
 
@@ -577,7 +571,7 @@ DistributedMatrix* DistributedTreeCallbacks::createA() const {
    return createMatrix(MY, MYL, m_ABmat, n_Mat, nnzAmat, fnnzAmat, Amat, nnzBmat, fnnzBmat, Bmat, m_Blmat, nnzBlmat, fnnzBlmat, Blmat, prefix);
 }
 
-DistributedMatrix* DistributedTreeCallbacks::createC() const {
+std::unique_ptr<DistributedMatrix> DistributedTreeCallbacks::createC() const {
    TREE_SIZE MZ = &DistributedTree::MZ;
    TREE_SIZE MZL = &DistributedTree::MZL;
 
@@ -624,18 +618,18 @@ int DistributedTreeCallbacks::id() const {
    return data->id;
 }
 
-DistributedVector<double>* DistributedTreeCallbacks::createVector(DATA_INT n_vec, DATA_VEC vec, DATA_INT n_linking_vec, DATA_VEC linking_vec) const {
+std::unique_ptr<DistributedVector<double>> DistributedTreeCallbacks::createVector(DATA_INT n_vec, DATA_VEC vec, DATA_INT n_linking_vec, DATA_VEC linking_vec) const {
    assert(n_vec);
    assert(vec);
 
    assert(!(is_hierarchical_root || is_hierarchical_inner_root || is_hierarchical_inner_leaf) || (false && "cannot be used with hierarchical data"));
 
    if (commWrkrs == MPI_COMM_NULL)
-      return new DistributedDummyVector<double>();
+      return std::make_unique<DistributedDummyVector<double>>();
 
    const int nlinking = (np == -1 && linking_vec != nullptr) ? data->*n_linking_vec : -1;
 
-   auto* svec = new DistributedVector<double>(data->*n_vec, nlinking, commWrkrs);
+   std::unique_ptr<DistributedVector<double>> svec = std::make_unique<DistributedVector<double>>(data->*n_vec, nlinking, commWrkrs);
 
    assert(svec->first);
    double* elems = dynamic_cast<SimpleVector<double>&>(*svec->first).elements();
@@ -650,50 +644,50 @@ DistributedVector<double>* DistributedTreeCallbacks::createVector(DATA_INT n_vec
       (data->*linking_vec)(data->user_data, data->id, elems_link, data->*n_linking_vec);
    }
 
-   for (const DistributedTree* child_tree : children) {
-      std::shared_ptr<DistributedVector<double>> child_vec{dynamic_cast<const DistributedTreeCallbacks*>(child_tree)->createVector(n_vec, vec, n_linking_vec, linking_vec)};
+   for (const auto& child_tree : children) {
+      std::shared_ptr<DistributedVector<double>> child_vec{dynamic_cast<const DistributedTreeCallbacks*>(child_tree.get())->createVector(n_vec, vec, n_linking_vec, linking_vec)};
       svec->AddChild(child_vec);
    }
 
    return svec;
 }
 
-DistributedVector<double>* DistributedTreeCallbacks::createc() const {
+std::unique_ptr<DistributedVector<double>> DistributedTreeCallbacks::createc() const {
    DATA_INT n_func = &InputNode::n;
    DATA_VEC func = &InputNode::fc;
 
    return createVector(n_func, func, nullptr, nullptr);
 }
 
-DistributedVector<double>* DistributedTreeCallbacks::createxlow() const {
+std::unique_ptr<DistributedVector<double>> DistributedTreeCallbacks::createxlow() const {
    DATA_INT n_func = &InputNode::n;
    DATA_VEC func = &InputNode::fxlow;
 
    return createVector(n_func, func, nullptr, nullptr);
 }
 
-DistributedVector<double>* DistributedTreeCallbacks::createixlow() const {
+std::unique_ptr<DistributedVector<double>> DistributedTreeCallbacks::createixlow() const {
    DATA_INT n_func = &InputNode::n;
    DATA_VEC func = &InputNode::fixlow;
 
    return createVector(n_func, func, nullptr, nullptr);
 }
 
-DistributedVector<double>* DistributedTreeCallbacks::createxupp() const {
+std::unique_ptr<DistributedVector<double>> DistributedTreeCallbacks::createxupp() const {
    DATA_INT n_func = &InputNode::n;
    DATA_VEC func = &InputNode::fxupp;
 
    return createVector(n_func, func, nullptr, nullptr);
 }
 
-DistributedVector<double>* DistributedTreeCallbacks::createixupp() const {
+std::unique_ptr<DistributedVector<double>> DistributedTreeCallbacks::createixupp() const {
    DATA_INT n_func = &InputNode::n;
    DATA_VEC func = &InputNode::fixupp;
 
    return createVector(n_func, func, nullptr, nullptr);
 }
 
-DistributedVector<double>* DistributedTreeCallbacks::createb() const {
+std::unique_ptr<DistributedVector<double>> DistributedTreeCallbacks::createb() const {
    DATA_INT n_func = &InputNode::my;
    DATA_VEC func = &InputNode::fb;
 
@@ -703,7 +697,7 @@ DistributedVector<double>* DistributedTreeCallbacks::createb() const {
    return createVector(n_func, func, n_func_link, func_link);
 }
 
-DistributedVector<double>* DistributedTreeCallbacks::createclow() const {
+std::unique_ptr<DistributedVector<double>> DistributedTreeCallbacks::createclow() const {
    DATA_INT n_func = &InputNode::mz;
    DATA_VEC func = &InputNode::fclow;
 
@@ -713,7 +707,7 @@ DistributedVector<double>* DistributedTreeCallbacks::createclow() const {
    return createVector(n_func, func, n_func_link, func_link);
 }
 
-DistributedVector<double>* DistributedTreeCallbacks::createiclow() const {
+std::unique_ptr<DistributedVector<double>> DistributedTreeCallbacks::createiclow() const {
    DATA_VEC func = &InputNode::ficlow;
    DATA_INT n_func = &InputNode::mz;
 
@@ -723,7 +717,7 @@ DistributedVector<double>* DistributedTreeCallbacks::createiclow() const {
    return createVector(n_func, func, n_func_link, func_link);
 }
 
-DistributedVector<double>* DistributedTreeCallbacks::createcupp() const {
+std::unique_ptr<DistributedVector<double>> DistributedTreeCallbacks::createcupp() const {
    DATA_INT n_func = &InputNode::mz;
    DATA_VEC func = &InputNode::fcupp;
 
@@ -733,7 +727,7 @@ DistributedVector<double>* DistributedTreeCallbacks::createcupp() const {
    return createVector(n_func, func, n_func_link, func_link);
 }
 
-DistributedVector<double>* DistributedTreeCallbacks::createicupp() const {
+std::unique_ptr<DistributedVector<double>> DistributedTreeCallbacks::createicupp() const {
    DATA_INT n_func = &InputNode::mz;
    DATA_VEC func = &InputNode::ficupp;
 
@@ -744,13 +738,14 @@ DistributedVector<double>* DistributedTreeCallbacks::createicupp() const {
    assert(!is_hierarchical_root || (false && "cannot be used with hierarchical data"));
 }
 
-DistributedTree* DistributedTreeCallbacks::shaveDenseBorder(int nx_to_shave, int myl_to_shave, int mzl_to_shave) {
+std::unique_ptr<DistributedTree> DistributedTreeCallbacks::shaveDenseBorder(int nx_to_shave, int myl_to_shave, int mzl_to_shave, std::unique_ptr<DistributedTree> pointer_to_this) {
+   assert(this == pointer_to_this.get());
    assertTreeStructureCorrect();
    if (PIPS_MPIgetRank() == 0 && !pipsipmpp_options::get_bool_parameter("SILENT"))
       std::cout << "Trimming " << nx_to_shave << " vars, " << myl_to_shave << " dense equalities, and " << mzl_to_shave
                 << " inequalities for the border\n";
 
-   auto* top_layer = new DistributedTreeCallbacks();
+   std::unique_ptr<DistributedTreeCallbacks> top_layer = std::make_unique<DistributedTreeCallbacks>();
 
    /* sTree members */
    top_layer->commWrkrs = commWrkrs;
@@ -771,7 +766,7 @@ DistributedTree* DistributedTreeCallbacks::shaveDenseBorder(int nx_to_shave, int
    top_layer->np = -1;
 
    assert(IPMIterExecTIME == -1);
-   top_layer->children.push_back(this);
+   top_layer->children.push_back(std::move(pointer_to_this));
 
    // TODO: not sure about the ressources monitors..: resMon, iterMon..
    top_layer->is_hierarchical_root = true;
@@ -794,7 +789,7 @@ DistributedTree* DistributedTreeCallbacks::shaveDenseBorder(int nx_to_shave, int
    this->adjustActiveMzlBy(-mzl_to_shave);
 
    for (auto& child : children)
-      dynamic_cast<DistributedTreeCallbacks*>(child)->np = nx_active;
+      dynamic_cast<DistributedTreeCallbacks*>(child.get())->np = nx_active;
 
    assert(myl_active >= 0);
    assert(mzl_active >= 0);
@@ -894,12 +889,12 @@ void DistributedTreeCallbacks::createSubcommunicatorsAndChildren(int& take_nth_r
    assert(map_child_to_sub_tree.size() == children.size());
 
    /* create new sub-roots */
-   std::vector<DistributedTreeCallbacks*> new_leafs(n_new_roots);
+   std::vector<std::unique_ptr<DistributedTreeCallbacks>> new_leafs(n_new_roots);
    for (auto& leaf : new_leafs) {
-      leaf = new DistributedTreeCallbacks();
+      leaf = std::make_unique<DistributedTreeCallbacks>();
       leaf->setHierarchicalInnerLeaf();
 
-      leaf->sub_root = new DistributedTreeCallbacks();
+      leaf->sub_root = std::make_unique<DistributedTreeCallbacks>();
       leaf->sub_root->setHierarchicalInnerLeaf();
    }
 
@@ -911,26 +906,26 @@ void DistributedTreeCallbacks::createSubcommunicatorsAndChildren(int& take_nth_r
 
       const unsigned int assigned_sub_root_for_child = map_child_to_sub_tree[child];
       assert(assigned_sub_root_for_child < new_leafs.size());
-      DistributedTreeCallbacks* assigned_leaf = new_leafs[assigned_sub_root_for_child];
+      auto& assigned_leaf = *new_leafs[assigned_sub_root_for_child];
 
       for (int process : child_procs) {
          // assuming sorted..
-         if (assigned_leaf->myProcs.empty() || assigned_leaf->myProcs.back() != process) {
-            if (!assigned_leaf->myProcs.empty()) {
-               assert(process > assigned_leaf->myProcs.back());
-               assert(!isInVector(process, assigned_leaf->myProcs));
+         if (assigned_leaf.myProcs.empty() || assigned_leaf.myProcs.back() != process) {
+            if (!assigned_leaf.myProcs.empty()) {
+               assert(process > assigned_leaf.myProcs.back());
+               assert(!isInVector(process, assigned_leaf.myProcs));
             }
 
-            assigned_leaf->myProcs.push_back(process);
-            assigned_leaf->sub_root->myProcs.push_back(process);
+            assigned_leaf.myProcs.push_back(process);
+            assigned_leaf.sub_root->myProcs.push_back(process);
          }
       }
 
-      dynamic_cast<DistributedTreeCallbacks*>(assigned_leaf->sub_root)->addChild(dynamic_cast<DistributedTreeCallbacks*>(children[child]));
+      dynamic_cast<DistributedTreeCallbacks&>(*assigned_leaf.sub_root).addChild(std::move(children[child]));
    }
 
    /* create all sub-communicators */
-   for (auto new_leaf : new_leafs) {
+   for (auto& new_leaf : new_leafs) {
       new_leaf->commWrkrs = PIPS_MPIcreateGroupFromRanks(new_leaf->myProcs, commWrkrs);
 
       if (!isInVector(rankMe, new_leaf->myProcs))
@@ -940,18 +935,9 @@ void DistributedTreeCallbacks::createSubcommunicatorsAndChildren(int& take_nth_r
       new_leaf->sub_root->myProcs = new_leaf->myProcs;
    }
 
-#ifndef NDEBUG
-   for (size_t child = 0; child < children.size(); ++child) {
-      if (isInVector(rankMe, children[child]->myProcs)) {
-         auto child_new_root = new_leafs[map_child_to_sub_tree[child]];
-         assert(child_new_root->commWrkrs != MPI_COMM_NULL);
-      }
-   }
-#endif
-
    /* add sub_roots as this new children */
    children.clear();
-   children.insert(children.begin(), new_leafs.begin(), new_leafs.end());
+   children.insert(children.begin(), std::make_move_iterator(new_leafs.begin()), std::make_move_iterator(new_leafs.end()));
 
    if (!is_hierarchical_inner_leaf)
       is_hierarchical_inner_root = true;
@@ -1006,17 +992,17 @@ void DistributedTreeCallbacks::adjustActiveMylBy(int adjustment) {
    assert(myl_active >= 0);
    assert(MYL >= 0);
 
-   for (DistributedTree* child_ : children) {
-      auto* child = dynamic_cast<DistributedTreeCallbacks*>(child_);
+   for (auto& child_ : children) {
+      auto& child = dynamic_cast<DistributedTreeCallbacks&>(*child_);
 
-      assert(child->children.empty());
+      assert(child.children.empty());
 
-      if (isInVector(rankMe, child->myProcs)) {
-         child->myl_active += adjustment;
-         child->MYL += adjustment;
+      if (isInVector(rankMe, child.myProcs)) {
+         child.myl_active += adjustment;
+         child.MYL += adjustment;
       }
-      assert(child->myl_active >= 0);
-      assert(child->MYL >= 0);
+      assert(child.myl_active >= 0);
+      assert(child.MYL >= 0);
    }
 }
 
@@ -1026,15 +1012,15 @@ void DistributedTreeCallbacks::adjustActiveMzlBy(int adjustment) {
    MZL += adjustment;
 
    for (auto& child_ : children) {
-      auto* child = dynamic_cast<DistributedTreeCallbacks*>(child_);
-      assert(child->children.empty());
+      auto& child = dynamic_cast<DistributedTreeCallbacks&>(*child_);
+      assert(child.children.empty());
 
-      if (isInVector(rankMe, child->myProcs)) {
-         child->mzl_active += adjustment;
-         child->MZL += adjustment;
+      if (isInVector(rankMe, child.myProcs)) {
+         child.mzl_active += adjustment;
+         child.MZL += adjustment;
       }
-      assert(child->mzl_active >= 0);
-      assert(child->MZL >= 0);
+      assert(child.mzl_active >= 0);
+      assert(child.MZL >= 0);
    }
 }
 
@@ -1117,9 +1103,9 @@ std::pair<int, int> DistributedTreeCallbacks::adjustSizesAfterSplit(const std::v
                sub_root.nx_active == 0 && sub_root.my_active == 0 && sub_root.mz_active == 0 && sub_root.myl_active == 0 && sub_root.mzl_active == 0);
 
          for (const auto& child_ : sub_root.children) {
-            const auto& child = dynamic_cast<const DistributedTreeCallbacks*>(child_);
-            assert(child->N == 0 && child->MY == 0 && child->MZ == 0 && child->MYL == 0 && child->MZL == 0);
-            assert(child->nx_active == 0 && child->my_active == 0 && child->mz_active == 0 && child->myl_active == 0 && child->mzl_active == 0);
+            const auto& child = dynamic_cast<const DistributedTreeCallbacks&>(*child_);
+            assert(child.N == 0 && child.MY == 0 && child.MZ == 0 && child.MYL == 0 && child.MZL == 0);
+            assert(child.nx_active == 0 && child.my_active == 0 && child.mz_active == 0 && child.myl_active == 0 && child.mzl_active == 0);
          }
 #endif
       }
@@ -1195,9 +1181,9 @@ std::pair<int, int> DistributedTreeCallbacks::splitTree(int n_layers, Distribute
    return std::make_pair<int, int>(deleted_myl_mzl.first + deleted_children.first, deleted_myl_mzl.second + deleted_children.second);
 }
 
-DistributedTree* DistributedTreeCallbacks::switchToHierarchicalTree(DistributedQP*& data_to_split) {
+std::unique_ptr<DistributedTree> DistributedTreeCallbacks::switchToHierarchicalTree(DistributedQP*& data_to_split, std::unique_ptr<DistributedTree> pointer_to_this) {
    assert(data_to_split->exploitingLinkStructure());
-
+   assert(this == dynamic_cast<DistributedTreeCallbacks*>(pointer_to_this.get()));
    const int n_layers = pipsipmpp_options::get_int_parameter("HIERARCHICAL_APPROACH_N_LAYERS");
 
    assert(!is_hierarchical_root);
@@ -1237,8 +1223,8 @@ DistributedTree* DistributedTreeCallbacks::switchToHierarchicalTree(DistributedQ
       assert(myl_to_shave <= myl_active);
       assert(mzl_to_shave <= mzl_active);
 
-      auto* top_layer = dynamic_cast<DistributedTreeCallbacks*>( shaveDenseBorder(nx_to_shave, myl_to_shave, mzl_to_shave));
-      data_to_split = data_to_split->shaveDenseBorder(top_layer);
+      auto top_layer = shaveDenseBorder(nx_to_shave, myl_to_shave, mzl_to_shave, std::move(pointer_to_this));
+      data_to_split = data_to_split->shaveDenseBorder(*top_layer);
 
       if (PIPS_MPIgetRank() == 0)
          std::cout << "Hierarchical data_to_split built\n";
@@ -1246,7 +1232,7 @@ DistributedTree* DistributedTreeCallbacks::switchToHierarchicalTree(DistributedQ
       return top_layer;
    }
    else
-      return this;
+      return pointer_to_this;
 }
 
 std::vector<MPI_Comm> DistributedTreeCallbacks::getChildComms() const {

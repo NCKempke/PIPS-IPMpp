@@ -8,8 +8,7 @@
 #ifndef GEOSTOCHSCALER_H
 #define GEOSTOCHSCALER_H
 
-#include "StochScaler.h"
-#include "DistributedVector.h"
+#include "Scaler.hpp"
 
 class Problem;
 
@@ -18,21 +17,24 @@ class Problem;
  * Geometric scaler
  * @{
  */
-class GeoStochScaler : public StochScaler {
-   bool equilibrate;
-   int maxIters;
-   double minImpr;
-   double goodEnough;
+class GeoStochScaler : public Scaler {
+
+private:
+   const double minImpr;
+   const double goodEnough;
+
+   const int maxIters;
+   const bool equilibrate;
 
 protected:
-   void doObjScaling() override;
+   void doObjScaling() const override;
 
-   void applyGeoMean(Vector<double>& maxvec, const Vector<double>& minvec);
+   static void applyGeoMean(Vector<double>& maxvec, const Vector<double>& minvec);
    void postEquiScale();
-public:
 
-   GeoStochScaler(const Problem& problem, bool equiScaling, bool bitshifting = false);
-   virtual ~GeoStochScaler() = default;
+public:
+   GeoStochScaler(const ProblemFactory& problem_factory, const Problem& problem, bool equiScaling, bool bitshifting = false);
+   ~GeoStochScaler() override = default;
 
    /** scale */
    void scale() override;
