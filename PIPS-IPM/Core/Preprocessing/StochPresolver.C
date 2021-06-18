@@ -10,7 +10,7 @@
 #include <iostream>
 #include <string>
 #include <memory>
-#include "DistributedQP.hpp"
+#include "DistributedProblem.hpp"
 #include "DistributedTreeCallbacks.h"
 #include "PIPSIPMppOptions.h"
 #include "DistributedMatrix.h"
@@ -29,9 +29,9 @@ StochPresolver::StochPresolver(DistributedTree* tree_, const Problem& prob, Post
       print_problem(pipsipmpp_options::get_bool_parameter("PRESOLVE_PRINT_PROBLEM")),
       write_presolved_problem(pipsipmpp_options::get_bool_parameter("PRESOLVE_WRITE_PRESOLVED_PROBLEM_MPS")),
       transform_inequalities_to_equalities{pipsipmpp_options::get_bool_parameter("PRESOLVE_TRANSFROM_INEQUALITIES_INTO_EQUALITIES")},
-      verbosity(pipsipmpp_options::get_int_parameter("PRESOLVE_VERBOSITY")), tree(tree_), original_problem(dynamic_cast<const DistributedQP&>(prob)),
-      presolve_data(dynamic_cast<const DistributedQP&>(original_problem), dynamic_cast<StochPostsolver*>(postsolver)) {
-   const auto& sorigprob = dynamic_cast<const DistributedQP&>(original_problem);
+      verbosity(pipsipmpp_options::get_int_parameter("PRESOLVE_VERBOSITY")), tree(tree_), original_problem(dynamic_cast<const DistributedProblem&>(prob)),
+      presolve_data(dynamic_cast<const DistributedProblem&>(original_problem), dynamic_cast<StochPostsolver*>(postsolver)) {
+   const auto& sorigprob = dynamic_cast<const DistributedProblem&>(original_problem);
 
    if (pipsipmpp_options::get_bool_parameter("PRESOLVE_SINGLETON_ROWS"))
       presolvers.emplace_back(std::make_unique<StochPresolverSingletonRows>(presolve_data, sorigprob));
@@ -75,7 +75,7 @@ Problem* StochPresolver::presolve() {
    }
 
    /* finalize data and switch tree to new presolved data */
-   auto* finalPreDistributedQP = dynamic_cast<DistributedQP*>(presolve_data.finalize());
+   auto* finalPreDistributedQP = dynamic_cast<DistributedProblem*>(presolve_data.finalize());
 
    assert(tree != nullptr);
    assert(tree == finalPreDistributedQP->stochNode);
@@ -121,7 +121,7 @@ void StochPresolver::resetFreeVariables() {
    if (my_rank == 0)
       std::cout << "Resetting bounds found in bound strengthening\n";
 
-   const auto& sorigprob = dynamic_cast<const DistributedQP&>(original_problem);
+   const auto& sorigprob = dynamic_cast<const DistributedProblem&>(original_problem);
 
    presolve_data.resetOriginallyFreeVarsBounds(sorigprob);
 }

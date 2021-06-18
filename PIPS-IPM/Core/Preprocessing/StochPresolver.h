@@ -44,7 +44,7 @@ private:
 
    /* tree belonging to origData and presolve_data */
    DistributedTree* const tree;
-   const DistributedQP& original_problem;
+   const DistributedProblem& original_problem;
 
    PresolveData presolve_data;
 

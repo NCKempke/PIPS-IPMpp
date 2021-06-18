@@ -85,7 +85,7 @@ namespace rowlib {
 
 class StochPresolverParallelRows : public StochPresolverBase {
 public:
-   StochPresolverParallelRows(PresolveData& presolve_data, const DistributedQP& origProb);
+   StochPresolverParallelRows(PresolveData& presolve_data, const DistributedProblem& origProb);
 
    ~StochPresolverParallelRows();
 

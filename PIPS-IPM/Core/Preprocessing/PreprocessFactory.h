@@ -13,7 +13,7 @@
 #include "StochPresolver.h"
 #include "PreprocessType.h"
 #include "StochPostsolver.h"
-#include "DistributedQP.hpp"
+#include "DistributedProblem.hpp"
 
 class PreprocessFactory {
 public:
@@ -43,7 +43,7 @@ public:
 
    // todo : not sure about the factory design here
    static Postsolver* make_postsolver(const Problem* original_problem) {
-      return new StochPostsolver(dynamic_cast<const DistributedQP&>(*original_problem));
+      return new StochPostsolver(dynamic_cast<const DistributedProblem&>(*original_problem));
    }
 };
 

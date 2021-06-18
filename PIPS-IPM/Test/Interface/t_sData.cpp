@@ -1,10 +1,10 @@
 #include "gtest/gtest.h"
 #include "gmock/gmock.h"
-#include "DistributedQP.hpp"
+#include "DistributedProblem.hpp"
 #include <tuple>
 
 class HierarchicalDataSplittingTest
-      : public DistributedQP,
+      : public DistributedProblem,
         public ::testing::TestWithParam<std::tuple<std::vector<unsigned int>, std::vector<int>, int, std::vector<unsigned int>>> {
 };
 

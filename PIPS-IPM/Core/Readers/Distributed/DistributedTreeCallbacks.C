@@ -3,7 +3,7 @@
  * (C) 2012 Argonne National Laboratory. See Copyright Notification.  */
 
 #include "DistributedTreeCallbacks.h"
-#include "DistributedQP.hpp"
+#include "DistributedProblem.hpp"
 #include "DistributedSymmetricMatrix.h"
 #include "DistributedMatrix.h"
 #include "DistributedVector.h"
@@ -135,7 +135,7 @@ bool DistributedTreeCallbacks::hasPresolved() {
    return has_presolved_data;
 }
 
-void DistributedTreeCallbacks::initPresolvedData(const DistributedQP& presolved_data) {
+void DistributedTreeCallbacks::initPresolvedData(const DistributedProblem& presolved_data) {
    const auto& Q = dynamic_cast<const DistributedSymmetricMatrix&>(*presolved_data.Q);
    const auto& A = dynamic_cast<const DistributedMatrix&>(*presolved_data.A);
    const auto& C = dynamic_cast<const DistributedMatrix&>(*presolved_data.C);
@@ -1127,7 +1127,7 @@ std::pair<int, int> DistributedTreeCallbacks::adjustSizesAfterSplit(const std::v
    return std::make_pair(not_my_two_links_eq, not_my_two_links_ineq);
 }
 
-std::pair<int, int> DistributedTreeCallbacks::splitTree(int n_layers, DistributedQP* data_to_split) {
+std::pair<int, int> DistributedTreeCallbacks::splitTree(int n_layers, DistributedProblem* data_to_split) {
    if (n_layers == 1 || commWrkrs == MPI_COMM_NULL)
       return std::make_pair(0, 0);
 
@@ -1195,7 +1195,7 @@ std::pair<int, int> DistributedTreeCallbacks::splitTree(int n_layers, Distribute
    return std::make_pair<int, int>(deleted_myl_mzl.first + deleted_children.first, deleted_myl_mzl.second + deleted_children.second);
 }
 
-DistributedTree* DistributedTreeCallbacks::switchToHierarchicalTree(DistributedQP*& data_to_split) {
+DistributedTree* DistributedTreeCallbacks::switchToHierarchicalTree(DistributedProblem*& data_to_split) {
    assert(data_to_split->exploitingLinkStructure());
 
    const int n_layers = pipsipmpp_options::get_int_parameter("HIERARCHICAL_APPROACH_N_LAYERS");

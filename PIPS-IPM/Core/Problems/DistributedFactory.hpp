@@ -20,7 +20,7 @@
 
 class QP;
 
-class DistributedQP;
+class DistributedProblem;
 
 class Variables;
 
@@ -72,24 +72,24 @@ public:
    /** create rhs for augmented system using tree */
    Vector<double>* make_right_hand_side() const;
 
-   std::unique_ptr<DistributedRootLinearSystem> make_linear_system_root(DistributedQP* problem);
+   std::unique_ptr<DistributedRootLinearSystem> make_linear_system_root(DistributedProblem* problem);
 
-   std::unique_ptr<DistributedRootLinearSystem> make_root_hierarchical_linear_system(DistributedQP* problem);
+   std::unique_ptr<DistributedRootLinearSystem> make_root_hierarchical_linear_system(DistributedProblem* problem);
 
    DistributedRootLinearSystem*
-   make_linear_system_root(DistributedQP* problem, std::shared_ptr<Vector<double>> primal_diagonal,
+   make_linear_system_root(DistributedProblem* problem, std::shared_ptr<Vector<double>> primal_diagonal,
       std::shared_ptr<Vector<double>> dq, std::shared_ptr<Vector<double>> nomegaInv,
       std::shared_ptr<Vector<double>> primal_regularization,
       std::shared_ptr<Vector<double>> dual_equality_regularization,
       std::shared_ptr<Vector<double>> dual_inequality_regularization,
       std::shared_ptr<Vector<double>> rhs);
 
-   DistributedQP* switchToHierarchicalData(DistributedQP* problem);
+   DistributedProblem* switchToHierarchicalData(DistributedProblem* problem);
 
    void switchToOriginalTree();
 
    DistributedLeafLinearSystem*
-   make_linear_system_leaf(DistributedQP* problem, std::shared_ptr<Vector<double>> primal_diagonal, std::shared_ptr<Vector<double>> dq,
+   make_linear_system_leaf(DistributedProblem* problem, std::shared_ptr<Vector<double>> primal_diagonal, std::shared_ptr<Vector<double>> dq,
       std::shared_ptr<Vector<double>> nomegaInv,
       std::shared_ptr<Vector<double>> primal_regularization, std::shared_ptr<Vector<double>> dual_equality_regularization,
       std::shared_ptr<Vector<double>> dual_inequality_regularization,

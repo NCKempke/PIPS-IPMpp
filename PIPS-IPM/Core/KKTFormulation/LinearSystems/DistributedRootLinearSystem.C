@@ -6,7 +6,7 @@
 
 #include "DistributedRootLinearSystem.h"
 #include "DistributedFactory.hpp"
-#include "DistributedQP.hpp"
+#include "DistributedProblem.hpp"
 #include "DistributedDummyLinearSystem.h"
 #include "DistributedLeafLinearSystem.h"
 #include "PIPSIPMppOptions.h"
@@ -19,14 +19,14 @@
 double g_scenNum;
 #endif
 
-DistributedRootLinearSystem::DistributedRootLinearSystem(DistributedFactory* factory_, DistributedQP* prob_,
+DistributedRootLinearSystem::DistributedRootLinearSystem(DistributedFactory* factory_, DistributedProblem* prob_,
    bool is_hierarchy_root) : DistributedLinearSystem(factory_, prob_, is_hierarchy_root) {
    if (pipsipmpp_options::get_bool_parameter("HIERARCHICAL"))
       assert(is_hierarchy_root);
    init();
 }
 
-DistributedRootLinearSystem::DistributedRootLinearSystem(DistributedFactory* factory_, DistributedQP* prob_,
+DistributedRootLinearSystem::DistributedRootLinearSystem(DistributedFactory* factory_, DistributedProblem* prob_,
    std::shared_ptr<Vector<double>> dd_, std::shared_ptr<Vector<double>> dq_, std::shared_ptr<Vector<double>> nomegaInv_,
    std::shared_ptr<Vector<double>> primal_reg_, std::shared_ptr<Vector<double>> dual_y_reg_,
    std::shared_ptr<Vector<double>> dual_z_reg_, std::shared_ptr<Vector<double>> rhs_) : DistributedLinearSystem(

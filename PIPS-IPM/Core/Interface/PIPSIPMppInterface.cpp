@@ -5,7 +5,7 @@
 #include "PIPSIPMppInterface.hpp"
 #include "PreprocessType.h"
 #include "DistributedFactory.hpp"
-#include "DistributedQP.hpp"
+#include "DistributedProblem.hpp"
 #include "DistributedResiduals.hpp"
 #include "DistributedVariables.h"
 #include "PreprocessFactory.h"
@@ -37,7 +37,7 @@ scaler_type, PresolverType presolver_type, const std::string& settings) : comm(c
 
    // presolving activated?
    if (presolver_type != PresolverType::PRESOLVER_NONE) {
-      original_problem.reset(dynamic_cast<DistributedQP*>(factory->make_problem()));
+      original_problem.reset(dynamic_cast<DistributedProblem*>(factory->make_problem()));
 
       MPI_Barrier(comm);
       const double t0_presolve = MPI_Wtime();
@@ -47,7 +47,7 @@ scaler_type, PresolverType presolver_type, const std::string& settings) : comm(c
 
       presolver.reset(preprocess_factory->make_presolver(factory->tree, original_problem.get(), presolver_type, postsolver.get()));
 
-      presolved_problem.reset(dynamic_cast<DistributedQP*>(presolver->presolve()));
+      presolved_problem.reset(dynamic_cast<DistributedProblem*>(presolver->presolve()));
 
       MPI_Barrier(comm);
       const double t_presolve = MPI_Wtime();
@@ -55,7 +55,7 @@ scaler_type, PresolverType presolver_type, const std::string& settings) : comm(c
          std::cout << "---presolve time (in sec.): " << t_presolve - t0_presolve << "\n";
    }
    else {
-      presolved_problem.reset(dynamic_cast<DistributedQP*>(factory->make_problem()));
+      presolved_problem.reset(dynamic_cast<DistributedProblem*>(factory->make_problem()));
    }
    assert(presolved_problem);
 
@@ -81,7 +81,7 @@ scaler_type, PresolverType presolver_type, const std::string& settings) : comm(c
       if (my_rank == 0)
          std::cout << "Using hierarchical approach!\n";
 
-      presolved_problem.reset(dynamic_cast<DistributedQP*>(factory->switchToHierarchicalData(presolved_problem.release())));
+      presolved_problem.reset(dynamic_cast<DistributedProblem*>(factory->switchToHierarchicalData(presolved_problem.release())));
 
       if (pipsipmpp_options::get_bool_parameter("HIERARCHICAL_PRINT_HIER_DATA"))
          presolved_problem->write_to_streamDense(std::cout);

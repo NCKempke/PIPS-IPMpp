@@ -13,7 +13,7 @@
 #include "DistributedVectorUtilities.h"
 #include <cassert>
 
-StochPresolverBase::StochPresolverBase(PresolveData& presolve_data, const DistributedQP& origProb) : my_rank(PIPS_MPIgetRank(MPI_COMM_WORLD)),
+StochPresolverBase::StochPresolverBase(PresolveData& presolve_data, const DistributedProblem& origProb) : my_rank(PIPS_MPIgetRank(MPI_COMM_WORLD)),
       distributed(PIPS_MPIgetDistributed(MPI_COMM_WORLD)), verbosity(pipsipmpp_options::get_int_parameter("PRESOLVE_VERBOSITY")),
       INF_NEG(-pipsipmpp_options::get_double_parameter("PRESOLVE_INFINITY")), INF_POS(pipsipmpp_options::get_double_parameter("PRESOLVE_INFINITY")),
       n_linking_vars(dynamic_cast<const DistributedVector<double>&>(*origProb.g).first->length()), n_linking_rows_eq(

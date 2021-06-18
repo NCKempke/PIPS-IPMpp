@@ -12,7 +12,7 @@
 #include "PIPSIPMppOptions.h"
 
 
-StochPresolverBoundStrengthening::StochPresolverBoundStrengthening(PresolveData& presolve_data, const DistributedQP& origProb) : StochPresolverBase(
+StochPresolverBoundStrengthening::StochPresolverBoundStrengthening(PresolveData& presolve_data, const DistributedProblem& origProb) : StochPresolverBase(
       presolve_data, origProb), limit_iter(pipsipmpp_options::get_int_parameter("PRESOLVE_BOUND_STR_MAX_ITER")),
       limit_entry(pipsipmpp_options::get_double_parameter("PRESOLVE_BOUND_STR_NUMERIC_LIMIT_ENTRY")),
       limit_partial_activity(pipsipmpp_options::get_double_parameter("PRESOLVE_BOUND_STR_MAX_PARTIAL_ACTIVITY")),

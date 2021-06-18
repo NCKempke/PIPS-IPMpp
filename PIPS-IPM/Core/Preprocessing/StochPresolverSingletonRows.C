@@ -13,7 +13,7 @@
 #include <iostream>
 #include <algorithm>
 
-StochPresolverSingletonRows::StochPresolverSingletonRows(PresolveData& presolve_data, const DistributedQP& origProb) : StochPresolverBase(
+StochPresolverSingletonRows::StochPresolverSingletonRows(PresolveData& presolve_data, const DistributedProblem& origProb) : StochPresolverBase(
       presolve_data, origProb), removed_rows(0), buffer_found_singleton_equality(n_linking_vars), buffer_rows_lower(n_linking_vars),
       buffer_rows_upper(n_linking_vars), buffer_xlows(n_linking_vars), buffer_xupps(n_linking_vars), buffer_coeffs_lower(n_linking_vars),
       buffer_coeffs_upper(n_linking_vars) {

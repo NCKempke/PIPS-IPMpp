@@ -15,7 +15,7 @@
 #include <stdexcept>
 #include <iostream>
 
-StochPostsolver::StochPostsolver(const DistributedQP& original_problem) : Postsolver(original_problem),
+StochPostsolver::StochPostsolver(const DistributedProblem& original_problem) : Postsolver(original_problem),
    postsolve_tol(pipsipmpp_options::get_double_parameter("POSTSOLVE_TOLERANCE")),
    INF_NEG(-pipsipmpp_options::get_double_parameter("PRESOLVE_INFINITY")),
    INF_POS(pipsipmpp_options::get_double_parameter("PRESOLVE_INFINITY")),

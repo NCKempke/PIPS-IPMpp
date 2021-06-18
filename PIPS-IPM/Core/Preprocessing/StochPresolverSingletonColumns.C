@@ -10,7 +10,7 @@
 #include "StochPresolverSingletonColumns.h"
 #include "DistributedVectorUtilities.h"
 
-StochPresolverSingletonColumns::StochPresolverSingletonColumns(PresolveData& presolve_data, const DistributedQP& origProb) : StochPresolverBase(
+StochPresolverSingletonColumns::StochPresolverSingletonColumns(PresolveData& presolve_data, const DistributedProblem& origProb) : StochPresolverBase(
       presolve_data, origProb), removed_cols(0), local_singletons(false),
       n_linking_rows_eq(dynamic_cast<const DistributedVector<double>&>(*origProb.bA).last->length()),
       n_linking_rows_ineq(dynamic_cast<const DistributedVector<double>&>(*origProb.inequality_upper_bounds).last->length()),

@@ -25,7 +25,7 @@ class DistributedTree;
 
 class DistributedFactory;
 
-class DistributedQP;
+class DistributedProblem;
 
 class DistributedLinearSystem : public LinearSystem {
 public:
@@ -108,9 +108,9 @@ public:
       return BorderMod_Block<T>(child, bordermod.multiplier);
    }
 
-   DistributedLinearSystem(DistributedFactory* factory, DistributedQP* prob, bool is_hierarchy_root = false);
+   DistributedLinearSystem(DistributedFactory* factory, DistributedProblem* prob, bool is_hierarchy_root = false);
 
-   DistributedLinearSystem(DistributedFactory* factory, DistributedQP* prob, std::shared_ptr<Vector<double>> dd, std::shared_ptr<Vector<double>> dq, std::shared_ptr<Vector<double>> nomegaInv,
+   DistributedLinearSystem(DistributedFactory* factory, DistributedProblem* prob, std::shared_ptr<Vector<double>> dd, std::shared_ptr<Vector<double>> dq, std::shared_ptr<Vector<double>> nomegaInv,
          std::shared_ptr<Vector<double>> primal_reg_, std::shared_ptr<Vector<double>> dual_y_reg_, std::shared_ptr<Vector<double>> dual_z_reg_, std::shared_ptr<Vector<double>> rhs, bool create_iter_ref_vecs);
 
    ~DistributedLinearSystem() override = default;
@@ -149,7 +149,7 @@ protected:
    int locmz{};
    int locmzl{};
 
-   const DistributedQP* data{};
+   const DistributedProblem* data{};
 
    int iAmDistrib;
 

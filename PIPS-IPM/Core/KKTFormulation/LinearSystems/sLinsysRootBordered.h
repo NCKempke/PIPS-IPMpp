@@ -12,7 +12,7 @@
 
 class sLinsysRootBordered : public DistributedRootLinearSystem {
 public:
-   sLinsysRootBordered(DistributedFactory* factory_, DistributedQP* prob_);
+   sLinsysRootBordered(DistributedFactory* factory_, DistributedProblem* prob_);
 
    ~sLinsysRootBordered() override = default;
 

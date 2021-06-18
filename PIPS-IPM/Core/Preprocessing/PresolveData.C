@@ -29,7 +29,7 @@ bool PresolveData::iTrackRow() const {
    return track_row && (!nodeIsDummy(tracked_row.getNode()) && (my_rank == 0 || tracked_row.isLinkingRow() || tracked_row.getNode() != -1));
 }
 
-PresolveData::PresolveData(const DistributedQP& sorigprob, StochPostsolver* postsolver) : postsolver(postsolver),
+PresolveData::PresolveData(const DistributedProblem& sorigprob, StochPostsolver* postsolver) : postsolver(postsolver),
       limit_max_bound_accepted(pipsipmpp_options::get_double_parameter("PRESOLVE_MAX_BOUND_ACCEPTED")),
       array_outdated_indicators(new bool[length_array_outdated_indicators]), outdated_lhsrhs(array_outdated_indicators[0]),
       outdated_nnzs(array_outdated_indicators[1]), outdated_linking_var_bounds(array_outdated_indicators[2]),
@@ -172,7 +172,7 @@ void PresolveData::delete_transposed() {
    getSystemMatrix(EQUALITY_SYSTEM).deleteTransposed();
    getSystemMatrix(INEQUALITY_SYSTEM).deleteTransposed();
 }
-DistributedQP* PresolveData::finalize() {
+DistributedProblem* PresolveData::finalize() {
    delete_transposed();
 #ifndef NDEBUG
    if (distributed) {
@@ -901,7 +901,7 @@ void PresolveData::deleteEntryAtIndex(const INDEX& row, const INDEX& col, int co
    reduceNnzCounterColumnBy(col, 1, at_root);
 }
 
-void PresolveData::resetOriginallyFreeVarsBounds(const DistributedQP& orig_prob) {
+void PresolveData::resetOriginallyFreeVarsBounds(const DistributedProblem& orig_prob) {
    // todo : tell postsolver about released variables
    assert(0 && "not yet properly implemented");
 

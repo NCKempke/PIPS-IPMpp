@@ -37,10 +37,10 @@ void QP::datainput(MpsReader* reader, int& iErr) {
 
    if (reader->scalingOption == 1) {
       // Create the scaling vector
-      this->createScaleFromQ();
+      this->create_scale_from_hessian();
 
       //Scale the variables
-      this->scaleQ();
+      this->scale_hessian();
       this->scaleA();
       this->scaleC();
       this->scaleg();
@@ -51,7 +51,7 @@ void QP::datainput(MpsReader* reader, int& iErr) {
    /* If objective sense is "MAX", flip the C and Q matrices */
    if (!strncmp(reader->objectiveSense, "MAX", 3)) {
       this->flipg();
-      this->flipQ();
+      this->flip_hessian();
    }
 }
 
@@ -86,7 +86,7 @@ double QP::objective_value(const Variables& variables) const {
    return gradient.dotProductWith(*variables.primals);
 }
 
-void QP::createScaleFromQ() {
+void QP::create_scale_from_hessian() {
    // Stuff the diagonal elements of Q into the vector "sc"
    this->hessian_diagonal(*sc);
 
@@ -100,11 +100,11 @@ void QP::createScaleFromQ() {
    }
 }
 
-void QP::scaleQ() {
+void QP::scale_hessian() {
    Q->symmetricScale(*sc);
 }
 
-void QP::flipQ() {
+void QP::flip_hessian() {
    // Multiply Q matrix by -1
    Q->scalarMult(-1.0);
 }

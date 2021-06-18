@@ -11,14 +11,14 @@
 #include "DistributedVector.h"
 #include "DistributedMatrix.h"
 #include "PresolveData.h"
-#include "DistributedQP.hpp"
+#include "DistributedProblem.hpp"
 #include "SystemType.h"
 #include "StochPostsolver.h"
 #include <vector>
 
 class StochPresolverBase {
 public:
-   StochPresolverBase(PresolveData& presolve_data, const DistributedQP& origProb);
+   StochPresolverBase(PresolveData& presolve_data, const DistributedProblem& origProb);
    virtual ~StochPresolverBase();
 
    virtual bool applyPresolving() = 0;
@@ -58,7 +58,7 @@ protected:
    PresolveData& presolve_data;
 
    // pointers to the currently needed matrices and vectors for presolving
-   const DistributedQP& origProb;
+   const DistributedProblem& origProb;
 
    const SparseStorageDynamic* currAmat;
    const SparseStorageDynamic* currAmatTrans;

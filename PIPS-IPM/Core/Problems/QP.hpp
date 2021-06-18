@@ -56,11 +56,11 @@ public:
    /** extract the diagonal of the Hessian and put it in the Vector<double> hessian_diagonal */
    void hessian_diagonal(Vector<double>& hessian_diagonal) const override;
 
-   void createScaleFromQ();
+   void create_scale_from_hessian();
 
-   void scaleQ();
+   void scale_hessian();
 
-   void flipQ();
+   void flip_hessian();
 
    [[nodiscard]] double datanorm() const override;
 

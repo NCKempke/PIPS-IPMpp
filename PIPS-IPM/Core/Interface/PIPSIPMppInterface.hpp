@@ -22,7 +22,7 @@ class DistributedFactory;
 class PreprocessFactory;
 class DistributedResiduals;
 class DistributedVariables;
-class DistributedQP;
+class DistributedProblem;
 class Presolver;
 class Postsolver;
 class Scaler;
@@ -103,9 +103,9 @@ protected:
    std::unique_ptr<DistributedFactory> factory;
    std::unique_ptr<PreprocessFactory> preprocess_factory;
 
-   std::unique_ptr<DistributedQP> presolved_problem; // possibly presolved problem
-   std::unique_ptr<DistributedQP> dataUnpermNotHier; // data after presolve before permutation, scaling and hierarchical data
-   std::unique_ptr<DistributedQP> original_problem; // original data
+   std::unique_ptr<DistributedProblem> presolved_problem; // possibly presolved problem
+   std::unique_ptr<DistributedProblem> dataUnpermNotHier; // data after presolve before permutation, scaling and hierarchical data
+   std::unique_ptr<DistributedProblem> original_problem; // original data
    std::unique_ptr<DistributedVariables> variables;
    std::unique_ptr<DistributedVariables> unscaleUnpermNotHierVars;
    std::unique_ptr<DistributedVariables> postsolved_variables;
