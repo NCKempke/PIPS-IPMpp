@@ -1,5 +1,5 @@
 /*
- * EquiStochScaler.h
+ * EquilibriumScaler.h
  *
  *  Created on: 20.12.2017
  *      Author: bzfrehfe
@@ -18,13 +18,13 @@ class Problem;
  * @{
  */
 
-class EquiStochScaler : public Scaler {
+class EquilibriumScaler : public Scaler {
 protected:
    void doObjScaling() const override;
 
 public:
-   EquiStochScaler(const ProblemFactory& problem_factory, const Problem& problem, bool bitshifting = true);
-   ~EquiStochScaler() override = default;
+   EquilibriumScaler(const ProblemFactory& problem_factory, const Problem& problem, bool bitshifting = true);
+   ~EquilibriumScaler() override = default;
 
    /** scale */
    void scale() override;

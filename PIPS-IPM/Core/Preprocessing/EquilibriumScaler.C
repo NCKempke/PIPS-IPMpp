@@ -1,12 +1,12 @@
 /*
- * EquiStochScaler.C
+ * EquilibriumScaler.C
  *
  *  Created on: 20.12.2017
  *      Author: bzfrehfe
  */
 
 //#define PIPS_DEBUG
-#include "EquiStochScaler.h"
+#include "EquilibriumScaler.h"
 #include "Vector.hpp"
 #include "ProblemFactory.h"
 #include "AbstractMatrix.h"
@@ -15,13 +15,13 @@
 #include <cmath>
 #include <memory>
 
-EquiStochScaler::EquiStochScaler(const ProblemFactory& problem_factory, const Problem& problem, bool bitshifting) :
+EquilibriumScaler::EquilibriumScaler(const ProblemFactory& problem_factory, const Problem& problem, bool bitshifting) :
    Scaler(problem_factory, problem, bitshifting) {
    if (PIPS_MPIgetRank() == 0 && scaling_output)
-      std::cout << "Creating EquiStochScaler...\n";
+      std::cout << "Creating EquilibriumScaler...\n";
 }
 
-void EquiStochScaler::doObjScaling() const {
+void EquilibriumScaler::doObjScaling() const {
    assert(vec_colscale != nullptr);
 
    obj->componentMult(*vec_colscale);
@@ -35,7 +35,7 @@ void EquiStochScaler::doObjScaling() const {
 }
 
 // todo scale Q
-void EquiStochScaler::scale() {
+void EquilibriumScaler::scale() {
    create_scaling_vectors();
 
    /* We want to do the direction with lower maximal ratio first,

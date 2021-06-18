@@ -8,7 +8,7 @@
 #ifndef PIPS_IPM_CORE_QPPREPROCESS_PREPROCESSFACTORY_H_
 #define PIPS_IPM_CORE_QPPREPROCESS_PREPROCESSFACTORY_H_
 
-#include "EquiStochScaler.h"
+#include "EquilibriumScaler.h"
 #include "GeoStochScaler.h"
 #include "StochPresolver.h"
 #include "PreprocessType.h"
@@ -23,7 +23,7 @@ public:
    static Scaler* make_scaler(const ProblemFactory& problem_factory, const Problem& problem, ScalerType type) {
       switch (type) {
          case ScalerType::SCALER_EQUI_STOCH:
-            return new EquiStochScaler(problem_factory, problem, false);
+            return new EquilibriumScaler(problem_factory, problem, false);
          case ScalerType::SCALER_GEO_STOCH:
             return new GeoStochScaler(problem_factory, problem, false, false);
          case ScalerType::SCALER_GEO_EQUI_STOCH:

@@ -2,7 +2,7 @@ target_include_directories(pips-ipmpp PRIVATE ./)
 
 target_sources(pips-ipmpp
         PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/CurtisReidScaler.cpp
-        PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/EquiStochScaler.C
+        PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/EquilibriumScaler.C
         PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/GeoStochScaler.C
         PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/PresolveData.C
         PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/Postsolver.cpp
