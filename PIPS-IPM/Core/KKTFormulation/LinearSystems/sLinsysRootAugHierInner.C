@@ -97,8 +97,8 @@ void sLinsysRootAugHierInner::LtsolveHierarchyBorder(AbstractMatrix& res, const 
 void
 sLinsysRootAugHierInner::computeInnerSystemRightHandSide(DistributedVector<double>& rhs_inner,
    const SimpleVector<double>& b0, bool use_local_RAC) {
-   BorderLinsys Border(0, dynamic_cast<StripMatrix&>(*dynamic_cast<const DistributedMatrix&>(*data->A).Blmat),
-      dynamic_cast<StripMatrix&>(*dynamic_cast<const DistributedMatrix&>(*data->C).Blmat), use_local_RAC);
+   BorderLinsys Border(0, dynamic_cast<StripMatrix&>(*dynamic_cast<const DistributedMatrix&>(*data->equality_jacobian).Blmat),
+      dynamic_cast<StripMatrix&>(*dynamic_cast<const DistributedMatrix&>(*data->inequality_jacobian).Blmat), use_local_RAC);
 
    if (Border.isEmpty())
       return;
@@ -139,8 +139,8 @@ void sLinsysRootAugHierInner::addLniziLinkCons(Vector<double>& z0_, Vector<doubl
    /* solve system */
    solveCompressed(*sol_inner);
 
-   BorderLinsys Bl(0, dynamic_cast<StripMatrix&>(*dynamic_cast<const DistributedMatrix&>(*data->A).Blmat),
-      dynamic_cast<StripMatrix&>(*dynamic_cast<const DistributedMatrix&>(*data->C).Blmat), use_local_RAC);
+   BorderLinsys Bl(0, dynamic_cast<StripMatrix&>(*dynamic_cast<const DistributedMatrix&>(*data->equality_jacobian).Blmat),
+      dynamic_cast<StripMatrix&>(*dynamic_cast<const DistributedMatrix&>(*data->inequality_jacobian).Blmat), use_local_RAC);
 
    addBorderTimesRhsToB0(*sol_inner, z0, Bl);
 }
@@ -237,8 +237,8 @@ sLinsysRootAugHierInner::addInnerBorderKiInvBrToRes(AbstractMatrix& result, Bord
    std::vector<BorderMod>& Br_mod_border, bool use_local_RAC,
    bool sparse_res, bool sym_res, int begin_cols, int end_cols, int n_empty_rows_inner_border) {
    const auto mres = result.n_rows();
-   assert(dynamic_cast<const DistributedMatrix&>(*data->A).Blmat->is_a(kStripMatrix));
-   assert(dynamic_cast<const DistributedMatrix&>(*data->C).Blmat->is_a(kStripMatrix));
+   assert(dynamic_cast<const DistributedMatrix&>(*data->equality_jacobian).Blmat->is_a(kStripMatrix));
+   assert(dynamic_cast<const DistributedMatrix&>(*data->inequality_jacobian).Blmat->is_a(kStripMatrix));
 
    BorderLinsys Bl(n_empty_rows_inner_border, data->getLocalFBorder(), data->getLocalGBorder(), use_local_RAC);
    if (Bl.isEmpty() || (Br.isEmpty() && Br_mod_border.empty()))
@@ -261,8 +261,8 @@ sLinsysRootAugHierInner::addInnerBorderKiInvBrToRes(AbstractMatrix& result, Bord
 void sLinsysRootAugHierInner::addTermToSchurComplBlocked(bool sparseSC, SymmetricMatrix& SC, bool use_local_RAC,
    int n_empty_rows_inner_border) {
    assert(data->getLocalFBorder().n_columns() == data->getLocalGBorder().n_columns());
-   assert(dynamic_cast<const DistributedMatrix&>(*data->A).Blmat->is_a(kStripMatrix));
-   assert(dynamic_cast<const DistributedMatrix&>(*data->C).Blmat->is_a(kStripMatrix));
+   assert(dynamic_cast<const DistributedMatrix&>(*data->equality_jacobian).Blmat->is_a(kStripMatrix));
+   assert(dynamic_cast<const DistributedMatrix&>(*data->inequality_jacobian).Blmat->is_a(kStripMatrix));
 
    BorderLinsys Bl(n_empty_rows_inner_border, data->getLocalFBorder(), data->getLocalGBorder(), use_local_RAC);
    BorderLinsys Br(n_empty_rows_inner_border, data->getLocalFBorder(), data->getLocalGBorder(), use_local_RAC);

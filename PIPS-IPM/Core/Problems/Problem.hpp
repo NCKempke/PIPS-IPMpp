@@ -14,10 +14,10 @@ protected:
    Problem() = default;
 
 public:
-   std::shared_ptr<GeneralMatrix> A;
-   std::shared_ptr<GeneralMatrix> C;
-   std::shared_ptr<Vector<double>> g; // objective
-   std::shared_ptr<Vector<double>> bA; // rhs equality
+   std::shared_ptr<GeneralMatrix> equality_jacobian;
+   std::shared_ptr<GeneralMatrix> inequality_jacobian;
+   std::shared_ptr<Vector<double>> objective_gradient; // objective
+   std::shared_ptr<Vector<double>> equality_rhs; // rhs equality
    std::shared_ptr<Vector<double>> primal_upper_bounds; // upper bounds x
    std::shared_ptr<Vector<double>> primal_upper_bound_indicators; // index for upper bounds
    std::shared_ptr<Vector<double>> primal_lower_bounds; // lower bounds x
@@ -45,9 +45,9 @@ public:
 
    virtual ~Problem() = default;
 
-   [[nodiscard]] virtual double objective_value(const Variables& x) const = 0;
+   [[nodiscard]] virtual double evaluate_objective(const Variables& x) const = 0;
 
-   virtual void objective_gradient(const Variables& vars, Vector<double>& gradient) const = 0;
+   virtual void evaluate_objective_gradient(const Variables& vars, Vector<double>& gradient) const = 0;
 
    /** compute the norm of the problem data */
    [[nodiscard]] virtual double datanorm() const;
@@ -99,7 +99,7 @@ public:
    /** y = beta * y + alpha * C\T * x */
    virtual void CTransmult(double beta, Vector<double>& y, double alpha, const Vector<double>& x) const;
 
-   void getg(Vector<double>& cout) const;
+   void get_objective_gradient(Vector<double>& myG) const;
 
    void getbA(Vector<double>& bout) const;
 

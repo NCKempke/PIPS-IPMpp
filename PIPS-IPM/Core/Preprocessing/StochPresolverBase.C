@@ -16,9 +16,9 @@
 StochPresolverBase::StochPresolverBase(PresolveData& presolve_data, const DistributedProblem& origProb) : my_rank(PIPS_MPIgetRank(MPI_COMM_WORLD)),
       distributed(PIPS_MPIgetDistributed(MPI_COMM_WORLD)), verbosity(pipsipmpp_options::get_int_parameter("PRESOLVE_VERBOSITY")),
       INF_NEG(-pipsipmpp_options::get_double_parameter("PRESOLVE_INFINITY")), INF_POS(pipsipmpp_options::get_double_parameter("PRESOLVE_INFINITY")),
-      n_linking_vars(dynamic_cast<const DistributedVector<double>&>(*origProb.g).first->length()), n_linking_rows_eq(
-            dynamic_cast<const DistributedVector<double>&>(*origProb.bA).last
-            ? dynamic_cast<const DistributedVector<double>&>(*origProb.bA).last->length() : 0), n_linking_rows_ineq(
+      n_linking_vars(dynamic_cast<const DistributedVector<double>&>(*origProb.objective_gradient).first->length()), n_linking_rows_eq(
+            dynamic_cast<const DistributedVector<double>&>(*origProb.equality_rhs).last
+            ? dynamic_cast<const DistributedVector<double>&>(*origProb.equality_rhs).last->length() : 0), n_linking_rows_ineq(
             dynamic_cast<const DistributedVector<double>&>(*origProb.inequality_lower_bound_indicators).last
             ? dynamic_cast<const DistributedVector<double>&>(*origProb.inequality_lower_bound_indicators).last->length() : 0), presolve_data(presolve_data), origProb(origProb) {
    localNelims = 0;
@@ -292,7 +292,7 @@ void StochPresolverBase::updatePointersForCurrentNode(int node, SystemType syste
    assert(-1 <= node && node < nChildren);
    assert(system_type == EQUALITY_SYSTEM || system_type == INEQUALITY_SYSTEM);
 
-   const GeneralMatrix& matrix = (system_type == EQUALITY_SYSTEM) ? *presolve_data.getPresProb().A : *presolve_data.getPresProb().C;
+   const GeneralMatrix& matrix = (system_type == EQUALITY_SYSTEM) ? *presolve_data.getPresProb().equality_jacobian : *presolve_data.getPresProb().inequality_jacobian;
 
    /* set matrix pointers for A B and Bl */
    setPointersMatrices(matrix, node);
@@ -341,12 +341,12 @@ void StochPresolverBase::setPointersMatrixBoundsActivities(SystemType system_typ
    assert(-1 <= node && node < nChildren);
 
    if (system_type == EQUALITY_SYSTEM) {
-      currEqRhs = &getSimpleVecFromRowStochVec(*presolve_data.getPresProb().bA, node, false);
+      currEqRhs = &getSimpleVecFromRowStochVec(*presolve_data.getPresProb().equality_rhs, node, false);
 
       currIneqLhs = currIclow = currIneqRhs = currIcupp = currIneqLhsLink = currIclowLink = currIneqRhsLink = currIcuppLink = nullptr;
 
       if (presolve_data.hasLinking(system_type))
-         currEqRhsLink = &getSimpleVecFromRowStochVec(*presolve_data.getPresProb().bA, node, true);
+         currEqRhsLink = &getSimpleVecFromRowStochVec(*presolve_data.getPresProb().equality_rhs, node, true);
       else
          currEqRhsLink = nullptr;
 
@@ -389,9 +389,9 @@ void StochPresolverBase::setPointersVarBounds(int node) {
 }
 
 void StochPresolverBase::setPointersObjective(int node) {
-   currgParent = &getSimpleVecFromColStochVec(*presolve_data.getPresProb().g, -1);
+   currgParent = &getSimpleVecFromColStochVec(*presolve_data.getPresProb().objective_gradient, -1);
    if (node != -1)
-      currgChild = &getSimpleVecFromColStochVec(*presolve_data.getPresProb().g, node);
+      currgChild = &getSimpleVecFromColStochVec(*presolve_data.getPresProb().objective_gradient, node);
    else
       currgChild = nullptr;
 }

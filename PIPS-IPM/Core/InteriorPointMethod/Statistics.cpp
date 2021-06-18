@@ -21,7 +21,7 @@ void Statistics::print(const Problem* problem, const Variables* variables, const
 void
 Statistics::print(const Problem* problem, const Variables* variables, const Residuals* residuals, double dnorm, double alpha_primal, double alpha_dual,
       double sigma, int i, double mu, TerminationStatus status_code, int level) const {
-   double objective = problem->objective_value(*variables);
+   double objective = problem->evaluate_objective(*variables);
 
    const Residuals* unscaled_residuals = residuals;
    if (scaler) {

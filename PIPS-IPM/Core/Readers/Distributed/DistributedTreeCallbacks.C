@@ -137,11 +137,11 @@ bool DistributedTreeCallbacks::hasPresolved() {
 
 void DistributedTreeCallbacks::initPresolvedData(const DistributedProblem& presolved_data) {
    const auto& Q = dynamic_cast<const DistributedSymmetricMatrix&>(*presolved_data.Q);
-   const auto& A = dynamic_cast<const DistributedMatrix&>(*presolved_data.A);
-   const auto& C = dynamic_cast<const DistributedMatrix&>(*presolved_data.C);
+   const auto& A = dynamic_cast<const DistributedMatrix&>(*presolved_data.equality_jacobian);
+   const auto& C = dynamic_cast<const DistributedMatrix&>(*presolved_data.inequality_jacobian);
 
-   const auto& g = dynamic_cast<const DistributedVector<double>&>(*presolved_data.g);
-   const auto& b = dynamic_cast<const DistributedVector<double>&>(*presolved_data.bA);
+   const auto& g = dynamic_cast<const DistributedVector<double>&>(*presolved_data.objective_gradient);
+   const auto& b = dynamic_cast<const DistributedVector<double>&>(*presolved_data.equality_rhs);
 
    assert(presolved_data.inequality_upper_bound_indicators || presolved_data.inequality_upper_bound_indicators);
    const DistributedVector<double>& ic = presolved_data.inequality_lower_bound_indicators ? dynamic_cast<const DistributedVector<double>&>(*presolved_data.inequality_lower_bound_indicators)

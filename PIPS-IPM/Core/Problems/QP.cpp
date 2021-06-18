@@ -33,7 +33,7 @@ double QP::datanorm() const {
 }
 
 void QP::datainput(MpsReader* reader, int& iErr) {
-   reader->readQpGen(*g, *Q, *primal_lower_bounds, *primal_lower_bound_indicators, *primal_upper_bounds, *primal_upper_bound_indicators, *A, *bA, *C, *inequality_lower_bounds, *inequality_lower_bound_indicators, *inequality_upper_bounds, *inequality_upper_bound_indicators, iErr);
+   reader->readQpGen(*objective_gradient, *Q, *primal_lower_bounds, *primal_lower_bound_indicators, *primal_upper_bounds, *primal_upper_bound_indicators, *equality_jacobian, *equality_rhs, *inequality_jacobian, *inequality_lower_bounds, *inequality_lower_bound_indicators, *inequality_upper_bounds, *inequality_upper_bound_indicators, iErr);
 
    if (reader->scalingOption == 1) {
       // Create the scaling vector
@@ -74,14 +74,14 @@ void QP::hessian_diagonal(Vector<double>& hessian_diagonal) const {
    Q->fromGetDiagonal(0, hessian_diagonal);
 }
 
-void QP::objective_gradient(const Variables& variables, Vector<double>& gradient) const {
-   this->getg(gradient);
+void QP::evaluate_objective_gradient(const Variables& variables, Vector<double>& gradient) const {
+   this->get_objective_gradient(gradient);
    this->hessian_multiplication(1., gradient, 1., *variables.primals);
 }
 
-double QP::objective_value(const Variables& variables) const {
+double QP::evaluate_objective(const Variables& variables) const {
    SimpleVector<double> gradient(nx);
-   this->getg(gradient);
+   this->get_objective_gradient(gradient);
    this->hessian_multiplication(1., gradient, 0.5, *variables.primals);
    return gradient.dotProductWith(*variables.primals);
 }

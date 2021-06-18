@@ -35,7 +35,7 @@ public:
 
    std::vector<DistributedProblem*> children;
 
-   void AddChild(DistributedProblem* child);
+   void add_child(DistributedProblem* child);
 
    const DistributedTree* stochNode{};
 
@@ -147,7 +147,7 @@ public:
 
    virtual DistributedProblem* cloneFull(bool switchToDynamicStorage = false) const;
 
-   double objective_value(const Variables& variables) const override;
+   double evaluate_objective(const Variables& variables) const override;
 
    void
    cleanUpPresolvedData(const DistributedVector<int>& rowNnzVecA, const DistributedVector<int>& rowNnzVecC,

@@ -206,8 +206,8 @@ int StochPresolverModelCleanup::removeRedundantRows(SystemType system_type, int 
  * be in a consistent state.
  */
 int StochPresolverModelCleanup::removeTinyEntriesFromSystem(SystemType system_type) {
-   assert(dynamic_cast<const DistributedMatrix&>(*(presolve_data.getPresProb().A)).children.size() == (size_t) nChildren);
-   assert(dynamic_cast<const DistributedMatrix&>(*(presolve_data.getPresProb().C)).children.size() == (size_t) nChildren);
+   assert(dynamic_cast<const DistributedMatrix&>(*(presolve_data.getPresProb().equality_jacobian)).children.size() == (size_t) nChildren);
+   assert(dynamic_cast<const DistributedMatrix&>(*(presolve_data.getPresProb().inequality_jacobian)).children.size() == (size_t) nChildren);
 
    int n_elims = 0;
 

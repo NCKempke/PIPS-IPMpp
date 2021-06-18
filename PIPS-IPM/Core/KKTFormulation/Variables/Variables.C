@@ -599,7 +599,7 @@ void Variables::print_solution(MpsReader* reader, Problem* problem, int& iErr) {
    assert(primals->isKindOf(kSimpleVector)); // Otherwise this routine
 
    SimpleVector<double> g(nx);
-   problem->getg(g);
+   problem->get_objective_gradient(g);
    problem->hessian_multiplication(1.0, g, 0.5, *primals);
    double objective = g.dotProductWith(*primals);
 

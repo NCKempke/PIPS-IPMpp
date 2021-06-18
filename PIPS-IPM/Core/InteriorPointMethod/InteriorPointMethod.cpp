@@ -97,7 +97,7 @@ double InteriorPointMethod::barrier_directional_derivative(Problem& problem, Var
             *problem.inequality_upper_bound_indicators);
    }
    result *= iterate.mu();
-   result += problem.g->dotProductWith(*direction.primals);
+   result += problem.objective_gradient->dotProductWith(*direction.primals);
    return result;
 }
 

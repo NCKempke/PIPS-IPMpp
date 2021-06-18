@@ -1120,16 +1120,16 @@ void DistributedProblem::write_to_streamDense(std::ostream& out) const {
 
    if (myRank == 0)
       out << "A:\n";
-   (*A).write_to_streamDense(out);
+   (*equality_jacobian).write_to_streamDense(out);
    if (myRank == 0)
       out << "C:\n";
-   (*C).write_to_streamDense(out);
+   (*inequality_jacobian).write_to_streamDense(out);
    if (myRank == 0)
       out << "obj:\n";
-   (*g).write_to_stream(out);
+   (*objective_gradient).write_to_stream(out);
    if (myRank == 0)
       out << "bA:\n";
-   (*bA).write_to_stream(out);
+   (*equality_rhs).write_to_stream(out);
    if (myRank == 0)
       out << "xupp:\n";
    (*primal_upper_bounds).write_to_stream(out);
@@ -1159,11 +1159,11 @@ void DistributedProblem::write_to_streamDense(std::ostream& out) const {
 DistributedProblem* DistributedProblem::cloneFull(bool switchToDynamicStorage) const {
    // todo Q is empty!
    std::shared_ptr<SymmetricMatrix> Q_clone(Q->clone());
-   std::shared_ptr<GeneralMatrix> A_clone(dynamic_cast<const DistributedMatrix&>(*A).cloneFull(switchToDynamicStorage));
-   std::shared_ptr<GeneralMatrix> C_clone(dynamic_cast<const DistributedMatrix&>(*C).cloneFull(switchToDynamicStorage));
+   std::shared_ptr<GeneralMatrix> A_clone(dynamic_cast<const DistributedMatrix&>(*equality_jacobian).cloneFull(switchToDynamicStorage));
+   std::shared_ptr<GeneralMatrix> C_clone(dynamic_cast<const DistributedMatrix&>(*inequality_jacobian).cloneFull(switchToDynamicStorage));
 
-   std::shared_ptr<DistributedVector<double>> c_clone(dynamic_cast<DistributedVector<double>*>(g->cloneFull()));
-   std::shared_ptr<DistributedVector<double>> bA_clone(dynamic_cast<DistributedVector<double>*>(bA->cloneFull()));
+   std::shared_ptr<DistributedVector<double>> c_clone(dynamic_cast<DistributedVector<double>*>(objective_gradient->cloneFull()));
+   std::shared_ptr<DistributedVector<double>> bA_clone(dynamic_cast<DistributedVector<double>*>(equality_rhs->cloneFull()));
    std::shared_ptr<DistributedVector<double>> xupp_clone(dynamic_cast<DistributedVector<double>*>(primal_upper_bounds->cloneFull()));
    std::shared_ptr<DistributedVector<double>> ixupp_clone(dynamic_cast<DistributedVector<double>*>(primal_upper_bound_indicators->cloneFull()));
    std::shared_ptr<DistributedVector<double>> xlow_clone(dynamic_cast<DistributedVector<double>*>(primal_lower_bounds->cloneFull()));
@@ -1186,27 +1186,27 @@ void DistributedProblem::createChildren() {
    //follow the structure of one of the tree objects and create the same
    //structure for this class, and link this object with the corresponding
    //vectors and matrices
-   auto& gSt = dynamic_cast<DistributedVector<double>&>(*g);
+   auto& gSt = dynamic_cast<DistributedVector<double>&>(*objective_gradient);
    auto& QSt = dynamic_cast<DistributedSymmetricMatrix&>(*Q);
 
    auto& xlowSt = dynamic_cast<DistributedVector<double>&>(*primal_lower_bounds);
    auto& ixlowSt = dynamic_cast<DistributedVector<double>&>(*primal_lower_bound_indicators);
    auto& xuppSt = dynamic_cast<DistributedVector<double>&>(*primal_upper_bounds);
    auto& ixuppSt = dynamic_cast<DistributedVector<double>&>(*primal_upper_bound_indicators);
-   auto& ASt = dynamic_cast<DistributedMatrix&>(*A);
-   auto& bASt = dynamic_cast<DistributedVector<double>&>(*bA);
-   auto& CSt = dynamic_cast<DistributedMatrix&>(*C);
+   auto& ASt = dynamic_cast<DistributedMatrix&>(*equality_jacobian);
+   auto& bASt = dynamic_cast<DistributedVector<double>&>(*equality_rhs);
+   auto& CSt = dynamic_cast<DistributedMatrix&>(*inequality_jacobian);
    auto& clowSt = dynamic_cast<DistributedVector<double>&>(*inequality_lower_bounds);
    auto& iclowSt = dynamic_cast<DistributedVector<double>&>(*inequality_lower_bound_indicators);
    auto& cuppSt = dynamic_cast<DistributedVector<double>&>(*inequality_upper_bounds);
    auto& icuppSt = dynamic_cast<DistributedVector<double>&>(*inequality_upper_bound_indicators);
 
    for (size_t it = 0; it < gSt.children.size(); it++) {
-      AddChild(new DistributedProblem(stochNode->getChildren()[it], gSt.children[it], QSt.children[it], xlowSt.children[it],
-         ixlowSt.children[it],
-         xuppSt.children[it], ixuppSt.children[it], ASt.children[it], bASt.children[it], CSt.children[it],
-         clowSt.children[it],
-         iclowSt.children[it], cuppSt.children[it], icuppSt.children[it]));
+      add_child(new DistributedProblem(stochNode->getChildren()[it], gSt.children[it], QSt.children[it], xlowSt.children[it],
+            ixlowSt.children[it],
+            xuppSt.children[it], ixuppSt.children[it], ASt.children[it], bASt.children[it], CSt.children[it],
+            clowSt.children[it],
+            iclowSt.children[it], cuppSt.children[it], icuppSt.children[it]));
    }
 }
 
@@ -1219,13 +1219,13 @@ DistributedProblem* DistributedProblem::shaveBorderFromDataAndCreateNewTop(const
       dynamic_cast<DistributedSymmetricMatrix&>(*Q).raiseBorder(n_global_linking_vars));
 
    std::shared_ptr<GeneralMatrix> A_hier(
-      dynamic_cast<DistributedMatrix&>(*A).raiseBorder(n_global_eq_linking_conss, n_global_linking_vars));
+      dynamic_cast<DistributedMatrix&>(*equality_jacobian).raiseBorder(n_global_eq_linking_conss, n_global_linking_vars));
    std::shared_ptr<GeneralMatrix> C_hier(
-      dynamic_cast<DistributedMatrix&>(*C).raiseBorder(n_global_ineq_linking_conss, n_global_linking_vars));
+      dynamic_cast<DistributedMatrix&>(*inequality_jacobian).raiseBorder(n_global_ineq_linking_conss, n_global_linking_vars));
 
    /* we ordered global linking vars first and global linking rows to the end */
    std::shared_ptr<DistributedVector<double>> g_hier(
-      dynamic_cast<DistributedVector<double>&>(*g).raiseBorder(n_global_linking_vars, -1));
+      dynamic_cast<DistributedVector<double>&>(*objective_gradient).raiseBorder(n_global_linking_vars, -1));
    std::shared_ptr<DistributedVector<double>> bux_hier(
       dynamic_cast<DistributedVector<double>&>(*primal_upper_bounds).raiseBorder(n_global_linking_vars, -1));
    std::shared_ptr<DistributedVector<double>> ixupp_hier(
@@ -1237,7 +1237,7 @@ DistributedProblem* DistributedProblem::shaveBorderFromDataAndCreateNewTop(const
 
    // TODO shave top
    std::shared_ptr<DistributedVector<double>> bA_hier(
-      dynamic_cast<DistributedVector<double>&>(*bA).raiseBorder(-1, n_global_eq_linking_conss));
+      dynamic_cast<DistributedVector<double>&>(*equality_rhs).raiseBorder(-1, n_global_eq_linking_conss));
 
    std::shared_ptr<DistributedVector<double>> bu_hier(
       dynamic_cast<DistributedVector<double>&>(*inequality_upper_bounds).raiseBorder(-1, n_global_ineq_linking_conss));
@@ -1273,9 +1273,9 @@ DistributedProblem* DistributedProblem::shaveDenseBorder(const DistributedTree* 
    number_inequality_lower_bounds -= iclow.last->number_nonzeros();
    number_inequality_upper_bounds -= icupp.last->number_nonzeros();
 
-   nx = g->length();
-   my = A->n_rows();
-   mz = C->n_rows();
+   nx = objective_gradient->length();
+   my = equality_jacobian->n_rows();
+   mz = inequality_jacobian->n_rows();
 
    /* adapt vectors and global link sizes - we pushed these up */
 
@@ -1405,14 +1405,14 @@ void DistributedProblem::addChildrenForSplit() {
          ? dynamic_cast<DistributedSymmetricMatrix&>(*Q).children[i]
          : dynamic_cast<DistributedSymmetricMatrix&>(*dynamic_cast<DistributedSymmetricMatrix&>(*Q).diag).children[i];
 
-      std::shared_ptr<DistributedMatrix> A_child = is_hierarchy_inner_root ? dynamic_cast<DistributedMatrix&>(*A).children[i]
-         : dynamic_cast<DistributedMatrix&>(*dynamic_cast<DistributedMatrix&>(*A).Bmat).children[i];
-      std::shared_ptr<DistributedMatrix> C_child = is_hierarchy_inner_root ? dynamic_cast<DistributedMatrix&>(*C).children[i]
-         : dynamic_cast<DistributedMatrix&>(*dynamic_cast<DistributedMatrix&>(*C).Bmat).children[i];
+      std::shared_ptr<DistributedMatrix> A_child = is_hierarchy_inner_root ? dynamic_cast<DistributedMatrix&>(*equality_jacobian).children[i]
+         : dynamic_cast<DistributedMatrix&>(*dynamic_cast<DistributedMatrix&>(*equality_jacobian).Bmat).children[i];
+      std::shared_ptr<DistributedMatrix> C_child = is_hierarchy_inner_root ? dynamic_cast<DistributedMatrix&>(*inequality_jacobian).children[i]
+         : dynamic_cast<DistributedMatrix&>(*dynamic_cast<DistributedMatrix&>(*inequality_jacobian).Bmat).children[i];
 
       std::shared_ptr<DistributedVector<double>> g_child = is_hierarchy_inner_root
-         ? dynamic_cast<DistributedVector<double>&>(*g).children[i]
-         : dynamic_cast<DistributedVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*g).first).children[i];
+         ? dynamic_cast<DistributedVector<double>&>(*objective_gradient).children[i]
+         : dynamic_cast<DistributedVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*objective_gradient).first).children[i];
       std::shared_ptr<DistributedVector<double>> blx_child = is_hierarchy_inner_root
          ? dynamic_cast<DistributedVector<double>&>(*primal_lower_bounds).children[i]
          : dynamic_cast<DistributedVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*primal_lower_bounds).first).children[i];
@@ -1427,8 +1427,8 @@ void DistributedProblem::addChildrenForSplit() {
          : dynamic_cast<DistributedVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*primal_upper_bound_indicators).first).children[i];
 
       std::shared_ptr<DistributedVector<double>> bA_child = is_hierarchy_inner_root
-         ? dynamic_cast<DistributedVector<double>&>(*bA).children[i]
-         : dynamic_cast<DistributedVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*bA).first).children[i];
+         ? dynamic_cast<DistributedVector<double>&>(*equality_rhs).children[i]
+         : dynamic_cast<DistributedVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*equality_rhs).first).children[i];
 
       std::shared_ptr<DistributedVector<double>> bl_child = is_hierarchy_inner_root
          ? dynamic_cast<DistributedVector<double>&>(*inequality_lower_bounds).children[i]
@@ -1483,7 +1483,7 @@ void DistributedProblem::addChildrenForSplit() {
       const int first_child = childchild_pos;
       while (childchild_pos < map_blocks_children.size() && map_blocks_children[childchild_pos] == i) {
          children[childchild_pos]->has_RAC = false;
-         child->AddChild(children[childchild_pos]);
+         child->add_child(children[childchild_pos]);
 
          if (childchild_pos + 1 == map_blocks_children.size() || map_blocks_children[childchild_pos + 1] != i) {
             child->linkStartBlockLengthsA.push_back(0);
@@ -1555,14 +1555,14 @@ void DistributedProblem::splitData() {
    if (stochNode->isHierarchicalInnerLeaf()) {
       dynamic_cast<DistributedSymmetricMatrix&>(*dynamic_cast<DistributedSymmetricMatrix&>(*Q).diag).splitMatrix(
          map_block_subtree, child_comms);
-      dynamic_cast<DistributedMatrix&>(*dynamic_cast<DistributedMatrix&>(*A).Bmat).splitMatrix(linkStartBlockLengthsA,
+      dynamic_cast<DistributedMatrix&>(*dynamic_cast<DistributedMatrix&>(*equality_jacobian).Bmat).splitMatrix(linkStartBlockLengthsA,
          map_block_subtree, stochNode->myl(),
          child_comms);
-      dynamic_cast<DistributedMatrix&>(*dynamic_cast<DistributedMatrix&>(*C).Bmat).splitMatrix(linkStartBlockLengthsC,
+      dynamic_cast<DistributedMatrix&>(*dynamic_cast<DistributedMatrix&>(*inequality_jacobian).Bmat).splitMatrix(linkStartBlockLengthsC,
          map_block_subtree, stochNode->mzl(),
          child_comms);
 
-      dynamic_cast<DistributedVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*g).first).split(
+      dynamic_cast<DistributedVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*objective_gradient).first).split(
          map_block_subtree, child_comms);
 
       dynamic_cast<DistributedVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*primal_upper_bounds).first).split(
@@ -1574,7 +1574,7 @@ void DistributedProblem::splitData() {
       dynamic_cast<DistributedVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*primal_lower_bound_indicators).first).split(
          map_block_subtree, child_comms);
 
-      dynamic_cast<DistributedVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*bA).first).split(
+      dynamic_cast<DistributedVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*equality_rhs).first).split(
          map_block_subtree, child_comms,
          linkStartBlockLengthsA, stochNode->myl());
 
@@ -1592,19 +1592,19 @@ void DistributedProblem::splitData() {
          linkStartBlockLengthsC, stochNode->mzl());
    } else {
       dynamic_cast<DistributedSymmetricMatrix&>(*Q).splitMatrix(map_block_subtree, child_comms);
-      dynamic_cast<DistributedMatrix&>(*A).splitMatrix(linkStartBlockLengthsA, map_block_subtree, stochNode->myl(),
+      dynamic_cast<DistributedMatrix&>(*equality_jacobian).splitMatrix(linkStartBlockLengthsA, map_block_subtree, stochNode->myl(),
          child_comms);
-      dynamic_cast<DistributedMatrix&>(*C).splitMatrix(linkStartBlockLengthsC, map_block_subtree, stochNode->mzl(),
+      dynamic_cast<DistributedMatrix&>(*inequality_jacobian).splitMatrix(linkStartBlockLengthsC, map_block_subtree, stochNode->mzl(),
          child_comms);
 
-      dynamic_cast<DistributedVector<double>&>(*g).split(map_block_subtree, child_comms);
+      dynamic_cast<DistributedVector<double>&>(*objective_gradient).split(map_block_subtree, child_comms);
 
       dynamic_cast<DistributedVector<double>&>(*primal_upper_bounds).split(map_block_subtree, child_comms);
       dynamic_cast<DistributedVector<double>&>(*primal_upper_bound_indicators).split(map_block_subtree, child_comms);
       dynamic_cast<DistributedVector<double>&>(*primal_lower_bounds).split(map_block_subtree, child_comms);
       dynamic_cast<DistributedVector<double>&>(*primal_lower_bound_indicators).split(map_block_subtree, child_comms);
 
-      dynamic_cast<DistributedVector<double>&>(*bA).split(map_block_subtree, child_comms, linkStartBlockLengthsA,
+      dynamic_cast<DistributedVector<double>&>(*equality_rhs).split(map_block_subtree, child_comms, linkStartBlockLengthsA,
          stochNode->myl());
 
       dynamic_cast<DistributedVector<double>&>(*inequality_upper_bounds).split(map_block_subtree, child_comms, linkStartBlockLengthsC,
@@ -1620,17 +1620,17 @@ void DistributedProblem::splitData() {
 
 void DistributedProblem::recomputeSize() {
    dynamic_cast<DistributedSymmetricMatrix&>(*Q).recomputeSize();
-   dynamic_cast<DistributedMatrix&>(*A).recomputeSize();
-   dynamic_cast<DistributedMatrix&>(*C).recomputeSize();
+   dynamic_cast<DistributedMatrix&>(*equality_jacobian).recomputeSize();
+   dynamic_cast<DistributedMatrix&>(*inequality_jacobian).recomputeSize();
 
-   dynamic_cast<DistributedVector<double>&>(*g).recomputeSize();
+   dynamic_cast<DistributedVector<double>&>(*objective_gradient).recomputeSize();
 
    dynamic_cast<DistributedVector<double>&>(*primal_upper_bounds).recomputeSize();
    dynamic_cast<DistributedVector<double>&>(*primal_upper_bound_indicators).recomputeSize();
    dynamic_cast<DistributedVector<double>&>(*primal_lower_bounds).recomputeSize();
    dynamic_cast<DistributedVector<double>&>(*primal_lower_bound_indicators).recomputeSize();
 
-   dynamic_cast<DistributedVector<double>&>(*bA).recomputeSize();
+   dynamic_cast<DistributedVector<double>&>(*equality_rhs).recomputeSize();
 
    dynamic_cast<DistributedVector<double>&>(*inequality_upper_bounds).recomputeSize();
    dynamic_cast<DistributedVector<double>&>(*inequality_upper_bound_indicators).recomputeSize();
@@ -1639,10 +1639,10 @@ void DistributedProblem::recomputeSize() {
 }
 
 void DistributedProblem::splitStringMatricesAccordingToSubtreeStructure() {
-   assert(dynamic_cast<DistributedMatrix&>(*A).Blmat->is_a(kStripMatrix));
-   assert(dynamic_cast<DistributedMatrix&>(*C).Blmat->is_a(kStripMatrix));
-   auto& Blmat = dynamic_cast<StripMatrix&>(*dynamic_cast<DistributedMatrix&>(*A).Blmat);
-   auto& Dlmat = dynamic_cast<StripMatrix&>(*dynamic_cast<DistributedMatrix&>(*C).Blmat);
+   assert(dynamic_cast<DistributedMatrix&>(*equality_jacobian).Blmat->is_a(kStripMatrix));
+   assert(dynamic_cast<DistributedMatrix&>(*inequality_jacobian).Blmat->is_a(kStripMatrix));
+   auto& Blmat = dynamic_cast<StripMatrix&>(*dynamic_cast<DistributedMatrix&>(*equality_jacobian).Blmat);
+   auto& Dlmat = dynamic_cast<StripMatrix&>(*dynamic_cast<DistributedMatrix&>(*inequality_jacobian).Blmat);
 
    if (stochNode->getCommWorkers() == MPI_COMM_NULL) {
       assert(Blmat.is_a(kStringGenDummyMatrix));
@@ -1692,9 +1692,9 @@ void DistributedProblem::permuteLinkingCons(const Permutation& permA, const Perm
    assert(!is_hierarchy_root);
 
    if (stochNode->isHierarchicalInnerLeaf()) {
-      dynamic_cast<DistributedMatrix&>(*dynamic_cast<DistributedMatrix&>(*A).Bmat).permuteLinkingCons(permA);
-      dynamic_cast<DistributedMatrix&>(*dynamic_cast<DistributedMatrix&>(*C).Bmat).permuteLinkingCons(permC);
-      dynamic_cast<DistributedVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*bA).first).permuteLinkingEntries(
+      dynamic_cast<DistributedMatrix&>(*dynamic_cast<DistributedMatrix&>(*equality_jacobian).Bmat).permuteLinkingCons(permA);
+      dynamic_cast<DistributedMatrix&>(*dynamic_cast<DistributedMatrix&>(*inequality_jacobian).Bmat).permuteLinkingCons(permC);
+      dynamic_cast<DistributedVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*equality_rhs).first).permuteLinkingEntries(
          permA);
       dynamic_cast<DistributedVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*inequality_lower_bounds).first).permuteLinkingEntries(
          permC);
@@ -1705,9 +1705,9 @@ void DistributedProblem::permuteLinkingCons(const Permutation& permA, const Perm
       dynamic_cast<DistributedVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*inequality_upper_bound_indicators).first).permuteLinkingEntries(
          permC);
    } else {
-      dynamic_cast<DistributedMatrix&>(*A).permuteLinkingCons(permA);
-      dynamic_cast<DistributedMatrix&>(*C).permuteLinkingCons(permC);
-      dynamic_cast<DistributedVector<double>&>(*bA).permuteLinkingEntries(permA);
+      dynamic_cast<DistributedMatrix&>(*equality_jacobian).permuteLinkingCons(permA);
+      dynamic_cast<DistributedMatrix&>(*inequality_jacobian).permuteLinkingCons(permC);
+      dynamic_cast<DistributedVector<double>&>(*equality_rhs).permuteLinkingEntries(permA);
       dynamic_cast<DistributedVector<double>&>(*inequality_lower_bounds).permuteLinkingEntries(permC);
       dynamic_cast<DistributedVector<double>&>(*inequality_upper_bounds).permuteLinkingEntries(permC);
       dynamic_cast<DistributedVector<double>&>(*inequality_lower_bound_indicators).permuteLinkingEntries(permC);
@@ -1719,9 +1719,9 @@ void DistributedProblem::permuteLinkingVars(const Permutation& perm) {
    assert(permutation_is_valid(linkVarsPermutation));
    assert(!is_hierarchy_root);
 
-   dynamic_cast<DistributedMatrix&>(*A).permuteLinkingVars(perm);
-   dynamic_cast<DistributedMatrix&>(*C).permuteLinkingVars(perm);
-   dynamic_cast<DistributedVector<double>&>(*g).permuteVec0Entries(perm);
+   dynamic_cast<DistributedMatrix&>(*equality_jacobian).permuteLinkingVars(perm);
+   dynamic_cast<DistributedMatrix&>(*inequality_jacobian).permuteLinkingVars(perm);
+   dynamic_cast<DistributedVector<double>&>(*objective_gradient).permuteVec0Entries(perm);
    dynamic_cast<DistributedVector<double>&>(*primal_upper_bounds).permuteVec0Entries(perm);
    dynamic_cast<DistributedVector<double>&>(*primal_lower_bounds).permuteVec0Entries(perm);
    dynamic_cast<DistributedVector<double>&>(*primal_upper_bound_indicators).permuteVec0Entries(perm);
@@ -1847,8 +1847,8 @@ void DistributedProblem::activateLinkStructureExploitation() {
 
    const int nx0 = getLocalnx();
 
-   const auto& Astoch = dynamic_cast<const DistributedMatrix&>(*A);
-   const auto& Cstoch = dynamic_cast<const DistributedMatrix&>(*C);
+   const auto& Astoch = dynamic_cast<const DistributedMatrix&>(*equality_jacobian);
+   const auto& Cstoch = dynamic_cast<const DistributedMatrix&>(*inequality_jacobian);
 
    n_blocks_per_link_var = std::vector<int>(nx0, 0);
    Astoch.updateKLinkVarsCount(n_blocks_per_link_var);
@@ -1964,7 +1964,7 @@ void DistributedProblem::activateLinkStructureExploitation() {
       assert(linkConsPermutationA.empty());
       assert(linkConsPermutationC.empty());
 
-      const size_t nBlocks = dynamic_cast<DistributedVector<double>&>(*g).children.size();
+      const size_t nBlocks = dynamic_cast<DistributedVector<double>&>(*objective_gradient).children.size();
 
       // compute permutation vectors
       linkConsPermutationA = getAscending2LinkFirstGlobalsLastPermutation(linkStartBlockIdA, n_blocks_per_link_row_A,
@@ -1981,15 +1981,15 @@ void DistributedProblem::activateLinkStructureExploitation() {
    }
 }
 
-void DistributedProblem::AddChild(DistributedProblem* child) {
+void DistributedProblem::add_child(DistributedProblem* child) {
    children.push_back(child);
 }
 
-double DistributedProblem::objective_value(const Variables& variables) const {
+double DistributedProblem::evaluate_objective(const Variables& variables) const {
    const auto& x = dynamic_cast<const DistributedVector<double>&>(*variables.primals);
    std::unique_ptr<Vector<double> > temp(x.clone());
 
-   this->getg(*temp);
+   this->get_objective_gradient(*temp);
    this->hessian_multiplication(1.0, *temp, 0.5, *variables.primals);
    return temp->dotProductWith(*variables.primals);
 }
@@ -2003,8 +2003,8 @@ void DistributedProblem::printLinkVarsStats() {
    std::vector<int> linkCount0(n, 0);
    std::vector<int> linkCountLC(n, 0);
 
-   auto& Astoch = dynamic_cast<DistributedMatrix&>(*A);
-   auto& Cstoch = dynamic_cast<DistributedMatrix&>(*C);
+   auto& Astoch = dynamic_cast<DistributedMatrix&>(*equality_jacobian);
+   auto& Cstoch = dynamic_cast<DistributedMatrix&>(*inequality_jacobian);
 
    Astoch.updateKLinkVarsCount(linkCountA);
    Cstoch.updateKLinkVarsCount(linkCountC);
@@ -2078,7 +2078,7 @@ void DistributedProblem::printLinkConsStats() {
    if (myl > 0) {
       std::vector<int> linkCount(myl, 0);
 
-      dynamic_cast<DistributedMatrix&>(*A).updateKLinkConsCount(linkCount);
+      dynamic_cast<DistributedMatrix&>(*equality_jacobian).updateKLinkConsCount(linkCount);
 
       if (rank == 0) {
          std::vector<int> linkSizes(nLinkStats, 0);
@@ -2105,7 +2105,7 @@ void DistributedProblem::printLinkConsStats() {
    if (mzl > 0) {
       std::vector<int> linkCount(mzl, 0);
 
-      dynamic_cast<DistributedMatrix&>(*C).updateKLinkConsCount(linkCount);
+      dynamic_cast<DistributedMatrix&>(*inequality_jacobian).updateKLinkConsCount(linkCount);
 
       if (rank == 0) {
          std::vector<int> linkSizes(nLinkStats, 0);
@@ -2159,7 +2159,7 @@ int DistributedProblem::getLocalnx() const {
 
    long long nx{0};
 
-   const auto& Ast = dynamic_cast<const DistributedMatrix&>(*A);
+   const auto& Ast = dynamic_cast<const DistributedMatrix&>(*equality_jacobian);
    if (is_hierarchy_inner_leaf)
       assert(Ast.Bmat->is_a(kDistributedMatrix));
    else
@@ -2172,7 +2172,7 @@ int DistributedProblem::getLocalmy() const {
    assert(!is_hierarchy_root);
 
    long long my{0};
-   const auto& Ast = dynamic_cast<const DistributedMatrix&>(*A);
+   const auto& Ast = dynamic_cast<const DistributedMatrix&>(*equality_jacobian);
 
    if (is_hierarchy_inner_leaf)
       assert(Ast.Bmat->is_a(kDistributedMatrix));
@@ -2184,7 +2184,7 @@ int DistributedProblem::getLocalmy() const {
 
 int DistributedProblem::getLocalmyl() const {
    long long myl{0};
-   const auto& Ast = dynamic_cast<const DistributedMatrix&>(*A);
+   const auto& Ast = dynamic_cast<const DistributedMatrix&>(*equality_jacobian);
 
    if (is_hierarchy_root) {
       assert(0 && "TODO : implement");
@@ -2201,7 +2201,7 @@ int DistributedProblem::getLocalmyl() const {
 
 int DistributedProblem::getLocalmz() const {
    long long mz{0};
-   const auto& Cst = dynamic_cast<const DistributedMatrix&>(*C);
+   const auto& Cst = dynamic_cast<const DistributedMatrix&>(*inequality_jacobian);
 
    if (is_hierarchy_root)
       assert(0 && "TODO : implement");
@@ -2214,7 +2214,7 @@ int DistributedProblem::getLocalmz() const {
 }
 
 int DistributedProblem::getLocalmzl() const {
-   const auto& Cst = dynamic_cast<const DistributedMatrix&>(*C);
+   const auto& Cst = dynamic_cast<const DistributedMatrix&>(*inequality_jacobian);
    long long mzl{0};
 
    if (is_hierarchy_root) {
@@ -2230,7 +2230,7 @@ int DistributedProblem::getLocalmzl() const {
 
 int DistributedProblem::getLocalSizes(int& nx, int& my, int& mz, int& myl, int& mzl) const {
    if (is_hierarchy_root) {
-      const auto& Abd = dynamic_cast<const BorderedMatrix&>(*A);
+      const auto& Abd = dynamic_cast<const BorderedMatrix&>(*equality_jacobian);
       assert(Abd.border_left->first);
       assert(Abd.border_left->last);
 
@@ -2238,14 +2238,14 @@ int DistributedProblem::getLocalSizes(int& nx, int& my, int& mz, int& myl, int& 
       my = Abd.border_left->first->n_rows();
       myl = Abd.bottom_left_block->n_rows();
 
-      const auto& Cbd = dynamic_cast<const BorderedMatrix&>(*C);
+      const auto& Cbd = dynamic_cast<const BorderedMatrix&>(*inequality_jacobian);
       assert(Cbd.border_left->first);
       assert(Cbd.border_left->last);
       mz = Cbd.border_left->first->n_rows();
       mzl = Cbd.bottom_left_block->n_rows();
    } else if (is_hierarchy_inner_leaf && stochNode->getCommWorkers() != MPI_COMM_NULL) {
-      const auto& Ast = dynamic_cast<const DistributedMatrix&>(*A);
-      const auto& Cst = dynamic_cast<const DistributedMatrix&>(*C);
+      const auto& Ast = dynamic_cast<const DistributedMatrix&>(*equality_jacobian);
+      const auto& Cst = dynamic_cast<const DistributedMatrix&>(*inequality_jacobian);
 
       assert(Ast.Bmat->is_a(kDistributedMatrix));
       assert(Cst.Bmat->is_a(kDistributedMatrix));
@@ -2257,13 +2257,13 @@ int DistributedProblem::getLocalSizes(int& nx, int& my, int& mz, int& myl, int& 
       mz = 0;
       mzl = dynamic_cast<const DistributedMatrix&>(*Cst.Bmat).Blmat->n_rows();
    } else {
-      const auto& Ast = dynamic_cast<const DistributedMatrix&>(*A);
+      const auto& Ast = dynamic_cast<const DistributedMatrix&>(*equality_jacobian);
 
       nx = Ast.Bmat->n_columns();
       my = Ast.Bmat->n_rows();
       myl = Ast.Blmat->n_rows();
 
-      const auto& Cst = dynamic_cast<const DistributedMatrix&>(*C);
+      const auto& Cst = dynamic_cast<const DistributedMatrix&>(*inequality_jacobian);
       mz = Cst.Bmat->n_rows();
       mzl = Cst.Blmat->n_rows();
    }
@@ -2274,8 +2274,8 @@ int DistributedProblem::getLocalNnz(int& nnzQ, int& nnzB, int& nnzD) {
    if (is_hierarchy_root || is_hierarchy_inner_root || is_hierarchy_inner_leaf)
       assert(0 && "TODO : implement");
    const auto& Qst = dynamic_cast<const DistributedSymmetricMatrix&>(*Q);
-   const auto& Ast = dynamic_cast<const DistributedMatrix&>(*A);
-   const auto& Cst = dynamic_cast<const DistributedMatrix&>(*C);
+   const auto& Ast = dynamic_cast<const DistributedMatrix&>(*equality_jacobian);
+   const auto& Cst = dynamic_cast<const DistributedMatrix&>(*inequality_jacobian);
 
    nnzQ = dynamic_cast<const SparseSymmetricMatrix&>(*Qst.diag).getStorage().len + dynamic_cast<const SparseMatrix&>(*Qst.border).getStorage().len;
    nnzB = dynamic_cast<const SparseMatrix&>(*Ast.Bmat).getStorage().len;
@@ -2506,7 +2506,7 @@ const SparseMatrix& DistributedProblem::getLocalCrossHessian() const {
 // This is T_i
 const SparseMatrix& DistributedProblem::getLocalA() const {
    assert(!is_hierarchy_root);
-   auto& Ast = dynamic_cast<const DistributedMatrix&>(*A);
+   auto& Ast = dynamic_cast<const DistributedMatrix&>(*equality_jacobian);
 
    if (is_hierarchy_inner_leaf && stochNode->getCommWorkers() != MPI_COMM_NULL) {
       assert(Ast.Amat->is_a(kDistributedMatrix));
@@ -2520,7 +2520,7 @@ const SparseMatrix& DistributedProblem::getLocalA() const {
 // This is W_i:
 const SparseMatrix& DistributedProblem::getLocalB() const {
    assert(!is_hierarchy_root);
-   auto& Ast = dynamic_cast<const DistributedMatrix&>(*A);
+   auto& Ast = dynamic_cast<const DistributedMatrix&>(*equality_jacobian);
 
    if (is_hierarchy_inner_leaf && stochNode->getCommWorkers() != MPI_COMM_NULL) {
       assert(Ast.Bmat->is_a(kDistributedMatrix));
@@ -2534,7 +2534,7 @@ const SparseMatrix& DistributedProblem::getLocalB() const {
 // This is F_i (linking equality matrix):
 const SparseMatrix& DistributedProblem::getLocalF() const {
    assert(!is_hierarchy_root);
-   auto& Ast = dynamic_cast<const DistributedMatrix&>(*A);
+   auto& Ast = dynamic_cast<const DistributedMatrix&>(*equality_jacobian);
 
    if (is_hierarchy_inner_leaf && stochNode->getCommWorkers() != MPI_COMM_NULL) {
       assert(Ast.Bmat->is_a(kDistributedMatrix));
@@ -2547,7 +2547,7 @@ const SparseMatrix& DistributedProblem::getLocalF() const {
 
 const StripMatrix& DistributedProblem::getLocalFBorder() const {
    assert(is_hierarchy_inner_leaf);
-   auto& Ast = dynamic_cast<const DistributedMatrix&>(*A);
+   auto& Ast = dynamic_cast<const DistributedMatrix&>(*equality_jacobian);
 
    assert(Ast.Blmat->is_a(kStripMatrix));
    return dynamic_cast<const StripMatrix&>(*Ast.Blmat);
@@ -2555,7 +2555,7 @@ const StripMatrix& DistributedProblem::getLocalFBorder() const {
 
 const StripMatrix& DistributedProblem::getLocalGBorder() const {
    assert(is_hierarchy_inner_leaf);
-   auto& Cst = dynamic_cast<const DistributedMatrix&>(*C);
+   auto& Cst = dynamic_cast<const DistributedMatrix&>(*inequality_jacobian);
 
    assert(Cst.Blmat->is_a(kStripMatrix));
    return dynamic_cast<const StripMatrix&>(*Cst.Blmat);
@@ -2566,7 +2566,7 @@ const StripMatrix& DistributedProblem::getLocalGBorder() const {
 // This is C_i
 const SparseMatrix& DistributedProblem::getLocalC() const {
    assert(!is_hierarchy_root);
-   auto& Cst = dynamic_cast<const DistributedMatrix&>(*C);
+   auto& Cst = dynamic_cast<const DistributedMatrix&>(*inequality_jacobian);
 
    if (is_hierarchy_inner_leaf && stochNode->getCommWorkers() != MPI_COMM_NULL) {
       assert(Cst.Amat->is_a(kDistributedMatrix));
@@ -2580,7 +2580,7 @@ const SparseMatrix& DistributedProblem::getLocalC() const {
 // This is D_i
 const SparseMatrix& DistributedProblem::getLocalD() const {
    assert(!is_hierarchy_root);
-   auto& Cst = dynamic_cast<const DistributedMatrix&>(*C);
+   auto& Cst = dynamic_cast<const DistributedMatrix&>(*inequality_jacobian);
 
    if (is_hierarchy_inner_leaf && stochNode->getCommWorkers() != MPI_COMM_NULL) {
       assert(Cst.Bmat->is_a(kDistributedMatrix));
@@ -2595,7 +2595,7 @@ const SparseMatrix& DistributedProblem::getLocalD() const {
 // This is G_i (linking inequality matrix):
 const SparseMatrix& DistributedProblem::getLocalG() const {
    assert(!is_hierarchy_root);
-   auto& Cst = dynamic_cast<const DistributedMatrix&>(*C);
+   auto& Cst = dynamic_cast<const DistributedMatrix&>(*inequality_jacobian);
 
    if (is_hierarchy_inner_leaf && stochNode->getCommWorkers() != MPI_COMM_NULL) {
       assert(Cst.Bmat->is_a(kDistributedMatrix));
@@ -2615,8 +2615,8 @@ DistributedProblem::cleanUpPresolvedData(const DistributedVector<int>& rowNnzVec
    Q_stoch.recomputeSize();
 
    // clean up equality system
-   auto& A_stoch = dynamic_cast<DistributedMatrix&>(*A);
-   auto& b_Astoch = dynamic_cast<DistributedVector<double>&>(*bA);
+   auto& A_stoch = dynamic_cast<DistributedMatrix&>(*equality_jacobian);
+   auto& b_Astoch = dynamic_cast<DistributedVector<double>&>(*equality_rhs);
 
    A_stoch.initStaticStorageFromDynamic(rowNnzVecA, colNnzVec);
    A_stoch.freeDynamicStorage();
@@ -2625,8 +2625,8 @@ DistributedProblem::cleanUpPresolvedData(const DistributedVector<int>& rowNnzVec
    b_Astoch.removeEntries(rowNnzVecA);
 
    // clean up inequality system and x
-   auto& C_stoch = dynamic_cast<DistributedMatrix&>(*C);
-   auto& g_stoch = dynamic_cast<DistributedVector<double>&>(*g);
+   auto& C_stoch = dynamic_cast<DistributedMatrix&>(*inequality_jacobian);
+   auto& g_stoch = dynamic_cast<DistributedVector<double>&>(*objective_gradient);
 
    auto& blx_stoch = dynamic_cast<DistributedVector<double>&>(*primal_lower_bounds);
    auto& ixlow_stoch = dynamic_cast<DistributedVector<double>&>(*primal_lower_bound_indicators);
@@ -2737,25 +2737,25 @@ bool DistributedProblem::isRootNodeInSync() const {
    // todo
 
    /* matrix A */
-   if (!dynamic_cast<const DistributedMatrix&>(*A).isRootNodeInSync()) {
+   if (!dynamic_cast<const DistributedMatrix&>(*equality_jacobian).isRootNodeInSync()) {
       std::cout << "ERROR: matrix A corrupted!\n";
       in_sync = false;
    }
 
    /* matrix C */
-   if (!dynamic_cast<const DistributedMatrix&>(*C).isRootNodeInSync()) {
+   if (!dynamic_cast<const DistributedMatrix&>(*inequality_jacobian).isRootNodeInSync()) {
       std::cout << "ERROR: matrix C corrupted!\n";
       in_sync = false;
    }
 
    /* objective g */
-   if (!dynamic_cast<const DistributedVector<double>&>(*g).isRootNodeInSync()) {
+   if (!dynamic_cast<const DistributedVector<double>&>(*objective_gradient).isRootNodeInSync()) {
       std::cout << "ERROR: objective vector corrupted!\n";
       in_sync = false;
    }
 
    /* rhs equality bA */
-   if (!dynamic_cast<const DistributedVector<double>&>(*bA).isRootNodeInSync()) {
+   if (!dynamic_cast<const DistributedVector<double>&>(*equality_rhs).isRootNodeInSync()) {
       std::cout << "ERROR: rhs of A corrupted!\n";
       in_sync = false;
    }
@@ -2817,30 +2817,30 @@ bool DistributedProblem::isRootNodeInSync() const {
 void DistributedProblem::printRanges() const {
    /* objective */
    double absmin_objective;
-   g->absminNonZero(absmin_objective, 0.0);
+   objective_gradient->absminNonZero(absmin_objective, 0.0);
    assert(absmin_objective >= 0);
-   const double absmax_objective = g->inf_norm();
+   const double absmax_objective = objective_gradient->inf_norm();
    assert(absmax_objective >= 0);
 
    /* matrix range */
-   const double absmax_A = A->inf_norm();
-   const double absmax_C = C->inf_norm();
+   const double absmax_A = equality_jacobian->inf_norm();
+   const double absmax_C = inequality_jacobian->inf_norm();
 
-   const double absmin_A = A->abminnormNonZero();
-   const double absmin_C = C->abminnormNonZero();
+   const double absmin_A = equality_jacobian->abminnormNonZero();
+   const double absmin_C = inequality_jacobian->abminnormNonZero();
 
    const double mat_min = std::min(absmin_A, absmin_C);
    const double mat_max = std::max(absmax_A, absmax_C);
 
    /* rhs range */
    double absmin_bA;
-   bA->absminNonZero(absmin_bA, 0.0);
+   equality_rhs->absminNonZero(absmin_bA, 0.0);
    double absmin_bl;
    inequality_lower_bounds->absminNonZero(absmin_bl, 0.0);
    double absmin_bu;
    inequality_upper_bounds->absminNonZero(absmin_bu, 0.0);
 
-   const double absmax_bA = bA->inf_norm();
+   const double absmax_bA = equality_rhs->inf_norm();
    const double absmax_bl = inequality_lower_bounds->inf_norm();
    const double absmax_bu = inequality_upper_bounds->inf_norm();
 

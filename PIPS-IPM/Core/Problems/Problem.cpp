@@ -6,72 +6,72 @@ Problem::Problem(std::shared_ptr<Vector<double>> g_in, std::shared_ptr<Vector<do
    std::shared_ptr<Vector<double>> ixupp_in,
    std::shared_ptr<GeneralMatrix> A_in, std::shared_ptr<Vector<double>> bA_in, std::shared_ptr<GeneralMatrix> C_in,
    std::shared_ptr<Vector<double>> clow_in, std::shared_ptr<Vector<double>> iclow_in,
-   std::shared_ptr<Vector<double>> cupp_in, std::shared_ptr<Vector<double>> icupp_in) : A{std::move(A_in)},
-   C{std::move(C_in)},
-   g{std::move(g_in)}, bA{std::move(bA_in)}, primal_upper_bounds{std::move(xupp_in)}, primal_upper_bound_indicators{std::move(ixupp_in)},
+   std::shared_ptr<Vector<double>> cupp_in, std::shared_ptr<Vector<double>> icupp_in) : equality_jacobian{std::move(A_in)},
+   inequality_jacobian{std::move(C_in)},
+   objective_gradient{std::move(g_in)}, equality_rhs{std::move(bA_in)}, primal_upper_bounds{std::move(xupp_in)}, primal_upper_bound_indicators{std::move(ixupp_in)},
    primal_lower_bounds{std::move(xlow_in)},
    primal_lower_bound_indicators{std::move(ixlow_in)}, inequality_upper_bounds{std::move(cupp_in)}, inequality_upper_bound_indicators{std::move(icupp_in)}, inequality_lower_bounds{std::move(clow_in)},
    inequality_lower_bound_indicators{std::move(iclow_in)},
-   nx{g->length()}, my{A->n_rows()}, mz{C->n_rows()}, number_primal_lower_bounds{primal_lower_bound_indicators->number_nonzeros()},
+   nx{objective_gradient->length()}, my{equality_jacobian->n_rows()}, mz{inequality_jacobian->n_rows()}, number_primal_lower_bounds{primal_lower_bound_indicators->number_nonzeros()},
    number_primal_upper_bounds{primal_upper_bound_indicators->number_nonzeros()},
    number_inequality_lower_bounds{inequality_lower_bound_indicators->number_nonzeros()}, number_inequality_upper_bounds{inequality_upper_bound_indicators->number_nonzeros()} {
    assert(primal_lower_bound_indicators && primal_upper_bound_indicators && inequality_lower_bound_indicators && inequality_upper_bound_indicators);
 }
 
 void Problem::Amult(double beta, Vector<double>& y, double alpha, const Vector<double>& x) const {
-   A->mult(beta, y, alpha, x);
+   equality_jacobian->mult(beta, y, alpha, x);
 }
 
 void Problem::Cmult(double beta, Vector<double>& y, double alpha, const Vector<double>& x) const {
-   C->mult(beta, y, alpha, x);
+   inequality_jacobian->mult(beta, y, alpha, x);
 }
 
 void Problem::ATransmult(double beta, Vector<double>& y, double alpha, const Vector<double>& x) const {
-   A->transMult(beta, y, alpha, x);
+   equality_jacobian->transMult(beta, y, alpha, x);
 }
 
 void Problem::CTransmult(double beta, Vector<double>& y, double alpha, const Vector<double>& x) const {
-   C->transMult(beta, y, alpha, x);
+   inequality_jacobian->transMult(beta, y, alpha, x);
 }
 
-void Problem::getg(Vector<double>& myG) const {
-   myG.copyFrom(*g);
+void Problem::get_objective_gradient(Vector<double>& myG) const {
+   myG.copyFrom(*objective_gradient);
 }
 
 void Problem::getbA(Vector<double>& bout) const {
-   bout.copyFrom(*bA);
+   bout.copyFrom(*equality_rhs);
 }
 
 void Problem::putAIntoAt(GeneralMatrix& M, int row, int col) {
-   M.atPutSubmatrix(row, col, *A, 0, 0, my, nx);
+   M.atPutSubmatrix(row, col, *equality_jacobian, 0, 0, my, nx);
 }
 
 void Problem::putAIntoAt(SymmetricMatrix& M, int row, int col) {
-   M.symAtPutSubmatrix(row, col, *A, 0, 0, my, nx);
+   M.symAtPutSubmatrix(row, col, *equality_jacobian, 0, 0, my, nx);
 }
 
 void Problem::putCIntoAt(GeneralMatrix& M, int row, int col) {
-   M.atPutSubmatrix(row, col, *C, 0, 0, mz, nx);
+   M.atPutSubmatrix(row, col, *inequality_jacobian, 0, 0, mz, nx);
 }
 
 void Problem::putCIntoAt(SymmetricMatrix& M, int row, int col) {
-   M.symAtPutSubmatrix(row, col, *C, 0, 0, mz, nx);
+   M.symAtPutSubmatrix(row, col, *inequality_jacobian, 0, 0, mz, nx);
 }
 
 void Problem::scaleA() {
-   A->columnScale(*sc);
+   equality_jacobian->columnScale(*sc);
 }
 
 void Problem::scaleC() {
-   C->columnScale(*sc);
+   inequality_jacobian->columnScale(*sc);
 }
 
 void Problem::scaleg() {
    auto& scVector = dynamic_cast<SimpleVector<double>&>(*sc);
-   assert (scVector.length() == g->length());
+   assert (scVector.length() == objective_gradient->length());
 
    // D * g
-   g->componentMult(scVector);
+   objective_gradient->componentMult(scVector);
 }
 
 void Problem::scalexupp() {
@@ -97,26 +97,26 @@ void Problem::scalexlow() {
 
 void Problem::flipg() {
    // Multiply C matrix by -1
-   g->scalarMult(-1.0);
+   objective_gradient->scalarMult(-1.0);
 }
 
 double Problem::datanorm() const {
    double norm = 0.0;
    double componentNorm;
 
-   componentNorm = g->inf_norm();
+   componentNorm = objective_gradient->inf_norm();
    if (componentNorm > norm)
       norm = componentNorm;
 
-   componentNorm = bA->inf_norm();
+   componentNorm = equality_rhs->inf_norm();
    if (componentNorm > norm)
       norm = componentNorm;
 
-   componentNorm = A->inf_norm();
+   componentNorm = equality_jacobian->inf_norm();
    if (componentNorm > norm)
       norm = componentNorm;
 
-   componentNorm = C->inf_norm();
+   componentNorm = inequality_jacobian->inf_norm();
    if (componentNorm > norm)
       norm = componentNorm;
 
@@ -145,7 +145,7 @@ double Problem::datanorm() const {
 
 void Problem::print() {
    std::cout << "begin c\n";
-   g->write_to_stream(std::cout);
+   objective_gradient->write_to_stream(std::cout);
    std::cout << "end c\n";
 
    std::cout << "begin xlow\n";
@@ -163,13 +163,13 @@ void Problem::print() {
    std::cout << "end ixupp\n";
    std::cout << "begin A\n";
 
-   A->write_to_stream(std::cout);
+   equality_jacobian->write_to_stream(std::cout);
    std::cout << "end A\n";
    std::cout << "begin b\n";
-   bA->write_to_stream(std::cout);
+   equality_rhs->write_to_stream(std::cout);
    std::cout << "end b\n";
    std::cout << "begin C\n";
-   C->write_to_stream(std::cout);
+   inequality_jacobian->write_to_stream(std::cout);
    std::cout << "end C\n";
 
    std::cout << "begin clow\n";

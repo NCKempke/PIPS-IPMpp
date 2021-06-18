@@ -219,9 +219,9 @@ double PIPSIPMppInterface::getObjective() {
 
    double obj;
    if (postsolved_variables != nullptr)
-      obj = original_problem->objective_value(*postsolved_variables);
+      obj = original_problem->evaluate_objective(*postsolved_variables);
    else {
-      obj = presolved_problem->objective_value(*variables);
+      obj = presolved_problem->evaluate_objective(*variables);
       if (scaler)
          obj = scaler->get_unscaled_objective(obj);
    }
@@ -231,7 +231,7 @@ double PIPSIPMppInterface::getObjective() {
 
 double PIPSIPMppInterface::getFirstStageObjective() const {
    Vector<double>& x = *(dynamic_cast<DistributedVector<double>&>(*variables->primals).first);
-   Vector<double>& c = *(dynamic_cast<DistributedVector<double>&>(*presolved_problem->g).first);
+   Vector<double>& c = *(dynamic_cast<DistributedVector<double>&>(*presolved_problem->objective_gradient).first);
    return c.dotProductWith(x);
 }
 
@@ -358,9 +358,9 @@ std::vector<double> PIPSIPMppInterface::gatherEqualityConsValues() {
                                         : dynamic_cast<DistributedVector<double>*>(postsolvedResids->equality_residuals->cloneFull());
 
    if (!original_problem || !postsolved_variables)
-      eq_vals->axpy(1.0, *presolved_problem->bA);
+      eq_vals->axpy(1.0, *presolved_problem->equality_rhs);
    else
-      eq_vals->axpy(1.0, *original_problem->bA);
+      eq_vals->axpy(1.0, *original_problem->equality_rhs);
 
    std::vector<double> eq_vals_vec = eq_vals->gatherStochVector();
 
@@ -445,8 +445,8 @@ void PIPSIPMppInterface::allgatherBlocksizes(std::vector<unsigned int>& block_le
    std::vector<unsigned int>& block_lengths_A, std::vector<unsigned int>& block_lengths_C) const
 {
    /// gather col lengths
-   const auto& col_vec = presolver ? dynamic_cast<const DistributedVector<double>&>(*original_problem->g) :
-      dynamic_cast<const DistributedVector<double>&>(*presolved_problem->g);
+   const auto& col_vec = presolver ? dynamic_cast<const DistributedVector<double>&>(*original_problem->objective_gradient) :
+      dynamic_cast<const DistributedVector<double>&>(*presolved_problem->objective_gradient);
 
    assert( block_lengths_col.size() == col_vec.children.size() + 1);
    assert( !col_vec.last );
@@ -467,8 +467,8 @@ void PIPSIPMppInterface::allgatherBlocksizes(std::vector<unsigned int>& block_le
    PIPS_MPIsumArrayInPlace(block_lengths_col, MPI_COMM_WORLD);
 
    /// gather row lengths
-   const auto& row_A_vec = presolver ? dynamic_cast<const DistributedVector<double>&>(*original_problem->bA) :
-      dynamic_cast<const DistributedVector<double>&>(*presolved_problem->bA);
+   const auto& row_A_vec = presolver ? dynamic_cast<const DistributedVector<double>&>(*original_problem->equality_rhs) :
+      dynamic_cast<const DistributedVector<double>&>(*presolved_problem->equality_rhs);
    const auto& row_C_vec = presolver ? dynamic_cast<const DistributedVector<double>&>(*original_problem->inequality_upper_bound_indicators) :
       dynamic_cast<const DistributedVector<double>&>(*presolved_problem->inequality_upper_bound_indicators);
 
@@ -593,7 +593,7 @@ void PIPSIPMppInterface::postsolveComputedSolution() {
    postsolvedResids.reset(dynamic_cast<DistributedResiduals*>(factory->make_residuals(*original_problem)));
    postsolver->postsolve(*unscaleUnpermNotHierVars, *postsolved_variables, result);
 
-   double obj_postsolved = original_problem->objective_value(*postsolved_variables);
+   double obj_postsolved = original_problem->evaluate_objective(*postsolved_variables);
 
    MPI_Barrier(comm);
    const double t_postsolve = MPI_Wtime();

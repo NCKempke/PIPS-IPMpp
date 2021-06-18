@@ -773,15 +773,15 @@ LinearSystem::matXYZinfnorm(const Problem& problem, Vector<double>& solx, Vector
    if (use_regularized_system && primal_regularization_diagonal)
       solx.axpy(1.0, *primal_regularization_diagonal);
 
-   problem.A->addColSums(solx);
-   problem.C->addColSums(solx);
+   problem.equality_jacobian->addColSums(solx);
+   problem.inequality_jacobian->addColSums(solx);
    double infnorm = solx.inf_norm();
 
    soly.setToZero();
    if (use_regularized_system && dual_equality_regularization_diagonal)
       soly.axpy(1.0, *dual_equality_regularization_diagonal);
 
-   problem.A->addRowSums(soly);
+   problem.equality_jacobian->addRowSums(soly);
    infnorm = std::max(infnorm, soly.inf_norm());
 
    solz.copyFromAbs(*nomegaInv);
@@ -789,7 +789,7 @@ LinearSystem::matXYZinfnorm(const Problem& problem, Vector<double>& solx, Vector
    if (use_regularized_system && dual_inequality_regularization_diagonal)
       solz.axpy(1.0, *dual_inequality_regularization_diagonal);
 
-   problem.C->addRowSums(solz);
+   problem.inequality_jacobian->addRowSums(solz);
    infnorm = std::max(infnorm, solz.inf_norm());
 
    return infnorm;

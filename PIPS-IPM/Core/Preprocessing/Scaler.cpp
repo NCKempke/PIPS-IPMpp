@@ -18,10 +18,10 @@
 Scaler::Scaler(const Problem& problem, bool bitshifting, bool usesides) : do_bitshifting(bitshifting), with_sides(usesides),
       dnorm_orig(problem.datanorm()),
       scaling_output{pipsipmpp_options::get_bool_parameter("SCALER_OUTPUT")} {
-   A = problem.A;
-   C = problem.C;
-   obj = problem.g;
-   bA = problem.bA;
+   A = problem.equality_jacobian;
+   C = problem.inequality_jacobian;
+   obj = problem.objective_gradient;
+   bA = problem.equality_rhs;
    bux = problem.primal_upper_bounds; // upper bound of x
    blx = problem.primal_lower_bounds; // lower bound of x
    rhsC = problem.inequality_upper_bounds; // RHS of C
