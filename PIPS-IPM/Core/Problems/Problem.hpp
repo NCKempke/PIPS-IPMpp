@@ -9,15 +9,20 @@
 #include "Vector.hpp"
 #include "AbstractMatrix.h"
 
+class MpsReader;
+
+class Variables;
+
 class Problem {
 protected:
    Problem() = default;
 
 public:
-   std::shared_ptr<GeneralMatrix> A;
-   std::shared_ptr<GeneralMatrix> C;
-   std::shared_ptr<Vector<double>> g; // objective
-   std::shared_ptr<Vector<double>> bA; // rhs equality
+   std::shared_ptr<SymmetricMatrix> hessian;
+   std::shared_ptr<GeneralMatrix> equality_jacobian;
+   std::shared_ptr<GeneralMatrix> inequality_jacobian;
+   std::shared_ptr<Vector<double>> objective_gradient; // objective
+   std::shared_ptr<Vector<double>> equality_rhs; // rhs equality
    std::shared_ptr<Vector<double>> primal_upper_bounds; // upper bounds x
    std::shared_ptr<Vector<double>> primal_upper_bound_indicators; // index for upper bounds
    std::shared_ptr<Vector<double>> primal_lower_bounds; // lower bounds x
@@ -37,7 +42,8 @@ public:
    long long number_inequality_lower_bounds{0};
    long long number_inequality_upper_bounds{0};
 
-   Problem(std::shared_ptr<Vector<double>> g_in, std::shared_ptr<Vector<double>> xlow_in,
+   Problem(std::shared_ptr<Vector<double>> g_in, std::shared_ptr<SymmetricMatrix> Q_in,
+         std::shared_ptr<Vector<double>> xlow_in,
       std::shared_ptr<Vector<double>> ixlow_in, std::shared_ptr<Vector<double>> xupp_in, std::shared_ptr<Vector<double>> ixupp_in,
       std::shared_ptr<GeneralMatrix> A_in, std::shared_ptr<Vector<double>> bA_in, std::shared_ptr<GeneralMatrix> C_in,
       std::shared_ptr<Vector<double>> clow_in, std::shared_ptr<Vector<double>> iclow_in,
@@ -45,9 +51,9 @@ public:
 
    virtual ~Problem() = default;
 
-   [[nodiscard]] virtual double objective_value(const Variables& x) const = 0;
+   [[nodiscard]] virtual double evaluate_objective(const Variables& x) const;
 
-   virtual void objective_gradient(const Variables& vars, Vector<double>& gradient) const = 0;
+   virtual void evaluate_objective_gradient(const Variables& vars, Vector<double>& gradient) const;
 
    /** compute the norm of the problem data */
    [[nodiscard]] virtual double datanorm() const;
@@ -70,9 +76,11 @@ public:
    [[nodiscard]] virtual std::unique_ptr<Problem> cloneFull() const = 0;
    virtual void write_to_streamDense(std::ostream& out) const = 0;
 
-   virtual void hessian_multiplication(double beta, Vector<double>& y, double alpha, const Vector<double>& x) const = 0;
+   /** y = beta * y + alpha * Q * x */
+   void hessian_multiplication(double beta, Vector<double>& y, double alpha, const Vector<double>& x) const;
 
-   virtual void hessian_diagonal(Vector<double>& hessian_diagonal) const = 0;
+   /** extract the diagonal of the Hessian and put it in the Vector<double> hessian_diagonal */
+   virtual void hessian_diagonal(Vector<double>& hessian_diagonal) const;
 
    /** insert the constraint matrix A into the matrix M for the
     fundamental linear system, where M is stored as a GenMatrix */
@@ -102,7 +110,7 @@ public:
    /** y = beta * y + alpha * C\T * x */
    virtual void CTransmult(double beta, Vector<double>& y, double alpha, const Vector<double>& x) const;
 
-   void getg(Vector<double>& cout) const;
+   void get_objective_gradient(Vector<double>& myG) const;
 
    void getbA(Vector<double>& bout) const;
 
@@ -116,7 +124,24 @@ public:
 
    void scalexlow();
 
-   void flipg();
+   void flip_objective_gradient();
+
+   /** insert the Hessian into the matrix M for the fundamental linear system, where M is stored as a SymMatrix */
+   virtual void put_hessian_into_At(SymmetricMatrix& M, int row, int col);
+
+   /** insert the Hessian into the matrix M for the fundamental linear system, where M is stored as a GenMatrix */
+   virtual void put_hessian_into_At(GeneralMatrix& M, int row, int col);
+
+   void create_scale_from_hessian();
+
+   void scale_hessian();
+
+   void flip_hessian();
+
+
+   virtual void datainput() {};
+
+   virtual void datainput(MpsReader* reader, int& iErr);
 };
 
 #endif

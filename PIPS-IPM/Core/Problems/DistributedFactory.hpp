@@ -21,7 +21,7 @@
 
 class QP;
 
-class DistributedQP;
+class DistributedProblem;
 
 class Variables;
 
@@ -73,24 +73,24 @@ public:
    /** create rhs for augmented system using tree */
    [[nodiscard]] std::unique_ptr<Vector<double>> make_right_hand_side() const override;
 
-   [[nodiscard]] std::unique_ptr<DistributedRootLinearSystem> make_linear_system_root(DistributedQP* problem) const;
+   [[nodiscard]] std::unique_ptr<DistributedRootLinearSystem> make_linear_system_root(DistributedProblem* problem) const;
 
-   [[nodiscard]] std::unique_ptr<DistributedRootLinearSystem> make_root_hierarchical_linear_system(DistributedQP* problem) const;
+   [[nodiscard]] std::unique_ptr<DistributedRootLinearSystem> make_root_hierarchical_linear_system(DistributedProblem* problem) const;
 
    [[nodiscard]] std::unique_ptr<DistributedRootLinearSystem>
-   make_linear_system_root(DistributedQP* problem, std::shared_ptr<Vector<double>> primal_diagonal,
+   make_linear_system_root(DistributedProblem* problem, std::shared_ptr<Vector<double>> primal_diagonal,
       std::shared_ptr<Vector<double>> dq, std::shared_ptr<Vector<double>> nomegaInv,
       std::shared_ptr<Vector<double>> primal_regularization,
       std::shared_ptr<Vector<double>> dual_equality_regularization,
       std::shared_ptr<Vector<double>> dual_inequality_regularization,
       std::shared_ptr<Vector<double>> rhs) const;
 
-   DistributedQP* switchToHierarchicalData(DistributedQP* problem);
+   DistributedProblem* switchToHierarchicalData(DistributedProblem* problem);
 
    void switchToOriginalTree();
 
    [[nodiscard]] std::unique_ptr<DistributedLeafLinearSystem>
-   make_linear_system_leaf(DistributedQP* problem, std::shared_ptr<Vector<double>> primal_diagonal, std::shared_ptr<Vector<double>> dq,
+   make_linear_system_leaf(DistributedProblem* problem, std::shared_ptr<Vector<double>> primal_diagonal, std::shared_ptr<Vector<double>> dq,
       std::shared_ptr<Vector<double>> nomegaInv,
       std::shared_ptr<Vector<double>> primal_regularization, std::shared_ptr<Vector<double>> dual_equality_regularization,
       std::shared_ptr<Vector<double>> dual_inequality_regularization,

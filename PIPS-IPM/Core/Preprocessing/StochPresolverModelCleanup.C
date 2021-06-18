@@ -11,7 +11,7 @@
 #include <cmath>
 #include <vector>
 
-StochPresolverModelCleanup::StochPresolverModelCleanup(PresolveData& presolve_data, const DistributedQP& origProb) : StochPresolverBase(presolve_data,
+StochPresolverModelCleanup::StochPresolverModelCleanup(PresolveData& presolve_data, const DistributedProblem& origProb) : StochPresolverBase(presolve_data,
       origProb), limit_min_mat_entry(pipsipmpp_options::get_double_parameter("PRESOLVE_MODEL_CLEANUP_MIN_MATRIX_ENTRY")),
       limit_max_matrix_entry_impact(pipsipmpp_options::get_double_parameter("PRESOLVE_MODEL_CLEANUP_MAX_MATRIX_ENTRY_IMPACT")),
       limit_matrix_entry_impact_feasdist(pipsipmpp_options::get_double_parameter("PRESOLVE_MODEL_CLEANUP_MATRIX_ENTRY_IMPACT_FEASDIST")),
@@ -206,8 +206,8 @@ int StochPresolverModelCleanup::removeRedundantRows(SystemType system_type, int 
  * be in a consistent state.
  */
 int StochPresolverModelCleanup::removeTinyEntriesFromSystem(SystemType system_type) {
-   assert(dynamic_cast<const DistributedMatrix&>(*(presolve_data.getPresProb().A)).children.size() == (size_t) nChildren);
-   assert(dynamic_cast<const DistributedMatrix&>(*(presolve_data.getPresProb().C)).children.size() == (size_t) nChildren);
+   assert(dynamic_cast<const DistributedMatrix&>(*(presolve_data.getPresProb().equality_jacobian)).children.size() == (size_t) nChildren);
+   assert(dynamic_cast<const DistributedMatrix&>(*(presolve_data.getPresProb().inequality_jacobian)).children.size() == (size_t) nChildren);
 
    int n_elims = 0;
 

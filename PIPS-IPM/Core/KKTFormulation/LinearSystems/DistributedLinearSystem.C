@@ -9,9 +9,9 @@
 #include "BorderedSymmetricMatrix.h"
 #include "DistributedLinearSystem.h"
 #include "DistributedFactory.hpp"
-#include "DistributedQP.hpp"
+#include "DistributedProblem.hpp"
 
-DistributedLinearSystem::DistributedLinearSystem(const DistributedFactory& factory_, DistributedQP* problem,
+DistributedLinearSystem::DistributedLinearSystem(const DistributedFactory& factory_, DistributedProblem* problem,
    bool is_hierarchy_root) : LinearSystem(
    factory_, *problem), data{problem},
    computeBlockwiseSC(pipsipmpp_options::get_bool_parameter("SC_COMPUTE_BLOCKWISE")),
@@ -35,7 +35,7 @@ DistributedLinearSystem::DistributedLinearSystem(const DistributedFactory& facto
    this->iAmDistrib = dds.iAmDistrib;
 }
 
-DistributedLinearSystem::DistributedLinearSystem(const DistributedFactory& factory_, DistributedQP* problem,
+DistributedLinearSystem::DistributedLinearSystem(const DistributedFactory& factory_, DistributedProblem* problem,
    std::shared_ptr<Vector<double>> dd_, std::shared_ptr<Vector<double>> dq_,
    std::shared_ptr<Vector<double>> nomegaInv_, std::shared_ptr<Vector<double>> primal_reg_,
    std::shared_ptr<Vector<double>> dual_y_reg_, std::shared_ptr<Vector<double>> dual_z_reg_,

@@ -7,7 +7,7 @@
 
 #include "DistributedLeafLinearSystem.h"
 
-DistributedLeafLinearSystem::DistributedLeafLinearSystem(const DistributedFactory& factory_, DistributedQP* prob,
+DistributedLeafLinearSystem::DistributedLeafLinearSystem(const DistributedFactory& factory_, DistributedProblem* prob,
    std::shared_ptr<Vector<double>> dd_, std::shared_ptr<Vector<double>> dq_, std::shared_ptr<Vector<double>> nomegaInv_,
    std::shared_ptr<Vector<double>> primal_reg_, std::shared_ptr<Vector<double>> dual_y_reg_,
    std::shared_ptr<Vector<double>> dual_z_reg_, std::shared_ptr<Vector<double>> rhs_) : DistributedLinearSystem(

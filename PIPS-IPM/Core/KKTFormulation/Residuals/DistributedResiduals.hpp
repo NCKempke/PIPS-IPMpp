@@ -40,7 +40,7 @@ public:
 
    [[nodiscard]] bool is_root_node_in_sync() const;
 
-   void collapse_hierarchical_structure(const DistributedQP& data_hier, const DistributedTree* tree_hier,
+   void collapse_hierarchical_structure(const DistributedProblem& data_hier, const DistributedTree* tree_hier,
       std::shared_ptr<Vector<double>> ixlow_,
       std::shared_ptr<Vector<double>> ixupp_, std::shared_ptr<Vector<double>> iclow_,
       std::shared_ptr<Vector<double>> icupp_);

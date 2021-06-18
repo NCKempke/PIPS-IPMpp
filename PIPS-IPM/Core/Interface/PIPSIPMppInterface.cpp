@@ -5,7 +5,7 @@
 #include "PIPSIPMppInterface.hpp"
 #include "PreprocessType.h"
 #include "DistributedFactory.hpp"
-#include "DistributedQP.hpp"
+#include "DistributedProblem.hpp"
 #include "DistributedResiduals.hpp"
 #include "DistributedVariables.h"
 #include "PreprocessFactory.h"
@@ -47,7 +47,7 @@ scaler_type, PresolverType presolver_type, const std::string& settings) : comm(c
 
       presolver.reset(preprocess_factory->make_presolver(*factory->tree, original_problem.get(), presolver_type, postsolver.get()));
 
-      presolved_problem.reset(dynamic_cast<DistributedQP*>(presolver->presolve()));
+      presolved_problem.reset(dynamic_cast<DistributedProblem*>(presolver->presolve()));
 
       MPI_Barrier(comm);
       const double t_presolve = MPI_Wtime();
@@ -74,14 +74,14 @@ scaler_type, PresolverType presolver_type, const std::string& settings) : comm(c
 
    // after identifying the linking structure switch to hierarchical data structure -> will this do anything to the scaler?
    if (pipsipmpp_options::get_bool_parameter("PARDISO_FOR_GLOBAL_SC"))
-      dynamic_cast<DistributedQP&>(*presolved_problem).activateLinkStructureExploitation();
+      dynamic_cast<DistributedProblem&>(*presolved_problem).activateLinkStructureExploitation();
 
    // TODO : save "old" data somewhere?
    if (pipsipmpp_options::get_bool_parameter("HIERARCHICAL")) {
       if (my_rank == 0)
          std::cout << "Using hierarchical approach!\n";
 
-      presolved_problem.reset(dynamic_cast<DistributedQP*>(factory->switchToHierarchicalData(dynamic_cast<DistributedQP*>(presolved_problem.release()))));
+      presolved_problem.reset(dynamic_cast<DistributedProblem*>(factory->switchToHierarchicalData(dynamic_cast<DistributedProblem*>(presolved_problem.release()))));
 
       if (pipsipmpp_options::get_bool_parameter("HIERARCHICAL_PRINT_HIER_DATA"))
          presolved_problem->write_to_streamDense(std::cout);
@@ -133,7 +133,7 @@ TerminationStatus PIPSIPMppInterface::run() {
       std::cout << "solving ...\n";
 
    if (my_rank == 0) {
-      const auto& qp_presolved_problem = dynamic_cast<DistributedQP&>(*presolved_problem);
+      const auto& qp_presolved_problem = dynamic_cast<DistributedProblem&>(*presolved_problem);
       // TODO : use unlifted data....
       if (!pipsipmpp_options::get_bool_parameter("HIERARCHICAL")) {
          std::cout << "1st stage " << qp_presolved_problem.getLocalnx() << " variables, " << qp_presolved_problem.getLocalmy()
@@ -220,9 +220,9 @@ double PIPSIPMppInterface::getObjective() {
 
    double obj;
    if (postsolved_variables != nullptr)
-      obj = original_problem->objective_value(*postsolved_variables);
+      obj = original_problem->evaluate_objective(*postsolved_variables);
    else {
-      obj = presolved_problem->objective_value(*variables);
+      obj = presolved_problem->evaluate_objective(*variables);
       if (scaler)
          obj = scaler->get_unscaled_objective(obj);
    }
@@ -232,7 +232,7 @@ double PIPSIPMppInterface::getObjective() {
 
 double PIPSIPMppInterface::getFirstStageObjective() const {
    Vector<double>& x = *(dynamic_cast<DistributedVector<double>&>(*variables->primals).first);
-   Vector<double>& c = *(dynamic_cast<DistributedVector<double>&>(*presolved_problem->g).first);
+   Vector<double>& c = *(dynamic_cast<DistributedVector<double>&>(*presolved_problem->objective_gradient).first);
    return c.dotProductWith(x);
 }
 
@@ -240,7 +240,7 @@ void PIPSIPMppInterface::getVarsUnscaledUnperm() {
    assert(unscaleUnpermNotHierVars == nullptr);
    assert(dataUnpermNotHier);
 
-   const auto& qp_presolved_problem = dynamic_cast<DistributedQP&>(*presolved_problem);
+   const auto& qp_presolved_problem = dynamic_cast<DistributedProblem&>(*presolved_problem);
 
    if (!ran_solver)
       throw std::logic_error("Must call run() and start solution process before trying to retrieve unscaled unpermuted solution");
@@ -258,7 +258,7 @@ void PIPSIPMppInterface::getResidsUnscaledUnperm() {
    assert(unscaleUnpermNotHierResids == nullptr);
    assert(dataUnpermNotHier);
 
-   const auto& qp_presolved_problem = dynamic_cast<DistributedQP&>(*presolved_problem);
+   const auto& qp_presolved_problem = dynamic_cast<DistributedProblem&>(*presolved_problem);
 
    if (!ran_solver)
       throw std::logic_error("Must call run() and start solution process before trying to retrieve unscaled unpermuted residuals");
@@ -365,9 +365,9 @@ std::vector<double> PIPSIPMppInterface::gatherEqualityConsValues() {
                                         : dynamic_cast<DistributedVector<double>*>(postsolvedResids->equality_residuals->cloneFull());
 
    if (!original_problem || !postsolved_variables)
-      eq_vals->axpy(1.0, *presolved_problem->bA);
+      eq_vals->axpy(1.0, *presolved_problem->equality_rhs);
    else
-      eq_vals->axpy(1.0, *original_problem->bA);
+      eq_vals->axpy(1.0, *original_problem->equality_rhs);
 
    std::vector<double> eq_vals_vec = eq_vals->gatherStochVector();
 
@@ -452,8 +452,8 @@ void PIPSIPMppInterface::allgatherBlocksizes(std::vector<unsigned int>& block_le
    std::vector<unsigned int>& block_lengths_A, std::vector<unsigned int>& block_lengths_C) const
 {
    /// gather col lengths
-   const auto& col_vec = presolver ? dynamic_cast<const DistributedVector<double>&>(*original_problem->g) :
-      dynamic_cast<const DistributedVector<double>&>(*presolved_problem->g);
+   const auto& col_vec = presolver ? dynamic_cast<const DistributedVector<double>&>(*original_problem->objective_gradient) :
+      dynamic_cast<const DistributedVector<double>&>(*presolved_problem->objective_gradient);
 
    assert( block_lengths_col.size() == col_vec.children.size() + 1);
    assert( !col_vec.last );
@@ -474,8 +474,8 @@ void PIPSIPMppInterface::allgatherBlocksizes(std::vector<unsigned int>& block_le
    PIPS_MPIsumArrayInPlace(block_lengths_col, MPI_COMM_WORLD);
 
    /// gather row lengths
-   const auto& row_A_vec = presolver ? dynamic_cast<const DistributedVector<double>&>(*original_problem->bA) :
-      dynamic_cast<const DistributedVector<double>&>(*presolved_problem->bA);
+   const auto& row_A_vec = presolver ? dynamic_cast<const DistributedVector<double>&>(*original_problem->equality_rhs) :
+      dynamic_cast<const DistributedVector<double>&>(*presolved_problem->equality_rhs);
    const auto& row_C_vec = presolver ? dynamic_cast<const DistributedVector<double>&>(*original_problem->inequality_upper_bound_indicators) :
       dynamic_cast<const DistributedVector<double>&>(*presolved_problem->inequality_upper_bound_indicators);
 
@@ -600,7 +600,7 @@ void PIPSIPMppInterface::postsolveComputedSolution() {
    postsolvedResids = factory->make_residuals(*original_problem);
    postsolver->postsolve(*unscaleUnpermNotHierVars, *postsolved_variables, result);
 
-   double obj_postsolved = original_problem->objective_value(*postsolved_variables);
+   double obj_postsolved = original_problem->evaluate_objective(*postsolved_variables);
 
    MPI_Barrier(comm);
    const double t_postsolve = MPI_Wtime();

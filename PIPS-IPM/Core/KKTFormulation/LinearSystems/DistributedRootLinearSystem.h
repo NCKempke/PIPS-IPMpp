@@ -13,7 +13,7 @@ class SCsparsifier;
 
 class DistributedFactory;
 
-class DistributedQP;
+class DistributedProblem;
 
 /** 
  * ROOT (= NON-leaf) linear system
@@ -36,9 +36,9 @@ private:
 public:
    std::vector<std::unique_ptr<DistributedLinearSystem>> children;
 
-   DistributedRootLinearSystem(const DistributedFactory& factory_, DistributedQP* prob_, bool is_hierarchy_root = false);
+   DistributedRootLinearSystem(const DistributedFactory& factory_, DistributedProblem* prob_, bool is_hierarchy_root = false);
 
-   DistributedRootLinearSystem(const DistributedFactory& factory, DistributedQP* prob_, std::shared_ptr<Vector<double>> dd_,
+   DistributedRootLinearSystem(const DistributedFactory& factory, DistributedProblem* prob_, std::shared_ptr<Vector<double>> dd_,
       std::shared_ptr<Vector<double>> dq_, std::shared_ptr<Vector<double>> nomegaInv_,
       std::shared_ptr<Vector<double>> primal_reg_, std::shared_ptr<Vector<double>> dual_y_reg_,
       std::shared_ptr<Vector<double>> dual_z_reg_, std::shared_ptr<Vector<double>> rhs_);

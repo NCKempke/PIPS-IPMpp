@@ -4,7 +4,7 @@
 
 #include <memory>
 #include "DistributedFactory.hpp"
-#include "DistributedQP.hpp"
+#include "DistributedProblem.hpp"
 #include "DistributedTreeCallbacks.h"
 #include "DistributedInputTree.h"
 #include "DistributedSymmetricMatrix.h"
@@ -121,7 +121,7 @@ std::unique_ptr<DoubleLinearSolver> DistributedFactory::make_leaf_solver(const A
 }
 
 std::unique_ptr<DistributedLeafLinearSystem>
-DistributedFactory::make_linear_system_leaf(DistributedQP* problem, std::shared_ptr<Vector<double>> primal_diagonal,
+DistributedFactory::make_linear_system_leaf(DistributedProblem* problem, std::shared_ptr<Vector<double>> primal_diagonal,
    std::shared_ptr<Vector<double>> dq,
    std::shared_ptr<Vector<double>> nomegaInv,
    std::shared_ptr<Vector<double>> primal_regularization, std::shared_ptr<Vector<double>> dual_equality_regularization,
@@ -227,7 +227,7 @@ std::unique_ptr<Problem> DistributedFactory::make_problem() const {
          std::cout << "IO second part took " << t2 << " sec\n";
 #endif
 
-   return std::make_unique<DistributedQP>(tree.get(), std::move(c), std::move(Q), std::move(xlow), std::move(ixlow), std::move(xupp),
+   return std::make_unique<DistributedProblem>(tree.get(), std::move(c), std::move(Q), std::move(xlow), std::move(ixlow), std::move(xupp),
       std::move(ixupp), std::move(A), std::move(b), std::move(C), std::move(clow), std::move(iclow), std::move(cupp),
       std::move(icupp));
 }
@@ -286,7 +286,7 @@ std::unique_ptr<Residuals> DistributedFactory::make_residuals(const Problem& pro
 }
 
 std::unique_ptr<AbstractLinearSystem> DistributedFactory::make_linear_system(Problem& problem_in) const {
-   auto* problem = dynamic_cast<DistributedQP*>(&problem_in);
+   auto* problem = dynamic_cast<DistributedProblem*>(&problem_in);
    if (pipsipmpp_options::get_bool_parameter("HIERARCHICAL"))
       return make_root_hierarchical_linear_system(problem);
    else
@@ -334,13 +334,13 @@ void DistributedFactory::iterate_ended() {
    }
 }
 
-std::unique_ptr<DistributedRootLinearSystem> DistributedFactory::make_linear_system_root(DistributedQP* problem) const {
+std::unique_ptr<DistributedRootLinearSystem> DistributedFactory::make_linear_system_root(DistributedProblem* problem) const {
    assert(problem);
    return std::make_unique<sLinsysRootAug>(*this, problem);
 }
 
 std::unique_ptr<DistributedRootLinearSystem>
-DistributedFactory::make_linear_system_root(DistributedQP* prob, std::shared_ptr<Vector<double>> primal_diagonal,
+DistributedFactory::make_linear_system_root(DistributedProblem* prob, std::shared_ptr<Vector<double>> primal_diagonal,
    std::shared_ptr<Vector<double>> dq,
    std::shared_ptr<Vector<double>> nomegaInv,
    std::shared_ptr<Vector<double>> primal_regularization, std::shared_ptr<Vector<double>> dual_equality_regularization,
@@ -359,11 +359,11 @@ DistributedFactory::make_linear_system_root(DistributedQP* prob, std::shared_ptr
 }
 
 std::unique_ptr<DistributedRootLinearSystem>
-DistributedFactory::make_root_hierarchical_linear_system(DistributedQP* problem) const {
+DistributedFactory::make_root_hierarchical_linear_system(DistributedProblem* problem) const {
    return std::make_unique<sLinsysRootBordered>(*this, problem);
 }
 
-DistributedQP* DistributedFactory::switchToHierarchicalData(DistributedQP* problem) {
+DistributedProblem* DistributedFactory::switchToHierarchicalData(DistributedProblem* problem) {
    hier_tree_swap = tree->clone();
 
    tree = tree->switchToHierarchicalTree(problem, std::move(tree));

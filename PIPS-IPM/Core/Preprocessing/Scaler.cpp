@@ -13,12 +13,12 @@
 #include "PIPSIPMppOptions.h"
 #include "ProblemFactory.h"
 #include "Variables.h"
+#include "Problem.hpp"
 #include "Residuals.h"
-#include "QP.hpp"
 #include "pipsdef.h"
 
 Scaler::Scaler(const ProblemFactory& problem_factory_, const Problem& problem, bool bitshifting, bool usesides) : problem_factory{problem_factory_},
-   A{problem.A}, C{problem.C}, obj{problem.g}, bA{problem.bA}, bux{problem.primal_upper_bounds}, blx{problem.primal_lower_bounds},
+   A{problem.equality_jacobian}, C{problem.inequality_jacobian}, obj{problem.objective_gradient}, bA{problem.equality_rhs}, bux{problem.primal_upper_bounds}, blx{problem.primal_lower_bounds},
    rhsC{problem.inequality_upper_bounds}, lhsC{problem.inequality_lower_bounds}, factor_objscale{1.},
    dnorm_orig(problem.datanorm()), do_bitshifting(bitshifting), with_sides(usesides),
    scaling_output{pipsipmpp_options::get_bool_parameter("SCALER_OUTPUT")} {}

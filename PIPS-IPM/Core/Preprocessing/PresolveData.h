@@ -8,7 +8,7 @@
 #ifndef PIPS_IPM_CORE_QPPREPROCESS_PRESOLVEDATA_H_
 #define PIPS_IPM_CORE_QPPREPROCESS_PRESOLVEDATA_H_
 
-#include "DistributedQP.hpp"
+#include "DistributedProblem.hpp"
 #include "StochPostsolver.h"
 #include "SparseStorageDynamic.h"
 #include "SystemType.h"
@@ -21,7 +21,7 @@
 
 class PresolveData {
 private:
-   DistributedQP* presProb;
+   DistributedProblem* presProb;
 
    StochPostsolver* const postsolver;
 
@@ -131,10 +131,10 @@ private:
 
 public :
 
-   PresolveData(const DistributedQP& sorigprob, StochPostsolver* postsolver);
+   PresolveData(const DistributedProblem& sorigprob, StochPostsolver* postsolver);
    ~PresolveData();
 
-   [[nodiscard]] const DistributedQP& getPresProb() const { return *presProb; };
+   [[nodiscard]] const DistributedProblem& getPresProb() const { return *presProb; };
 
    [[nodiscard]] double getObjOffset() const { return objOffset; };
    [[nodiscard]] int getNChildren() const { return nChildren; };
@@ -158,10 +158,10 @@ public :
    std::queue<INDEX>& getSingletonCols() { return singleton_cols; };
 
    void delete_transposed();
-   DistributedQP* finalize();
+   DistributedProblem* finalize();
 
    /* reset originally free variables' bounds to +- inf iff their current bounds are still implied by the problem */
-   void resetOriginallyFreeVarsBounds(const DistributedQP& orig_prob);
+   void resetOriginallyFreeVarsBounds(const DistributedProblem& orig_prob);
 
    /* whether or not there is currently changes buffered that need synchronization among all procs */
    bool reductionsEmpty();

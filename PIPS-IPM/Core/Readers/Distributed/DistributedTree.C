@@ -3,7 +3,7 @@
  * (C) 2012 Argonne National Laboratory. See Copyright Notification.  */
 
 #include "DistributedTree.h"
-#include "DistributedQP.hpp"
+#include "DistributedProblem.hpp"
 #include "DistributedVector.h"
 #include "SimpleVector.hpp"
 #include <numeric>

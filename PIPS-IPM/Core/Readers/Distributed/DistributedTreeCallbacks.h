@@ -15,7 +15,7 @@
  *  The new sTree implementation, C++-like is sTreeImpl.
  */
 
-class DistributedQP;
+class DistributedProblem;
 
 class DistributedTreeCallbacks : public DistributedTree {
 public:
@@ -67,11 +67,11 @@ public:
    virtual void switchToOriginalData();
    virtual bool isPresolved();
    virtual bool hasPresolved();
-   virtual void initPresolvedData(const DistributedQP& presolved_data);
+   virtual void initPresolvedData(const DistributedProblem& presolved_data);
 
    virtual void writeSizes(std::ostream& sout) const;
 
-   std::unique_ptr<DistributedTree> switchToHierarchicalTree(DistributedQP*& data_to_split, std::unique_ptr<DistributedTree> pointer_to_this) override;
+   std::unique_ptr<DistributedTree> switchToHierarchicalTree(DistributedProblem*& data_to_split, std::unique_ptr<DistributedTree> pointer_to_this) override;
 
    [[nodiscard]] const std::vector<unsigned int>& getMapBlockSubTrees() const { return map_node_sub_root; };
    [[nodiscard]] std::vector<MPI_Comm> getChildComms() const;
@@ -107,7 +107,7 @@ protected:
    std::pair<int, int>
    adjustSizesAfterSplit(const std::vector<unsigned int>& two_links_children_eq, const std::vector<unsigned int>& two_links_children_ineq);
 
-   std::pair<int, int> splitTree(int n_layers, DistributedQP* data_to_split) override;
+   std::pair<int, int> splitTree(int n_layers, DistributedProblem* data_to_split) override;
 
    [[nodiscard]] std::unique_ptr<DistributedTree> shaveDenseBorder(int nx_to_shave, int myl_to_shave, int mzl_to_shave, std::unique_ptr<DistributedTree> pointer_to_this) override;
 

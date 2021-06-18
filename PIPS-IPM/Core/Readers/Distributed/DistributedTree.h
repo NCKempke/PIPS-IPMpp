@@ -16,7 +16,7 @@
 
 class DistributedTreeCallbacks;
 
-class DistributedQP;
+class DistributedProblem;
 
 class DistributedTree {
    friend DistributedTreeCallbacks;
@@ -135,10 +135,10 @@ public:
    /* shave tree and add an additional top layer */
    [[nodiscard]] virtual std::unique_ptr<DistributedTree> shaveDenseBorder(int nx_to_shave, int myl_to_shave, int mzl_to_shave, std::unique_ptr<DistributedTree> pointer_to_this) = 0;
    /* add an additional layer below this one by adding sqrt(nChildren) children each with sqrt(nChildren) of our current children */
-   [[nodiscard]] virtual std::pair<int, int> splitTree(int n_layers, DistributedQP* data) = 0;
+   [[nodiscard]] virtual std::pair<int, int> splitTree(int n_layers, DistributedProblem* data) = 0;
 
    // TODO : make sure that none of the not suitable methods get called...
-   [[nodiscard]] virtual std::unique_ptr<DistributedTree> switchToHierarchicalTree(DistributedQP*& data, std::unique_ptr<DistributedTree> pointer_to_this) = 0;
+   [[nodiscard]] virtual std::unique_ptr<DistributedTree> switchToHierarchicalTree(DistributedProblem*& data, std::unique_ptr<DistributedTree> pointer_to_this) = 0;
 
    void printProcessTree() const;
 protected:

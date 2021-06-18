@@ -11,7 +11,7 @@
 
 class sLinsysRootAugHierInner : public sLinsysRootAug {
 public:
-   sLinsysRootAugHierInner(const DistributedFactory& factory, DistributedQP* prob_, std::shared_ptr<Vector<double>> dd_,
+   sLinsysRootAugHierInner(const DistributedFactory& factory, DistributedProblem* prob_, std::shared_ptr<Vector<double>> dd_,
       std::shared_ptr<Vector<double>> dq_, std::shared_ptr<Vector<double>> nomegaInv_,
       std::shared_ptr<Vector<double>> regP_, std::shared_ptr<Vector<double>> regDy_,
       std::shared_ptr<Vector<double>> regDz_, std::shared_ptr<Vector<double>> rhs_);

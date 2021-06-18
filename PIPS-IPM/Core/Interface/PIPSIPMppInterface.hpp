@@ -22,7 +22,7 @@ class DistributedFactory;
 class PreprocessFactory;
 class Residuals;
 class Variables;
-class DistributedQP;
+class DistributedProblem;
 class Problem;
 class Presolver;
 class Postsolver;
