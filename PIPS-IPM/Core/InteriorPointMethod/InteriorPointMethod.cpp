@@ -55,7 +55,7 @@ TerminationStatus InteriorPointMethod::solve(Problem& problem, Variables& iterat
          }
 
          // termination test
-         const auto [duality_gap, residual_norm] = this->compute_unscaled_gap_and_residual_norm(residuals);
+         const auto [duality_gap, residual_norm] = this->compute_unscaled_gap_and_residual_norm(problem, residuals);
          this->update_history(duality_gap, residual_norm, this->iteration, mu);
          status = this->compute_status(duality_gap, residual_norm, this->iteration, mu);
 
@@ -106,16 +106,16 @@ double InteriorPointMethod::predicted_reduction(Problem& problem, Variables& ite
    return -step_length * InteriorPointMethod::barrier_directional_derivative(problem, iterate, direction);
 }
 
-std::pair<double, double> InteriorPointMethod::compute_unscaled_gap_and_residual_norm(const Residuals& residuals) {
+std::pair<double, double> InteriorPointMethod::compute_unscaled_gap_and_residual_norm(const Problem& problem, const Residuals& residuals) {
    if (!scaler)
       return std::make_pair(std::fabs(residuals.get_duality_gap()), residuals.get_residual_norm());
    else {
-      if (!residuals_unscaled)
-         residuals_unscaled.reset(scaler->get_unscaled_residuals(residuals));
-      else {
-         residuals_unscaled->copy(residuals);
-         scaler->unscale_residuals(*residuals_unscaled);
+      if (!residuals_unscaled) {
+         residuals_unscaled = factory.make_residuals(problem);
       }
+
+      residuals_unscaled->copy(residuals);
+      scaler->unscale_residuals(*residuals_unscaled);
 
       return std::make_pair(std::fabs(residuals_unscaled->get_duality_gap()), residuals_unscaled->get_residual_norm());
    }

@@ -15,7 +15,7 @@
 
 class Problem;
 
-class DistributedFactory;
+class ProblemFactory;
 
 class Variables;
 
@@ -80,7 +80,7 @@ protected:
    /** - (T_n^-1 \Lambda_n + U_n^-1 \Pi_n)^-1*/
    std::shared_ptr<Vector<double>> nomegaInv{};
 
-   DistributedFactory* factory;
+   const ProblemFactory& factory;
 
    /** right-hand side of the system */
    std::shared_ptr<Vector<double>> rhs{};
@@ -94,7 +94,7 @@ protected:
    std::shared_ptr<Vector<double>> dual_equality_regularization_diagonal{};
    std::shared_ptr<Vector<double>> dual_inequality_regularization_diagonal{};
 
-   LinearSystem(DistributedFactory* factory_, const Problem& problem, bool create_iter_ref_vecs);
+   LinearSystem(const ProblemFactory& factory_, const Problem& problem, bool create_iter_ref_vecs);
 
    /** dimensions of the vectors */
    long long nx{0};
@@ -154,9 +154,9 @@ protected:
    const Problem& problem;
 
 public:
-   LinearSystem(DistributedFactory* factory, const Problem& problem);
+   LinearSystem(const ProblemFactory& factory, const Problem& problem);
 
-   LinearSystem(DistributedFactory* factory_, const Problem& problem, std::shared_ptr<Vector<double>> dd_, std::shared_ptr<Vector<double>> dq_, std::shared_ptr<Vector<double>> nomegaInv_,
+   LinearSystem(const ProblemFactory& factory_, const Problem& problem, std::shared_ptr<Vector<double>> dd_, std::shared_ptr<Vector<double>> dq_, std::shared_ptr<Vector<double>> nomegaInv_,
          std::shared_ptr<Vector<double>> primal_regularization_, std::shared_ptr<Vector<double>> dual_equality_regularization, std::shared_ptr<Vector<double>> dual_inequality_regularization_,
          std::shared_ptr<Vector<double>> rhs_, bool create_iter_ref_vecs);
 

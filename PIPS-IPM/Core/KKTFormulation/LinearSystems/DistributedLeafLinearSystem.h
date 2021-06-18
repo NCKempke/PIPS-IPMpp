@@ -19,7 +19,7 @@
  */
 class DistributedLeafLinearSystem : public DistributedLinearSystem {
 public:
-   DistributedLeafLinearSystem(DistributedFactory* factory, DistributedProblem* prob_, std::shared_ptr<Vector<double>> dd_,
+   DistributedLeafLinearSystem(const DistributedFactory& factory, DistributedProblem* prob_, std::shared_ptr<Vector<double>> dd_,
       std::shared_ptr<Vector<double>> dq_, std::shared_ptr<Vector<double>> nomegaInv_,
       std::shared_ptr<Vector<double>> primal_reg_, std::shared_ptr<Vector<double>> dual_y_reg_,
       std::shared_ptr<Vector<double>> dual_z_reg_, std::shared_ptr<Vector<double>> rhs_);

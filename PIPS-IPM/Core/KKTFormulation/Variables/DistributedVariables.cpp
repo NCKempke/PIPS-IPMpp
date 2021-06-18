@@ -31,6 +31,10 @@ DistributedVariables::DistributedVariables(const DistributedVariables& vars) : V
    stochNode = vars.stochNode;
 }
 
+std::unique_ptr<Variables> DistributedVariables::cloneFull() const {
+   return std::make_unique<DistributedVariables>(*this);
+}
+
 void
 DistributedVariables::collapseHierarchicalStructure(const DistributedProblem& hier_data, const DistributedTree* stochNode_,
  std::shared_ptr<Vector<double>> ixlow_, std::shared_ptr<Vector<double>> ixupp_, std::shared_ptr<Vector<double>> iclow_,

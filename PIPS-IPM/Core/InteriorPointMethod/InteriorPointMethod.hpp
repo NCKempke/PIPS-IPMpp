@@ -55,7 +55,7 @@ protected:
    double mutol{1.e-6};
    double artol{1.e-4};
 
-   std::pair<double, double> compute_unscaled_gap_and_residual_norm(const Residuals& residuals);
+   std::pair<double, double> compute_unscaled_gap_and_residual_norm(const Problem& problem, const Residuals& residuals);
    void update_history(double duality_gap, double residual_norm, int iteration, double mu);
    TerminationStatus compute_status(double duality_gap, double residual_norm, int iteration, double mu);
    static double barrier_directional_derivative(Problem& problem, Variables& iterate, Variables& direction);

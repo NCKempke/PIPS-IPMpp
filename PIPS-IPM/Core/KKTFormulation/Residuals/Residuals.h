@@ -97,6 +97,8 @@ public:
 
    Residuals(const Residuals& residuals);
 
+   [[nodiscard]] virtual std::unique_ptr<Residuals> cloneFull() const;
+
    /** The norm of the residuals, ommiting the complementarity conditions */
    [[nodiscard]] double get_residual_norm() const { return residual_norm; }
 

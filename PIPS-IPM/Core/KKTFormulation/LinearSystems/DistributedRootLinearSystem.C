@@ -19,14 +19,14 @@
 double g_scenNum;
 #endif
 
-DistributedRootLinearSystem::DistributedRootLinearSystem(DistributedFactory* factory_, DistributedProblem* prob_,
+DistributedRootLinearSystem::DistributedRootLinearSystem(const DistributedFactory& factory_, DistributedProblem* prob_,
    bool is_hierarchy_root) : DistributedLinearSystem(factory_, prob_, is_hierarchy_root) {
    if (pipsipmpp_options::get_bool_parameter("HIERARCHICAL"))
       assert(is_hierarchy_root);
    init();
 }
 
-DistributedRootLinearSystem::DistributedRootLinearSystem(DistributedFactory* factory_, DistributedProblem* prob_,
+DistributedRootLinearSystem::DistributedRootLinearSystem(const DistributedFactory& factory_, DistributedProblem* prob_,
    std::shared_ptr<Vector<double>> dd_, std::shared_ptr<Vector<double>> dq_, std::shared_ptr<Vector<double>> nomegaInv_,
    std::shared_ptr<Vector<double>> primal_reg_, std::shared_ptr<Vector<double>> dual_y_reg_,
    std::shared_ptr<Vector<double>> dual_z_reg_, std::shared_ptr<Vector<double>> rhs_) : DistributedLinearSystem(
@@ -54,11 +54,7 @@ void DistributedRootLinearSystem::init() {
 }
 
 DistributedRootLinearSystem::~DistributedRootLinearSystem() {
-   for (auto& c : children)
-      delete c;
-
    delete kktDist;
-
    delete[] sparseKktBuffer;
 }
 
@@ -724,7 +720,7 @@ void DistributedRootLinearSystem::Ltsolve2(DistributedVector<double>& x, SimpleV
 }
 
 void DistributedRootLinearSystem::createChildren() {
-   DistributedLinearSystem* child{};
+   std::unique_ptr<DistributedLinearSystem> child{};
    assert(primal_diagonal && dq && nomegaInv && rhs);
 
    auto& primal_diagonalst = dynamic_cast<DistributedVector<double>&>(*primal_diagonal);
@@ -735,11 +731,13 @@ void DistributedRootLinearSystem::createChildren() {
    auto& regDzst = dynamic_cast<DistributedVector<double>&>(*dual_inequality_regularization_diagonal);
    auto& rhsst = dynamic_cast<DistributedVector<double>&>(*rhs);
 
+   const auto& distributed_factory = dynamic_cast<const DistributedFactory&>(factory);
+
    for (size_t it = 0; it < data->children.size(); it++) {
       assert(primal_diagonalst.children[it]);
 
       if (MPI_COMM_NULL == primal_diagonalst.children[it]->mpiComm) {
-         child = new DistributedDummyLinearSystem(factory, data->children[it]);
+         child = std::make_unique<DistributedDummyLinearSystem>(distributed_factory, data->children[it]);
       } else {
          assert(data->children[it]);
          if (is_hierarchy_root) {
@@ -753,28 +751,24 @@ void DistributedRootLinearSystem::createChildren() {
          }
 
          if (data->children[it]->children.empty()) {
-            child = factory->make_linear_system_leaf(data->children[it], primal_diagonalst.children[it],
+            child = distributed_factory.make_linear_system_leaf(data->children[it], primal_diagonalst.children[it],
                dqst.children[it],
                nomegaInvst.children[it], regPst.children[it], regDyst.children[it], regDzst.children[it],
                rhsst.children[it]);
          } else {
             assert(data->children[it]);
-            child = factory->make_linear_system_root(data->children[it], primal_diagonalst.children[it],
+            child = distributed_factory.make_linear_system_root(data->children[it], primal_diagonalst.children[it],
                dqst.children[it],
                nomegaInvst.children[it], regPst.children[it], regDyst.children[it], regDzst.children[it],
                rhsst.children[it]);
          }
       }
-      assert(child != nullptr);
-      AddChild(child);
+      assert(child);
+      AddChild(std::move(child));
    }
 }
 
 void DistributedRootLinearSystem::deleteChildren() {
-   for (auto& it : children) {
-      it->deleteChildren();
-      delete it;
-   }
    children.clear();
 }
 
@@ -851,8 +845,8 @@ void DistributedRootLinearSystem::put_barrier_parameter(double barrier) {
       child->put_barrier_parameter(barrier);
 }
 
-void DistributedRootLinearSystem::AddChild(DistributedLinearSystem* child) {
-   children.push_back(child);
+void DistributedRootLinearSystem::AddChild(std::unique_ptr<DistributedLinearSystem> child) {
+   children.push_back(std::move(child));
 }
 
 ///////////////////////////////////////////////////////////

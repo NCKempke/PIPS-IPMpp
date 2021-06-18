@@ -28,6 +28,8 @@ public:
 
    DistributedResiduals(const DistributedResiduals& res) = default;
 
+   [[nodiscard]] std::unique_ptr<Residuals> cloneFull() const override;
+
    ~DistributedResiduals() override = default;
 
    void permute_vec_0_entries(const std::vector<unsigned int>& perm, bool resids_only = false);

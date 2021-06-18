@@ -102,9 +102,9 @@ public:
 
    void activateLinkStructureExploitation();
 
-   DistributedResiduals* getResidsUnperm(const DistributedResiduals& resids, const DistributedProblem& unpermData) const;
+   DistributedResiduals* getResidsUnperm(const Residuals& resids, const Problem& unpermData) const;
 
-   DistributedVariables* getVarsUnperm(const DistributedVariables& vars, const DistributedProblem& unpermData) const;
+   DistributedVariables* getVarsUnperm(const Variables& vars, const Problem& unpermData) const;
 
    bool isRootNodeInSync() const;
 
@@ -126,10 +126,10 @@ protected:
 
    void splitDataAndAddAsChildLayer();
 
-   DistributedProblem* shaveBorderFromDataAndCreateNewTop(const DistributedTree* tree);
+   DistributedProblem* shaveBorderFromDataAndCreateNewTop(const DistributedTree& tree);
 
 public:
-   DistributedProblem* shaveDenseBorder(const DistributedTree* tree);
+   DistributedProblem* shaveDenseBorder(const DistributedTree& tree);
 
    void splitDataAccordingToTree();
 
@@ -143,9 +143,12 @@ public:
 
    int getNGlobalINEQConss() const { return n_global_ineq_linking_conss; };
 
-   virtual void write_to_streamDense(std::ostream& out) const;
+   void write_to_streamDense(std::ostream& out) const override;
 
-   virtual DistributedProblem* cloneFull(bool switchToDynamicStorage = false) const;
+   std::unique_ptr<Problem> cloneFull() const override {
+      return cloneFull(false);
+   }
+   std::unique_ptr<DistributedProblem> cloneFull(bool switchToDynamicStorage = false) const;
 
    double evaluate_objective(const Variables& variables) const override;
 

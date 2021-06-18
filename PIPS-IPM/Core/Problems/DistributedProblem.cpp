@@ -1157,7 +1157,7 @@ void DistributedProblem::write_to_streamDense(std::ostream& out) const {
    (*inequality_lower_bound_indicators).write_to_stream(out);
 }
 
-DistributedProblem* DistributedProblem::cloneFull(bool switchToDynamicStorage) const {
+std::unique_ptr<DistributedProblem> DistributedProblem::cloneFull(bool switchToDynamicStorage) const {
    // todo Q is empty!
    std::shared_ptr<SymmetricMatrix> Q_clone(hessian->clone());
    std::shared_ptr<GeneralMatrix> A_clone(dynamic_cast<const DistributedMatrix&>(*equality_jacobian).cloneFull(switchToDynamicStorage));
@@ -1177,7 +1177,7 @@ DistributedProblem* DistributedProblem::cloneFull(bool switchToDynamicStorage) c
    const DistributedTree* tree_clone = stochNode;
 
    // TODO : proper copy ctor..
-   return new DistributedProblem(tree_clone, std::move(c_clone), std::move(Q_clone), std::move(xlow_clone),
+   return std::make_unique<DistributedProblem>(tree_clone, std::move(c_clone), std::move(Q_clone), std::move(xlow_clone),
       std::move(ixlow_clone), std::move(xupp_clone), std::move(ixupp_clone),
       std::move(A_clone), std::move(bA_clone),
       std::move(C_clone), std::move(clow_clone), std::move(iclow_clone), std::move(cupp_clone), std::move(icupp_clone));
@@ -1203,11 +1203,11 @@ void DistributedProblem::createChildren() {
    auto& icuppSt = dynamic_cast<DistributedVector<double>&>(*inequality_upper_bound_indicators);
 
    for (size_t it = 0; it < gSt.children.size(); it++) {
-      add_child(new DistributedProblem(stochNode->getChildren()[it], gSt.children[it], QSt.children[it], xlowSt.children[it],
-            ixlowSt.children[it],
-            xuppSt.children[it], ixuppSt.children[it], ASt.children[it], bASt.children[it], CSt.children[it],
-            clowSt.children[it],
-            iclowSt.children[it], cuppSt.children[it], icuppSt.children[it]));
+      add_child(new DistributedProblem(stochNode->getChildren()[it].get(), gSt.children[it], QSt.children[it], xlowSt.children[it],
+         ixlowSt.children[it],
+         xuppSt.children[it], ixuppSt.children[it], ASt.children[it], bASt.children[it], CSt.children[it],
+         clowSt.children[it],
+         iclowSt.children[it], cuppSt.children[it], icuppSt.children[it]));
    }
 }
 
@@ -1215,7 +1215,7 @@ void DistributedProblem::destroyChildren() {
    children.clear();
 }
 
-DistributedProblem* DistributedProblem::shaveBorderFromDataAndCreateNewTop(const DistributedTree* tree) {
+DistributedProblem* DistributedProblem::shaveBorderFromDataAndCreateNewTop(const DistributedTree& tree) {
    std::shared_ptr<SymmetricMatrix> Q_hier(
       dynamic_cast<DistributedSymmetricMatrix&>(*hessian).raiseBorder(n_global_linking_vars));
 
@@ -1252,12 +1252,12 @@ DistributedProblem* DistributedProblem::shaveBorderFromDataAndCreateNewTop(const
    // TODO what is this?
    //DistributedVector<double>* sc_hier = dynamic_cast<DistributedVector<double>&>(*sc).shaveBorder(-1);
 
-   return new DistributedProblem(tree, std::move(g_hier), std::move(Q_hier), std::move(blx_hier), std::move(ixlow_hier), std::move(bux_hier), std::move(ixupp_hier), std::move(A_hier), std::move(bA_hier), std::move(C_hier),
+   return new DistributedProblem(&tree, std::move(g_hier), std::move(Q_hier), std::move(blx_hier), std::move(ixlow_hier), std::move(bux_hier), std::move(ixupp_hier), std::move(A_hier), std::move(bA_hier), std::move(C_hier),
                   std::move(bl_hier), std::move(iclow_hier), std::move(bu_hier),
                   std::move(icupp_hier), false, true);
 }
 
-DistributedProblem* DistributedProblem::shaveDenseBorder(const DistributedTree* tree) {
+DistributedProblem* DistributedProblem::shaveDenseBorder(const DistributedTree& tree) {
    DistributedProblem* hierarchical_top = shaveBorderFromDataAndCreateNewTop(tree);
 
    const auto& ixlow = dynamic_cast<const DistributedVector<double>&>(*hierarchical_top->primal_lower_bound_indicators);
@@ -1315,7 +1315,7 @@ DistributedProblem* DistributedProblem::shaveDenseBorder(const DistributedTree* 
    hierarchical_top->useLinkStructure = false;
 
    hierarchical_top->children.push_back(this);
-   stochNode = tree->getChildren()[0];
+   stochNode = tree.getChildren()[0].get();
 
    return hierarchical_top;
 }
@@ -1730,8 +1730,9 @@ void DistributedProblem::permuteLinkingVars(const Permutation& perm) {
 }
 
 DistributedVariables*
-DistributedProblem::getVarsUnperm(const DistributedVariables& vars, const DistributedProblem& unpermData) const {
-   auto* unperm_vars = new DistributedVariables(vars);
+DistributedProblem::getVarsUnperm(const Variables& vars, const Problem& unpermData_in) const {
+   auto* unperm_vars = new DistributedVariables(dynamic_cast<const DistributedVariables&>(vars));
+   const auto& unpermData = dynamic_cast<const DistributedProblem&>(unpermData_in);
 
    if (is_hierarchy_root)
       unperm_vars->collapseHierarchicalStructure(*this, unpermData.stochNode, unpermData.primal_lower_bound_indicators, unpermData.primal_upper_bound_indicators,
@@ -1754,8 +1755,9 @@ DistributedProblem::getVarsUnperm(const DistributedVariables& vars, const Distri
 }
 
 DistributedResiduals*
-DistributedProblem::getResidsUnperm(const DistributedResiduals& resids, const DistributedProblem& unpermData) const {
-   auto* unperm_resids = new DistributedResiduals(resids);
+DistributedProblem::getResidsUnperm(const Residuals& resids, const Problem& unpermData_in) const {
+   auto* unperm_resids = new DistributedResiduals(dynamic_cast<const DistributedResiduals&>(resids));
+   const auto& unpermData = dynamic_cast<const DistributedProblem&>(unpermData_in);
 
    if (is_hierarchy_root)
       unperm_resids->collapse_hierarchical_structure(*this, stochNode, unpermData.primal_lower_bound_indicators, unpermData.primal_upper_bound_indicators, unpermData.inequality_lower_bound_indicators, unpermData.inequality_upper_bound_indicators);

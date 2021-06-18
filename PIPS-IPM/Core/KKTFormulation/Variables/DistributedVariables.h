@@ -24,6 +24,8 @@ public:
 
    DistributedVariables(const DistributedVariables& vars);
 
+   [[nodiscard]] std::unique_ptr<Variables> cloneFull() const override;
+
    ~DistributedVariables() override = default;
 
    [[nodiscard]] bool isRootNodeInSync() const;

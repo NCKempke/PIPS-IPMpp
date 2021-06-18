@@ -54,6 +54,10 @@ Variables::Variables(const Variables& other)  :
    slack_upper_bound_gap{other.slack_upper_bound_gap->cloneFull()}, slack_upper_bound_gap_dual{other.slack_upper_bound_gap_dual->cloneFull()}
    {}
 
+std::unique_ptr<Variables> Variables::cloneFull() const {
+   return std::make_unique<Variables>(*this);
+}
+
 double Variables::get_average_distance_to_bound_for_converged_vars(const Problem&, double tol) const {
    assert(0 < tol);
 

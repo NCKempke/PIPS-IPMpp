@@ -13,7 +13,7 @@
 #include "PIPSIPMppOptions.h"
 #include "DistributedFactory.hpp"
 
-sLinsysRootBordered::sLinsysRootBordered(DistributedFactory* factory_, DistributedProblem* prob_) : DistributedRootLinearSystem(factory_, prob_, true) {
+sLinsysRootBordered::sLinsysRootBordered(const DistributedFactory& factory_, DistributedProblem* prob_) : DistributedRootLinearSystem(factory_, prob_, true) {
    assert(locmyl >= 0 && locmzl >= 0);
 
    if (apply_regularization) {

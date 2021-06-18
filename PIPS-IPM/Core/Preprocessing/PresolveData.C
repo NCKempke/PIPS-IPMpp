@@ -72,7 +72,7 @@ PresolveData::PresolveData(const DistributedProblem& sorigprob, StochPostsolver*
    absmax_col->setToZero();
    objective_vec_chgs->setToZero();
 
-   presProb = sorigprob.cloneFull(true);
+   presProb = sorigprob.cloneFull(true).release();
 
    const int n_linking_vars = (nnzs_col->first) ? nnzs_col->first->length() : 0;
 
@@ -172,6 +172,7 @@ void PresolveData::delete_transposed() {
    getSystemMatrix(EQUALITY_SYSTEM).deleteTransposed();
    getSystemMatrix(INEQUALITY_SYSTEM).deleteTransposed();
 }
+
 DistributedProblem* PresolveData::finalize() {
    delete_transposed();
 #ifndef NDEBUG
@@ -188,7 +189,6 @@ DistributedProblem* PresolveData::finalize() {
 
    // this removes all columns and rows that are now empty from the problem
    presProb->cleanUpPresolvedData(*nnzs_row_A, *nnzs_row_C, *nnzs_col);
-
 
    return presProb;
 }

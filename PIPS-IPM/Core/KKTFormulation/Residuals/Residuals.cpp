@@ -38,6 +38,10 @@ Residuals::Residuals(const Residuals& residuals) : residual_norm{residuals.resid
    rphi{residuals.rphi->cloneFull()},
    rlambda{residuals.rlambda->cloneFull()}, rpi{residuals.rpi->cloneFull()} {}
 
+std::unique_ptr<Residuals> Residuals::cloneFull() const {
+   return std::make_unique<Residuals>(*this);
+}
+
 double compute_inf_norm(const Vector<double>& vec, bool print, std::string&& name) {
    const double infnorm = vec.inf_norm();
 
