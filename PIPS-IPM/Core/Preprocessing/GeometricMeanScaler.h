@@ -1,5 +1,5 @@
 /*
- * GeoStochScaler.h
+ * GeometricMeanScaler.h
  *
  *  Created on: 16.07.2018
  *      Author: Svenja Uslu
@@ -17,7 +17,7 @@ class Problem;
  * Geometric scaler
  * @{
  */
-class GeoStochScaler : public Scaler {
+class GeometricMeanScaler : public Scaler {
 
 private:
    const double minImpr;
@@ -33,8 +33,8 @@ protected:
    void postEquiScale();
 
 public:
-   GeoStochScaler(const ProblemFactory& problem_factory, const Problem& problem, bool equiScaling, bool bitshifting = false);
-   ~GeoStochScaler() override = default;
+   GeometricMeanScaler(const ProblemFactory& problem_factory, const Problem& problem, bool equiScaling, bool bitshifting = false);
+   ~GeometricMeanScaler() override = default;
 
    /** scale */
    void scale() override;

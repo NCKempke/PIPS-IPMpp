@@ -1,12 +1,12 @@
 /*
- * GeoStochScaler.C
+ * GeometricMeanScaler.C
  *
  *  Created on: 16.07.2018
  *      Author: Svenja Uslu
  */
 
 //#define PIPS_DEBUG
-#include "GeoStochScaler.h"
+#include "GeometricMeanScaler.h"
 #include "Vector.hpp"
 #include "AbstractMatrix.h"
 #include "ProblemFactory.h"
@@ -17,13 +17,13 @@
 static const double maxobjscale = 100.0;
 
 
-GeoStochScaler::GeoStochScaler(const ProblemFactory& problem_factory, const Problem& problem, bool equiScaling, bool bitshifting) :
+GeometricMeanScaler::GeometricMeanScaler(const ProblemFactory& problem_factory, const Problem& problem, bool equiScaling, bool bitshifting) :
    Scaler(problem_factory, problem, bitshifting), minImpr{0.85}, goodEnough{500.}, maxIters{10}, equilibrate{equiScaling} {
    if (PIPS_MPIgetRank() == 0 && scaling_output)
-      std::cout << "Creating GeoStochScaler... bitshifting=" << bitshifting << " equiscaling=" << equiScaling << "\n";
+      std::cout << "Creating GeometricMeanScaler... bitshifting=" << bitshifting << " equiscaling=" << equiScaling << "\n";
 }
 
-void GeoStochScaler::doObjScaling() const {
+void GeometricMeanScaler::doObjScaling() const {
    assert(vec_colscale != nullptr);
 
    obj->componentMult(*vec_colscale);
@@ -63,7 +63,7 @@ void GeoStochScaler::doObjScaling() const {
 #endif
 }
 
-void GeoStochScaler::scale() {
+void GeometricMeanScaler::scale() {
    create_scaling_vectors();
 
    /* We want to do the direction with lower maximal ratio first,
@@ -208,7 +208,7 @@ void GeoStochScaler::scale() {
  * Multiply maxvec and minvec componentwise and take the square root of the result.
  * Return result in maxvec.
  * */
-void GeoStochScaler::applyGeoMean(Vector<double>& maxvec, const Vector<double>& minvec) {
+void GeometricMeanScaler::applyGeoMean(Vector<double>& maxvec, const Vector<double>& minvec) {
    assert(maxvec.length() == minvec.length());
 
    maxvec.componentMult(minvec);
@@ -219,7 +219,7 @@ void GeoStochScaler::applyGeoMean(Vector<double>& maxvec, const Vector<double>& 
  * The scaling vectors vec_rowscaleA, vec_rowscaleC and vec_colscale should contain
  * the previously determined scaling factors.
  */
-void GeoStochScaler::postEquiScale() {
+void GeometricMeanScaler::postEquiScale() {
    assert(vec_rowscaleA && vec_rowscaleC && vec_colscale);
 
    std::unique_ptr<Vector<double>> rowmaxA{problem_factory.make_equalities_dual_vector()};
