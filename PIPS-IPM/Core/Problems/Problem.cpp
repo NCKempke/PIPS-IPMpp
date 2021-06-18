@@ -1,12 +1,19 @@
-#include <SimpleVector.hpp>
 #include "Problem.hpp"
+#include "SimpleVector.hpp"
+#include "Variables.h"
+#include "AbstractMatrix.h"
+#include <cmath>
+#include "MpsReader.h"
 
-Problem::Problem(std::shared_ptr<Vector<double>> g_in, std::shared_ptr<Vector<double>> xlow_in,
+Problem::Problem(std::shared_ptr<Vector<double>> g_in, std::shared_ptr<SymmetricMatrix> Q_in,
+      std::shared_ptr<Vector<double>> xlow_in,
    std::shared_ptr<Vector<double>> ixlow_in, std::shared_ptr<Vector<double>> xupp_in,
    std::shared_ptr<Vector<double>> ixupp_in,
    std::shared_ptr<GeneralMatrix> A_in, std::shared_ptr<Vector<double>> bA_in, std::shared_ptr<GeneralMatrix> C_in,
    std::shared_ptr<Vector<double>> clow_in, std::shared_ptr<Vector<double>> iclow_in,
-   std::shared_ptr<Vector<double>> cupp_in, std::shared_ptr<Vector<double>> icupp_in) : equality_jacobian{std::move(A_in)},
+   std::shared_ptr<Vector<double>> cupp_in, std::shared_ptr<Vector<double>> icupp_in) :
+   hessian(std::move(Q_in)),
+   equality_jacobian{std::move(A_in)},
    inequality_jacobian{std::move(C_in)},
    objective_gradient{std::move(g_in)}, equality_rhs{std::move(bA_in)}, primal_upper_bounds{std::move(xupp_in)}, primal_upper_bound_indicators{std::move(ixupp_in)},
    primal_lower_bounds{std::move(xlow_in)},
@@ -81,7 +88,6 @@ void Problem::scalexupp() {
 
    // inverse(D) * bux
    primal_upper_bounds->componentDiv(scVector);
-
 }
 
 
@@ -92,58 +98,44 @@ void Problem::scalexlow() {
 
    // inverse(D) * blx
    primal_lower_bounds->componentDiv(scVector);
-
 }
 
-void Problem::flipg() {
-   // Multiply C matrix by -1
+void Problem::flip_objective_gradient() {
+   // Multiply g by -1
    objective_gradient->scalarMult(-1.0);
 }
 
 double Problem::datanorm() const {
-   double norm = 0.0;
-   double componentNorm;
+   double norm = objective_gradient->inf_norm();
 
-   componentNorm = objective_gradient->inf_norm();
-   if (componentNorm > norm)
-      norm = componentNorm;
+   norm = std::max(norm, equality_rhs->inf_norm());
 
-   componentNorm = equality_rhs->inf_norm();
-   if (componentNorm > norm)
-      norm = componentNorm;
+   norm = std::max(norm, equality_jacobian->inf_norm());
 
-   componentNorm = equality_jacobian->inf_norm();
-   if (componentNorm > norm)
-      norm = componentNorm;
-
-   componentNorm = inequality_jacobian->inf_norm();
-   if (componentNorm > norm)
-      norm = componentNorm;
+   norm = std::max(norm, inequality_jacobian->inf_norm());
 
    assert(primal_lower_bounds->matchesNonZeroPattern(*primal_lower_bound_indicators));
-   componentNorm = primal_lower_bounds->inf_norm();
-   if (componentNorm > norm)
-      norm = componentNorm;
+   norm = std::max(norm, primal_lower_bounds->inf_norm());
 
    assert(primal_upper_bounds->matchesNonZeroPattern(*primal_upper_bound_indicators));
-   componentNorm = primal_upper_bounds->inf_norm();
-   if (componentNorm > norm)
-      norm = componentNorm;
+   norm = std::max(norm, primal_upper_bounds->inf_norm());
 
    assert(inequality_lower_bounds->matchesNonZeroPattern(*inequality_lower_bound_indicators));
-   componentNorm = inequality_lower_bounds->inf_norm();
-   if (componentNorm > norm)
-      norm = componentNorm;
+   norm = std::max(norm, inequality_lower_bounds->inf_norm());
 
    assert(inequality_upper_bounds->matchesNonZeroPattern(*inequality_upper_bound_indicators));
-   componentNorm = inequality_upper_bounds->inf_norm();
-   if (componentNorm > norm)
-      norm = componentNorm;
+   norm = std::max(norm, inequality_upper_bounds->inf_norm());
+
+   norm = std::max(norm, hessian->inf_norm());
 
    return norm;
 }
 
 void Problem::print() {
+   std::cout << "begin Q\n";
+   hessian->write_to_stream(std::cout);
+   std::cout << "end Q\n";
+
    std::cout << "begin c\n";
    objective_gradient->write_to_stream(std::cout);
    std::cout << "end c\n";
@@ -185,4 +177,81 @@ void Problem::print() {
    std::cout << "begin icupp\n";
    inequality_upper_bound_indicators->write_to_stream(std::cout);
    std::cout << "end icupp\n";
+}
+
+void Problem::hessian_multiplication(double beta, Vector<double>& y, double alpha, const Vector<double>& x) const {
+   // y = beta * y + alpha * Q * x
+   hessian->mult(beta, y, alpha, x);
+}
+
+void Problem::datainput(MpsReader* reader, int& iErr) {
+   reader->readQpGen(*objective_gradient, *hessian, *primal_lower_bounds, *primal_lower_bound_indicators, *primal_upper_bounds,
+         *primal_upper_bound_indicators, *equality_jacobian, *equality_rhs, *inequality_jacobian, *inequality_lower_bounds,
+         *inequality_lower_bound_indicators, *inequality_upper_bounds, *inequality_upper_bound_indicators, iErr);
+
+   if (reader->scalingOption == 1) {
+      // Create the scaling vector
+      this->create_scale_from_hessian();
+
+      //Scale the variables
+      this->scale_hessian();
+      this->scaleA();
+      this->scaleC();
+      this->scaleg();
+      this->scalexlow();
+      this->scalexupp();
+   }
+
+   /* If objective sense is "MAX", flip the C and Q matrices */
+   if (!strncmp(reader->objectiveSense, "MAX", 3)) {
+      this->flip_objective_gradient();
+      this->flip_hessian();
+   }
+}
+
+void Problem::put_hessian_into_At(SymmetricMatrix& M, int row, int col) {
+   M.symAtPutSubmatrix(row, col, *hessian, 0, 0, nx, nx);
+}
+
+void Problem::put_hessian_into_At(GeneralMatrix& M, int row, int col) {
+   M.atPutSubmatrix(row, col, *hessian, 0, 0, nx, nx);
+}
+
+void Problem::hessian_diagonal(Vector<double>& hessian_diagonal) const {
+   hessian->fromGetDiagonal(0, hessian_diagonal);
+}
+
+void Problem::evaluate_objective_gradient(const Variables& variables, Vector<double>& gradient) const {
+   this->get_objective_gradient(gradient);
+   this->hessian_multiplication(1., gradient, 1., *variables.primals);
+}
+
+double Problem::evaluate_objective(const Variables& variables) const {
+   SimpleVector<double> gradient(nx);
+   this->get_objective_gradient(gradient);
+   this->hessian_multiplication(1., gradient, 0.5, *variables.primals);
+   return gradient.dotProductWith(*variables.primals);
+}
+
+void Problem::create_scale_from_hessian() {
+   // Stuff the diagonal elements of Q into the vector "sc"
+   this->hessian_diagonal(*sc);
+
+   // Modifying scVector is equivalent to modifying sc
+   auto& scVector = dynamic_cast<SimpleVector<double>&>(*sc);
+   for (int i = 0; i < scVector.length(); i++) {
+      if (scVector[i] > 1)
+         scVector[i] = 1.0 / sqrt(scVector[i]);
+      else
+         scVector[i] = 1.0;
+   }
+}
+
+void Problem::scale_hessian() {
+   hessian->symmetricScale(*sc);
+}
+
+void Problem::flip_hessian() {
+   // Multiply Q matrix by -1
+   hessian->scalarMult(-1.0);
 }

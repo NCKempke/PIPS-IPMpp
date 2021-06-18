@@ -10,7 +10,7 @@
 #include "Scaler.hpp"
 #include "PIPSIPMppOptions.h"
 #include "DistributedVector.h"
-#include "QP.hpp"
+#include "Problem.hpp"
 #include "Variables.h"
 #include "Residuals.h"
 #include "pipsdef.h"

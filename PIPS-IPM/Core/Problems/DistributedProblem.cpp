@@ -1104,7 +1104,8 @@ DistributedProblem::DistributedProblem(const DistributedTree* tree_, std::shared
    std::shared_ptr<Vector<double>> iclow_in,
    std::shared_ptr<Vector<double>> cupp_in,
    std::shared_ptr<Vector<double>> icupp_in, bool add_children, bool is_hierarchy_root,
-   bool is_hierarchy_inner_root, bool is_hierarchy_inner_leaf) : QP(std::move(c_in), std::move(Q_in),
+   bool is_hierarchy_inner_root, bool is_hierarchy_inner_leaf) :
+   Problem(std::move(c_in), std::move(Q_in),
    std::move(xlow_in), std::move(ixlow_in),
    std::move(xupp_in), std::move(ixupp_in), std::move(A_in), std::move(bA_in), std::move(C_in), std::move(clow_in),
    std::move(iclow_in), std::move(cupp_in), std::move(icupp_in)), stochNode{tree_},
@@ -1158,7 +1159,7 @@ void DistributedProblem::write_to_streamDense(std::ostream& out) const {
 
 DistributedProblem* DistributedProblem::cloneFull(bool switchToDynamicStorage) const {
    // todo Q is empty!
-   std::shared_ptr<SymmetricMatrix> Q_clone(Q->clone());
+   std::shared_ptr<SymmetricMatrix> Q_clone(hessian->clone());
    std::shared_ptr<GeneralMatrix> A_clone(dynamic_cast<const DistributedMatrix&>(*equality_jacobian).cloneFull(switchToDynamicStorage));
    std::shared_ptr<GeneralMatrix> C_clone(dynamic_cast<const DistributedMatrix&>(*inequality_jacobian).cloneFull(switchToDynamicStorage));
 
@@ -1187,7 +1188,7 @@ void DistributedProblem::createChildren() {
    //structure for this class, and link this object with the corresponding
    //vectors and matrices
    auto& gSt = dynamic_cast<DistributedVector<double>&>(*objective_gradient);
-   auto& QSt = dynamic_cast<DistributedSymmetricMatrix&>(*Q);
+   auto& QSt = dynamic_cast<DistributedSymmetricMatrix&>(*hessian);
 
    auto& xlowSt = dynamic_cast<DistributedVector<double>&>(*primal_lower_bounds);
    auto& ixlowSt = dynamic_cast<DistributedVector<double>&>(*primal_lower_bound_indicators);
@@ -1216,7 +1217,7 @@ void DistributedProblem::destroyChildren() {
 
 DistributedProblem* DistributedProblem::shaveBorderFromDataAndCreateNewTop(const DistributedTree* tree) {
    std::shared_ptr<SymmetricMatrix> Q_hier(
-      dynamic_cast<DistributedSymmetricMatrix&>(*Q).raiseBorder(n_global_linking_vars));
+      dynamic_cast<DistributedSymmetricMatrix&>(*hessian).raiseBorder(n_global_linking_vars));
 
    std::shared_ptr<GeneralMatrix> A_hier(
       dynamic_cast<DistributedMatrix&>(*equality_jacobian).raiseBorder(n_global_eq_linking_conss, n_global_linking_vars));
@@ -1402,8 +1403,8 @@ void DistributedProblem::addChildrenForSplit() {
    unsigned int childchild_pos{0};
    for (unsigned int i = 0; i < n_new_children; ++i) {
       std::shared_ptr<DistributedSymmetricMatrix> Q_child = is_hierarchy_inner_root
-         ? dynamic_cast<DistributedSymmetricMatrix&>(*Q).children[i]
-         : dynamic_cast<DistributedSymmetricMatrix&>(*dynamic_cast<DistributedSymmetricMatrix&>(*Q).diag).children[i];
+         ? dynamic_cast<DistributedSymmetricMatrix&>(*hessian).children[i]
+         : dynamic_cast<DistributedSymmetricMatrix&>(*dynamic_cast<DistributedSymmetricMatrix&>(*hessian).diag).children[i];
 
       std::shared_ptr<DistributedMatrix> A_child = is_hierarchy_inner_root ? dynamic_cast<DistributedMatrix&>(*equality_jacobian).children[i]
          : dynamic_cast<DistributedMatrix&>(*dynamic_cast<DistributedMatrix&>(*equality_jacobian).Bmat).children[i];
@@ -1553,7 +1554,7 @@ void DistributedProblem::splitData() {
    assert(child_comms.size() == getNDistinctValues(map_block_subtree));
 
    if (stochNode->isHierarchicalInnerLeaf()) {
-      dynamic_cast<DistributedSymmetricMatrix&>(*dynamic_cast<DistributedSymmetricMatrix&>(*Q).diag).splitMatrix(
+      dynamic_cast<DistributedSymmetricMatrix&>(*dynamic_cast<DistributedSymmetricMatrix&>(*hessian).diag).splitMatrix(
          map_block_subtree, child_comms);
       dynamic_cast<DistributedMatrix&>(*dynamic_cast<DistributedMatrix&>(*equality_jacobian).Bmat).splitMatrix(linkStartBlockLengthsA,
          map_block_subtree, stochNode->myl(),
@@ -1591,7 +1592,7 @@ void DistributedProblem::splitData() {
          map_block_subtree, child_comms,
          linkStartBlockLengthsC, stochNode->mzl());
    } else {
-      dynamic_cast<DistributedSymmetricMatrix&>(*Q).splitMatrix(map_block_subtree, child_comms);
+      dynamic_cast<DistributedSymmetricMatrix&>(*hessian).splitMatrix(map_block_subtree, child_comms);
       dynamic_cast<DistributedMatrix&>(*equality_jacobian).splitMatrix(linkStartBlockLengthsA, map_block_subtree, stochNode->myl(),
          child_comms);
       dynamic_cast<DistributedMatrix&>(*inequality_jacobian).splitMatrix(linkStartBlockLengthsC, map_block_subtree, stochNode->mzl(),
@@ -1619,7 +1620,7 @@ void DistributedProblem::splitData() {
 }
 
 void DistributedProblem::recomputeSize() {
-   dynamic_cast<DistributedSymmetricMatrix&>(*Q).recomputeSize();
+   dynamic_cast<DistributedSymmetricMatrix&>(*hessian).recomputeSize();
    dynamic_cast<DistributedMatrix&>(*equality_jacobian).recomputeSize();
    dynamic_cast<DistributedMatrix&>(*inequality_jacobian).recomputeSize();
 
@@ -2273,7 +2274,7 @@ int DistributedProblem::getLocalSizes(int& nx, int& my, int& mz, int& myl, int& 
 int DistributedProblem::getLocalNnz(int& nnzQ, int& nnzB, int& nnzD) {
    if (is_hierarchy_root || is_hierarchy_inner_root || is_hierarchy_inner_leaf)
       assert(0 && "TODO : implement");
-   const auto& Qst = dynamic_cast<const DistributedSymmetricMatrix&>(*Q);
+   const auto& Qst = dynamic_cast<const DistributedSymmetricMatrix&>(*hessian);
    const auto& Ast = dynamic_cast<const DistributedMatrix&>(*equality_jacobian);
    const auto& Cst = dynamic_cast<const DistributedMatrix&>(*inequality_jacobian);
 
@@ -2482,7 +2483,7 @@ int DistributedProblem::getSchurCompMaxNnzDist(int blocksStart, int blocksEnd) c
 }
 
 const SparseSymmetricMatrix& DistributedProblem::getLocalQ() const {
-   auto& Qst = dynamic_cast<const DistributedSymmetricMatrix&>(*Q);
+   auto& Qst = dynamic_cast<const DistributedSymmetricMatrix&>(*hessian);
    assert(!is_hierarchy_root);
 
    if (is_hierarchy_inner_leaf && stochNode->getCommWorkers() != MPI_COMM_NULL) {
@@ -2495,7 +2496,7 @@ const SparseSymmetricMatrix& DistributedProblem::getLocalQ() const {
 }
 
 const SparseMatrix& DistributedProblem::getLocalCrossHessian() const {
-   auto& Qst = dynamic_cast<const DistributedSymmetricMatrix&>(*Q);
+   auto& Qst = dynamic_cast<const DistributedSymmetricMatrix&>(*hessian);
    assert(!is_hierarchy_inner_root && !is_hierarchy_root && !is_hierarchy_inner_leaf);
 
    return dynamic_cast<const SparseMatrix&>(*Qst.border);
@@ -2609,7 +2610,7 @@ const SparseMatrix& DistributedProblem::getLocalG() const {
 void
 DistributedProblem::cleanUpPresolvedData(const DistributedVector<int>& rowNnzVecA, const DistributedVector<int>& rowNnzVecC,
    const DistributedVector<int>& colNnzVec) {
-   auto& Q_stoch = dynamic_cast<DistributedSymmetricMatrix&>(*Q);
+   auto& Q_stoch = dynamic_cast<DistributedSymmetricMatrix&>(*hessian);
    // todo only works if Q is empty - not existent
    Q_stoch.deleteEmptyRowsCols(colNnzVec);
    Q_stoch.recomputeSize();

@@ -14,7 +14,6 @@ add_library(pips-ipmpp STATIC
         Problems/DistributedFactory.cpp
         Problems/DistributedProblem.cpp
         Problems/Problem.cpp
-        Problems/QP.cpp
         Problems/StochResourcesMonitor.cpp
 
         Readers/Distributed/DistributedInputTree.C

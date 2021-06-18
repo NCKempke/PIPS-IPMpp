@@ -1,7 +1,7 @@
 #ifndef DISTRIBUTEDQP_H
 #define DISTRIBUTEDQP_H
 
-#include "QP.hpp"
+#include "Problem.hpp"
 #include "DistributedResiduals.hpp"
 #include "DistributedVariables.h"
 #include "DistributedSymmetricMatrix.h"
@@ -17,7 +17,7 @@
 
 class DistributedTree;
 
-class DistributedProblem : public QP {
+class DistributedProblem : public Problem {
 protected:
    DistributedProblem() = default;
 

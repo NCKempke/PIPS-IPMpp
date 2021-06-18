@@ -3869,16 +3869,16 @@ void PresolveData::append_new_slacks_to_objective_vector(int node, int n_slack_v
 }
 
 void PresolveData::extend_q_matrix_by_new_variables(int node, int n_variables) {
-   SparseSymmetricMatrix& Q_diag = getSparseSymmetricDiagFromStochMat(dynamic_cast<DistributedSymmetricMatrix&>(*presProb->Q), node);
+   SparseSymmetricMatrix& Q_diag = getSparseSymmetricDiagFromStochMat(dynamic_cast<DistributedSymmetricMatrix&>(*presProb->hessian), node);
    Q_diag.append_empty_diagonal(n_variables);
 
    if (node == -1) {
       for (int i = 0; i < nChildren; ++i ) {
-         SparseMatrix& border = getSparseBorderFromStochMat(dynamic_cast<DistributedSymmetricMatrix&>(*presProb->Q), i);
+         SparseMatrix& border = getSparseBorderFromStochMat(dynamic_cast<DistributedSymmetricMatrix&>(*presProb->hessian), i);
          border.append_empty_columns(n_variables);
       }
    } else {
-      SparseMatrix& Q_border = getSparseBorderFromStochMat(dynamic_cast<DistributedSymmetricMatrix&>(*presProb->Q), node);
+      SparseMatrix& Q_border = getSparseBorderFromStochMat(dynamic_cast<DistributedSymmetricMatrix&>(*presProb->hessian), node);
       Q_border.append_empty_rows(n_variables);
    }
 }

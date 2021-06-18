@@ -136,7 +136,7 @@ bool DistributedTreeCallbacks::hasPresolved() {
 }
 
 void DistributedTreeCallbacks::initPresolvedData(const DistributedProblem& presolved_data) {
-   const auto& Q = dynamic_cast<const DistributedSymmetricMatrix&>(*presolved_data.Q);
+   const auto& Q = dynamic_cast<const DistributedSymmetricMatrix&>(*presolved_data.hessian);
    const auto& A = dynamic_cast<const DistributedMatrix&>(*presolved_data.equality_jacobian);
    const auto& C = dynamic_cast<const DistributedMatrix&>(*presolved_data.inequality_jacobian);
 
