@@ -98,7 +98,7 @@ void Scaler::unscale_residuals(Residuals& residuals) const {
 
    if (residuals.getMcupp() > 0)
       residuals.ru->componentDiv(*vec_rowscaleC);
-   // nothing to to for rgamma, rphi, rlambda, rpi;
+   // nothing to do for rgamma, rphi, rlambda, rpi;
 
    // gap is scaling resistant
 
