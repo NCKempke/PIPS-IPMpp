@@ -11,27 +11,44 @@ CurtisReidScaler::CurtisReidScaler(const ProblemFactory& problem_factory, const 
       std::cout << "Creating CurtisReidScaler... bitshifting=" << bitshifting << "\n";
 }
 
+/** comments indicate notation in Curtis Reid paper (_1 and _2 for equality and inequality contribution)
+ * A.R. Curtis, J.K. Reid, On the automatic scaling of matrices for Gaussian elimination (1971)
+ */
 void CurtisReidScaler::scale() {
    create_scaling_vectors();
 
-   const auto [sum_non_zeros_columns, sum_non_zeros_equalities, sum_non_zeros_inequalities] = get_nonzero_vectors();
+   const auto [sum_non_zeros_columns, sum_non_zeros_equalities, sum_non_zeros_inequalities] = get_nonzero_vectors(); // [N, M_1, M_2]
 
-   const auto [log_sum_columns, log_sum_equalities, log_sum_inequalities] = get_log_sum_vectors();
+   const auto [log_sum_columns, log_sum_equalities, log_sum_inequalities] = get_log_sum_vectors(); // [tau, sigma_1, sigma_2]
 
    /// initialize
-   scaling_factors_columns->setToZero();
+   scaling_factors_columns->setToZero(); // c
 
-   scaling_factors_equalities->copyFrom(*log_sum_equalities);
+   scaling_factors_equalities->copyFrom(*log_sum_equalities); // p_1
    scaling_factors_equalities->componentDiv(*sum_non_zeros_equalities);
 
-   scaling_factors_inequalitites->copyFrom(*log_sum_inequalities);
-   scaling_factors_equalities->componentDiv(*sum_non_zeros_inequalities);
+   scaling_factors_inequalities->copyFrom(*log_sum_inequalities); // p_2
+   scaling_factors_inequalities->componentDiv(*sum_non_zeros_inequalities);
 
    /// calculate initial residuals
    auto least_squares_residuals = problem_factory.make_primal_vector();
+   auto tmp_vec_equalities = problem_factory.make_equalities_dual_vector();
+   auto tmp_vec_inequalities = problem_factory.make_inequalities_dual_vector();
+
+   tmp_vec_equalities->copyFrom(*log_sum_equalities);
+   tmp_vec_equalities->componentDiv(*sum_non_zeros_equalities);
+
+   tmp_vec_inequalities->copyFrom(*log_sum_inequalities);
+   tmp_vec_inequalities->componentDiv(*sum_non_zeros_inequalities);
 
    least_squares_residuals->copyFrom(*log_sum_columns);
 
+   auto transform_to_one = [](const auto& val) {
+      return val == 0.0 ? 0.0 : 1.0;
+   };
+
+   A->transpose_mult_transform(1.0, *least_squares_residuals, -1.0, *tmp_vec_equalities, transform_to_one);
+   C->transpose_mult_transform(1.0, *least_squares_residuals, -1.0, *tmp_vec_inequalities, transform_to_one);
 };
 
 
@@ -54,6 +71,15 @@ std::tuple<std::unique_ptr<Vector<double>>, std::unique_ptr<Vector<double>>, std
 
    this->A->sum_transform_columns(*sum_non_zeros_columns, to_one);
    this->C->sum_transform_columns(*sum_non_zeros_columns, to_one);
+
+#ifndef NDEBUG
+   auto positive_predicate = [](const auto& val) {
+      return val > 0.0;
+   };
+   sum_non_zeros_columns->all_of(positive_predicate);
+   sum_non_zeros_equalities->all_of(positive_predicate);
+   sum_non_zeros_inequalities->all_of(positive_predicate);
+#endif
 
    return {std::move(sum_non_zeros_columns), std::move(sum_non_zeros_equalities), std::move(sum_non_zeros_inequalities)};
 }

@@ -46,7 +46,7 @@ void EquilibriumScaler::scale() {
    std::unique_ptr<Vector<double>> rowminC{problem_factory.make_inequalities_dual_vector()};
    std::unique_ptr<Vector<double>> colmin{problem_factory.make_primal_vector()};
 
-   const double rowratio = maxRowRatio(*scaling_factors_equalities, *scaling_factors_inequalitites, *rowminA, *rowminC, nullptr);
+   const double rowratio = maxRowRatio(*scaling_factors_equalities, *scaling_factors_inequalities, *rowminA, *rowminC, nullptr);
    const double colratio = maxColRatio(*scaling_factors_columns, *colmin, nullptr, nullptr);
 
    const int myRank = PIPS_MPIgetRank(MPI_COMM_WORLD);
@@ -61,18 +61,18 @@ void EquilibriumScaler::scale() {
       invertAndRound(do_bitshifting, *scaling_factors_columns);
 
       A->getRowMinMaxVec(false, true, scaling_factors_columns.get(), *scaling_factors_equalities);
-      C->getRowMinMaxVec(false, true, scaling_factors_columns.get(), *scaling_factors_inequalitites);
+      C->getRowMinMaxVec(false, true, scaling_factors_columns.get(), *scaling_factors_inequalities);
 
       invertAndRound(do_bitshifting, *scaling_factors_equalities);
-      invertAndRound(do_bitshifting, *scaling_factors_inequalitites);
+      invertAndRound(do_bitshifting, *scaling_factors_inequalities);
    }
    else // row first
    {
       invertAndRound(do_bitshifting, *scaling_factors_equalities);
-      invertAndRound(do_bitshifting, *scaling_factors_inequalitites);
+      invertAndRound(do_bitshifting, *scaling_factors_inequalities);
 
       A->getColMinMaxVec(false, true, scaling_factors_equalities.get(), *scaling_factors_columns);
-      C->getColMinMaxVec(false, false, scaling_factors_inequalitites.get(), *scaling_factors_columns);
+      C->getColMinMaxVec(false, false, scaling_factors_inequalities.get(), *scaling_factors_columns);
 
       invertAndRound(do_bitshifting, *scaling_factors_columns);
    }
@@ -85,7 +85,7 @@ void EquilibriumScaler::scale() {
       setScalingVecsToOne();
 #ifndef NDEBUG
       scaling_factors_equalities->setToConstant(NAN);
-      scaling_factors_inequalitites->setToConstant(NAN);
+      scaling_factors_inequalities->setToConstant(NAN);
       scaling_factors_columns->setToConstant(NAN);
 #endif
    }

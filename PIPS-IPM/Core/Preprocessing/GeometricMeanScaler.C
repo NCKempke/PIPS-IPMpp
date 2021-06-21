@@ -73,7 +73,7 @@ void GeometricMeanScaler::scale() {
    std::unique_ptr<Vector<double>> rowminC{problem_factory.make_inequalities_dual_vector()};
    std::unique_ptr<Vector<double>> colmin{problem_factory.make_primal_vector()};
 
-   const double rowratio = maxRowRatio(*scaling_factors_equalities, *scaling_factors_inequalitites, *rowminA, *rowminC, nullptr);
+   const double rowratio = maxRowRatio(*scaling_factors_equalities, *scaling_factors_inequalities, *rowminA, *rowminC, nullptr);
    const double colratio = maxColRatio(*scaling_factors_columns, *colmin, nullptr, nullptr);
 
    const int myRank = PIPS_MPIgetRank(MPI_COMM_WORLD);
@@ -116,29 +116,29 @@ void GeometricMeanScaler::scale() {
       for (int i = 0; i < maxIters; i++) {
          // column scaling first?
          if (colratio < rowratio && !with_sides) {
-            p0 = maxColRatio(*scaling_factors_columns, *colmin, scaling_factors_equalities.get(), scaling_factors_inequalitites.get());
+            p0 = maxColRatio(*scaling_factors_columns, *colmin, scaling_factors_equalities.get(), scaling_factors_inequalities.get());
             applyGeoMean(*scaling_factors_columns, *colmin);
             invertAndRound(do_bitshifting, *scaling_factors_columns);
 
-            p1 = maxRowRatio(*scaling_factors_equalities, *scaling_factors_inequalitites, *rowminA, *rowminC, scaling_factors_columns.get());
+            p1 = maxRowRatio(*scaling_factors_equalities, *scaling_factors_inequalities, *rowminA, *rowminC, scaling_factors_columns.get());
             applyGeoMean(*scaling_factors_equalities, *rowminA);
-            applyGeoMean(*scaling_factors_inequalitites, *rowminC);
+            applyGeoMean(*scaling_factors_inequalities, *rowminC);
 
             invertAndRound(do_bitshifting, *scaling_factors_equalities);
-            invertAndRound(do_bitshifting, *scaling_factors_inequalitites);
+            invertAndRound(do_bitshifting, *scaling_factors_inequalities);
 
             PIPSdebugMessage("Geometric Scaling round %d. colratio=%f, rowratio=%f \n", i, p0, p1);
          }
          else // row first
          {
 
-            p0 = maxRowRatio(*scaling_factors_equalities, *scaling_factors_inequalitites, *rowminA, *rowminC, scaling_factors_columns.get());
+            p0 = maxRowRatio(*scaling_factors_equalities, *scaling_factors_inequalities, *rowminA, *rowminC, scaling_factors_columns.get());
             applyGeoMean(*scaling_factors_equalities, *rowminA);
-            applyGeoMean(*scaling_factors_inequalitites, *rowminC);
+            applyGeoMean(*scaling_factors_inequalities, *rowminC);
             invertAndRound(do_bitshifting, *scaling_factors_equalities);
-            invertAndRound(do_bitshifting, *scaling_factors_inequalitites);
+            invertAndRound(do_bitshifting, *scaling_factors_inequalities);
 
-            p1 = maxColRatio(*scaling_factors_columns, *colmin, scaling_factors_equalities.get(), scaling_factors_inequalitites.get());
+            p1 = maxColRatio(*scaling_factors_columns, *colmin, scaling_factors_equalities.get(), scaling_factors_inequalities.get());
             applyGeoMean(*scaling_factors_columns, *colmin);
 
             invertAndRound(do_bitshifting, *scaling_factors_columns);
@@ -198,7 +198,7 @@ void GeometricMeanScaler::scale() {
       setScalingVecsToOne();
 #ifndef NDEBUG
       scaling_factors_equalities->setToConstant(NAN);
-      scaling_factors_inequalitites->setToConstant(NAN);
+      scaling_factors_inequalities->setToConstant(NAN);
       scaling_factors_columns->setToConstant(NAN);
 #endif
    }
@@ -216,11 +216,11 @@ void GeometricMeanScaler::applyGeoMean(Vector<double>& maxvec, const Vector<doub
 }
 
 /** apply Equilibrium Scaling after having done Geometric Scaling.
- * The scaling vectors scaling_factors_equalities, scaling_factors_inequalitites and scaling_factors_columns should contain
+ * The scaling vectors scaling_factors_equalities, scaling_factors_inequalities and scaling_factors_columns should contain
  * the previously determined scaling factors.
  */
 void GeometricMeanScaler::postEquiScale() {
-   assert(scaling_factors_equalities && scaling_factors_inequalitites && scaling_factors_columns);
+   assert(scaling_factors_equalities && scaling_factors_inequalities && scaling_factors_columns);
 
    std::unique_ptr<Vector<double>> rowmaxA{problem_factory.make_equalities_dual_vector()};
    std::unique_ptr<Vector<double>> rowminA{problem_factory.make_equalities_dual_vector()};
@@ -230,32 +230,32 @@ void GeometricMeanScaler::postEquiScale() {
    std::unique_ptr<Vector<double>> colmin{problem_factory.make_primal_vector()};
 
    const double rowratio = maxRowRatio(*rowmaxA, *rowmaxC, *rowminA, *rowminC, scaling_factors_columns.get());
-   const double colratio = maxColRatio(*colmax, *colmin, scaling_factors_equalities.get(), scaling_factors_inequalitites.get());
+   const double colratio = maxColRatio(*colmax, *colmin, scaling_factors_equalities.get(), scaling_factors_inequalities.get());
 
    PIPSdebugMessage("rowratio before Post-EquiScale %f \n", rowratio);
    PIPSdebugMessage("colratio before Post-EquiScale %f \n", colratio);
 
    std::swap(scaling_factors_columns, colmax);
    std::swap(scaling_factors_equalities, rowmaxA);
-   std::swap(scaling_factors_inequalitites, rowmaxC);
+   std::swap(scaling_factors_inequalities, rowmaxC);
 
    // column scaling first?
    if (colratio < rowratio && !with_sides) {
       invertAndRound(do_bitshifting, *scaling_factors_columns);
 
       A->getRowMinMaxVec(false, true, scaling_factors_columns.get(), *scaling_factors_equalities);
-      C->getRowMinMaxVec(false, true, scaling_factors_columns.get(), *scaling_factors_inequalitites);
+      C->getRowMinMaxVec(false, true, scaling_factors_columns.get(), *scaling_factors_inequalities);
 
       invertAndRound(do_bitshifting, *scaling_factors_equalities);
-      invertAndRound(do_bitshifting, *scaling_factors_inequalitites);
+      invertAndRound(do_bitshifting, *scaling_factors_inequalities);
    }
    else // row first
    {
       invertAndRound(do_bitshifting, *scaling_factors_equalities);
-      invertAndRound(do_bitshifting, *scaling_factors_inequalitites);
+      invertAndRound(do_bitshifting, *scaling_factors_inequalities);
 
       A->getColMinMaxVec(false, true, scaling_factors_equalities.get(), *scaling_factors_columns);
-      C->getColMinMaxVec(false, false, scaling_factors_inequalitites.get(), *scaling_factors_columns);
+      C->getColMinMaxVec(false, false, scaling_factors_inequalities.get(), *scaling_factors_columns);
 
       invertAndRound(do_bitshifting, *scaling_factors_columns);
    }

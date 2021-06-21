@@ -75,7 +75,7 @@ protected:
    // scaling vectors
    std::unique_ptr<Vector<double>> vec_rowscaleQ{};
    std::unique_ptr<Vector<double>> scaling_factors_equalities{};
-   std::unique_ptr<Vector<double>> scaling_factors_inequalitites{};
+   std::unique_ptr<Vector<double>> scaling_factors_inequalities{};
    std::unique_ptr<Vector<double>> scaling_factors_columns{};
 
    // problem data
