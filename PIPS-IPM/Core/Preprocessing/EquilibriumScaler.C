@@ -22,9 +22,9 @@ EquilibriumScaler::EquilibriumScaler(const ProblemFactory& problem_factory, cons
 }
 
 void EquilibriumScaler::doObjScaling() const {
-   assert(vec_colscale != nullptr);
+   assert(scaling_factors_columns != nullptr);
 
-   obj->componentMult(*vec_colscale);
+   obj->componentMult(*scaling_factors_columns);
 
 #if 0 // note: seems to deteriorate performance and stability
    const double absmax = obj->infnorm();
@@ -46,8 +46,8 @@ void EquilibriumScaler::scale() {
    std::unique_ptr<Vector<double>> rowminC{problem_factory.make_inequalities_dual_vector()};
    std::unique_ptr<Vector<double>> colmin{problem_factory.make_primal_vector()};
 
-   const double rowratio = maxRowRatio(*vec_rowscaleA, *vec_rowscaleC, *rowminA, *rowminC, nullptr);
-   const double colratio = maxColRatio(*vec_colscale, *colmin, nullptr, nullptr);
+   const double rowratio = maxRowRatio(*scaling_factors_equalities, *scaling_factors_inequalitites, *rowminA, *rowminC, nullptr);
+   const double colratio = maxColRatio(*scaling_factors_columns, *colmin, nullptr, nullptr);
 
    const int myRank = PIPS_MPIgetRank(MPI_COMM_WORLD);
 
@@ -58,23 +58,23 @@ void EquilibriumScaler::scale() {
 
    // column scaling first?
    if (colratio < rowratio && !with_sides) {
-      invertAndRound(do_bitshifting, *vec_colscale);
+      invertAndRound(do_bitshifting, *scaling_factors_columns);
 
-      A->getRowMinMaxVec(false, true, vec_colscale.get(), *vec_rowscaleA);
-      C->getRowMinMaxVec(false, true, vec_colscale.get(), *vec_rowscaleC);
+      A->getRowMinMaxVec(false, true, scaling_factors_columns.get(), *scaling_factors_equalities);
+      C->getRowMinMaxVec(false, true, scaling_factors_columns.get(), *scaling_factors_inequalitites);
 
-      invertAndRound(do_bitshifting, *vec_rowscaleA);
-      invertAndRound(do_bitshifting, *vec_rowscaleC);
+      invertAndRound(do_bitshifting, *scaling_factors_equalities);
+      invertAndRound(do_bitshifting, *scaling_factors_inequalitites);
    }
    else // row first
    {
-      invertAndRound(do_bitshifting, *vec_rowscaleA);
-      invertAndRound(do_bitshifting, *vec_rowscaleC);
+      invertAndRound(do_bitshifting, *scaling_factors_equalities);
+      invertAndRound(do_bitshifting, *scaling_factors_inequalitites);
 
-      A->getColMinMaxVec(false, true, vec_rowscaleA.get(), *vec_colscale);
-      C->getColMinMaxVec(false, false, vec_rowscaleC.get(), *vec_colscale);
+      A->getColMinMaxVec(false, true, scaling_factors_equalities.get(), *scaling_factors_columns);
+      C->getColMinMaxVec(false, false, scaling_factors_inequalitites.get(), *scaling_factors_columns);
 
-      invertAndRound(do_bitshifting, *vec_colscale);
+      invertAndRound(do_bitshifting, *scaling_factors_columns);
    }
 
    applyScaling();
@@ -84,9 +84,9 @@ void EquilibriumScaler::scale() {
    if (!scaling_applied) {
       setScalingVecsToOne();
 #ifndef NDEBUG
-      vec_rowscaleA->setToConstant(NAN);
-      vec_rowscaleC->setToConstant(NAN);
-      vec_colscale->setToConstant(NAN);
+      scaling_factors_equalities->setToConstant(NAN);
+      scaling_factors_inequalitites->setToConstant(NAN);
+      scaling_factors_columns->setToConstant(NAN);
 #endif
    }
 

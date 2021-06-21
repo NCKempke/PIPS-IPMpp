@@ -138,9 +138,9 @@ void DistributedLinearSystem::addLnizi(Vector<double>& z0_, Vector<double>& zi_)
    // same for z01 (only the first n0 entries in the output z0 are computed)
    SimpleVector<double> z01(&z0[0], n0);
 
-   R.transMult(1.0, z01, -1.0, zi1);
-   A.transMult(1.0, z01, -1.0, zi2);
-   C.transMult(1.0, z01, -1.0, zi3);
+   R.transpose_mult(1.0, z01, -1.0, zi1);
+   A.transpose_mult(1.0, z01, -1.0, zi2);
+   C.transpose_mult(1.0, z01, -1.0, zi3);
 }
 
 void
@@ -526,7 +526,7 @@ void DistributedLinearSystem::LniTransMult(SimpleVector<double>& y, double alpha
       const SparseMatrix& F = data->getLocalF();
       SimpleVector<double> xlink(&x[nxMyMzP], locmyl);
 
-      F.transMult(1.0, LniTx1, 1.0, xlink);
+      F.transpose_mult(1.0, LniTx1, 1.0, xlink);
    }
 
    if (locmzl > 0) {
@@ -535,7 +535,7 @@ void DistributedLinearSystem::LniTransMult(SimpleVector<double>& y, double alpha
       const SparseMatrix& G = data->getLocalG();
       SimpleVector<double> xlink(&x[nxMyMzMylP], locmzl);
 
-      G.transMult(1.0, LniTx1, 1.0, xlink);
+      G.transpose_mult(1.0, LniTx1, 1.0, xlink);
    }
 
 //  solver->Lsolve(LniTx); -> empty

@@ -696,10 +696,10 @@ void DistributedRootLinearSystem::addBorderTimesRhsToB0(DistributedVector<double
       SimpleVector<double> b2(&b0[nA0], mF0C);
       SimpleVector<double> b3(&b0[nA0 + mF0C], mG0C);
 
-      A0_border.transMult(1.0, b1, -1.0, zi2);
-      C0_border.transMult(1.0, b1, -1.0, zi3);
-      F0vec_border.transMult(1.0, b1, -1.0, zi4);
-      G0vec_border.transMult(1.0, b1, -1.0, zi5);
+      A0_border.transpose_mult(1.0, b1, -1.0, zi2);
+      C0_border.transpose_mult(1.0, b1, -1.0, zi3);
+      F0vec_border.transpose_mult(1.0, b1, -1.0, zi4);
+      G0vec_border.transpose_mult(1.0, b1, -1.0, zi5);
 
       F0cons_border.mult(1.0, b2, -1.0, zi1);
       G0cons_border.mult(1.0, b3, -1.0, zi1);

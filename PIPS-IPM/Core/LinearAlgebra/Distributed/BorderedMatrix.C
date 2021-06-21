@@ -52,6 +52,22 @@ int BorderedMatrix::is_a(int type) const {
 }
 
 void BorderedMatrix::mult(double beta, Vector<double>& y_in, double alpha, const Vector<double>& x_in) const {
+   this->mult(beta, y_in, alpha, x_in, &AbstractMatrix::mult);
+}
+
+void BorderedMatrix::mult_transform(double beta, Vector<double>& y_in, double alpha, const Vector<double>& x_in,
+   const std::function<double(const double&)>& transform) const {
+
+   auto mult = [&capture0 = std::as_const(transform)](const GeneralMatrix* mat, auto&& PH1, auto&& PH2, auto&& PH3, auto&& PH4) {
+      mat->mult_transform(std::forward<decltype(PH1)>(PH1), std::forward<decltype(PH2)>(PH2),
+         std::forward<decltype(PH3)>(PH3), std::forward<decltype(PH4)>(PH4), capture0);
+   };
+
+   this->mult(beta, y_in, alpha, x_in, mult);
+}
+
+void BorderedMatrix::mult(double beta, Vector<double>& y_in, double alpha, const Vector<double>& x_in,
+   const std::function<void(const GeneralMatrix*, double, Vector<double>&, double, const Vector<double>&)>& mult) const {
    /* x row, y column shaped */
    assert(hasVecStructureForBorderedMat(x_in, true));
    assert(hasVecStructureForBorderedMat(y_in, false));
@@ -59,15 +75,34 @@ void BorderedMatrix::mult(double beta, Vector<double>& y_in, double alpha, const
    const auto& x = dynamic_cast<const DistributedVector<double>&>(x_in);
    auto& y = dynamic_cast<DistributedVector<double>&>(y_in);
 
-   border_left->mult(beta, *y.children[0], alpha, *x.first);
-   inner_matrix->mult(1.0, *y.children[0], alpha, *x.children[0]);
+   mult(border_left.get(), beta, *y.children[0], alpha, *x.first);
+   mult(inner_matrix.get(), 1.0, *y.children[0], alpha, *x.children[0]);
 
-   bottom_left_block->mult(beta, *y.last, alpha, *x.first);
-   border_bottom->mult(1.0, *y.last, alpha, *x.children[0]);
+   mult(bottom_left_block.get(), beta, *y.last, alpha, *x.first);
+   mult(border_bottom.get(), 1.0, *y.last, alpha, *x.children[0]);
+
 }
 
 /** y = beta * y + alpha * this^T * x */
-void BorderedMatrix::transMult(double beta, Vector<double>& y_in, double alpha, const Vector<double>& x_in) const {
+void BorderedMatrix::transpose_mult(double beta, Vector<double>& y_in, double alpha, const Vector<double>& x_in) const {
+   this->transpose_mult(beta, y_in, alpha, x_in, &AbstractMatrix::transpose_mult);
+}
+
+/** y = beta * y + alpha * this^T * x */
+void BorderedMatrix::transpose_mult_transform(double beta, Vector<double>& y_in, double alpha, const Vector<double>& x_in,
+   const std::function<double(const double&)>& transform) const {
+
+   auto transpose_mult = [&capture0 = std::as_const(transform)](const GeneralMatrix* mat, auto&& PH1, auto&& PH2, auto&& PH3, auto&& PH4) {
+      mat->transpose_mult_transform(std::forward<decltype(PH1)>(PH1), std::forward<decltype(PH2)>(PH2),
+         std::forward<decltype(PH3)>(PH3), std::forward<decltype(PH4)>(PH4), capture0);
+   };
+
+   this->transpose_mult(beta, y_in, alpha, x_in, transpose_mult);
+}
+
+void BorderedMatrix::transpose_mult(double beta, Vector<double>& y_in, double alpha, const Vector<double>& x_in,
+   const std::function<void(const GeneralMatrix*, double, Vector<double>&, double, const Vector<double>&)>& transpose_mult) const {
+
    /* x column, y row shaped */
    assert(hasVecStructureForBorderedMat(x_in, false));
    assert(hasVecStructureForBorderedMat(y_in, true));
@@ -75,12 +110,13 @@ void BorderedMatrix::transMult(double beta, Vector<double>& y_in, double alpha, 
    const auto& x = dynamic_cast<const DistributedVector<double>&>(x_in);
    auto& y = dynamic_cast<DistributedVector<double>&>(y_in);
 
-   border_left->transMult(beta, *y.first, alpha, *x.children[0]);
-   bottom_left_block->transMult(1.0, *y.first, alpha, *x.last);
+   transpose_mult(border_left.get(), beta, *y.first, alpha, *x.children[0]);
+   transpose_mult(bottom_left_block.get(), 1.0, *y.first, alpha, *x.last);
 
-   inner_matrix->transMult(beta, *y.children[0], alpha, *x.children[0]);
-   border_bottom->transMult(1.0, *y.children[0], alpha, *x.last);
+   transpose_mult(inner_matrix.get(), beta, *y.children[0], alpha, *x.children[0]);
+   transpose_mult(border_bottom.get(), 1.0, *y.children[0], alpha, *x.last);
 }
+
 
 double BorderedMatrix::inf_norm() const {
    double norm = -std::numeric_limits<double>::infinity();

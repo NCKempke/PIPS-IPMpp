@@ -70,7 +70,7 @@ public:
    void fromGetSpRow(int, int, double[], int, int[], int&, int, int&) const override { assert(false && "Not implemented"); };
 
    void mult(double beta, Vector<double>& y, double alpha, const Vector<double>& x) const override;
-   void transMult(double beta, Vector<double>& y, double alpha, const Vector<double>& x) const override;
+   void transpose_mult(double beta, Vector<double>& y, double alpha, const Vector<double>& x) const override;
 
    [[nodiscard]] double inf_norm() const override;
    using AbstractMatrix::abminnormNonZero;
@@ -137,7 +137,7 @@ public:
    [[nodiscard]] long long size() const override { return 0; };
 
    void mult(double, Vector<double>&, double, const Vector<double>&) const override {};
-   void transMult(double, Vector<double>&, double, const Vector<double>&) const override {};
+   void transpose_mult(double, Vector<double>&, double, const Vector<double>&) const override {};
 
    [[nodiscard]] double inf_norm() const override { return 0.0; }
    [[nodiscard]] double abminnormNonZero(double) const override { return std::numeric_limits<double>::infinity(); }

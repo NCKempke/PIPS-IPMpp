@@ -55,14 +55,14 @@ void BorderedSymmetricMatrix::mult(double beta, Vector<double>& y_in, double alp
    assert(!y.last);
 
    top_left_block->mult(beta, *y.first, alpha, *x.first);
-   border_vertical->transMult(1.0, *y.first, alpha, *x.children[0]);
+   border_vertical->transpose_mult(1.0, *y.first, alpha, *x.children[0]);
 
    border_vertical->mult(beta, *y.children[0], alpha, *x.first);
    inner_matrix->mult(1.0, *y.children[0], alpha, *x.children[0]);
 }
 
 /** y = beta * y + alpha * this^T * x */
-void BorderedSymmetricMatrix::transMult(double beta, Vector<double>& y, double alpha, const Vector<double>& x) const {
+void BorderedSymmetricMatrix::transpose_mult(double beta, Vector<double>& y, double alpha, const Vector<double>& x) const {
    this->mult(beta, y, alpha, x);
 }
 

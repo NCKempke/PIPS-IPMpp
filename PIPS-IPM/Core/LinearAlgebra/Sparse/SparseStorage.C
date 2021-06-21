@@ -817,16 +817,30 @@ void indexedLexSort(int first[], int n, int swapFirst, int second[], int swapSec
 
 void SparseStorage::mult(double beta, double y[], double alpha, const double x[]) const {
    for (int row = 0; row < m; row++) {
-      double temp = 0;
+      y[row] *= beta;
       for (int k = krowM[row]; k < krowM[row + 1]; k++) {
          const int col = jcolM[k];
          assert(col < n);
 
-         temp += M[k] * x[col];
+         y[row] += alpha * M[k] * x[col];
       }
-      y[row] = beta * y[row] + alpha * temp;
    }
 }
+
+void SparseStorage::mult_transform(double beta, double y[], double alpha, const double x[], const std::function<double(const double&)>& transform) const
+{
+   for (int row = 0; row < m; ++row) {
+      y[row] *= beta;
+
+      for (int k = krowM[row]; k < krowM[row + 1]; ++k) {
+         const int col = jcolM[k];
+         assert(col < n);
+
+         y[row] += alpha * transform(M[k]) * x[col];
+      }
+   }
+}
+
 
 void SparseStorage::multSym(double beta, double y[], double alpha, const double x[]) const {
    assert( m == n );
@@ -851,17 +865,37 @@ void SparseStorage::multSym(double beta, double y[], double alpha, const double 
 
 void SparseStorage::transMult(double beta, double y[], double alpha, const double x[]) const {
    if (beta != 1.0) {
-      for (int j = 0; j < n; j++)
-         y[j] *= beta;
+      std::transform(y, y + n, y, [&beta](const double& t) {
+         return t * beta;
+      });
    }
 
-   for (int i = 0; i < m; i++) {
-      for (int k = krowM[i]; k < krowM[i + 1]; k++) {
+   for (int i = 0; i < m; ++i) {
+      for (int k = krowM[i]; k < krowM[i + 1]; ++k) {
          const int j = jcolM[k];
 
          assert(j < n);
 
          y[j] += alpha * M[k] * x[i];
+      }
+   }
+}
+
+void SparseStorage::transpose_mult_transform(double beta, double* y, double alpha, const double* x, const std::function<double(const double&)>& transform) const {
+
+   if (beta != 1.0) {
+      std::transform(y, y + n, y, [&beta](const double& t) {
+         return t * beta;
+      });
+   }
+
+   for (int i = 0; i < m; ++i) {
+      for (int k = krowM[i]; k < krowM[i + 1]; ++k) {
+         const int j = jcolM[k];
+
+         assert(j < n);
+
+         y[j] += alpha * transform(M[k]) * x[i];
       }
    }
 }

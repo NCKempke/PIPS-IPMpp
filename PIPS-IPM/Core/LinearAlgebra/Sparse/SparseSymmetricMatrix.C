@@ -142,7 +142,7 @@ void SparseSymmetricMatrix::mult(double beta, Vector<double>& y_in, double alpha
 }
 
 void
-SparseSymmetricMatrix::transMult(double beta, Vector<double>& y_in, double alpha, const Vector<double>& x_in) const {
+SparseSymmetricMatrix::transpose_mult(double beta, Vector<double>& y_in, double alpha, const Vector<double>& x_in) const {
    assert(x_in.length() == mStorage->n && y_in.length() == mStorage->m);
 
    const auto& x = dynamic_cast<const SimpleVector<double>&>(x_in);

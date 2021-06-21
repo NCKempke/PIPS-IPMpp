@@ -12,7 +12,7 @@ class Problem;
 
 class CurtisReidScaler : Scaler {
 private:
-   std::tuple<std::unique_ptr<Vector<int>>, std::unique_ptr<Vector<int>>, std::unique_ptr<Vector<int>>> get_nonzero_vectors() const;
+   std::tuple<std::unique_ptr<Vector<double>>, std::unique_ptr<Vector<double>>, std::unique_ptr<Vector<double>>> get_nonzero_vectors() const;
    std::tuple<std::unique_ptr<Vector<double>>, std::unique_ptr<Vector<double>>, std::unique_ptr<Vector<double>>> get_log_sum_vectors() const;
 protected:
    void doObjScaling() const override;

@@ -129,7 +129,7 @@ void DistributedSymmetricMatrix::mult(double beta, Vector<double>& y_, double al
       assert(x.parent);
       assert(y.parent);
 
-      border->transMult(1.0, *y.getLinkingVecNotHierarchicalTop(), alpha, *x.first);
+      border->transpose_mult(1.0, *y.getLinkingVecNotHierarchicalTop(), alpha, *x.first);
       border->mult(1.0, *y.first, alpha, *x.getLinkingVecNotHierarchicalTop());
    }
 
@@ -146,7 +146,7 @@ void DistributedSymmetricMatrix::mult(double beta, Vector<double>& y_, double al
 
 /** y = beta * y + alpha * this^T * x */
 void
-DistributedSymmetricMatrix::transMult(double beta, Vector<double>& y_, double alpha, const Vector<double>& x_) const {
+DistributedSymmetricMatrix::transpose_mult(double beta, Vector<double>& y_, double alpha, const Vector<double>& x_) const {
    // We are symmetric, this^T = this, therefore call 'mult' method
    this->mult(beta, y_, alpha, x_);
 }

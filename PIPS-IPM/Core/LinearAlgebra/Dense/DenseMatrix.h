@@ -51,10 +51,10 @@ public:
    void putSparseTriple(const int irow[], int len, const int jcol[], const double A[], int& info) override;
 
    void mult(double beta, Vector<double>& y, double alpha, const Vector<double>& x) const override;
-   virtual void mult(double beta, double y[], int incy, double alpha, const double x[], int incx) const;
+   void mult_transform(double beta, Vector<double>& y, double alpha, const Vector<double>& x, const std::function<double(const double&)>& transform) const;
 
-   void transMult(double beta, Vector<double>& y, double alpha, const Vector<double>& x) const override;
-   virtual void transMult(double beta, double y[], int incy, double alpha, const double x[], int incx) const;
+   void transpose_mult(double beta, Vector<double>& y, double alpha, const Vector<double>& x) const override;
+   virtual void transpose_mult_transform(double beta, Vector<double>& y, double alpha, const Vector<double>& x, const std::function<double(const double&)>& transform) const;
 
    void matTransDMultMat(const Vector<double>&, SymmetricMatrix**) const override { assert(false && "not implemented"); };
    void matTransDinvMultMat(const Vector<double>&, SymmetricMatrix**) const override { assert(false && "not implemented"); };

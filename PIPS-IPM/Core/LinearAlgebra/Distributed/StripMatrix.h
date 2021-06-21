@@ -50,8 +50,10 @@ public:
 
    /** y = beta * y + alpha * this * x */
    void mult(double beta, Vector<double>& y, double alpha, const Vector<double>& x) const override;
+   void mult_transform(double beta, Vector<double>& y, double alpha, const Vector<double>& x, const std::function<double(const double&)>& transform) const override;
    /** y = beta * y + alpha * this^T * x */
-   void transMult(double beta, Vector<double>& y, double alpha, const Vector<double>& x) const override;
+   void transpose_mult(double beta, Vector<double>& y, double alpha, const Vector<double>& x) const override;
+   void transpose_mult_transform(double beta, Vector<double>& y, double alpha, const Vector<double>& x, const std::function<double(const double&)>& transform) const override;
 
    [[nodiscard]] double inf_norm() const override;
    void scalarMult(double num) override;
@@ -108,11 +110,15 @@ public:
    void putSparseTriple(const int[], int, const int[], const double[], int&) override { assert("not implemented" && 0); };
 
 protected:
-   virtual void multVertical(double beta, Vector<double>& y, double alpha, const Vector<double>& x) const;
-   virtual void multHorizontal(double beta, Vector<double>& y, double alpha, const Vector<double>& x, bool root) const;
+   virtual void multVertical(double beta, Vector<double>& y, double alpha, const Vector<double>& x,
+      const std::function<void(const GeneralMatrix*, double, Vector<double>&, double, const Vector<double>&)>& mult) const;
+   virtual void multHorizontal(double beta, Vector<double>& y, double alpha, const Vector<double>& x, bool root,
+      const std::function<void(const GeneralMatrix*, double, Vector<double>&, double, const Vector<double>&)>& mult) const;
 
-   virtual void transMultVertical(double beta, Vector<double>& y, double alpha, const Vector<double>& x, bool root) const;
-   virtual void transMultHorizontal(double beta, Vector<double>& y, double alpha, const Vector<double>& x) const;
+   virtual void transMultVertical(double beta, Vector<double>& y, double alpha, const Vector<double>& x, bool root,
+      const std::function<void(const GeneralMatrix*, double, Vector<double>&, double, const Vector<double>&)>& transpose_mult) const;
+   virtual void transMultHorizontal(double beta, Vector<double>& y, double alpha, const Vector<double>& x,
+      const std::function<void(const GeneralMatrix*, double, Vector<double>&, double, const Vector<double>&)>& transpose_mult) const;
 
    virtual void columnScaleVertical(const Vector<double>& vec);
    virtual void columnScaleHorizontal(const Vector<double>& vec);
@@ -152,7 +158,9 @@ public:
    [[nodiscard]] bool isEmpty() const override { return true; };
    [[nodiscard]] int is_a(int type) const override { return type == kStringGenDummyMatrix || type == kStringMatrix || type == kStripMatrix; };
    void mult(double, Vector<double>&, double, const Vector<double>&) const override {};
-   void transMult(double, Vector<double>&, double, const Vector<double>&) const override {};
+   void mult_transform(double, Vector<double>&, double, const Vector<double>&, const std::function<double(const double&)>&) const override {};
+   void transpose_mult(double, Vector<double>&, double, const Vector<double>&) const override {};
+   void transpose_mult_transform(double, Vector<double>&, double, const Vector<double>&, const std::function<double(const double&)>&) const override {};
    [[nodiscard]] double inf_norm() const override { return -std::numeric_limits<double>::infinity(); };
    void scalarMult(double) override {};
    void write_to_stream(std::ostream&) const override {};
@@ -178,11 +186,11 @@ public:
    void splitAlongTree(const DistributedTreeCallbacks&) override { assert(false && "should not end up here"); };
 
 protected:
-   void multVertical(double, Vector<double>&, double, const Vector<double>&) const override {};
-   void multHorizontal(double, Vector<double>&, double, const Vector<double>&, bool) const override {};
+   void multVertical(double, Vector<double>&, double, const Vector<double>&, const std::function<void(const GeneralMatrix*, double, Vector<double>&, double, const Vector<double>&)>&) const override {};
+   void multHorizontal(double, Vector<double>&, double, const Vector<double>&, bool, const std::function<void(const GeneralMatrix*, double, Vector<double>&, double, const Vector<double>&)>&) const override {};
 
-   void transMultVertical(double, Vector<double>&, double, const Vector<double>&, bool) const override {};
-   void transMultHorizontal(double, Vector<double>&, double, const Vector<double>&) const override {};
+   void transMultVertical(double, Vector<double>&, double, const Vector<double>&, bool, const std::function<void(const GeneralMatrix*, double, Vector<double>&, double, const Vector<double>&)>&) const override {};
+   void transMultHorizontal(double, Vector<double>&, double, const Vector<double>&, const std::function<void(const GeneralMatrix*, double, Vector<double>&, double, const Vector<double>&)>&) const override {};
 
    void columnScaleVertical(const Vector<double>&) override {};
    void columnScaleHorizontal(const Vector<double>&) override {};

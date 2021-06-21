@@ -121,19 +121,47 @@ void StripMatrix::scalarMult(double num) {
       it->scalarMult(num);
 }
 
-
 void StripMatrix::mult(double beta, Vector<double>& y, double alpha, const Vector<double>& x) const {
    if (is_vertical)
-      multVertical(beta, y, alpha, x);
+      multVertical(beta, y, alpha, x, &AbstractMatrix::mult);
    else
-      multHorizontal(beta, y, alpha, x, true);
+      multHorizontal(beta, y, alpha, x, true, &AbstractMatrix::mult);
 }
 
-void StripMatrix::transMult(double beta, Vector<double>& y, double alpha, const Vector<double>& x) const {
+void StripMatrix::mult_transform(double beta, Vector<double>& y, double alpha, const Vector<double>& x,
+   const std::function<double(const double&)>& transform) const {
+
+   auto mult = [&capture0 = std::as_const(transform)](const GeneralMatrix* mat, auto&& PH1, auto&& PH2, auto&& PH3, auto&& PH4) {
+      mat->mult_transform(std::forward<decltype(PH1)>(PH1), std::forward<decltype(PH2)>(PH2),
+         std::forward<decltype(PH3)>(PH3), std::forward<decltype(PH4)>(PH4), capture0);
+   };
+
+   if (is_vertical) {
+      multVertical(beta, y, alpha, x, mult);
+   } else {
+      multHorizontal(beta, y, alpha, x, true, mult);
+   }
+}
+
+void StripMatrix::transpose_mult(double beta, Vector<double>& y, double alpha, const Vector<double>& x) const {
    if (is_vertical)
-      transMultVertical(beta, y, alpha, x, true);
+      transMultVertical(beta, y, alpha, x, true, &AbstractMatrix::transpose_mult);
    else
-      transMultHorizontal(beta, y, alpha, x);
+      transMultHorizontal(beta, y, alpha, x, &AbstractMatrix::transpose_mult);
+}
+
+void StripMatrix::transpose_mult_transform(double beta, Vector<double>& y, double alpha, const Vector<double>& x,
+   const std::function<double(const double&)>& transform) const {
+
+   auto transpose_mult = [&capture0 = std::as_const(transform)](const GeneralMatrix* mat, auto&& PH1, auto&& PH2, auto&& PH3, auto&& PH4) {
+      mat->transpose_mult_transform(std::forward<decltype(PH1)>(PH1), std::forward<decltype(PH2)>(PH2),
+         std::forward<decltype(PH3)>(PH3), std::forward<decltype(PH4)>(PH4), capture0);
+   };
+
+   if (is_vertical)
+      transMultVertical(beta, y, alpha, x, true, transpose_mult);
+   else
+      transMultHorizontal(beta, y, alpha, x, transpose_mult);
 }
 
 int StripMatrix::numberOfNonZeros() const {
@@ -179,30 +207,31 @@ void StripMatrix::recomputeNonzeros() {
    PIPS_MPIgetSumInPlace(nonzeros, mpi_comm);
 }
 
-void StripMatrix::multVertical(double beta, Vector<double>& y_in, double alpha, const Vector<double>& x_in) const {
+void StripMatrix::multVertical(double beta, Vector<double>& y_in, double alpha, const Vector<double>& x_in,
+   const std::function<void(const GeneralMatrix*, double, Vector<double>&, double, const Vector<double>&)>& mult) const {
    const auto& x = dynamic_cast<const SimpleVector<double>&>(x_in);
    auto& y = dynamic_cast<DistributedVector<double>&>(y_in);
 
    assert(is_vertical);
    assert(y.children.size() == children.size());
 
-   first->mult(beta, *y.first, alpha, x);
+   mult(first.get(), beta, *y.first, alpha, x);
 
    if (last) {
       assert(y.last);
-      last->mult(beta, *y.last, alpha, x);
+      mult(last.get(), beta, *y.last, alpha, x);
    }
 
    for (size_t i = 0; i < children.size(); ++i) {
       if (children[i]->is_a(kStringGenDummyMatrix))
          assert(y.children[i]->isKindOf(kStochDummy));
 
-      children[i]->multVertical(beta, *y.children[i], alpha, x);
+      children[i]->multVertical(beta, *y.children[i], alpha, x, mult);
    }
 }
 
 void StripMatrix::multHorizontal(double beta, Vector<double>& y_in, double alpha, const Vector<double>& x_in,
-   bool root) const {
+   bool root, const std::function<void(const GeneralMatrix*, double, Vector<double>&, double, const Vector<double>&)>& mult) const {
    const auto& x = dynamic_cast<const DistributedVector<double>&>(x_in);
    auto& y = dynamic_cast<SimpleVector<double>&>(y_in);
 
@@ -214,17 +243,17 @@ void StripMatrix::multHorizontal(double beta, Vector<double>& y_in, double alpha
       assert(!last);
       assert(children.empty());
       assert(!root);
-      dynamic_cast<const StripMatrix&>(*first).multHorizontal(1.0, y, alpha, *x.first, false);
+      dynamic_cast<const StripMatrix&>(*first).multHorizontal(1.0, y, alpha, *x.first, false, mult);
    } else {
       if (PIPS_MPIiAmSpecial(distributed, mpi_comm)) {
-         first->mult(root ? beta : 1.0, y, alpha, *x.first);
+         mult(first.get(), root ? beta : 1.0, y, alpha, *x.first);
          if (last)
-            last->mult(1.0, y, alpha, *x.last);
+            mult(last.get(), 1.0, y, alpha, *x.last);
       } else if (root)
          y.setToZero();
 
       for (size_t i = 0; i < children.size(); ++i)
-         children[i]->multHorizontal(1.0, y, alpha, *x.children[i], false);
+         children[i]->multHorizontal(1.0, y, alpha, *x.children[i], false, mult);
 
       if (distributed && root)
          PIPS_MPIsumArrayInPlace(y.elements(), y.length(), mpi_comm);
@@ -232,7 +261,7 @@ void StripMatrix::multHorizontal(double beta, Vector<double>& y_in, double alpha
 }
 
 void StripMatrix::transMultVertical(double beta, Vector<double>& y_in, double alpha, const Vector<double>& x_in,
-   bool root) const {
+   bool root, const std::function<void(const GeneralMatrix*, double, Vector<double>&, double, const Vector<double>&)>& transpose_mult) const {
    const auto& x = dynamic_cast<const DistributedVector<double>&>(x_in);
    auto& y = dynamic_cast<SimpleVector<double>&>(y_in);
 
@@ -245,17 +274,17 @@ void StripMatrix::transMultVertical(double beta, Vector<double>& y_in, double al
       assert(!last);
       assert(children.empty());
       assert(!root);
-      dynamic_cast<StripMatrix&>(*first).transMultVertical(1.0, y, alpha, *x.first, false);
+      dynamic_cast<StripMatrix&>(*first).transMultVertical(1.0, y, alpha, *x.first, false, transpose_mult);
    } else {
       if (rank == 0) {
-         first->transMult(root ? beta : 1.0, y, alpha, *x.first);
+         transpose_mult(first.get(), root ? beta : 1.0, y, alpha, *x.first);
          if (last)
-            last->transMult(1.0, y, alpha, *x.last);
+            transpose_mult(last.get(), 1.0, y, alpha, *x.last);
       } else if (root)
          y.setToZero();
 
       for (size_t i = 0; i < children.size(); i++)
-         children[i]->transMultVertical(1.0, y, alpha, *x.children[i], false);
+         children[i]->transMultVertical(1.0, y, alpha, *x.children[i], false, transpose_mult);
 
       if (distributed && root)
          PIPS_MPIsumArrayInPlace(y.elements(), y.length(), mpi_comm);
@@ -263,7 +292,8 @@ void StripMatrix::transMultVertical(double beta, Vector<double>& y_in, double al
 }
 
 void
-StripMatrix::transMultHorizontal(double beta, Vector<double>& y_in, double alpha, const Vector<double>& x_in) const {
+StripMatrix::transMultHorizontal(double beta, Vector<double>& y_in, double alpha, const Vector<double>& x_in,
+   const std::function<void(const GeneralMatrix*, double, Vector<double>&, double, const Vector<double>&)>& transpose_mult) const {
 
    const auto& x = dynamic_cast<const SimpleVector<double>&>(x_in);
    auto& y = dynamic_cast<DistributedVector<double>&>(y_in);
@@ -275,16 +305,16 @@ StripMatrix::transMultHorizontal(double beta, Vector<double>& y_in, double alpha
    else
       assert(last == nullptr);
 
-   first->transMult(beta, *y.first, alpha, x);
+   transpose_mult(first.get(), beta, *y.first, alpha, x);
 
    if (last)
-      last->transMult(beta, *y.last, alpha, x);
+      transpose_mult(last.get(), beta, *y.last, alpha, x);
 
    for (size_t i = 0; i < children.size(); ++i) {
       if (children[i]->is_a(kStringGenDummyMatrix))
          assert(y.children[i]->isKindOf(kStochDummy));
 
-      children[i]->transMultHorizontal(beta, *y.children[i], alpha, x);
+      children[i]->transMultHorizontal(beta, *y.children[i], alpha, x, transpose_mult);
    }
 }
 

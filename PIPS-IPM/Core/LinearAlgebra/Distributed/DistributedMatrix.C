@@ -14,6 +14,7 @@ DistributedMatrix::DistributedMatrix(std::unique_ptr<GeneralMatrix> Amat_in, std
    Bmat{std::move(Bmat_in)}, Blmat{std::move(Blmat_in)}, mpiComm{mpiComm_}, iAmDistrib{PIPS_MPIgetDistributed(mpiComm)},
    inner_leaf{inner_leaf},
    inner_root{inner_root} {
+
    assert(Amat);
    assert(Bmat);
    assert(Blmat);
@@ -205,6 +206,24 @@ void DistributedMatrix::setToDiagonal(const Vector<double>& vec_) {
 
 /* y = beta * y + alpha * this * x */
 void DistributedMatrix::mult(double beta, Vector<double>& y_, double alpha, const Vector<double>& x_) const {
+   this->mult(beta, y_, alpha, x_, &AbstractMatrix::mult);
+}
+
+/* y = beta * y + alpha * this * x */
+void DistributedMatrix::mult_transform(double beta, Vector<double>& y_, double alpha, const Vector<double>& x_,
+   const std::function<double(const double&)>& transform) const {
+
+   auto mult = [&capture0 = std::as_const(transform)](const GeneralMatrix* mat, auto&& PH1, auto&& PH2, auto&& PH3, auto&& PH4) {
+      mat->mult_transform(std::forward<decltype(PH1)>(PH1), std::forward<decltype(PH2)>(PH2),
+         std::forward<decltype(PH3)>(PH3), std::forward<decltype(PH4)>(PH4), capture0);
+   };
+
+   this->mult(beta, y_, alpha, x_, mult);
+}
+
+void DistributedMatrix::mult(double beta, Vector<double>& y_, double alpha, const Vector<double>& x_,
+   const std::function<void(const GeneralMatrix*, double, Vector<double>&, double, const Vector<double>&)>& mult) const {
+
    if (0.0 == alpha) {
       y_.scale(beta);
       return;
@@ -214,11 +233,11 @@ void DistributedMatrix::mult(double beta, Vector<double>& y_, double alpha, cons
    auto& y = dynamic_cast<DistributedVector<double>&>(y_);
 
    assert(amatEmpty());
-   Bmat->mult(beta, *y.first, alpha, *x.getLinkingVecNotHierarchicalTop());
+   mult(Bmat.get(), beta, *y.first, alpha, *x.getLinkingVecNotHierarchicalTop());
 
    if (y.last) {
       if (iAmSpecial(iAmDistrib, mpiComm))
-         Blmat->mult(beta, *y.last, alpha, *x.getLinkingVecNotHierarchicalTop());
+         mult(Blmat.get(), beta, *y.last, alpha, *x.getLinkingVecNotHierarchicalTop());
       else
          y.last->setToZero();
    }
@@ -227,17 +246,16 @@ void DistributedMatrix::mult(double beta, Vector<double>& y_, double alpha, cons
    assert(x.children.size() == children.size());
 
    for (size_t it = 0; it < children.size(); it++)
-      children[it]->mult2(beta, *y.children[it], alpha, *x.children[it], y.last.get());
+      children[it]->mult2(beta, *y.children[it], alpha, *x.children[it], y.last.get(), mult);
 
    if (iAmDistrib && y.last)
       PIPS_MPIsumArrayInPlace(dynamic_cast<SimpleVector<double>&>(*y.last).elements(), y.last->length(), mpiComm);
 }
 
-
 /* mult method for children; needed only for linking constraints */
 void
 DistributedMatrix::mult2(double beta, DistributedVector<double>& y, double alpha, const DistributedVector<double>& x,
-   Vector<double>* yparentl_) const {
+   Vector<double>* yparentl_, const std::function<void(const GeneralMatrix*, double, Vector<double>&, double, const Vector<double>&)>& mult) const {
    assert(alpha != 0.0);
    assert(children.empty());
    assert(y.children.size() == children.size());
@@ -245,10 +263,10 @@ DistributedMatrix::mult2(double beta, DistributedVector<double>& y, double alpha
    assert(x.first);
    assert(y.first);
 
-   Bmat->mult(beta, *y.first, alpha, *x.first);
+   mult(Bmat.get(), beta, *y.first, alpha, *x.first);
 
    if (yparentl_) {
-      Blmat->mult(1.0, *yparentl_, alpha, *x.first);
+      mult(Blmat.get(), 1.0, *yparentl_, alpha, *x.first);
       if (!iAmSpecial(iAmDistrib, mpiComm))
          yparentl_->setToZero();
    }
@@ -256,12 +274,27 @@ DistributedMatrix::mult2(double beta, DistributedVector<double>& y, double alpha
    if (!amatEmpty()) {
       const Vector<double>* link_vec = x.getLinkingVecNotHierarchicalTop();
       assert(link_vec != x.first.get());
-      Amat->mult(1.0, *y.first, alpha, *link_vec);
+      mult(Amat.get(), 1.0, *y.first, alpha, *link_vec);
    }
 }
 
+void DistributedMatrix::transpose_mult(double beta, Vector<double>& y_, double alpha, const Vector<double>& x_) const {
+   this->transpose_mult(beta, y_, alpha, x_, &AbstractMatrix::transpose_mult);
+}
 
-void DistributedMatrix::transMult(double beta, Vector<double>& y_, double alpha, const Vector<double>& x_) const {
+void DistributedMatrix::transpose_mult_transform(double beta, Vector<double>& y_, double alpha, const Vector<double>& x_,
+   const std::function<double(const double&)>& transform) const {
+
+   auto transpose_mult = [&capture0 = std::as_const(transform)](const GeneralMatrix* mat, auto&& PH1, auto&& PH2, auto&& PH3, auto&& PH4) {
+      mat->transpose_mult_transform(std::forward<decltype(PH1)>(PH1), std::forward<decltype(PH2)>(PH2),
+         std::forward<decltype(PH3)>(PH3), std::forward<decltype(PH4)>(PH4), capture0);
+   };
+
+   this->transpose_mult(beta, y_, alpha, x_, transpose_mult);
+}
+
+void DistributedMatrix::transpose_mult(double beta, Vector<double>& y_, double alpha, const Vector<double>& x_,
+   const std::function<void(const GeneralMatrix*, double, Vector<double>&, double, const Vector<double>&)>& transpose_mult) const {
    if (0.0 == alpha) {
       y_.scale(beta);
       return;
@@ -275,10 +308,10 @@ void DistributedMatrix::transMult(double beta, Vector<double>& y_, double alpha,
    assert(x.first);
 
    if (iAmSpecial(iAmDistrib, mpiComm)) {
-      Bmat->transMult(at_root ? beta : 1.0, *y.getLinkingVecNotHierarchicalTop(), alpha, *x.first);
+      transpose_mult(Bmat.get(), at_root ? beta : 1.0, *y.getLinkingVecNotHierarchicalTop(), alpha, *x.first);
 
       if (x.last)
-         Blmat->transMult(1.0, *y.getLinkingVecNotHierarchicalTop(), alpha, *x.last);
+         transpose_mult(Blmat.get(), 1.0, *y.getLinkingVecNotHierarchicalTop(), alpha, *x.last);
    } else if (at_root)
       y.first->setToZero();
 
@@ -286,15 +319,15 @@ void DistributedMatrix::transMult(double beta, Vector<double>& y_, double alpha,
    assert(x.children.size() == children.size());
 
    for (size_t it = 0; it < children.size(); it++)
-      children[it]->transMult2(beta, *y.children[it], alpha, *x.children[it], x.last.get());
+      children[it]->transpose_mult2(beta, *y.children[it], alpha, *x.children[it], x.last.get(), transpose_mult);
 
    if (iAmDistrib && y.first.get() == y.getLinkingVecNotHierarchicalTop())
       PIPS_MPIsumArrayInPlace(dynamic_cast<SimpleVector<double>&>(*y.first).elements(), y.first->length(), mpiComm);
 }
 
 void
-DistributedMatrix::transMult2(double beta, DistributedVector<double>& y, double alpha,
-   const DistributedVector<double>& x, const Vector<double>* xvecl) const {
+DistributedMatrix::transpose_mult2(double beta, DistributedVector<double>& y, double alpha, const DistributedVector<double>& x, const Vector<double>* xvecl,
+   const std::function<void(const GeneralMatrix*, double, Vector<double>&, double, const Vector<double>&)>& transpose_mult) const {
    assert(alpha != 0.0);
    assert(x.first);
    assert(y.first);
@@ -303,11 +336,11 @@ DistributedMatrix::transMult2(double beta, DistributedVector<double>& y, double 
    assert(children.empty());
 
    if (!amatEmpty())
-      Amat->transMult(1.0, *y.getLinkingVecNotHierarchicalTop(), alpha, *x.first);
+      transpose_mult(Amat.get(), 1.0, *y.getLinkingVecNotHierarchicalTop(), alpha, *x.first);
 
-   Bmat->transMult(beta, *y.first, alpha, *x.first);
+   transpose_mult(Bmat.get(), beta, *y.first, alpha, *x.first);
    if (xvecl)
-      Blmat->transMult(1.0, *y.first, alpha, *xvecl);
+      transpose_mult(Blmat.get(), 1.0, *y.first, alpha, *xvecl);
 }
 
 double DistributedMatrix::inf_norm() const {

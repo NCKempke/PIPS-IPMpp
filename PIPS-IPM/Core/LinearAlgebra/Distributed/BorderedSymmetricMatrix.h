@@ -40,7 +40,7 @@ public:
    void mult(double beta, Vector<double>& y, double alpha, const Vector<double>& x) const override;
 
    /** y = beta * y + alpha * this^T * x */
-   void transMult(double beta, Vector<double>& y, double alpha, const Vector<double>& x) const override;
+   void transpose_mult(double beta, Vector<double>& y, double alpha, const Vector<double>& x) const override;
 
    void fromGetDiagonal(int idiag, Vector<double>& x) const override;
 

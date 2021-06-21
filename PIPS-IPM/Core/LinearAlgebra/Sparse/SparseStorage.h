@@ -87,9 +87,11 @@ public:
    virtual void clear();
 
    virtual void mult(double beta, double y[], double alpha, const double x[]) const;
+   virtual void mult_transform(double beta, double y[], double alpha, const double x[], const std::function<double(const double&)>& transform) const;
    virtual void multSym(double beta, double y[], double alpha, const double x[]) const;
 
    virtual void transMult(double beta, double y[], double alpha, const double x[] ) const;
+   virtual void transpose_mult_transform(double beta, double y[], double alpha, const double x[], const std::function<double(const double&)>& transform) const;
    virtual void transMultD(double beta, double y[], double alpha, const double x[], const double d[]) const;
 
    void atPutDiagonal(int idiag, const Vector<double>& v) override;

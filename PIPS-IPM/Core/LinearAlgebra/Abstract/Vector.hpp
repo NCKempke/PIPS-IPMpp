@@ -47,14 +47,14 @@ public:
    virtual void copyFrom(const Vector<T>& v) = 0;
 
    /** Return the infinity norm of this Vector<double> object. */
-   virtual double two_norm() const = 0;
+   [[nodiscard]] virtual double two_norm() const = 0;
    /** Return the infinity norm of this Vector<double> object. */
    virtual T inf_norm() const = 0;
    /** Return the one norm of this Vector<double> object. */
    virtual T one_norm() const = 0;
 
    /** Return number of elements in this vector not considered zero */
-   virtual int getNnzs() const = 0;
+   [[nodiscard]] virtual int getNnzs() const = 0;
 
    /** Multiply the components of this Vector<double> by the components of v. */
    virtual void componentMult(const Vector<T>& v) = 0;

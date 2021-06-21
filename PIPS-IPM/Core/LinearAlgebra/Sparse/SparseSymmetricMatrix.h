@@ -69,7 +69,7 @@ public:
 
 
    void mult(double beta, Vector<double>& y, double alpha, const Vector<double>& x) const override;
-   void transMult(double beta, Vector<double>& y, double alpha, const Vector<double>& x) const override;
+   void transpose_mult(double beta, Vector<double>& y, double alpha, const Vector<double>& x) const override;
 
    [[nodiscard]] double inf_norm() const override;
    [[nodiscard]] double abminnormNonZero(double tol) const override;

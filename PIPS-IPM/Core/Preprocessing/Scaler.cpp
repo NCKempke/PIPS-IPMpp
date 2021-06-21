@@ -24,7 +24,7 @@ Scaler::Scaler(const ProblemFactory& problem_factory_, const Problem& problem, b
    scaling_output{pipsipmpp_options::get_bool_parameter("SCALER_OUTPUT")} {}
 
 double Scaler::get_unscaled_objective(double objval) const {
-   assert(vec_colscale);
+   assert(scaling_factors_columns);
    assert(factor_objscale > 0.0);
 
    if (scaling_applied)
@@ -38,48 +38,48 @@ void Scaler::unscale_variables(Variables& variables) const {
       return;
 
    // todo : Q
-   assert(vec_colscale);
-   assert(vec_rowscaleA);
-   assert(vec_rowscaleC);
+   assert(scaling_factors_columns);
+   assert(scaling_factors_equalities);
+   assert(scaling_factors_inequalitites);
 
-   variables.primals->componentMult(*vec_colscale);
-   variables.slacks->componentDiv(*vec_rowscaleC);
-   variables.equality_duals->componentMult(*vec_rowscaleA);
-   variables.inequality_duals->componentMult(*vec_rowscaleC);
-   variables.primal_lower_bound_gap->componentMult(*vec_colscale);
-   variables.primal_lower_bound_gap_dual->componentDiv(*vec_colscale);
-   variables.primal_upper_bound_gap->componentMult(*vec_colscale);
-   variables.primal_upper_bound_gap_dual->componentDiv(*vec_colscale);
-   variables.slack_lower_bound_gap->componentDiv(*vec_rowscaleC);
-   variables.slack_lower_bound_gap_dual->componentMult(*vec_rowscaleC);
-   variables.slack_upper_bound_gap->componentDiv(*vec_rowscaleC);
-   variables.slack_upper_bound_gap_dual->componentMult(*vec_rowscaleC);
+   variables.primals->componentMult(*scaling_factors_columns);
+   variables.slacks->componentDiv(*scaling_factors_inequalitites);
+   variables.equality_duals->componentMult(*scaling_factors_equalities);
+   variables.inequality_duals->componentMult(*scaling_factors_inequalitites);
+   variables.primal_lower_bound_gap->componentMult(*scaling_factors_columns);
+   variables.primal_lower_bound_gap_dual->componentDiv(*scaling_factors_columns);
+   variables.primal_upper_bound_gap->componentMult(*scaling_factors_columns);
+   variables.primal_upper_bound_gap_dual->componentDiv(*scaling_factors_columns);
+   variables.slack_lower_bound_gap->componentDiv(*scaling_factors_inequalitites);
+   variables.slack_lower_bound_gap_dual->componentMult(*scaling_factors_inequalitites);
+   variables.slack_upper_bound_gap->componentDiv(*scaling_factors_inequalitites);
+   variables.slack_upper_bound_gap_dual->componentMult(*scaling_factors_inequalitites);
 }
 
 void Scaler::unscale_residuals(Residuals& residuals) const {
    if (!scaling_applied)
       return;
 
-   assert(vec_colscale);
-   assert(vec_rowscaleA);
-   assert(vec_rowscaleC);
+   assert(scaling_factors_columns);
+   assert(scaling_factors_equalities);
+   assert(scaling_factors_inequalitites);
 
-   residuals.lagrangian_gradient->componentDiv(*vec_colscale);
-   residuals.equality_residuals->componentDiv(*vec_rowscaleA);
-   residuals.inequality_residuals->componentDiv(*vec_rowscaleC);
-   residuals.inequality_dual_residuals->componentMult(*vec_rowscaleC);
+   residuals.lagrangian_gradient->componentDiv(*scaling_factors_columns);
+   residuals.equality_residuals->componentDiv(*scaling_factors_equalities);
+   residuals.inequality_residuals->componentDiv(*scaling_factors_inequalitites);
+   residuals.inequality_dual_residuals->componentMult(*scaling_factors_inequalitites);
 
    if (residuals.getNxlow() > 0)
-      residuals.rv->componentMult(*vec_colscale);
+      residuals.rv->componentMult(*scaling_factors_columns);
 
    if (residuals.getNxupp() > 0)
-      residuals.rw->componentMult(*vec_colscale);
+      residuals.rw->componentMult(*scaling_factors_columns);
 
    if (residuals.getMclow() > 0)
-      residuals.rt->componentDiv(*vec_rowscaleC);
+      residuals.rt->componentDiv(*scaling_factors_inequalitites);
 
    if (residuals.getMcupp() > 0)
-      residuals.ru->componentDiv(*vec_rowscaleC);
+      residuals.ru->componentDiv(*scaling_factors_inequalitites);
    // nothing to to for rgamma, rphi, rlambda, rpi;
 
    // gap is scaling resistant
@@ -88,56 +88,56 @@ void Scaler::unscale_residuals(Residuals& residuals) const {
 }
 
 Vector<double>* Scaler::get_primal_unscaled(const Vector<double>& primal_solution) const {
-   assert(vec_colscale);
+   assert(scaling_factors_columns);
    Vector<double>* unscaledprimal = primal_solution.cloneFull();
 
    // unscale primal
    if (scaling_applied)
-      unscaledprimal->componentMult(*vec_colscale);
+      unscaledprimal->componentMult(*scaling_factors_columns);
 
    return unscaledprimal;
 }
 
 Vector<double>* Scaler::get_dual_eq_unscaled(const Vector<double>& dual_solution) const {
-   assert(vec_rowscaleA);
+   assert(scaling_factors_equalities);
    Vector<double>* unscaleddual = dual_solution.cloneFull();
 
    // unscale dual
    if (scaling_applied)
-      unscaleddual->componentMult(*vec_rowscaleA);
+      unscaleddual->componentMult(*scaling_factors_equalities);
 
    return unscaleddual;
 }
 
 Vector<double>* Scaler::get_dual_ineq_unscaled(const Vector<double>& dual_solution) const {
-   assert(vec_rowscaleC);
+   assert(scaling_factors_inequalitites);
    Vector<double>* unscaleddual = dual_solution.cloneFull();
 
    // unscale dual
    if (scaling_applied)
-      unscaleddual->componentMult(*vec_rowscaleC);
+      unscaleddual->componentMult(*scaling_factors_inequalitites);
 
    return unscaleddual;
 }
 
 Vector<double>* Scaler::get_dual_var_bounds_upp_unscaled(const Vector<double>& dual_solution) const {
-   assert(vec_colscale);
+   assert(scaling_factors_columns);
    Vector<double>* unscaleddual = dual_solution.cloneFull();
 
    // unscale primal
    if (scaling_applied)
-      unscaleddual->componentDiv(*vec_colscale);
+      unscaleddual->componentDiv(*scaling_factors_columns);
 
    return unscaleddual;
 }
 
 Vector<double>* Scaler::get_dual_var_bounds_low_unscaled(const Vector<double>& dual_solution) const {
-   assert(vec_colscale);
+   assert(scaling_factors_columns);
    Vector<double>* unscaleddual = dual_solution.cloneFull();
 
    // unscale primal
    if (scaling_applied)
-      unscaleddual->componentDiv(*vec_colscale);
+      unscaleddual->componentDiv(*scaling_factors_columns);
 
    return unscaleddual;
 }
@@ -149,11 +149,11 @@ void Scaler::invertAndRound(bool round, Vector<double>& vector) {
 }
 
 void Scaler::create_scaling_vectors() {
-   assert(!vec_rowscaleA && !vec_rowscaleC && !vec_colscale);
+   assert(!scaling_factors_equalities && !scaling_factors_inequalitites && !scaling_factors_columns);
 
-   vec_rowscaleA = problem_factory.make_equalities_dual_vector();
-   vec_rowscaleC = problem_factory.make_inequalities_dual_vector();
-   vec_colscale = problem_factory.make_primal_vector();
+   scaling_factors_equalities = problem_factory.make_equalities_dual_vector();
+   scaling_factors_inequalitites = problem_factory.make_inequalities_dual_vector();
+   scaling_factors_columns = problem_factory.make_primal_vector();
 }
 
 void Scaler::applyScaling() const {
@@ -165,19 +165,19 @@ void Scaler::applyScaling() const {
    doObjScaling();
 
    // scale A and rhs
-   A->columnScale(*vec_colscale);
-   A->rowScale(*vec_rowscaleA);
-   bA->componentMult(*vec_rowscaleA);
+   A->columnScale(*scaling_factors_columns);
+   A->rowScale(*scaling_factors_equalities);
+   bA->componentMult(*scaling_factors_equalities);
 
    // scale C and lhs, rhs
-   C->columnScale(*vec_colscale);
-   C->rowScale(*vec_rowscaleC);
-   rhsC->componentMult(*vec_rowscaleC);
-   lhsC->componentMult(*vec_rowscaleC);
+   C->columnScale(*scaling_factors_columns);
+   C->rowScale(*scaling_factors_inequalitites);
+   rhsC->componentMult(*scaling_factors_inequalitites);
+   lhsC->componentMult(*scaling_factors_inequalitites);
 
    // scale ub and lb of x
-   bux->componentDiv(*vec_colscale);
-   blx->componentDiv(*vec_colscale);
+   bux->componentDiv(*scaling_factors_columns);
+   blx->componentDiv(*scaling_factors_columns);
 
    scaling_applied = true;
 
@@ -323,8 +323,8 @@ void Scaler::printRowColRatio() const {
 }
 
 void Scaler::setScalingVecsToOne() {
-   assert(vec_rowscaleA && vec_rowscaleC && vec_colscale);
-   vec_rowscaleA->setToConstant(1.0);
-   vec_rowscaleC->setToConstant(1.0);
-   vec_colscale->setToConstant(1.0);
+   assert(scaling_factors_equalities && scaling_factors_inequalitites && scaling_factors_columns);
+   scaling_factors_equalities->setToConstant(1.0);
+   scaling_factors_inequalitites->setToConstant(1.0);
+   scaling_factors_columns->setToConstant(1.0);
 }

@@ -190,9 +190,9 @@ void DistributedLeafLinearSystem::addLniziLinkCons(Vector<double>& z0_, Vector<d
       SimpleVector<double> zi2(&zi[locnx], locmy);
       SimpleVector<double> zi3(&zi[locnx + locmy], locmz);
 
-      R.transMult(1.0, z01, -1.0, zi1);
-      A.transMult(1.0, z01, -1.0, zi2);
-      C.transMult(1.0, z01, -1.0, zi3);
+      R.transpose_mult(1.0, z01, -1.0, zi1);
+      A.transpose_mult(1.0, z01, -1.0, zi2);
+      C.transpose_mult(1.0, z01, -1.0, zi3);
    }
 
    if (locmyl > 0) {
@@ -543,9 +543,9 @@ void DistributedLeafLinearSystem::addBorderTimesRhsToB0(SimpleVector<double>& rh
 
       SimpleVector<double> b1(&b0[0], nRi);
 
-      border.R.transMult(1.0, b1, -1.0, zi1);
-      border.A.transMult(1.0, b1, -1.0, zi2);
-      border.C.transMult(1.0, b1, -1.0, zi3);
+      border.R.transpose_mult(1.0, b1, -1.0, zi1);
+      border.A.transpose_mult(1.0, b1, -1.0, zi2);
+      border.C.transpose_mult(1.0, b1, -1.0, zi3);
    }
 
    SimpleVector<double> b2(&b0[nb0 - mFi - mGi], mFi);

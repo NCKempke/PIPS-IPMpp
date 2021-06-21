@@ -96,13 +96,6 @@ void DenseMatrix::atPutSubmatrix(int destRow, int destCol, const AbstractMatrix&
    Mat.fromGetDense(srcRow, srcCol, &M[destRow][destCol], n, rowExtent, colExtent);
 }
 
-void DenseMatrix::mult(double beta, double y[], int incy, double alpha, const double x[], int incx) const {
-   char fortranTrans = 'T';
-   int n = mStorage->n, m = mStorage->m;
-
-   dgemv_(&fortranTrans, &n, &m, &alpha, &mStorage->M[0][0], &n, x, &incx, &beta, y, &incy);
-}
-
 void DenseMatrix::mult(double beta, Vector<double>& y_in, double alpha, const Vector<double>& x_in) const {
    char fortranTrans = 'T';
    int n = mStorage->n, m = mStorage->m;
@@ -121,16 +114,24 @@ void DenseMatrix::mult(double beta, Vector<double>& y_in, double alpha, const Ve
    }
 }
 
+void DenseMatrix::mult_transform(double beta, Vector<double>& y_in, double alpha, const Vector<double>& x_in, const std::function<double(const double&)>& transform) const {
+   assert(this->n_rows() == y_in.length());
+   assert(this->n_columns() == x_in.length());
 
-void DenseMatrix::transMult(double beta, double y[], int incy, double alpha, const double x[], int incx) const {
-   char fortranTrans = 'N';
-   int n = mStorage->n, m = mStorage->m;
+   const auto& x = dynamic_cast<const SimpleVector<double>&>(x_in);
+   auto& y = dynamic_cast<SimpleVector<double>&>(y_in);
+
    double** M = mStorage->M;
 
-   dgemv_(&fortranTrans, &n, &m, &alpha, &M[0][0], &n, x, &incx, &beta, y, &incy);
+   for (int i = 0; i < this->n_rows(); ++i) {
+      y[i] *= beta;
+      for (int j = 0; j < this->n_columns(); ++j) {
+         y[i] += alpha * transform(M[i][j]) * x[j];
+      }
+   }
 }
 
-void DenseMatrix::transMult(double beta, Vector<double>& y_in, double alpha, const Vector<double>& x_in) const {
+void DenseMatrix::transpose_mult(double beta, Vector<double>& y_in, double alpha, const Vector<double>& x_in) const {
    char fortranTrans = 'N';
    int n = mStorage->n, m = mStorage->m;
    double** M = mStorage->M;
@@ -148,12 +149,32 @@ void DenseMatrix::transMult(double beta, Vector<double>& y_in, double alpha, con
    }
 }
 
+void DenseMatrix::transpose_mult_transform(double beta, Vector<double>& y_in, double alpha, const Vector<double>& x_in, const std::function<double(const double&)>& transform) const {
+   assert(this->n_columns() == y_in.length());
+   assert(this->n_rows() == x_in.length());
+
+   const auto& x = dynamic_cast<const SimpleVector<double>&>(x_in);
+   auto& y = dynamic_cast<SimpleVector<double>&>(y_in);
+
+   double** M = mStorage->M;
+
+   std::transform(y.elements(), y.elements() + this->n_columns(), y.elements(), [&beta](const double& val) {
+      return val * beta;
+   });
+
+   for (int i = 0; i < this->n_rows(); ++i) {
+      for (int j = 0; j < this->n_columns(); ++j) {
+         y[j] += alpha * transform(M[i][j]) * x[i];
+      }
+   }
+}
+
 double DenseMatrix::inf_norm() const {
-   assert(mStorage != nullptr);
+   assert(mStorage);
    return mStorage->inf_norm();
 }
 double DenseMatrix::abminnormNonZero(double tol) const {
-   assert(mStorage != nullptr);
+   assert(mStorage);
    return mStorage->abminnormNonZero(tol);
 }
 

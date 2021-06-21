@@ -107,7 +107,7 @@ void DenseSymmetricMatrix::mult(double beta, Vector<double>& y_in, double alpha,
    }
 }
 
-void DenseSymmetricMatrix::transMult(double beta, Vector<double>& y, double alpha, const Vector<double>& x) const {
+void DenseSymmetricMatrix::transpose_mult(double beta, Vector<double>& y, double alpha, const Vector<double>& x) const {
    this->mult(beta, y, alpha, x);
 }
 

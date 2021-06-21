@@ -30,7 +30,7 @@ public:
    void mult(double beta, Vector<double>& y, double alpha, const Vector<double>& x) const override;
 
    virtual void transMult(double beta, double y[], int incy, double alpha, const double x[], int incx) const;
-   void transMult(double beta, Vector<double>& y, double alpha, const Vector<double>& x) const override;
+   void transpose_mult(double beta, Vector<double>& y, double alpha, const Vector<double>& x) const override;
 
    [[nodiscard]] std::pair<long long, long long> n_rows_columns() const override;
    [[nodiscard]] long long n_rows() const override;

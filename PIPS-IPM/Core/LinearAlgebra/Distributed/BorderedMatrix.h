@@ -59,10 +59,11 @@ public:
 
    /** y = beta * y + alpha * this * x */
    void mult(double beta, Vector<double>& y, double alpha, const Vector<double>& x) const override;
+   void mult_transform(double beta, Vector<double>& y, double alpha, const Vector<double>& x, const std::function<double(const double&)>& transform) const override;
 
    /** y = beta * y + alpha * this^T * x */
-   void transMult(double beta, Vector<double>& y, double alpha, const Vector<double>& x) const override;
-
+   void transpose_mult(double beta, Vector<double>& y, double alpha, const Vector<double>& x) const override;
+   void transpose_mult_transform(double beta, Vector<double>& y, double alpha, const Vector<double>& x, const std::function<double(const double&)>& transform) const override;
    [[nodiscard]] double inf_norm() const override;
 
    void columnScale(const Vector<double>& vec) override;
@@ -146,6 +147,8 @@ public:
 
    void atPutSpRow(int, const double*, int, const int*, int&) override { assert(0 && "not implemented"); };
 private:
+   void mult(double beta, Vector<double>& y, double alpha, const Vector<double>& x, const std::function<void(const GeneralMatrix*, double, Vector<double>&, double, const Vector<double>&)>& mult) const;
+   void transpose_mult(double beta, Vector<double>& y, double alpha, const Vector<double>& x, const std::function<void(const GeneralMatrix*, double, Vector<double>&, double, const Vector<double>&)>& transpose_mult) const;
 
    template<typename T>
    bool hasVecStructureForBorderedMat(const Vector<T>& vec, bool row_vec) const;

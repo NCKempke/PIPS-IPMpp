@@ -227,6 +227,15 @@ void SparseMatrix::mult(double beta, Vector<double>& y_in, double alpha, const V
    mStorage->mult(beta, y.elements(), alpha, x.elements());
 }
 
+void SparseMatrix::mult_transform(double beta, Vector<double>& y_in, double alpha, const Vector<double>& x_in,
+   const std::function<double(const double&)>& transform) const {
+   assert(x_in.length() == mStorage->n && y_in.length() == mStorage->m);
+
+   const auto& x = dynamic_cast<const SimpleVector<double>&>(x_in);
+   auto& y = dynamic_cast<SimpleVector<double>&>(y_in);
+   mStorage->mult_transform(beta, y.elements(), alpha, x.elements(), transform);
+}
+
 void SparseMatrix::multMatSymUpper(double beta, SymmetricMatrix& y, double alpha, const double x[], int yrowstart,
    int ycolstart) const {
    auto& y_sparse = dynamic_cast<SparseSymmetricMatrix&>(y);
@@ -247,12 +256,21 @@ void SparseMatrix::transmultMatSymUpper(double beta, SymmetricMatrix& y, double 
    m_Mt->getStorage().multMatSymUpper(beta, y_sparse.getStorage(), alpha, x, yrowstart, ycolstart);
 }
 
-void SparseMatrix::transMult(double beta, Vector<double>& y_in, double alpha, const Vector<double>& x_in) const {
+void SparseMatrix::transpose_mult(double beta, Vector<double>& y_in, double alpha, const Vector<double>& x_in) const {
    assert(x_in.length() == mStorage->m && y_in.length() == mStorage->n);
 
    const auto& x = dynamic_cast<const SimpleVector<double>&>(x_in);
    auto& y = dynamic_cast<SimpleVector<double>&>(y_in);
    mStorage->transMult(beta, y.elements(), alpha, x.elements());
+}
+
+void SparseMatrix::transpose_mult_transform(double beta, Vector<double>& y_in, double alpha, const Vector<double>& x_in,
+   const std::function<double(const double&)>& transform) const {
+   assert(x_in.length() == mStorage->m && y_in.length() == mStorage->n);
+
+   const auto& x = dynamic_cast<const SimpleVector<double>&>(x_in);
+   auto& y = dynamic_cast<SimpleVector<double>&>(y_in);
+   mStorage->transpose_mult_transform(beta, y.elements(), alpha, x.elements(), transform);
 }
 
 void SparseMatrix::transMultD(double beta, Vector<double>& y_, double alpha, const Vector<double>& x_,

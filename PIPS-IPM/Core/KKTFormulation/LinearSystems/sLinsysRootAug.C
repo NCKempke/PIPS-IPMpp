@@ -551,7 +551,7 @@ void sLinsysRootAug::solveReducedLinkCons(SimpleVector<double>& b_vec) {
       assert(rhs_reduced_b3.length() == zDiag->length());
 
       rhs_reduced_b3.componentDiv(*zDiag);
-      C.transMult(1.0, rhs1, -1.0, rhs_reduced_b3);
+      C.transpose_mult(1.0, rhs1, -1.0, rhs_reduced_b3);
    }
 
    ///////////////////////////////////////////////////////////////////////
@@ -656,7 +656,7 @@ void sLinsysRootAug::solveReducedLinkConsBlocked(DenseMatrix& rhs_mat_transp, in
          assert(zDiag);
          assert(b3.length() == zDiag->length());
          b3.componentDiv(*zDiag);
-         C.transMult(1.0, rhs1, -1.0, b3);
+         C.transpose_mult(1.0, rhs1, -1.0, b3);
 //         C.transMultD(1.0, rhs1, -1.0, b3, *zDiag);
       }
    }

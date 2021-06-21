@@ -111,7 +111,7 @@ public:
    virtual void mult(double beta, Vector<double>& y, double alpha, const Vector<double>& x) const = 0;
 
    /** y = beta * y + alpha * this^T * x */
-   virtual void transMult(double beta, Vector<double>& y, double alpha, const Vector<double>& x) const = 0;
+   virtual void transpose_mult(double beta, Vector<double>& y, double alpha, const Vector<double>& x) const = 0;
 
    /** the magnitude of the element in this matrix with largest absolute value.
     */
@@ -258,6 +258,12 @@ public:
     *  @see DoubleMatrix::fromGetSpRow
     */
    virtual void atPutSpRow(int col, const double A[], int lenA, const int jcolA[], int& info) = 0;
+
+   /** y = beta * y + alpha * transform(this) * x */
+   virtual void mult_transform(double beta, Vector<double>& y, double alpha, const Vector<double>& x, const std::function<double(const double&)>& transform) const = 0;
+
+   /** y = beta * y + alpha * transform(this^T) * x */
+   virtual void transpose_mult_transform(double beta, Vector<double>& y, double alpha, const Vector<double>& x, const std::function<double(const double&)>& transform) const = 0;
 
    /** C = this^T * D * this where D=diag(d) is a diagonal matrix. */
    virtual void matTransDMultMat(const Vector<double>& d, SymmetricMatrix** res) const = 0;

@@ -34,11 +34,11 @@ void Problem::Cmult(double beta, Vector<double>& y, double alpha, const Vector<d
 }
 
 void Problem::ATransmult(double beta, Vector<double>& y, double alpha, const Vector<double>& x) const {
-   equality_jacobian->transMult(beta, y, alpha, x);
+   equality_jacobian->transpose_mult(beta, y, alpha, x);
 }
 
 void Problem::CTransmult(double beta, Vector<double>& y, double alpha, const Vector<double>& x) const {
-   inequality_jacobian->transMult(beta, y, alpha, x);
+   inequality_jacobian->transpose_mult(beta, y, alpha, x);
 }
 
 void Problem::get_objective_gradient(Vector<double>& myG) const {

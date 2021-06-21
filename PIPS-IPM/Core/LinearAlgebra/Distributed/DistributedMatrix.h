@@ -58,9 +58,17 @@ private:
    [[nodiscard]] virtual bool hasSparseMatrices() const;
 
    /** trans mult method for children with linking constraints */
-   virtual void transMult2(double beta, DistributedVector<double>& y, double alpha, const DistributedVector<double>& x, const Vector<double>* xvecl) const;
+   virtual void transpose_mult(double beta, Vector<double>& y, double alpha, const Vector<double>& x,
+      const std::function<void(const GeneralMatrix*, double, Vector<double>&, double, const Vector<double>&)>& transpose_mult) const;
 
-   virtual void mult2(double beta, DistributedVector<double>& y, double alpha, const DistributedVector<double>& x, Vector<double>* yparentl_) const;
+   virtual void transpose_mult2(double beta, DistributedVector<double>& y, double alpha, const DistributedVector<double>& x, const Vector<double>* xvecl,
+      const std::function<void(const GeneralMatrix*, double, Vector<double>&, double, const Vector<double>&)>& transpose_mult) const;
+
+   virtual void mult(double beta, Vector<double>& y, double alpha, const Vector<double>& x,
+      const std::function<void(const GeneralMatrix*, double, Vector<double>&, double, const Vector<double>&)>& mult) const;
+
+   virtual void mult2(double beta, DistributedVector<double>& y, double alpha, const DistributedVector<double>& x, Vector<double>* yparentl_,
+      const std::function<void(const GeneralMatrix*, double, Vector<double>&, double, const Vector<double>&)>& mult) const;
 
    /** column scale method for children */
    virtual void columnScale2(const Vector<double>& vec);
@@ -118,7 +126,11 @@ public:
    /** y = beta * y + alpha * this * x */
    void mult(double beta, Vector<double>& y, double alpha, const Vector<double>& x) const override;
 
-   void transMult(double beta, Vector<double>& y, double alpha, const Vector<double>& x) const override;
+   void mult_transform(double beta, Vector<double>& y, double alpha, const Vector<double>& x, const std::function<double(const double&)>& transform) const override;
+
+   void transpose_mult(double beta, Vector<double>& y, double alpha, const Vector<double>& x) const override;
+
+   void transpose_mult_transform(double beta, Vector<double>& y, double alpha, const Vector<double>& x, const std::function<double(const double&)>& transform) const override;
 
    [[nodiscard]] double inf_norm() const override;
    [[nodiscard]] double abminnormNonZero(double tol) const override;
@@ -268,10 +280,24 @@ public:
    void setToDiagonal(const Vector<double>&) override {};
 
    void mult(double, Vector<double>&, double, const Vector<double>&) const override {};
-   void mult2(double, DistributedVector<double>&, double, const DistributedVector<double>&, Vector<double>*) const override {};
+   void mult_transform(double, Vector<double>&, double, const Vector<double>&, const std::function<double(const double&)>&) const override {};
 
-   void transMult(double, Vector<double>&, double, const Vector<double>&) const override {};
-   void transMult2(double, DistributedVector<double>&, double, const DistributedVector<double>&, const Vector<double>*) const override {};
+   void transpose_mult(double, Vector<double>&, double, const Vector<double>&) const override {};
+   void transpose_mult_transform(double, Vector<double>&, double, const Vector<double>&,
+      const std::function<double(const double&)>&) const override {};
+private:
+   void mult(double, Vector<double>&, double, const Vector<double>&,
+      const std::function<void(const GeneralMatrix*, double, Vector<double>&, double, const Vector<double>&)>& mult) const override{};
+   void mult2(double, DistributedVector<double>&, double, const DistributedVector<double>&, Vector<double>*,
+      const std::function<void(const GeneralMatrix*, double, Vector<double>&, double, const Vector<double>&)>& mult) const override {};
+
+   void transpose_mult(double, Vector<double>&, double, const Vector<double>&,
+      const std::function<void(const GeneralMatrix*, double, Vector<double>&, double, const Vector<double>&)>& mult) const override {};
+   void transpose_mult2(double, DistributedVector<double>&, double, const DistributedVector<double>&, const Vector<double>*,
+      const std::function<void(const GeneralMatrix*, double, Vector<double>&, double, const Vector<double>&)>& mult) const override {};
+
+
+public:
 
    [[nodiscard]] double inf_norm() const override { return 0.0; };
    [[nodiscard]] double abminnormNonZero(double) const override { return std::numeric_limits<double>::infinity(); };
