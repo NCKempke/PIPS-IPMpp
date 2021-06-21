@@ -831,14 +831,14 @@ void SparseStorage::mult(double beta, double y[], double alpha, const double x[]
 void SparseStorage::mult_transform(double beta, double y[], double alpha, const double x[], const std::function<double(const double&)>& transform) const
 {
    for (int row = 0; row < m; ++row) {
-      y[row] *= beta;
-
+      double tmp = 0.0;
       for (int k = krowM[row]; k < krowM[row + 1]; ++k) {
          const int col = jcolM[k];
          assert(col < n);
 
-         y[row] += alpha * transform(M[k]) * x[col];
+         tmp += alpha * transform(M[k]) * x[col];
       }
+      y[row] = beta * y[row] + alpha * tmp;
    }
 }
 
