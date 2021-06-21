@@ -41,12 +41,15 @@ public:
 
    /** create x vector */
    [[nodiscard]] virtual std::unique_ptr<Vector<double>> make_primal_vector() const = 0;
+   [[nodiscard]] virtual std::unique_ptr<Vector<int>> make_primal_integral_vector() const = 0;
 
    /** create dual A vector */
    [[nodiscard]] virtual std::unique_ptr<Vector<double>> make_equalities_dual_vector() const = 0;
+   [[nodiscard]] virtual std::unique_ptr<Vector<int>> make_equalities_dual_integral_vector() const = 0;
 
    /** create dual C vector */
    [[nodiscard]] virtual std::unique_ptr<Vector<double>> make_inequalities_dual_vector() const = 0;
+   [[nodiscard]] virtual std::unique_ptr<Vector<int>> make_inequalities_dual_integral_vector() const = 0;
 
    /** create rhs for whole system */
    [[nodiscard]] virtual std::unique_ptr<Vector<double>> make_right_hand_side() const = 0;

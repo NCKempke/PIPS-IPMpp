@@ -17,11 +17,10 @@ protected:
    void doObjScaling() const override;
 
    void applyGeoMean(Vector<double>& maxvec, const Vector<double>& minvec);
-   void postEquiScale();
 public:
 
    CurtisReidScaler(const ProblemFactory& problem_factory, const Problem& problem, bool bitshifting = false);
-   virtual ~CurtisReidScaler() = default;
+   ~CurtisReidScaler() override = default;
 
    /** scale */
    void scale() override;

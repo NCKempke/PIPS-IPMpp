@@ -31,8 +31,8 @@ class InteriorPointMethod;
 
 class PIPSIPMppInterface {
 public:
-   PIPSIPMppInterface(DistributedInputTree* tree, MehrotraStrategyType mehrotra_heuristic, MPI_Comm = MPI_COMM_WORLD, ScalerType scaler_type = ScalerType::SCALER_NONE,
-         PresolverType presolver_type = PresolverType::PRESOLVER_NONE, const std::string& settings = "PIPSIPMpp.opt");
+   PIPSIPMppInterface(DistributedInputTree* tree, MehrotraStrategyType mehrotra_heuristic, MPI_Comm = MPI_COMM_WORLD, ScalerType scaler_type = ScalerType::NONE,
+         PresolverType presolver_type = PresolverType::NONE, const std::string& settings = "PIPSIPMpp.opt");
 
    ~PIPSIPMppInterface();
 

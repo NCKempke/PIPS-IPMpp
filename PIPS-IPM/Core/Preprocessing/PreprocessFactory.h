@@ -22,12 +22,13 @@ public:
 
    static Scaler* make_scaler(const ProblemFactory& problem_factory, const Problem& problem, ScalerType type) {
       switch (type) {
-         case ScalerType::SCALER_EQUI_STOCH:
+         case ScalerType::EQUILIBRIUM:
             return new EquilibriumScaler(problem_factory, problem, false);
-         case ScalerType::SCALER_GEO_STOCH:
+         case ScalerType::GEOMETRIC_MEAN:
             return new GeometricMeanScaler(problem_factory, problem, false, false);
-         case ScalerType::SCALER_GEO_EQUI_STOCH:
+         case ScalerType::GEOMETRIC_MEAN_EQUILIBRIUM:
             return new GeometricMeanScaler(problem_factory, problem, true, false);
+//         case ScalerType::CURTIS_REID:
          default:
             return nullptr;
       }
@@ -36,7 +37,7 @@ public:
    static Presolver* make_presolver(DistributedTree& tree, const Problem* data, PresolverType type, Postsolver* postsolver = nullptr) {
       assert(data);
       switch (type) {
-         case PresolverType::PRESOLVER_STOCH:
+         case PresolverType::PRESOLVE:
             return new StochPresolver(tree, *data, postsolver);
          default:
             return nullptr;

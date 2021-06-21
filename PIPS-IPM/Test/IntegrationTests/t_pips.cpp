@@ -127,7 +127,7 @@ TEST_P(ScenarioTests, TestGamssmallPrimalDualStepScaleGeo) {
 
    const int n_expected_iterations(GetParam().n_iterations);
 
-   solveInstanceAndCheckResult(result, n_expected_iterations, root + problem_paths, n_blocks, PresolverType::PRESOLVER_NONE, ScalerType::SCALER_GEO_STOCH, MehrotraStrategyType::PRIMAL_DUAL);
+   solveInstanceAndCheckResult(result, n_expected_iterations, root + problem_paths, n_blocks, PresolverType::NONE, ScalerType::GEOMETRIC_MEAN, MehrotraStrategyType::PRIMAL_DUAL);
 };
 
 TEST_P(ScenarioTests, TestGamssmallPrimalDualStepScaleGeoPresolve) {
@@ -136,7 +136,7 @@ TEST_P(ScenarioTests, TestGamssmallPrimalDualStepScaleGeoPresolve) {
    const double result(GetParam().result);
    const int n_expected_iterations(GetParam().n_iterations);
 
-   solveInstanceAndCheckResult(result, n_expected_iterations, root + problem_paths, n_blocks, PresolverType::PRESOLVER_STOCH, ScalerType::SCALER_GEO_STOCH, MehrotraStrategyType::PRIMAL_DUAL);
+   solveInstanceAndCheckResult(result, n_expected_iterations, root + problem_paths, n_blocks, PresolverType::PRESOLVE, ScalerType::GEOMETRIC_MEAN, MehrotraStrategyType::PRIMAL_DUAL);
 };
 
 TEST_P(ScenarioTests, TestGamssmallPrimalDualStep) {
@@ -145,7 +145,7 @@ TEST_P(ScenarioTests, TestGamssmallPrimalDualStep) {
    const double result(GetParam().result);
    const int n_expected_iterations(GetParam().n_iterations);
 
-   solveInstanceAndCheckResult(result, n_expected_iterations, root + problem_paths, n_blocks, PresolverType::PRESOLVER_NONE, ScalerType::SCALER_NONE, MehrotraStrategyType::PRIMAL_DUAL);
+   solveInstanceAndCheckResult(result, n_expected_iterations, root + problem_paths, n_blocks, PresolverType::NONE, ScalerType::NONE, MehrotraStrategyType::PRIMAL_DUAL);
 };
 
 TEST_P(ScenarioTests, TestGamssmallPrimalDualStepPresolve) {
@@ -154,7 +154,7 @@ TEST_P(ScenarioTests, TestGamssmallPrimalDualStepPresolve) {
    const double result(GetParam().result);
    const int n_expected_iterations(GetParam().n_iterations);
 
-   solveInstanceAndCheckResult(result, n_expected_iterations, root + problem_paths, n_blocks, PresolverType::PRESOLVER_STOCH, ScalerType::SCALER_NONE, MehrotraStrategyType::PRIMAL_DUAL);
+   solveInstanceAndCheckResult(result, n_expected_iterations, root + problem_paths, n_blocks, PresolverType::PRESOLVE, ScalerType::NONE, MehrotraStrategyType::PRIMAL_DUAL);
 };
 
 TEST_P(ScenarioTests, TestGamssmallNoSettings) {
@@ -163,7 +163,7 @@ TEST_P(ScenarioTests, TestGamssmallNoSettings) {
    const double result(GetParam().result);
    const int n_expected_iterations(GetParam().n_iterations);
 
-   solveInstanceAndCheckResult(result, n_expected_iterations, root + problem_paths, n_blocks, PresolverType::PRESOLVER_NONE, ScalerType::SCALER_NONE, MehrotraStrategyType::PRIMAL);
+   solveInstanceAndCheckResult(result, n_expected_iterations, root + problem_paths, n_blocks, PresolverType::NONE, ScalerType::NONE, MehrotraStrategyType::PRIMAL);
 };
 
 TEST_P(ScenarioTests, TestGamssmallPresolve) {
@@ -172,7 +172,7 @@ TEST_P(ScenarioTests, TestGamssmallPresolve) {
    const double result(GetParam().result);
    const int n_expected_iterations(GetParam().n_iterations);
 
-   solveInstanceAndCheckResult(result, n_expected_iterations, root + problem_paths, n_blocks, PresolverType::PRESOLVER_STOCH, ScalerType::SCALER_NONE, MehrotraStrategyType::PRIMAL);
+   solveInstanceAndCheckResult(result, n_expected_iterations, root + problem_paths, n_blocks, PresolverType::PRESOLVE, ScalerType::NONE, MehrotraStrategyType::PRIMAL);
 };
 
 TEST_P(ScenarioTests, TestGamssmallScaleGeoPresolve) {
@@ -181,7 +181,7 @@ TEST_P(ScenarioTests, TestGamssmallScaleGeoPresolve) {
    const double result(GetParam().result);
    const int n_expected_iterations(GetParam().n_iterations);
 
-   solveInstanceAndCheckResult(result, n_expected_iterations, root + problem_paths, n_blocks, PresolverType::PRESOLVER_STOCH, ScalerType::SCALER_GEO_STOCH, MehrotraStrategyType::PRIMAL);
+   solveInstanceAndCheckResult(result, n_expected_iterations, root + problem_paths, n_blocks, PresolverType::PRESOLVE, ScalerType::GEOMETRIC_MEAN, MehrotraStrategyType::PRIMAL);
 };
 
 INSTANTIATE_TEST_SUITE_P(InstantiateTestsWithAllGamssmallInstances, ScenarioTests, ::testing::ValuesIn(getInstances()));

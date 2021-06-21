@@ -101,11 +101,16 @@ public:
    [[nodiscard]] virtual std::unique_ptr<DistributedVector<double>> createcupp() const = 0;
    [[nodiscard]] virtual std::unique_ptr<DistributedVector<double>> createicupp() const = 0;
 
-   [[nodiscard]] std::unique_ptr<DistributedVector<double>> new_primal_vector(bool empty = false) const;
-   [[nodiscard]] std::unique_ptr<DistributedVector<double>> newDualYVector(bool empty = false) const;
-   [[nodiscard]] std::unique_ptr<DistributedVector<double>> newDualZVector(bool empty = false) const;
+   template<typename T>
+   [[nodiscard]] std::unique_ptr<DistributedVector<T>> new_primal_vector(bool empty = false) const;
 
-   [[nodiscard]] std::unique_ptr<DistributedVector<double>> newRhs() const;
+   template<typename T>
+   [[nodiscard]] std::unique_ptr<DistributedVector<T>> new_equalities_dual_vector(bool empty = false) const;
+
+   template<typename T>
+   [[nodiscard]] std::unique_ptr<DistributedVector<T>> new_inequalities_dual_vector(bool empty = false) const;
+
+   [[nodiscard]] std::unique_ptr<DistributedVector<double>> new_right_hand_side() const;
 
    [[nodiscard]] const DistributedTree* getSubRoot() const { return sub_root.get(); };
    [[nodiscard]] const std::vector<std::unique_ptr<DistributedTree>>& getChildren() const { return children; };

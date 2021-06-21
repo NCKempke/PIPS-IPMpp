@@ -256,28 +256,28 @@ std::unique_ptr<Variables> DistributedFactory::make_variables(const Problem& pro
 
 std::unique_ptr<Residuals> DistributedFactory::make_residuals(const Problem& problem) const {
 
-   std::unique_ptr<Vector<double>> lagrangian_gradient{tree->new_primal_vector()};
+   std::unique_ptr<Vector<double>> lagrangian_gradient{make_primal_vector()};
 
-   std::unique_ptr<Vector<double>> rA{tree->newDualYVector()};
-   std::unique_ptr<Vector<double>> rC{tree->newDualZVector()};
+   std::unique_ptr<Vector<double>> rA{make_equalities_dual_vector()};
+   std::unique_ptr<Vector<double>> rC{make_inequalities_dual_vector()};
 
-   std::unique_ptr<Vector<double>> rz{tree->newDualZVector()};
+   std::unique_ptr<Vector<double>> rz{make_inequalities_dual_vector()};
 
    const bool mclow_empty = problem.number_inequality_lower_bounds <= 0;
-   std::unique_ptr<Vector<double>> rt{tree->newDualZVector(mclow_empty)};
-   std::unique_ptr<Vector<double>> rlambda{tree->newDualZVector(mclow_empty)};
+   std::unique_ptr<Vector<double>> rt{tree->new_inequalities_dual_vector<double>(mclow_empty)};
+   std::unique_ptr<Vector<double>> rlambda{tree->new_inequalities_dual_vector<double>(mclow_empty)};
 
    const bool mcupp_empty = problem.number_inequality_upper_bounds <= 0;
-   std::unique_ptr<Vector<double>> ru{tree->newDualZVector(mcupp_empty)};
-   std::unique_ptr<Vector<double>> rpi{tree->newDualZVector(mcupp_empty)};
+   std::unique_ptr<Vector<double>> ru{tree->new_inequalities_dual_vector<double>(mcupp_empty)};
+   std::unique_ptr<Vector<double>> rpi{tree->new_inequalities_dual_vector<double>(mcupp_empty)};
 
    const bool nxlow_empty = problem.number_primal_lower_bounds <= 0;
-   std::unique_ptr<Vector<double>> rv{tree->new_primal_vector(nxlow_empty)};
-   std::unique_ptr<Vector<double>> rgamma{tree->new_primal_vector(nxlow_empty)};
+   std::unique_ptr<Vector<double>> rv{tree->new_primal_vector<double>(nxlow_empty)};
+   std::unique_ptr<Vector<double>> rgamma{tree->new_primal_vector<double>(nxlow_empty)};
 
    const bool nxupp_empty = problem.number_primal_upper_bounds <= 0;
-   std::unique_ptr<Vector<double>> rw{tree->new_primal_vector(nxupp_empty)};
-   std::unique_ptr<Vector<double>> rphi{tree->new_primal_vector(nxupp_empty)};
+   std::unique_ptr<Vector<double>> rw{tree->new_primal_vector<double>(nxupp_empty)};
+   std::unique_ptr<Vector<double>> rphi{tree->new_primal_vector<double>(nxupp_empty)};
 
    assert(problem.primal_lower_bound_indicators && problem.primal_upper_bound_indicators && problem.inequality_lower_bound_indicators && problem.inequality_upper_bound_indicators);
    return std::make_unique<DistributedResiduals>(std::move(lagrangian_gradient), std::move(rA), std::move(rC), std::move(rz),
@@ -293,20 +293,32 @@ std::unique_ptr<AbstractLinearSystem> DistributedFactory::make_linear_system(Pro
       return make_linear_system_root(problem);
 }
 
+std::unique_ptr<Vector<int>> DistributedFactory::make_primal_integral_vector() const {
+   return tree->new_primal_vector<int>();
+}
+
+std::unique_ptr<Vector<int>> DistributedFactory::make_equalities_dual_integral_vector() const {
+   return tree->new_equalities_dual_vector<int>();
+}
+
+std::unique_ptr<Vector<int>> DistributedFactory::make_inequalities_dual_integral_vector() const {
+   return tree->new_inequalities_dual_vector<int>();
+}
+
 std::unique_ptr<Vector<double>> DistributedFactory::make_primal_vector() const {
-   return tree->new_primal_vector();
+   return tree->new_primal_vector<double>();
 }
 
 std::unique_ptr<Vector<double>> DistributedFactory::make_equalities_dual_vector() const {
-   return tree->newDualYVector();
+   return tree->new_equalities_dual_vector<double>();
 }
 
 std::unique_ptr<Vector<double>> DistributedFactory::make_inequalities_dual_vector() const {
-   return tree->newDualZVector();
+   return tree->new_inequalities_dual_vector<double>();
 }
 
 std::unique_ptr<Vector<double>> DistributedFactory::make_right_hand_side() const {
-   return tree->newRhs();
+   return tree->new_right_hand_side();
 }
 
 void DistributedFactory::iterate_started() {

@@ -36,7 +36,7 @@ scaler_type, PresolverType presolver_type, const std::string& settings) : comm(c
 #endif
 
    // presolving activated?
-   if (presolver_type != PresolverType::PRESOLVER_NONE) {
+   if (presolver_type != PresolverType::NONE) {
       original_problem = factory->make_problem();
 
       MPI_Barrier(comm);

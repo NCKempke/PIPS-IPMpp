@@ -17,11 +17,11 @@
 
 static void setParams(ScalerType& scaler_type, bool& stepDiffLp, bool& presolve, bool& printsol, bool& hierarchical, const char* paramname) {
    if (strcmp(paramname, "scale") == 0 || strcmp(paramname, "scaleEqui") == 0)
-      scaler_type = ScalerType::SCALER_EQUI_STOCH;
+      scaler_type = ScalerType::EQUILIBRIUM;
    else if (strcmp(paramname, "scaleGeo") == 0)
-      scaler_type = ScalerType::SCALER_GEO_STOCH;
+      scaler_type = ScalerType::GEOMETRIC_MEAN;
    else if (strcmp(paramname, "scaleGeoEqui") == 0)
-      scaler_type = ScalerType::SCALER_GEO_EQUI_STOCH;
+      scaler_type = ScalerType::GEOMETRIC_MEAN_EQUILIBRIUM;
    else if (strcmp(paramname, "stepLp") == 0)
       stepDiffLp = true;
    else if (strcmp(paramname, "presolve") == 0)
@@ -69,7 +69,7 @@ int main(int argc, char** argv) {
    MPI_Barrier(MPI_COMM_WORLD);
    const double t0 = MPI_Wtime();
 
-   ScalerType scaler_type = ScalerType::SCALER_NONE;
+   ScalerType scaler_type = ScalerType::NONE;
    bool primal_dual_step_length = false;
    bool presolve = false;
    bool printsol = false;
@@ -124,7 +124,7 @@ int main(int argc, char** argv) {
       std::cout << "Creating PIPSIpmInterface ...\n";
 
    PIPSIPMppInterface pipsIpm(root.get(), primal_dual_step_length ? MehrotraStrategyType::PRIMAL_DUAL : MehrotraStrategyType::PRIMAL, MPI_COMM_WORLD, scaler_type,
-         presolve ? PresolverType::PRESOLVER_STOCH : PresolverType::PRESOLVER_NONE);
+         presolve ? PresolverType::PRESOLVE : PresolverType::NONE);
 
    if (my_rank == 0) {
       std::cout << "PIPSIPMppInterface created\n";

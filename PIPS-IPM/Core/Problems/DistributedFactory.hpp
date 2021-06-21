@@ -63,12 +63,15 @@ public:
 
    /** create x shaped vector using tree */
    [[nodiscard]] std::unique_ptr<Vector<double>> make_primal_vector() const override;
+   [[nodiscard]] std::unique_ptr<Vector<int>> make_primal_integral_vector() const override;
 
    /** create dual A shaped vector using tree */
    [[nodiscard]] std::unique_ptr<Vector<double>> make_equalities_dual_vector() const override;
+   [[nodiscard]] std::unique_ptr<Vector<int>> make_equalities_dual_integral_vector() const override;
 
    /** create dual C shaped vector using tree */
    [[nodiscard]] std::unique_ptr<Vector<double>> make_inequalities_dual_vector() const override;
+   [[nodiscard]] std::unique_ptr<Vector<int>> make_inequalities_dual_integral_vector() const override;
 
    /** create rhs for augmented system using tree */
    [[nodiscard]] std::unique_ptr<Vector<double>> make_right_hand_side() const override;
