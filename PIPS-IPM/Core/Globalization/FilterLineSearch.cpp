@@ -49,8 +49,7 @@ void FilterLineSearch::compute_acceptable_iterate(Problem& problem, Variables& c
       }
    }
    if (!is_accepted) {
-      std::cout << "Enter restoration phase (not implemented yet)\n";
-      assert(false);
+      assert(false && "Enter restoration phase (not implemented yet)");
    }
 }
 
