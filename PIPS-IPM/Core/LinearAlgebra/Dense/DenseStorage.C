@@ -205,6 +205,18 @@ void DenseStorage::sum_transform_rows(Vector<double>& result_, const std::functi
    }
 }
 
+void DenseStorage::sum_transform_columns(Vector<double>& result_, const std::function<double(const double&)>& transform) const {
+   assert(result_.length() == this->n_columns());
+
+   auto& result = dynamic_cast<SimpleVector<double>&>(result_);
+
+   for (int i = 0; i < m; ++i) {
+      for (int j = 0; j < n; ++j) {
+         result[j] += transform(M[i][j]);
+      }
+   }
+}
+
 void DenseStorage::atPutDense(int row, int col, const double* A, int lda, int rowExtent, int colExtent) {
    assert(row >= 0 && row + rowExtent <= m);
    assert(col >= 0 && col + colExtent <= n);

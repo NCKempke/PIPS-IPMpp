@@ -45,6 +45,7 @@ public:
    void putZeros();
 
    void sum_transform_rows(Vector<double>& result, const std::function<double(const double&)>& transform) const override;
+   void sum_transform_columns(Vector<double>& result, const std::function<double(const double&)>& transform) const;
 
    void atAddOuterProductOf(int row, int col, double alpha, double* x, int incx, int nx);
 

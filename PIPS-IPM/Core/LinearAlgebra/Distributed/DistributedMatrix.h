@@ -72,6 +72,8 @@ private:
 
    virtual void getNnzPerCol(Vector<int>& nnzVec, Vector<int>* linkParent) const;
 
+   void sum_transform_columns(Vector<double>& result, const std::function<double(const double&)>& transform, Vector<double>* link_parent) const;
+
    virtual void addRowSums(Vector<double>& sumVec, Vector<double>* linkParent) const;
    virtual void addColSums(Vector<double>& sumVec, Vector<double>* linkParent) const;
 
@@ -159,6 +161,9 @@ public:
    void getColMinMaxVec(bool getMin, bool initializeVec, const Vector<double>* rowScaleVec, Vector<double>& minmaxVec) const override;
 
    void sum_transform_rows(Vector<double>& result, const std::function<double(const double&)>& transform) const override;
+   void sum_transform_columns(Vector<double>& result, const std::function<double(const double&)>& transform) const override {
+      sum_transform_columns(result, transform, nullptr);
+   };
 
    void addRowSums(Vector<double>& sumVec) const override { addRowSums(sumVec, nullptr); };
    void addColSums(Vector<double>& sumVec) const override { addColSums(sumVec, nullptr); };

@@ -43,6 +43,10 @@ void DenseMatrix::sum_transform_rows(Vector<double>& result, const std::function
    mStorage->sum_transform_rows(result, transform);
 }
 
+void DenseMatrix::sum_transform_columns(Vector<double>& result, const std::function<double(const double&)>& transform) const {
+   assert(result.length() == mStorage->n_columns());
+   mStorage->sum_transform_columns(result, transform);
+}
 
 void DenseMatrix::putSparseTriple(const int irow[], int len, const int jcol[], const double A[], int& info) {
    mStorage->putSparseTriple(irow, len, jcol, A, info);

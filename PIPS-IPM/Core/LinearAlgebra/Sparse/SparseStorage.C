@@ -1655,7 +1655,6 @@ void SparseStorage::sum_transform_rows(Vector<double>& result_, const std::funct
          result[r] += transform(M[c]);
       }
    }
-
 }
 
 void SparseStorage::addRowSums(double* vec) const {

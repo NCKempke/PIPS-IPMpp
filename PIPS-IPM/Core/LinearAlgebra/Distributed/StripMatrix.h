@@ -68,6 +68,8 @@ public:
 
    void sum_transform_rows(Vector<double>& result, const std::function<double(const double&)>& transform) const override;
 
+   void sum_transform_columns(Vector<double>& result, const std::function<double(const double&)>& transform) const override;
+
    void addRowSums(Vector<double>& vec) const override;
    void addColSums(Vector<double>& vec) const override;
 
@@ -127,6 +129,9 @@ protected:
    virtual void sum_transform_rows_vertical(Vector<double>& result, const std::function<double(const double&)>& transform) const;
    virtual void sum_transform_rows_horizontal(Vector<double>& result, const std::function<double(const double&)>& transform) const;
 
+   virtual void sum_transform_columns_vertical(Vector<double>& result, const std::function<double(const double&)>& transform) const;
+   virtual void sum_transform_columns_horizontal(Vector<double>& result, const std::function<double(const double&)>& transform) const;
+
    virtual void addRowSumsVertical(Vector<double>& vec) const;
    virtual void addRowSumsHorizontal(Vector<double>& vec) const;
 
@@ -160,6 +165,7 @@ public:
    void rowScale(const Vector<double>&) override {};
 
    void sum_transform_rows(Vector<double>&, const std::function<double(const double&)>&) const override {};
+   void sum_transform_columns(Vector<double>&, const std::function<double(const double&)>&) const override {};
 
    void addRowSums(Vector<double>&) const override {};
    void addColSums(Vector<double>&) const override {};
@@ -192,6 +198,9 @@ protected:
 
    void sum_transform_rows_vertical(Vector<double>&, const std::function<double(const double&)>&) const override {};
    void sum_transform_rows_horizontal(Vector<double>&, const std::function<double(const double&)>&) const override {};
+
+   void sum_transform_columns_vertical(Vector<double>&, const std::function<double(const double&)>&) const override {};
+   void sum_transform_columns_horizontal(Vector<double>&, const std::function<double(const double&)>&) const override {};
 
    void addRowSumsVertical(Vector<double>&) const override {};
    void addRowSumsHorizontal(Vector<double>&) const override {};

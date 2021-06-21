@@ -773,11 +773,40 @@ void DistributedMatrix::sum_transform_rows(Vector<double>& result_, const std::f
    }
 }
 
+void DistributedMatrix::sum_transform_columns(Vector<double>& result_, const std::function<double(const double&)>& transform, Vector<double>* link_parent) const {
+   assert(hasSparseMatrices());
+   auto& result = dynamic_cast<DistributedVector<double>&>(result_);
+
+   assert(result.children.size() == children.size());
+
+   auto& result_first = dynamic_cast<SimpleVector<double>&>(*result.first);
+
+   if (iAmSpecial(iAmDistrib, mpiComm) || link_parent) {
+      dynamic_cast<SparseMatrix&>(*Bmat).sum_transform_columns(result_first, transform);
+
+      /* with linking constraints? */
+      if (Blmat->n_rows() > 0)
+         dynamic_cast<SparseMatrix&>(*Blmat).sum_transform_columns(result_first, transform);
+   }
+
+   // not at root?
+   if (link_parent)
+      dynamic_cast<SparseMatrix&>(*Amat).sum_transform_rows(*link_parent, transform);
+   else {
+      for (size_t it = 0; it < children.size(); it++)
+         children[it]->sum_transform_columns(*(result.children[it]), transform, &result_first);
+   }
+
+   // distributed and at root?
+   if (iAmDistrib && !link_parent) {
+      PIPS_MPIsumArrayInPlace(result_first.elements(), result_first.length(), mpiComm);
+   }
+}
+
 void DistributedMatrix::getNnzPerCol(Vector<int>& nnzVec, Vector<int>* linkParent) const {
    assert(hasSparseMatrices());
    auto& nnzVecStoch = dynamic_cast<DistributedVector<int>&>(nnzVec);
 
-   // assert tree compatibility
    assert(nnzVecStoch.children.size() == children.size());
 
    auto* vec = dynamic_cast<SimpleVector<int>*>(nnzVecStoch.first.get());

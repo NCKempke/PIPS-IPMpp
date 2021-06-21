@@ -276,6 +276,9 @@ public:
    /** sum rows after applying transform to every element */
    virtual void sum_transform_rows(Vector<double>& result, const std::function<double(const double&)>& transform) const = 0;
 
+   /** sum columns after applying transform to every element */
+   virtual void sum_transform_columns(Vector<double>& result, const std::function<double(const double&)>& transform) const = 0;
+
    /** fill vector with absolute minimum/maximum value of each row */
    virtual void getRowMinMaxVec(bool /*getMin*/, bool /*initializeVec*/, const Vector<double>* /*colScaleVec*/, Vector<double>& /*minmaxVec*/ ) const {
       assert(0 && "not implemented");

@@ -181,6 +181,19 @@ void BorderedMatrix::sum_transform_rows(Vector<double>& result_, const std::func
    border_bottom->sum_transform_rows(*result.last, transform);
 }
 
+void BorderedMatrix::sum_transform_columns(Vector<double>& result_,
+   const std::function<double(const double&)>& transform) const {
+   assert(hasVecStructureForBorderedMat(result_, true));
+
+   auto& result = dynamic_cast<DistributedVector<double>&>(result_);
+
+   border_left->sum_transform_columns(*result.first, transform);
+   bottom_left_block->sum_transform_columns(*result.first, transform);
+
+   inner_matrix->sum_transform_columns(*result.children[0], transform);
+   border_bottom->sum_transform_columns(*result.children[0], transform);
+}
+
 void BorderedMatrix::addRowSums(Vector<double>& vec_) const {
    assert(hasVecStructureForBorderedMat(vec_, false));
 
@@ -214,31 +227,30 @@ bool BorderedMatrix::hasVecStructureForBorderedMat(const Vector<T>& vec, bool ro
       return false;
    }
 
-   if (vecs.children[0] == nullptr) {
+   if (!vecs.children[0]) {
       std::cout << "child[0]" << std::endl;
       return false;
    }
 
    if (row_vec) {
-      if (vecs.last != nullptr) {
+      if (vecs.last) {
          std::cout << "row-first but root.last" << std::endl;
          return false;
       }
-      if (vecs.first == nullptr) {
+      if (!vecs.first) {
          std::cout << "row-first but NO root.first" << std::endl;
          return false;
       }
    }
    else {
-      if (vecs.first != nullptr) {
+      if (vecs.first) {
          std::cout << "col-first but root.first" << std::endl;
          return false;
       }
-      if (vecs.last == nullptr) {
+      if (!vecs.last) {
          std::cout << "col-first but NO root.last" << std::endl;
          return false;
       }
-
    }
 
    if (row_vec && vecs.length() != n) {

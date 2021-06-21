@@ -87,6 +87,8 @@ public:
 
    void sum_transform_rows(Vector<double>& result, const std::function<double(const double&)>& transform) const override;
 
+   void sum_transform_columns(Vector<double>& result, const std::function<double(const double&)>& transform) const override;
+
    void addRowSums(Vector<double>& vec) const override;
 
    void addColSums(Vector<double>& vec) const override;
