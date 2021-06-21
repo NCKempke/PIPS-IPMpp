@@ -817,13 +817,14 @@ void indexedLexSort(int first[], int n, int swapFirst, int second[], int swapSec
 
 void SparseStorage::mult(double beta, double y[], double alpha, const double x[]) const {
    for (int row = 0; row < m; row++) {
-      y[row] *= beta;
+      double tmp = 0.0;
       for (int k = krowM[row]; k < krowM[row + 1]; k++) {
          const int col = jcolM[k];
          assert(col < n);
 
-         y[row] += alpha * M[k] * x[col];
+         tmp += M[k] * x[col];
       }
+      y[row] = beta * y[row] + alpha * tmp;
    }
 }
 
