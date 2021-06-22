@@ -32,13 +32,11 @@ if (HAVE_MUMPS)
             PRIVATE ${SCALAPACK_LIBRARIES}
             PRIVATE ${PARMETIS_LIBRARY}
             PRIVATE ${MATH_LIBS}
-            #PRIVATE blas
-            #PRIVATE lapack
             PRIVATE esmumps PRIVATE scotch PRIVATE scotcherr PRIVATE gfortran PRIVATE pthread PRIVATE m)
     target_link_libraries(mumps_solver PRIVATE ${METIS_5_LIBRARY})
 
     target_include_directories(pips-ipmpp PRIVATE ${MUMPS_INCLUDE_DIR})
-    target_sources(pips-ipmpp PRIVATE LinearSystems/sLinsysLeafMumps.C)
+    target_sources(pips-ipmpp PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../KKTFormulation/LinearSystems/sLinsysLeafMumps.C)
     target_compile_definitions(pips-ipmpp PUBLIC -DWITH_MUMPS)
 
     list(APPEND lin_solvers_list "mumps_solver")
@@ -109,7 +107,9 @@ if (HAVE_PARDISO)
             PRIVATE m
             )
     target_compile_definitions(pips-ipmpp PUBLIC -DWITH_PARDISO)
-
+    target_sources(pips-ipmpp PRIVATE
+            ${CMAKE_CURRENT_SOURCE_DIR}/../KKTFormulation/LinearSystems/sLinsysLeafSchurSlv.C
+            )
     list(APPEND lin_solvers_list "pardiso_solver")
     set(lin_solvers_list ${lin_solvers_list} PARENT_SCOPE)
 endif (HAVE_PARDISO)
