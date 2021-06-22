@@ -150,8 +150,7 @@ else(MATH_LIBS)
 endif(MATH_LIBS)
 
 #Boost
-find_package(Boost COMPONENTS log log_setup regex system filesystem thread chrono date_time)
-message(STATUS "Boost ... found")
+find_package(Boost REQUIRED)
 
 if(NOT Boost_FOUND)
    message("! A Boost version containing BOOST.LOG has NOT been found.")
@@ -160,6 +159,9 @@ if(NOT Boost_FOUND)
    message("! directory and use 'set(BOOST_ROOT \"/path/to/boost\")'.")
    message("! Then run  'cmake -DCMAKE_TOOLCHAIN_FILE=../Toolchain.cmake ..' in the build directory.")
    message(FATAL_ERROR "Configuration aborted due to missing BOOST libraries!")
+else(NOT Boost_FOUND)
+   message(STATUS "Boost ... found")
+   message(STATUS "Boost inlcude dir at ${Boost_INCLUDE_DIRS}")
 endif(NOT Boost_FOUND)
 
 ########################################

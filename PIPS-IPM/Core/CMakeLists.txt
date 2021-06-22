@@ -35,6 +35,7 @@ target_include_directories(pips-ipmpp
         Problems
         Readers
         Utilities
+        ${BOOST_INCLUDE_DIRS}
     PUBLIC
         Readers/Distributed
     )
@@ -53,6 +54,6 @@ endforeach(linear_solver)
 add_subdirectory(Preprocessing)
 
 target_link_libraries(pips-ipmpp
-        PRIVATE MPI::MPI_CXX
+        PRIVATE Boost::boost
         PRIVATE ${MATH_LIBS}
 )
