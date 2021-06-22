@@ -31,7 +31,11 @@ void CurtisReidScaler::scale() {
    scaling_factors_inequalities->componentDiv(*sum_non_zeros_inequalities);
 
    /// calculate initial residuals
-   auto least_squares_residuals = problem_factory.make_primal_vector();
+   auto least_squares_primal_residuals = problem_factory.make_primal_vector();
+   auto least_squares_equality_residuals = problem_factory.make_equalities_dual_vector();
+   auto least_squares_inequality_residuals = problem_factory.make_inequalities_dual_vector();
+
+   auto tmp_vec_primal = problem_factory.make_primal_vector();
    auto tmp_vec_equalities = problem_factory.make_equalities_dual_vector();
    auto tmp_vec_inequalities = problem_factory.make_inequalities_dual_vector();
 
@@ -41,14 +45,84 @@ void CurtisReidScaler::scale() {
    tmp_vec_inequalities->copyFrom(*log_sum_inequalities);
    tmp_vec_inequalities->componentDiv(*sum_non_zeros_inequalities);
 
-   least_squares_residuals->copyFrom(*log_sum_columns);
+   least_squares_primal_residuals->copyFrom(*log_sum_columns);
+   least_squares_equality_residuals->setToZero();
+   least_squares_inequality_residuals->setToZero();
 
    auto transform_to_one = [](const auto& val) {
       return val == 0.0 ? 0.0 : 1.0;
    };
 
-   A->transpose_mult_transform(1.0, *least_squares_residuals, -1.0, *tmp_vec_equalities, transform_to_one);
-   C->transpose_mult_transform(1.0, *least_squares_residuals, -1.0, *tmp_vec_inequalities, transform_to_one);
+   A->transpose_mult_transform(1.0, *least_squares_primal_residuals, -1.0, *tmp_vec_equalities, transform_to_one);
+   C->transpose_mult_transform(1.0, *least_squares_primal_residuals, -1.0, *tmp_vec_inequalities, transform_to_one);
+
+   bool done{false};
+
+   // e_{k-1}
+   double e{0.0};
+   // q_k
+   double q{1.0};
+   // s_k
+   double s{0.0};
+
+   s = least_squares_primal_residuals->scaled_dot_product_self(*sum_non_zeros_columns);
+   int k;
+   for (k = 0; !done && k < max_iter; ++k) {
+      const bool even_iter = (k % 2 == 0);
+
+      // compute r_{k+1}
+      const double scale_last = -1.0 / q;
+      const double scale_first = - e / q;
+
+      if (even_iter) {
+         // r_{k+1} = -1/q_k E N^-1 r_k - e_{k-1}/q_k r_{k-1}
+         tmp_vec_primal->copyFrom(*least_squares_primal_residuals);
+         tmp_vec_primal->componentDiv(*sum_non_zeros_columns);
+
+         A->mult_transform(scale_first, *least_squares_equality_residuals, scale_last, *tmp_vec_primal, transform_to_one);
+         C->mult_transform(scale_first, *least_squares_inequality_residuals, scale_last, *tmp_vec_primal, transform_to_one);
+      } else {
+         // r_{k+1} = -1/q_k E^T M^-1 r_k - e_{k-1}/q_k r_{k-1}
+         tmp_vec_equalities->copyFrom(*least_squares_equality_residuals);
+         tmp_vec_inequalities->copyFrom(*least_squares_inequality_residuals);
+
+         tmp_vec_equalities->componentDiv(*sum_non_zeros_equalities);
+         tmp_vec_inequalities->componentDiv(*sum_non_zeros_inequalities);
+
+         A->transpose_mult_transform(scale_first, *least_squares_primal_residuals, scale_last, *tmp_vec_equalities, transform_to_one);
+         C->transpose_mult_transform(1.0, *least_squares_primal_residuals, scale_last, *tmp_vec_inequalities, transform_to_one);
+      }
+
+      const double s_old = s;
+      // compute s_{k+1}
+      if (even_iter) {
+         // s_{k+1} = r_{k+1}^T M^-1 r_{k+1}
+         s = least_squares_equality_residuals->scaled_dot_product_self(*sum_non_zeros_equalities) +
+            least_squares_inequality_residuals->scaled_dot_product_self(*sum_non_zeros_inequalities);
+      } else {
+         // s_k{+1} = r_{k+1}^T N^-1 r_{k+1}
+         s = least_squares_primal_residuals->scaled_dot_product_self(*sum_non_zeros_columns);
+      }
+
+      // compute e_k = q_k s_{k+1} / s_{k}
+      e = q * s / s_old;
+
+      // q_{k+1}
+      const double q_old = q;
+      q = 1 - e;
+
+      // update factors
+      if (even_iter) {
+         // c_{2m + 2} = c_{2m} + 1/(q_{2m} q{2m+1}) [ N^-1 r_{2m} + e_{2m-1} e_{2m-2}(c_{2m} - c_{2m-2} ]
+      }
+   }
+
+   // final iteration
+   if (k % 2 == 0) {
+
+   } else {
+
+   }
 };
 
 

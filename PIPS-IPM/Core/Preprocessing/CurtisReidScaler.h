@@ -12,6 +12,8 @@ class Problem;
 
 class CurtisReidScaler : Scaler {
 private:
+   const int max_iter{10};
+
    std::tuple<std::unique_ptr<Vector<double>>, std::unique_ptr<Vector<double>>, std::unique_ptr<Vector<double>>> get_nonzero_vectors() const;
    std::tuple<std::unique_ptr<Vector<double>>, std::unique_ptr<Vector<double>>, std::unique_ptr<Vector<double>>> get_log_sum_vectors() const;
 protected:

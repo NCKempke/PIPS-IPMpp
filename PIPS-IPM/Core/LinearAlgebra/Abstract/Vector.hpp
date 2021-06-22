@@ -130,6 +130,8 @@ public:
    /** Return the scaled dot product of this (scaled) vector with itself  */
    virtual T dotProductSelf(T scaleFactor) const = 0;
 
+   [[nodiscard]] virtual T scaled_dot_product_self(const Vector<T>& scale) const = 0;
+
    /** Return the inner product <this + alpha * mystep, yvec + beta * ystep >
     */
    virtual T shiftedDotProductWith(T alpha, const Vector<T>& mystep, const Vector<T>& yvec, T beta, const Vector<T>& ystep) const = 0;

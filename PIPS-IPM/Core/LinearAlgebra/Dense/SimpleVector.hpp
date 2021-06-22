@@ -98,6 +98,7 @@ public:
    void gondzioProjection(T rmin, T rmax) override;
    T dotProductWith(const Vector<T>& v) const override;
    T dotProductSelf(T scaleFactor) const override;
+   [[nodiscard]] T scaled_dot_product_self(const Vector<T>& scale) const override;
 
    T shiftedDotProductWith(T alpha, const Vector<T>& mystep, const Vector<T>& yvec, T beta, const Vector<T>& ystep) const override;
    void negate() override;

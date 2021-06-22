@@ -100,6 +100,7 @@ public:
    void gondzioProjection(T rmin, T rmax) override;
    [[nodiscard]] T dotProductWith(const Vector<T>& v) const override;
    [[nodiscard]] T dotProductSelf(T scaleFactor) const override;
+   [[nodiscard]] T scaled_dot_product_self(const Vector<T>& scale) const override;
 
    /** Return the inner product <this + alpha * mystep, yvec + beta * ystep >
     */
@@ -228,6 +229,7 @@ public:
    void gondzioProjection(T, T) override {};
    T dotProductWith(const Vector<T>&) const override { return 0.0; }
    T dotProductSelf(T) const override { return 0.0; };
+   [[nodiscard]] T scaled_dot_product_self(const Vector<T>&) const override { return 0.0; };
 
    /** Return the inner product <this + alpha * mystep, yvec + beta * ystep > */
    T shiftedDotProductWith(T, const Vector<T>&, const Vector<T>&, T, const Vector<T>&) const override { return 0.0; }

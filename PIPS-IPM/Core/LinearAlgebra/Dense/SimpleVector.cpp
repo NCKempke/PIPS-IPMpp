@@ -560,16 +560,29 @@ double SimpleVector<double>::dotProductWith(const Vector<double>& vec) const {
    if (this->n == 0)
       return 0.0;
 
-   const SimpleVector<double>& svec = dynamic_cast<const SimpleVector<double>&>(vec);
+   const auto& svec = dynamic_cast<const SimpleVector<double>&>(vec);
 
    const int incx = 1;
    return ddot_(&this->n, v, &incx, svec.v, &incx);
 }
 
 template<typename T>
+T SimpleVector<T>::scaled_dot_product_self(const Vector<T>& scale_) const {
+   assert(this->n == scale_.length());
+   const auto& scale = dynamic_cast<const SimpleVector<T>&>(scale_);
+
+   double scaled_dot_product_self{0.0};
+   for (int i = 0; i < this->n; ++i) {
+      assert(scale[i] != 0.0);
+      scaled_dot_product_self += v[i] * v[i] / scale[i];
+   }
+   return scaled_dot_product_self;
+}
+
+template<typename T>
 T SimpleVector<T>::dotProductWith(const Vector<T>& vec) const {
    assert(this->n == vec.length());
-   const SimpleVector<T>& svec = dynamic_cast<const SimpleVector<T>&>(vec);
+   const auto& svec = dynamic_cast<const SimpleVector<T>&>(vec);
 
    T* vvec = svec.v;
 

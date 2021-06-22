@@ -1351,6 +1351,25 @@ T DistributedVector<T>::dotProductSelf(T scaleFactor) const {
    return dot_product;
 }
 
+template<typename T>
+T DistributedVector<T>::scaled_dot_product_self(const Vector<T>& scale) const {
+   T dot_product = 0.0;
+
+   for (size_t it = 0; it < children.size(); it++)
+      dot_product += children[it]->scaled_dot_product_self(scale);
+
+   if (first && (iAmSpecial || first->isKindOf(kStochVector)))
+      dot_product += first->scaled_dot_product_self(scale);
+
+   if (iAmSpecial && last)
+      dot_product += last->scaled_dot_product_self(scale);
+
+   if (iAmDistrib && !parent)
+      PIPS_MPIgetSumInPlace(dot_product, mpiComm);
+
+   return dot_product;
+}
+
 /** Return the inner product <this + alpha * mystep, yvec + beta * ystep >
  */
 template<typename T>
