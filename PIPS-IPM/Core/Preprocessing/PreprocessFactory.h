@@ -10,6 +10,7 @@
 
 #include "EquilibriumScaler.h"
 #include "GeometricMeanScaler.h"
+#include "CurtisReidScaler.h"
 #include "StochPresolver.h"
 #include "PreprocessType.h"
 #include "StochPostsolver.h"
@@ -28,7 +29,8 @@ public:
             return new GeometricMeanScaler(problem_factory, problem, false, false);
          case ScalerType::GEOMETRIC_MEAN_EQUILIBRIUM:
             return new GeometricMeanScaler(problem_factory, problem, true, false);
-//         case ScalerType::CURTIS_REID:
+         case ScalerType::CURTIS_REID:
+            return new CurtisReidScaler(problem_factory, problem, false);
          default:
             return nullptr;
       }

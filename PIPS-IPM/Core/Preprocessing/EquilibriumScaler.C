@@ -32,7 +32,6 @@ void EquilibriumScaler::scale_objective() const {
 
    scaleObjVector(absmax);
 #endif
-   const double absmax = 1.0;
 }
 
 // todo scale Q

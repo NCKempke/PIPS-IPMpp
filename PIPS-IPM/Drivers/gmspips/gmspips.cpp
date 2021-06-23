@@ -22,6 +22,8 @@ static void setParams(ScalerType& scaler_type, bool& stepDiffLp, bool& presolve,
       scaler_type = ScalerType::GEOMETRIC_MEAN;
    else if (strcmp(paramname, "scaleGeoEqui") == 0)
       scaler_type = ScalerType::GEOMETRIC_MEAN_EQUILIBRIUM;
+   else if (strcmp(paramname, "scaleCurtisReid") == 0)
+      scaler_type = ScalerType::CURTIS_REID;
    else if (strcmp(paramname, "stepLp") == 0)
       stepDiffLp = true;
    else if (strcmp(paramname, "presolve") == 0)

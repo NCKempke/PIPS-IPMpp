@@ -11,7 +11,7 @@
 class Problem;
 
 
-class CurtisReidScaler : Scaler {
+class CurtisReidScaler : public Scaler {
 private:
    std::unique_ptr<Vector<double>> temp_primal;
    std::unique_ptr<Vector<double>> temp_dual_equalities;
