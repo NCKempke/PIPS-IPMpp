@@ -2257,12 +2257,15 @@ const {
       result += children[i]->barrier_directional_derivative(*x.children[i], *bound.children[i], *bound_indicator.children[i]);
    }
 
-   if (first && x.first && bound.first && bound_indicator.first) {
+   if (first && x.first && bound.first && bound_indicator.first && (iAmSpecial || first->isKindOf(kStochVector))) {
       result += first->barrier_directional_derivative(*x.first, *bound.first, *bound_indicator.first);
    }
 
-   if (last && x.last && bound.last && bound_indicator.last) {
+   if (iAmSpecial && last && x.last && bound.last && bound_indicator.last) {
       result += last->barrier_directional_derivative(*x.last, *bound.last, *bound_indicator.last);
+   }
+   if (iAmDistrib && parent == nullptr) {
+      PIPS_MPIgetSumInPlace(result, mpiComm);
    }
    return result;
 }
@@ -2279,12 +2282,15 @@ const {
       result += children[i]->barrier_directional_derivative(*x.children[i], bound, *bound_indicator.children[i]);
    }
 
-   if (first && x.first && bound_indicator.first) {
+   if (first && x.first && bound_indicator.first && (iAmSpecial || first->isKindOf(kStochVector))) {
       result += first->barrier_directional_derivative(*x.first, bound, *bound_indicator.first);
    }
 
-   if (last && x.last && bound_indicator.last) {
+   if (iAmSpecial && last && x.last && bound_indicator.last) {
       result += last->barrier_directional_derivative(*x.last, bound, *bound_indicator.last);
+   }
+   if (iAmDistrib && parent == nullptr) {
+      PIPS_MPIgetSumInPlace(result, mpiComm);
    }
    return result;
 }

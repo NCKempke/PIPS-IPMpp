@@ -134,7 +134,6 @@ void InteriorPointMethod::update_history(double duality_gap, double residual_nor
    else {
       this->phi_min_history[iteration] = phi;
    }
-   return;
 }
 
 TerminationStatus InteriorPointMethod::compute_status(double duality_gap, double residual_norm, int iteration, double mu) {
