@@ -23,6 +23,9 @@ class ProblemFactory;
 
 class GeneralMatrix;
 
+using PrimalDualTriplet = std::tuple<std::unique_ptr<Vector<double>>, std::unique_ptr<Vector<double>>, std::unique_ptr<Vector<double>>>;
+
+
 /**
  * Abstract base class for scalers.
  */
@@ -52,6 +55,7 @@ protected:
    static void invertAndRound(bool round, Vector<double>& vector);
 
    void create_scaling_vectors();
+   PrimalDualTriplet create_primal_dual_vector_triplet() const;
    void applyScaling() const;
    virtual void doObjScaling() const = 0;
 

@@ -10,16 +10,29 @@
 
 class Problem;
 
+
 class CurtisReidScaler : Scaler {
 private:
+   std::unique_ptr<Vector<double>> temp_primal;
+   std::unique_ptr<Vector<double>> temp_dual_equalities;
+   std::unique_ptr<Vector<double>> temp_dual_inequalities;
+
+   const double convergence_constant{1e-2};
    const int max_iter{10};
 
-   std::tuple<std::unique_ptr<Vector<double>>, std::unique_ptr<Vector<double>>, std::unique_ptr<Vector<double>>> get_nonzero_vectors() const;
-   std::tuple<std::unique_ptr<Vector<double>>, std::unique_ptr<Vector<double>>, std::unique_ptr<Vector<double>>> get_log_sum_vectors() const;
+   PrimalDualTriplet get_nonzero_vectors() const;
+   PrimalDualTriplet get_log_sum_vectors() const;
+
+   void initialize_temp_vectors();
+   void free_temp_vectors();
+   void set_initial_scaling_factors(const Vector<double>& log_sum_equalities, const Vector<double>& log_sum_inequalities,
+      const Vector<double>& sum_non_zeros_equalities, const Vector<double>& sum_non_zeros_inequalities);
+   PrimalDualTriplet get_and_calculate_initial_residuals(const Vector<double>& log_sum_columns, const Vector<double>& log_sum_equalities,
+      const Vector<double>& log_sum_inequalities, const Vector<double>& sum_non_zeros_equalities, const Vector<double>& sum_non_zeros_inequalities) const;
+
 protected:
    void doObjScaling() const override;
 
-   void applyGeoMean(Vector<double>& maxvec, const Vector<double>& minvec);
 public:
 
    CurtisReidScaler(const ProblemFactory& problem_factory, const Problem& problem, bool bitshifting = false);

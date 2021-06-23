@@ -150,10 +150,11 @@ void Scaler::invertAndRound(bool round, Vector<double>& vector) {
 
 void Scaler::create_scaling_vectors() {
    assert(!scaling_factors_equalities && !scaling_factors_inequalities && !scaling_factors_columns);
+   std::tie(scaling_factors_equalities, scaling_factors_inequalities, scaling_factors_columns) = create_primal_dual_vector_triplet();
+}
 
-   scaling_factors_equalities = problem_factory.make_equalities_dual_vector();
-   scaling_factors_inequalities = problem_factory.make_inequalities_dual_vector();
-   scaling_factors_columns = problem_factory.make_primal_vector();
+PrimalDualTriplet Scaler::create_primal_dual_vector_triplet() const {
+   return {problem_factory.make_equalities_dual_vector(), problem_factory.make_inequalities_dual_vector(), problem_factory.make_primal_vector()};
 }
 
 void Scaler::applyScaling() const {
