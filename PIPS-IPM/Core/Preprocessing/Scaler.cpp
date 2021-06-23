@@ -163,7 +163,7 @@ void Scaler::applyScaling() const {
             obj->inf_norm(), A->inf_norm(), C->inf_norm(), bA->inf_norm(), rhsC->inf_norm(), lhsC->inf_norm(), bux->inf_norm(), blx->inf_norm());
 
    // todo scale Q
-   doObjScaling();
+   scale_objective();
 
    // scale A and rhs
    A->columnScale(*scaling_factors_columns);

@@ -23,8 +23,8 @@ GeometricMeanScaler::GeometricMeanScaler(const ProblemFactory& problem_factory, 
       std::cout << "Creating GeometricMeanScaler... bitshifting=" << bitshifting << " equiscaling=" << equiScaling << "\n";
 }
 
-void GeometricMeanScaler::doObjScaling() const {
-   assert(scaling_factors_columns != nullptr);
+void GeometricMeanScaler::scale_objective() const {
+   assert(scaling_factors_columns);
 
    obj->componentMult(*scaling_factors_columns);
 

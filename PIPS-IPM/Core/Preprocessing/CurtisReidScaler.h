@@ -31,7 +31,7 @@ private:
       const Vector<double>& log_sum_inequalities, const Vector<double>& sum_non_zeros_equalities, const Vector<double>& sum_non_zeros_inequalities) const;
 
 protected:
-   void doObjScaling() const override;
+   void scale_objective() const override;
 
 public:
 

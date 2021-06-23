@@ -21,8 +21,8 @@ EquilibriumScaler::EquilibriumScaler(const ProblemFactory& problem_factory, cons
       std::cout << "Creating EquilibriumScaler...\n";
 }
 
-void EquilibriumScaler::doObjScaling() const {
-   assert(scaling_factors_columns != nullptr);
+void EquilibriumScaler::scale_objective() const {
+   assert(scaling_factors_columns);
 
    obj->componentMult(*scaling_factors_columns);
 
@@ -32,6 +32,7 @@ void EquilibriumScaler::doObjScaling() const {
 
    scaleObjVector(absmax);
 #endif
+   const double absmax = 1.0;
 }
 
 // todo scale Q

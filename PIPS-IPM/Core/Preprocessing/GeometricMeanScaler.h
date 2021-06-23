@@ -27,7 +27,7 @@ private:
    const bool equilibrate;
 
 protected:
-   void doObjScaling() const override;
+   void scale_objective() const override;
 
    static void applyGeoMean(Vector<double>& maxvec, const Vector<double>& minvec);
    void postEquiScale();

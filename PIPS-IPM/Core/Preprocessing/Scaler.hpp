@@ -57,7 +57,7 @@ protected:
    void create_scaling_vectors();
    PrimalDualTriplet create_primal_dual_vector_triplet() const;
    void applyScaling() const;
-   virtual void doObjScaling() const = 0;
+   virtual void scale_objective() const = 0;
 
    /** get maximum absolute row ratio and write maximum row entries into vectors */
    double

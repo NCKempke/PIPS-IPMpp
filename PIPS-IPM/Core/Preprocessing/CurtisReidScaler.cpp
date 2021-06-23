@@ -267,3 +267,8 @@ PrimalDualTriplet CurtisReidScaler::get_log_sum_vectors() const {
    return {std::move(log_sum_columns), std::move(log_sum_equalities), std::move(log_sum_inequalities)};
 }
 
+void CurtisReidScaler::scale_objective() const {
+   assert(scaling_factors_columns);
+   // no "real" scaling for the objective implemented right now
+   obj->componentMult(*scaling_factors_columns);
+}

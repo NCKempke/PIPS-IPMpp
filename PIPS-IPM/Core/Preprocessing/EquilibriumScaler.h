@@ -20,7 +20,7 @@ class Problem;
 
 class EquilibriumScaler : public Scaler {
 protected:
-   void doObjScaling() const override;
+   void scale_objective() const override;
 
 public:
    EquilibriumScaler(const ProblemFactory& problem_factory, const Problem& problem, bool bitshifting = true);
