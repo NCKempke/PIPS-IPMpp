@@ -38,6 +38,10 @@ Residuals::Residuals(const Residuals& residuals) : residual_norm{residuals.resid
    rphi{residuals.rphi->cloneFull()},
    rlambda{residuals.rlambda->cloneFull()}, rpi{residuals.rpi->cloneFull()} {}
 
+std::unique_ptr<Residuals> Residuals::cloneFull() const {
+   return std::make_unique<Residuals>(*this);
+}
+
 double compute_inf_norm(const Vector<double>& vec, bool print, std::string&& name) {
    const double infnorm = vec.inf_norm();
 
@@ -59,11 +63,11 @@ void Residuals::evaluate(Problem& problem, Variables& iterate, bool print_residu
 
    this->residual_norm = 0.0;
    this->duality_gap = 0.0;
-   this->primal_objective = problem.objective_value(iterate);
+   this->primal_objective = problem.evaluate_objective(iterate);
    this->dual_objective = 0.0;
 
    /*** rQ = Qx + g - A^T y - C^T z - gamma + phi ***/
-   problem.objective_gradient(iterate, *this->lagrangian_gradient); // Qx + g
+   problem.evaluate_objective_gradient(iterate, *this->lagrangian_gradient); // Qx + g
 
    // contribution calculate x^T (g + Qx) to duality gap */
    this->duality_gap = this->lagrangian_gradient->dotProductWith(*iterate.primals);
@@ -86,7 +90,7 @@ void Residuals::evaluate(Problem& problem, Variables& iterate, bool print_residu
    this->residual_norm = std::max(this->residual_norm, compute_inf_norm(*this->equality_residuals, print_residuals, "rA"));
 
    // contribution -d^T y to duality gap
-   const double ba_y = problem.bA->dotProductWith(*iterate.equality_duals);
+   const double ba_y = problem.equality_rhs->dotProductWith(*iterate.equality_duals);
    this->duality_gap -= ba_y;
    this->dual_objective += ba_y;
 

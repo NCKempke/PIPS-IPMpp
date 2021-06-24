@@ -92,6 +92,10 @@ void SparseSymmetricMatrix::fromGetSpRow(int row, int col, double A[], int lenA,
 
 void SparseSymmetricMatrix::symAtPutSubmatrix(int this_start_row, int this_start_col, const AbstractMatrix& matrix, int matrix_start_row, int matrix_start_col, int n_rows, int n_cols) {
 
+   if (n_cols == 0 || n_rows == 0) {
+      return;
+   }
+
    /* storages for column indices and values of a row in matrix */
    std::vector<int> ja(n_cols);
    std::vector<double> a(n_cols);

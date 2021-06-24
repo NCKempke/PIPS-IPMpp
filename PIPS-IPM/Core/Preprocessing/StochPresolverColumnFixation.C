@@ -10,7 +10,7 @@
 #include "PIPSIPMppOptions.h"
 #include <cmath>
 
-StochPresolverColumnFixation::StochPresolverColumnFixation(PresolveData& presolve_data, const DistributedQP& origProb) : StochPresolverBase(
+StochPresolverColumnFixation::StochPresolverColumnFixation(PresolveData& presolve_data, const DistributedProblem& origProb) : StochPresolverBase(
       presolve_data, origProb), limit_fixation_max_fixing_impact(pipsipmpp_options::get_double_parameter("PRESOLVE_COLUMN_FIXATION_MAX_FIXING_IMPACT")),
       fixed_columns(0) {
 }

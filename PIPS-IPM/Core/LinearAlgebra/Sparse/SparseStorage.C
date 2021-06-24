@@ -1645,6 +1645,19 @@ void SparseStorage::addNnzPerRow(int* vec, int begin_rows, int end_rows) const {
       vec[r - begin_rows] += krowM[r + 1] - krowM[r];
 }
 
+void SparseStorage::sum_transform_rows(Vector<double>& result_, const std::function<double(const double&)>& transform) const {
+   assert(this->n_rows() == result_.length());
+   auto& result = dynamic_cast<SimpleVector<double>&>(result_);
+
+   for (int r = 0; r < m; ++r) {
+      const int row_end = krowM[r + 1];
+      for (int c = krowM[r]; c < row_end; ++c) {
+         result[r] += transform(M[c]);
+      }
+   }
+
+}
+
 void SparseStorage::addRowSums(double* vec) const {
    for (int r = 0; r < m; r++) {
       const int end = krowM[r + 1];

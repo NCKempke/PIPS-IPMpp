@@ -3,7 +3,7 @@
  * (C) 2012 Argonne National Laboratory. See Copyright Notification.  */
 
 #include "DistributedTree.h"
-#include "DistributedQP.hpp"
+#include "DistributedProblem.hpp"
 #include "DistributedVector.h"
 #include "SimpleVector.hpp"
 #include <numeric>
@@ -24,12 +24,6 @@ DistributedTree::DistributedTree(const DistributedTree& other) : commWrkrs{other
       sub_root = other.sub_root->clone();
    for (auto& child : other.children)
       children.push_back(child->clone());
-}
-
-DistributedTree::~DistributedTree() {
-   for (size_t it = 0; it < children.size(); it++)
-      delete children[it];
-   delete sub_root;
 }
 
 int DistributedTree::myl() const {
@@ -123,14 +117,14 @@ void DistributedTree::getGlobalSizes(long long& n, long long& my, long long& myl
    myl = MYL, mzl = MZL;
 }
 
-DistributedVector<double>* DistributedTree::new_primal_vector(bool empty) const {
+std::unique_ptr<DistributedVector<double>> DistributedTree::new_primal_vector(bool empty) const {
    if (commWrkrs == MPI_COMM_NULL) {
-      return new DistributedDummyVector<double>();
+      return std::make_unique<DistributedDummyVector<double>>();
    }
 
    if (!sub_root) {
-      auto* x = new DistributedVector<double>(empty ? 0 : nx(), commWrkrs);
-      for (auto it : children) {
+      auto x = std::make_unique<DistributedVector<double>>(empty ? 0 : nx(), commWrkrs);
+      for (const auto& it : children) {
          std::shared_ptr<DistributedVector<double>> child{it->new_primal_vector(empty)};
          x->AddChild(std::move(child));
       }
@@ -139,29 +133,29 @@ DistributedVector<double>* DistributedTree::new_primal_vector(bool empty) const 
    else {
       assert(children.empty());
       if (sub_root->commWrkrs == MPI_COMM_NULL) {
-         DistributedVector<double>* x = new DistributedDummyVector<double>();
+         auto x = std::make_unique<DistributedDummyVector<double>>();
          return x;
       }
       else {
          std::unique_ptr<DistributedVector<double>> x_vec{sub_root->new_primal_vector(empty)};
-         auto* x = new DistributedVector<double>(std::move(x_vec), nullptr, commWrkrs);
-         dynamic_cast<DistributedVector<double>&>(*x->first).parent = x;
+         auto x = std::make_unique<DistributedVector<double>>(std::move(x_vec), nullptr, commWrkrs);
+         dynamic_cast<DistributedVector<double>&>(*x->first).parent = x.get();
          return x;
       }
    }
 }
 
-DistributedVector<double>* DistributedTree::newDualYVector(bool empty) const {
+std::unique_ptr<DistributedVector<double>> DistributedTree::newDualYVector(bool empty) const {
    if (commWrkrs == MPI_COMM_NULL)
-      return new DistributedDummyVector<double>();
+      return std::make_unique<DistributedDummyVector<double>>();
 
-   DistributedVector<double>* y{};
+   std::unique_ptr<DistributedVector<double>> y{};
    const int yl = (np == -1) ? myl() : -1;
 
    if (!sub_root) {
-      y = new DistributedVector<double>(empty ? std::min(0, my()) : my(), empty ? std::min(yl, 0) : yl, commWrkrs);
+      y = std::make_unique<DistributedVector<double>>(empty ? std::min(0, my()) : my(), empty ? std::min(yl, 0) : yl, commWrkrs);
 
-      for (auto it : children) {
+      for (const auto& it : children) {
          std::shared_ptr<DistributedVector<double>> child{it->newDualYVector(empty)};
          y->AddChild(std::move(child));
       }
@@ -170,29 +164,28 @@ DistributedVector<double>* DistributedTree::newDualYVector(bool empty) const {
       assert(children.empty());
 
       if (sub_root->commWrkrs == MPI_COMM_NULL)
-         y = new DistributedDummyVector<double>();
+         y = std::make_unique<DistributedDummyVector<double>>();
       else {
          std::unique_ptr<DistributedVector<double>> y_vec{sub_root->newDualYVector(empty)};
          assert(yl == -1);
 
-         y = new DistributedVector<double>(std::move(y_vec), nullptr, commWrkrs);
-         dynamic_cast<DistributedVector<double>&>(*y->first).parent = y;
+         y = std::make_unique<DistributedVector<double>>(std::move(y_vec), nullptr, commWrkrs);
+         dynamic_cast<DistributedVector<double>&>(*y->first).parent = y.get();
       }
    }
    return y;
 }
 
-DistributedVector<double>* DistributedTree::newDualZVector(bool empty) const {
+std::unique_ptr<DistributedVector<double>> DistributedTree::newDualZVector(bool empty) const {
    if (commWrkrs == MPI_COMM_NULL)
-      return new DistributedDummyVector<double>();
+      return std::make_unique<DistributedDummyVector<double>>();
 
-   DistributedVector<double>* z{};
+   std::unique_ptr<DistributedVector<double>> z{};
    const int zl = (np == -1) ? mzl() : -1;
 
    if (!sub_root) {
-
-      z = new DistributedVector<double>(empty ? std::min(mz(), 0) : mz(), empty ? std::min(zl, 0) : zl, commWrkrs);
-      for (auto it : children) {
+      z = std::make_unique<DistributedVector<double>>(empty ? std::min(mz(), 0) : mz(), empty ? std::min(zl, 0) : zl, commWrkrs);
+      for (const auto& it : children) {
          std::shared_ptr<DistributedVector<double>> child{it->newDualZVector(empty)};
          z->AddChild(std::move(child));
       }
@@ -200,25 +193,25 @@ DistributedVector<double>* DistributedTree::newDualZVector(bool empty) const {
    else {
       assert(children.empty());
       if (sub_root->commWrkrs == MPI_COMM_NULL)
-         z = new DistributedDummyVector<double>();
+         z = std::make_unique<DistributedDummyVector<double>>();
       else {
          std::unique_ptr<DistributedVector<double>> z_vec{sub_root->newDualZVector(empty)};
          assert(zl == -1);
 
-         z = new DistributedVector<double>(std::move(z_vec), nullptr, commWrkrs);
-         dynamic_cast<DistributedVector<double>&>(*z->first).parent = z;
+         z = std::make_unique<DistributedVector<double>>(std::move(z_vec), nullptr, commWrkrs);
+         dynamic_cast<DistributedVector<double>&>(*z->first).parent = z.get();
       }
    }
 
    return z;
 }
 
-DistributedVector<double>* DistributedTree::newRhs() const {
+std::unique_ptr<DistributedVector<double>> DistributedTree::newRhs() const {
    //is this node a dead-end for this process?
    if (commWrkrs == MPI_COMM_NULL)
-      return new DistributedDummyVector<double>();
+      return std::make_unique<DistributedDummyVector<double>>();
 
-   DistributedVector<double>* rhs{};
+   std::unique_ptr<DistributedVector<double>> rhs{};
    if (!sub_root) {
       int locmyl = (np == -1) ? myl() : 0;
       int locmzl = (np == -1) ? mzl() : 0;
@@ -226,9 +219,9 @@ DistributedVector<double>* DistributedTree::newRhs() const {
       locmyl = std::max(locmyl, 0);
       locmzl = std::max(locmzl, 0);
 
-      rhs = new DistributedVector<double>(nx() + std::max(my(), 0) + std::max(mz(), 0) + locmyl + locmzl, commWrkrs);
+      rhs = std::make_unique<DistributedVector<double>>(nx() + std::max(my(), 0) + std::max(mz(), 0) + locmyl + locmzl, commWrkrs);
 
-      for (auto it : children) {
+      for (const auto& it : children) {
          std::shared_ptr<DistributedVector<double>> child{it->newRhs()};
          rhs->AddChild(std::move(child));
       }

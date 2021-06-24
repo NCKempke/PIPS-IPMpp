@@ -7,7 +7,7 @@
 
 #include "DistributedLeafLinearSystem.h"
 
-DistributedLeafLinearSystem::DistributedLeafLinearSystem(DistributedFactory* factory_, DistributedQP* prob,
+DistributedLeafLinearSystem::DistributedLeafLinearSystem(const DistributedFactory& factory_, DistributedProblem* prob,
    std::shared_ptr<Vector<double>> dd_, std::shared_ptr<Vector<double>> dq_, std::shared_ptr<Vector<double>> nomegaInv_,
    std::shared_ptr<Vector<double>> primal_reg_, std::shared_ptr<Vector<double>> dual_y_reg_,
    std::shared_ptr<Vector<double>> dual_z_reg_, std::shared_ptr<Vector<double>> rhs_) : DistributedLinearSystem(
@@ -25,7 +25,7 @@ DistributedLeafLinearSystem::DistributedLeafLinearSystem(DistributedFactory* fac
    prob->getLocalNnz(nnzQ, nnzB, nnzD);
 
    if (apply_regularization) {
-      regularization_strategy = factory_->make_regularization_strategy(static_cast<unsigned int>(locnx), static_cast<unsigned int>(locmy + locmz));
+      regularization_strategy = factory.make_regularization_strategy(static_cast<unsigned int>(locnx), static_cast<unsigned int>(locmy + locmz));
    }
 #ifdef TIMING
    if( myRank == 0 )
@@ -49,20 +49,20 @@ DistributedLeafLinearSystem::DistributedLeafLinearSystem(DistributedFactory* fac
 
    kkt_sp->symAtPutSubmatrix(0, 0, prob->getLocalQ(), 0, 0, locnx, locnx);
 
-   // TODO this logic or is flawed - requires Bi to exist..
+   if (locmy > 0) {
+      kkt_sp->symAtPutSubmatrix(locnx, 0, prob->getLocalB(), 0, 0, locmy, locnx);
+   }
+
    if (locmz > 0) {
-      kkt_sp->symAtPutSubmatrix(locnx, 0, prob->getLocalB(), 0, 0, locmy, locnx);
       kkt_sp->symAtPutSubmatrix(locnx + locmy, 0, prob->getLocalD(), 0, 0, locmz, locnx);
-   } else
-      kkt_sp->symAtPutSubmatrix(locnx, 0, prob->getLocalB(), 0, 0, locmy, locnx);
-//      mySymAtPutSubmatrix(*kkt_sp, data->getLocalB(), locnx, locmy, locmz);
+   }
 
 #ifdef TIMING
    if( myRank == 0 ) std::cout << "Rank 0: finished " << std::endl;
 #endif
 
    kkt.reset(kkt_sp);
-   solver.reset(DistributedFactory::make_leaf_solver(kkt_sp));
+   solver = DistributedFactory::make_leaf_solver(kkt_sp);
 
 #ifdef TIMING
    const double t1 = MPI_Wtime() - t0;

@@ -20,7 +20,7 @@ class sLinsysLeafMumps : public DistributedLeafLinearSystem {
 public:
    static constexpr int bufferMaxSize = (1024 * 1024 * 64);
 
-   sLinsysLeafMumps(DistributedFactory* factory, DistributedQP* prob_, Vector<double>* dd_, Vector<double>* dq_, Vector<double>* nomegaInv_,
+   sLinsysLeafMumps(const DistributedFactory& factory, DistributedQP* prob_, Vector<double>* dd_, Vector<double>* dq_, Vector<double>* nomegaInv_,
          Vector<double>* primal_reg_, Vector<double>* dual_y_reg_, Vector<double>* dual_z_reg_, Vector<double>* rhs_) : DistributedLeafLinearSystem(factory, prob_,
          dd_, dq_, nomegaInv_, primal_reg_, dual_y_reg_, dual_z_reg_, rhs_) {};
 

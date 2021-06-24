@@ -1,7 +1,7 @@
 #ifndef DISTRIBUTEDQP_H
 #define DISTRIBUTEDQP_H
 
-#include "QP.hpp"
+#include "Problem.hpp"
 #include "DistributedResiduals.hpp"
 #include "DistributedVariables.h"
 #include "DistributedSymmetricMatrix.h"
@@ -17,13 +17,13 @@
 
 class DistributedTree;
 
-class DistributedQP : public QP {
+class DistributedProblem : public Problem {
 protected:
-   DistributedQP() = default;
+   DistributedProblem() = default;
 
 public:
    /** constructor that sets up pointers to the data objects that are passed as arguments */
-   DistributedQP(const DistributedTree* stochNode, std::shared_ptr<Vector<double>> c,
+   DistributedProblem(const DistributedTree* stochNode, std::shared_ptr<Vector<double>> c,
       std::shared_ptr<SymmetricMatrix> Q, std::shared_ptr<Vector<double>> xlow,
       std::shared_ptr<Vector<double>> ixlow, std::shared_ptr<Vector<double>> xupp,
       std::shared_ptr<Vector<double>> ixupp, std::shared_ptr<GeneralMatrix> A, std::shared_ptr<Vector<double>> bA,
@@ -33,9 +33,9 @@ public:
       bool is_hierarchy_inner_root = false,
       bool is_hierarchy_inner_leaf = false);
 
-   std::vector<DistributedQP*> children;
+   std::vector<DistributedProblem*> children;
 
-   void AddChild(DistributedQP* child);
+   void add_child(DistributedProblem* child);
 
    const DistributedTree* stochNode{};
 
@@ -102,9 +102,9 @@ public:
 
    void activateLinkStructureExploitation();
 
-   DistributedResiduals* getResidsUnperm(const DistributedResiduals& resids, const DistributedQP& unpermData) const;
+   DistributedResiduals* getResidsUnperm(const Residuals& resids, const Problem& unpermData) const;
 
-   DistributedVariables* getVarsUnperm(const DistributedVariables& vars, const DistributedQP& unpermData) const;
+   DistributedVariables* getVarsUnperm(const Variables& vars, const Problem& unpermData) const;
 
    bool isRootNodeInSync() const;
 
@@ -126,10 +126,10 @@ protected:
 
    void splitDataAndAddAsChildLayer();
 
-   DistributedQP* shaveBorderFromDataAndCreateNewTop(const DistributedTree* tree);
+   DistributedProblem* shaveBorderFromDataAndCreateNewTop(const DistributedTree& tree);
 
 public:
-   DistributedQP* shaveDenseBorder(const DistributedTree* tree);
+   DistributedProblem* shaveDenseBorder(const DistributedTree& tree);
 
    void splitDataAccordingToTree();
 
@@ -143,11 +143,14 @@ public:
 
    int getNGlobalINEQConss() const { return n_global_ineq_linking_conss; };
 
-   virtual void write_to_streamDense(std::ostream& out) const;
+   void write_to_streamDense(std::ostream& out) const override;
 
-   virtual DistributedQP* cloneFull(bool switchToDynamicStorage = false) const;
+   std::unique_ptr<Problem> cloneFull() const override {
+      return cloneFull(false);
+   }
+   std::unique_ptr<DistributedProblem> cloneFull(bool switchToDynamicStorage = false) const;
 
-   double objective_value(const Variables& variables) const override;
+   double evaluate_objective(const Variables& variables) const override;
 
    void
    cleanUpPresolvedData(const DistributedVector<int>& rowNnzVecA, const DistributedVector<int>& rowNnzVecC,
@@ -191,7 +194,7 @@ public:
 
    bool hasRAC() const { return has_RAC; };
 
-   ~DistributedQP() override;
+   ~DistributedProblem() override;
 
 protected:
    void createChildren();

@@ -43,8 +43,8 @@ private:
    const int verbosity{-1};
 
    /* tree belonging to origData and presolve_data */
-   DistributedTree* const tree;
-   const DistributedQP& original_problem;
+   DistributedTree& tree;
+   const DistributedProblem& original_problem;
 
    PresolveData presolve_data;
 
@@ -52,10 +52,10 @@ private:
 
    void run_presolve_loop();
    void resetFreeVariables();
-   void write_presolved_problem_to_file();
+   void write_presolved_problem_to_file() const;
 public:
 
-   StochPresolver(DistributedTree* tree, const Problem& prob, Postsolver* postsolver);
+   StochPresolver(DistributedTree& tree, const Problem& prob, Postsolver* postsolver);
    ~StochPresolver() override = default;
 
    Problem* presolve() override;

@@ -7,8 +7,6 @@
 
 #include "mpi.h"
 
-#define LINKING_CONS 1
-
 extern "C" typedef int (* FNNZ)(void* user_data, int id, int* nnz);
 
 /* Row-major format */
@@ -372,7 +370,6 @@ int main(int argc, char** argv) {
    FNNZ fnnzC = &nnzMatIneqStage1;//FNNZ fnnzC = &nnzAllZero;
    FNNZ fnnzD = &nnzMatIneqStage2;//FNNZ fnnzD = &nnzAllZero;
 
-#if LINKING_CONS
    FNNZ fnnzBl = &nnzMatEqLink;
    FVEC fbl = &vecLinkRhs;
    FMAT fBl = &matEqLink;
@@ -383,20 +380,6 @@ int main(int argc, char** argv) {
    FVEC fdllow = &vecAllZero;
    FVEC fidlupp = &vecIneqRhsActiveLink;
    FVEC fidllow = &vecAllZero;
-
-#else
-   FNNZ fnnzBl = &nnzAllZero;
-   FVEC fbl = &vecAllZero;
-   FMAT fBl = &matAllZero;
-
-   FMAT fDl = &matAllZero;
-   FNNZ fnnzDl = &nnzAllZero;
-
-   FVEC fdlupp = &vecAllZero;
-   FVEC fdllow = &vecAllZero;
-   FVEC fidlupp = &vecAllZero;
-   FVEC fidllow = &vecAllZero;
-#endif
 
    FVEC fc = &vecObj;
    FVEC fb = &vecEqRhs;
@@ -425,87 +408,39 @@ int main(int argc, char** argv) {
    MPI_Comm_size(MPI_COMM_WORLD, &size);
 
 
-#if LINKING_CONS
    //build the problem tree
-   DistributedInputTree::DistributedInputNode dataLinkCons(&probData, 0, nCall, myCall, mylCall, mzCall, mzlCall, fQ, fnnzQ, fc, fA, fnnzA, fB, fnnzB, fBl,
+   std::unique_ptr<DistributedInputTree::DistributedInputNode> data_root = std::make_unique<DistributedInputTree::DistributedInputNode>(&probData, 0, nCall, myCall, mylCall, mzCall, mzlCall, fQ, fnnzQ, fc, fA, fnnzA, fB, fnnzB, fBl,
          fnnzBl, fb, fbl, fC, fnnzC, fD, fnnzD, fDl, fnnzDl, fclow, ficlow, fcupp, ficupp, fdllow, fidllow, fdlupp, fidlupp, fxlow, fixlow, fxupp,
          fixupp, false);
 
-   DistributedInputTree* root = new DistributedInputTree(dataLinkCons);
-#else
-
-   int nx0 = 2;
-   int my0 = 2;
-   int mz0 = 1;
-
-   //build the problem tree
-   DistributedInputTree::DistributedInputNode data(&probData, 0,
-                   nx0,my0,mz0, //myl0, mzl0
-                   fQ, fnnzQ, fc,
-                   fA, fnnzA,
-                   fB, fnnzB,
-                  //fBL, fnnzBL,
-                   fb, //fbl
-                   fC, fnnzC,
-                   fD, fnnzD,
-                  //fDL, fnnzDl,
-                   fclow, ficlow, fcupp, ficupp,
-                  //fdllow, fidllow, fdlupp, fidlupp,
-                   fxlow, fixlow, fxupp, fixupp, false );
-
-   DistributedInputTree* root = new DistributedInputTree(data);
-#endif
-
+   auto* root = new DistributedInputTree(std::move(data_root));
 
    for (int id = 1; id <= nScenarios; id++) {
-#if LINKING_CONS
-      DistributedInputTree::DistributedInputNode dataLinkConsChild(&probData, id, nCall, myCall, mylCall, mzCall, mzlCall, fQ, fnnzQ, fc, fA, fnnzA, fB, fnnzB,
+      std::unique_ptr<DistributedInputTree::DistributedInputNode> data_child = std::make_unique<DistributedInputTree::DistributedInputNode>(&probData, id, nCall, myCall, mylCall, mzCall, mzlCall, fQ, fnnzQ, fc, fA, fnnzA, fB, fnnzB,
             fBl, fnnzBl, fb, fbl, fC, fnnzC, fD, fnnzD, fDl, fnnzDl, fclow, ficlow, fcupp, ficupp, fdllow, fidllow, fdlupp, fidlupp, fxlow, fixlow,
             fxupp, fixupp, false);
 
-      root->AddChild(new DistributedInputTree(dataLinkConsChild));
-#else
-      int nx = 2;
-      int my = 2;
-      int mz = 1;
-
-      DistributedInputTree::DistributedInputNode data(&probData, id,
-                nx, my, mz, //myl, mzl
-                fQ, fnnzQ, fc,
-                fA, fnnzA,
-                fB, fnnzB,
-                //fBL, fnnzBL,
-                fb, //fbl
-                fC, fnnzC,
-                fD, fnnzD,
-                //fDL, fnnzDL,
-                fclow, ficlow, fcupp, ficupp,
-                //fdllow, fidllow, fdlupp, fidlupp,
-                fxlow, fixlow, fxupp, fixupp, false);
-
-      root->AddChild(new DistributedInputTree(data));
-#endif
-
+      root->add_child(std::make_unique<DistributedInputTree>(std::move(data_child)));
    }
 
    if (rank == 0)
-      std::cout << "Using a total of " << size << " MPI processes." << std::endl;
+      std::cout << "Using a total of " << size << " MPI processes.\n";
 
    /* use BiCGStab for outer solve */
    pipsipmpp_options::set_int_parameter("INNER_SC_SOLVE", 0);
    PIPSIPMppInterface pipsIpm(root, MehrotraStrategyType::PRIMAL, MPI_COMM_WORLD, ScalerType::SCALER_GEO_STOCH, PresolverType::PRESOLVER_NONE);
 
    if (rank == 0)
-      std::cout << "PIPSIPMppInterface created" << std::endl;
+      std::cout << "PIPSIPMppInterface created\n";
 
    if (rank == 0)
-      std::cout << "solving..." << std::endl;
+      std::cout << "solving...\n";
 
    pipsIpm.run();
 
    const double objective = pipsIpm.getObjective();
    if (rank == 0)
-      std::cout << "solving finished ... objective value: " << objective << std::endl;
+      std::cout << "solving finished ... objective value: " << objective << "\n";
 
    delete root;
 

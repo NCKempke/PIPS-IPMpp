@@ -311,7 +311,7 @@ namespace pipsipmpp_options {
       bool_options["XYZS_SOLVE_PRINT_RESISDUAL"] = false;
 
       /// REGULARIZATION FOR LINEAR SYSTEM
-      bool_options["REGULARIZATION"] = true;
+      bool_options["REGULARIZATION"] = false;
       bool_options["REGULARIZATION_VERBOSE"] = false;
       int_options["REGULARIZATION_STRATEGY"] = 1; // 0 -> Ipopt, 1 -> FriedlanderOrban
 

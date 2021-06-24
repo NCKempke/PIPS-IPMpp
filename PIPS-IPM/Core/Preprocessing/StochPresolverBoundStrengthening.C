@@ -12,13 +12,13 @@
 #include "PIPSIPMppOptions.h"
 
 
-StochPresolverBoundStrengthening::StochPresolverBoundStrengthening(PresolveData& presolve_data, const DistributedQP& origProb) : StochPresolverBase(
+StochPresolverBoundStrengthening::StochPresolverBoundStrengthening(PresolveData& presolve_data, const DistributedProblem& origProb) : StochPresolverBase(
       presolve_data, origProb), limit_iter(pipsipmpp_options::get_int_parameter("PRESOLVE_BOUND_STR_MAX_ITER")),
       limit_entry(pipsipmpp_options::get_double_parameter("PRESOLVE_BOUND_STR_NUMERIC_LIMIT_ENTRY")),
       limit_partial_activity(pipsipmpp_options::get_double_parameter("PRESOLVE_BOUND_STR_MAX_PARTIAL_ACTIVITY")),
       limit_bounds(pipsipmpp_options::get_double_parameter("PRESOLVE_BOUND_STR_NUMERIC_LIMIT_BOUNDS")), tightenings(0), local_bound_tightenings(false),
-      n_linking_vars(dynamic_cast<const DistributedVector<double>&>(*origProb.g).first->length()),
-      n_eq_linking_rows(dynamic_cast<const DistributedVector<double>&>(*origProb.bA).last->length()),
+      n_linking_vars(dynamic_cast<const DistributedVector<double>&>(*origProb.objective_gradient).first->length()),
+      n_eq_linking_rows(dynamic_cast<const DistributedVector<double>&>(*origProb.equality_rhs).last->length()),
       n_ineq_linking_rows(dynamic_cast<const DistributedVector<double>&>(*origProb.inequality_lower_bounds).last->length()), ub_linking_var(n_linking_vars),
       lb_linking_var(n_linking_vars), rows_ub(n_linking_vars), rows_lb(n_linking_vars), used_linking_eq_row(n_eq_linking_rows),
       used_linking_ineq_row(n_ineq_linking_rows) {

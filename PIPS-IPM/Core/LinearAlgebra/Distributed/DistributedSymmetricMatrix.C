@@ -18,8 +18,8 @@ DistributedSymmetricMatrix::DistributedSymmetricMatrix(std::unique_ptr<Symmetric
  * border is set up to be an empty matrix. 
  *
  * If it is called to create a child, the calling code should call 
- *   this->AddChild(c)
- * 'AddChild' method correctly sets the parent and (re)creates an EMPTY
+ *   this->add_child(c)
+ * 'add_child' method correctly sets the parent and (re)creates an EMPTY
  * border with correct sizes.
  */
 DistributedSymmetricMatrix::DistributedSymmetricMatrix(long long global_n, int local_n, int local_nnz,

@@ -17,6 +17,7 @@ target_sources(pips-ipmpp
         PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/Distributed/BorderedMatrix.C
         PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/Distributed/BorderedSymmetricMatrix.C
         PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/Distributed/DistributedMatrix.C
+        PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/Distributed/DistributedMatrixUtilities.cpp
         PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/Distributed/DistributedSymmetricMatrix.C
         PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/Distributed/DistributedVector.C
         PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/Distributed/StripMatrix.C

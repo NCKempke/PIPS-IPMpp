@@ -6,6 +6,7 @@
  */
 
 #include "SparseStorageDynamic.h"
+#include "SimpleVector.hpp"
 #include "pipsdef.h"
 #include <cassert>
 #include <algorithm>
@@ -350,15 +351,24 @@ std::unique_ptr<SparseStorageDynamic> SparseStorageDynamic::getTranspose() const
    return transpose;
 }
 
+void SparseStorageDynamic::sum_transform_rows(Vector<double>& result_, const std::function<double(const double&)>& transform) const {
+   assert(result_.length() == this->n_rows());
+
+   auto& result = dynamic_cast<SimpleVector<double>&>(result_);
+
+   auto accumulate = [&transform] (const double& sum, const double& other) {
+      return sum + transform(other);
+   };
+
+   for(int i = 0; i < m; ++i) {
+      result[i] = std::accumulate(M + rowptr[i].start, M + rowptr[i].end, result[i], accumulate);
+   }
+}
+
 
 void SparseStorageDynamic::addNnzPerRow(int* vec, int begin_rows, int end_rows) const {
    assert(0 <= begin_rows && begin_rows <= end_rows && end_rows <= m);
-#ifdef PRE_CPP11
-   for( int begin_rows = 0; r < end_rows; r++ )
-      first[r - begin_rows ] += rowptr[r].end - rowptr[r].start;
-#else
    std::transform(rowptr + begin_rows, rowptr + end_rows, vec, vec, [](ROWPTRS pt, double v) -> double { return v + pt.end - pt.start; });
-#endif
 }
 
 void SparseStorageDynamic::write_to_streamDense(std::ostream& out) const {

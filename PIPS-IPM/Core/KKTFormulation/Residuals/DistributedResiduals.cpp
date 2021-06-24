@@ -15,8 +15,12 @@ DistributedResiduals::DistributedResiduals(std::unique_ptr<Vector<double>> rQ_, 
    std::move(rpi_), std::move(rv_), std::move(rgamma_), std::move(rw_), std::move(rphi_), std::move(ixlow_), std::move(ixupp_), std::move(iclow_),
    std::move(icupp_)) {}
 
+std::unique_ptr<Residuals> DistributedResiduals::cloneFull() const{
+   return std::make_unique<DistributedResiduals>(*this);
+};
+
 void
-DistributedResiduals::collapse_hierarchical_structure(const DistributedQP& data_hier, const DistributedTree* tree_hier,
+DistributedResiduals::collapse_hierarchical_structure(const DistributedProblem& data_hier, const DistributedTree* tree_hier,
    std::shared_ptr<Vector<double>> ixlow_,
    std::shared_ptr<Vector<double>> ixupp_, std::shared_ptr<Vector<double>> iclow_,
    std::shared_ptr<Vector<double>> icupp_) {

@@ -13,7 +13,7 @@
 #include "PIPSIPMppOptions.h"
 #include "DistributedFactory.hpp"
 
-sLinsysRootBordered::sLinsysRootBordered(DistributedFactory* factory_, DistributedQP* prob_) : DistributedRootLinearSystem(factory_, prob_, true) {
+sLinsysRootBordered::sLinsysRootBordered(const DistributedFactory& factory_, DistributedProblem* prob_) : DistributedRootLinearSystem(factory_, prob_, true) {
    assert(locmyl >= 0 && locmzl >= 0);
 
    if (apply_regularization) {
@@ -58,9 +58,9 @@ void sLinsysRootBordered::finalizeKKT() {
     */
    assert(data->isHierarchyRoot());
 
-   const auto& F0 = *dynamic_cast<const BorderedMatrix&>(*data->A).bottom_left_block;
-   const auto& G0 = *dynamic_cast<const BorderedMatrix&>(*data->C).bottom_left_block;
-   const auto& Q0 = dynamic_cast<const SparseSymmetricMatrix&>(*dynamic_cast<const BorderedSymmetricMatrix&>(*data->Q).top_left_block);
+   const auto& F0 = *dynamic_cast<const BorderedMatrix&>(*data->equality_jacobian).bottom_left_block;
+   const auto& G0 = *dynamic_cast<const BorderedMatrix&>(*data->inequality_jacobian).bottom_left_block;
+   const auto& Q0 = dynamic_cast<const SparseSymmetricMatrix&>(*dynamic_cast<const BorderedSymmetricMatrix&>(*data->hessian).top_left_block);
 
    auto& SC = dynamic_cast<DenseSymmetricMatrix&>(*kkt);
 
@@ -123,9 +123,9 @@ void sLinsysRootBordered::computeSchurCompRightHandSide(const DistributedVector<
    if (PIPS_MPIgetRank(mpiComm) != 0)
       b0.setToZero();
 
-   BorderLinsys border(*dynamic_cast<const BorderedSymmetricMatrix&>(*data->Q).border_vertical, *dynamic_cast<const BorderedMatrix&>(*data->A).border_left,
-         *dynamic_cast<const BorderedMatrix&>(*data->C).border_left, 0, *dynamic_cast<const BorderedMatrix&>(*data->A).border_bottom,
-         *dynamic_cast<const BorderedMatrix&>(*data->C).border_bottom);
+   BorderLinsys border(*dynamic_cast<const BorderedSymmetricMatrix&>(*data->hessian).border_vertical, *dynamic_cast<const BorderedMatrix&>(*data->equality_jacobian).border_left,
+         *dynamic_cast<const BorderedMatrix&>(*data->inequality_jacobian).border_left, 0, *dynamic_cast<const BorderedMatrix&>(*data->equality_jacobian).border_bottom,
+         *dynamic_cast<const BorderedMatrix&>(*data->inequality_jacobian).border_bottom);
 
    children[0]->addBorderTimesRhsToB0(*sol_inner, b0, border);
 
@@ -133,9 +133,9 @@ void sLinsysRootBordered::computeSchurCompRightHandSide(const DistributedVector<
 }
 
 void sLinsysRootBordered::computeInnerSystemRightHandSide(DistributedVector<double>& rhs_inner, const SimpleVector<double>& b0, bool) {
-   BorderLinsys border(*dynamic_cast<const BorderedSymmetricMatrix&>(*data->Q).border_vertical, *dynamic_cast<const BorderedMatrix&>(*data->A).border_left,
-         *dynamic_cast<const BorderedMatrix&>(*data->C).border_left, 0, *dynamic_cast<const BorderedMatrix&>(*data->A).border_bottom,
-         *dynamic_cast<const BorderedMatrix&>(*data->C).border_bottom);
+   BorderLinsys border(*dynamic_cast<const BorderedSymmetricMatrix&>(*data->hessian).border_vertical, *dynamic_cast<const BorderedMatrix&>(*data->equality_jacobian).border_left,
+         *dynamic_cast<const BorderedMatrix&>(*data->inequality_jacobian).border_left, 0, *dynamic_cast<const BorderedMatrix&>(*data->equality_jacobian).border_bottom,
+         *dynamic_cast<const BorderedMatrix&>(*data->inequality_jacobian).border_bottom);
 
    children[0]->addBorderX0ToRhs(rhs_inner, b0, border);
 }
@@ -217,9 +217,9 @@ void sLinsysRootBordered::assembleLocalKKT() {
 
    assert(data->children.size() == 1);
 
-   BorderLinsys B(*dynamic_cast<const BorderedSymmetricMatrix&>(*data->Q).border_vertical, *dynamic_cast<const BorderedMatrix&>(*data->A).border_left,
-         *dynamic_cast<const BorderedMatrix&>(*data->C).border_left, 0, *dynamic_cast<const BorderedMatrix&>(*data->A).border_bottom,
-         *dynamic_cast<const BorderedMatrix&>(*data->C).border_bottom);
+   BorderLinsys B(*dynamic_cast<const BorderedSymmetricMatrix&>(*data->hessian).border_vertical, *dynamic_cast<const BorderedMatrix&>(*data->equality_jacobian).border_left,
+         *dynamic_cast<const BorderedMatrix&>(*data->inequality_jacobian).border_left, 0, *dynamic_cast<const BorderedMatrix&>(*data->equality_jacobian).border_bottom,
+         *dynamic_cast<const BorderedMatrix&>(*data->inequality_jacobian).border_bottom);
    std::vector<BorderMod> border_mod;
 
    children[0]->addBlTKiInvBrToRes(SC, B, B, border_mod, true, false);

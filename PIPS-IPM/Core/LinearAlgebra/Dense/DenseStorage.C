@@ -3,6 +3,8 @@
  * (C) 2001 University of Chicago. See Copyright Notification in OOQP */
 
 #include <cassert>
+#include <numeric>
+
 #include "OoqpBlas.h"
 #include "DenseStorage.h"
 #include "SparseStorage.h"
@@ -187,6 +189,20 @@ void DenseStorage::atPutZeros(int row, int col, int rowExtent, int colExtent) {
 
 void DenseStorage::putZeros() {
    std::fill(M[0], M[0] + n * m, 0.0);
+}
+
+void DenseStorage::sum_transform_rows(Vector<double>& result_, const std::function<double(const double&)>& transform) const {
+   assert(result_.length() == this->n_rows());
+
+   auto& result = dynamic_cast<SimpleVector<double>&>(result_);
+
+   auto accumulate = [&transform] (const double& sum, const double& other) {
+      return sum + transform(other);
+   };
+
+   for (int i = 0; i < m; ++i) {
+      result[i] = std::accumulate(M[i], M[i] + n, result[i], accumulate);
+   }
 }
 
 void DenseStorage::atPutDense(int row, int col, const double* A, int lda, int rowExtent, int colExtent) {

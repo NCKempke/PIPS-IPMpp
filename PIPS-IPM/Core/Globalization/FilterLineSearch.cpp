@@ -25,21 +25,21 @@ void FilterLineSearch::compute_acceptable_iterate(Problem& problem, Variables& c
       this->number_iterations++;
       if (verbose) std::cout << "Line search current step lengths: " << primal_step_length << ", " << dual_step_length << "\n";
       // compute the trial iterate
-      Variables trial_iterate(current_iterate);
-      trial_iterate.saxpy_pd(direction, primal_step_length, dual_step_length);
+      std::unique_ptr<Variables> trial_iterate = current_iterate.cloneFull();
+      trial_iterate->saxpy_pd(direction, primal_step_length, dual_step_length);
 
       // evaluate the residuals at the trial iterate
-      Residuals trial_residuals(current_residuals);
-      trial_residuals.evaluate(problem, trial_iterate);
-      trial_residuals.recompute_residual_norm();
+      std::unique_ptr<Residuals> trial_residuals = current_residuals.cloneFull();
+      trial_residuals->evaluate(problem, *trial_iterate);
+      trial_residuals->recompute_residual_norm();
 
       double predicted_reduction = InteriorPointMethod::predicted_reduction(problem, current_iterate, direction, primal_step_length);
 
       /* check whether the trial step is accepted */
-      is_accepted = this->filter_strategy.check_acceptance(current_iterate, current_residuals, trial_iterate, trial_residuals, predicted_reduction);
-      // if the trial iterate was accepted, current_iterate was overwritten
+      is_accepted = this->filter_strategy.check_acceptance(current_residuals, *trial_residuals, predicted_reduction);
+      // if the trial iterate was accepted, overwrite current_iterate
       if (is_accepted) {
-         current_iterate.copy(trial_iterate);
+         current_iterate.copy(*trial_iterate);
       }
       else {
          /* decrease the step length */
@@ -49,8 +49,7 @@ void FilterLineSearch::compute_acceptable_iterate(Problem& problem, Variables& c
       }
    }
    if (!is_accepted) {
-      std::cout << "Enter restoration phase (not implemented yet)\n";
-      assert(false);
+      assert(false && "Enter restoration phase (not implemented yet)");
    }
 }
 

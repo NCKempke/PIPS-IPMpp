@@ -8,12 +8,12 @@
 #ifndef PIPS_IPM_CORE_LINEARSOLVERS_PRECONDITIONERS_SCSPARSIFIER_H_
 #define PIPS_IPM_CORE_LINEARSOLVERS_PRECONDITIONERS_SCSPARSIFIER_H_
 
-#include "DistributedQP.hpp"
+#include "DistributedProblem.hpp"
 #include <vector>
 
 #define SCSPARSIFIER_SAVE_STATS
 
-class DistributedQP;
+class DistributedProblem;
 
 const static double diagDomBoundsLeaf[] = {0.002, 0.001, 0.0003, 0.000025, 0.000005, 0.000001};
 
@@ -44,13 +44,13 @@ public:
    void updateStats();
 
    // sets CSR column marker col of dominated local Schur complement (distributed) entries to -col
-   void unmarkDominatedSCdistLocals(const DistributedQP& prob, SparseSymmetricMatrix& sc);
+   void unmarkDominatedSCdistLocals(const DistributedProblem& prob, SparseSymmetricMatrix& sc);
 
    // resets unmarkDominatedSCdistEntries actions
    void resetSCdistEntries(SparseSymmetricMatrix& sc) const;
 
    // deletes dominated Schur complement entries and converts matrix to Fortran format
-   void getSparsifiedSC_fortran(const DistributedQP& prob, SparseSymmetricMatrix& sc);
+   void getSparsifiedSC_fortran(const DistributedProblem& prob, SparseSymmetricMatrix& sc);
 
    // updates the bound according the convergence history of BICGStab
    // todo this method should be removed and increaseDiagDomBound/decreaseDiagDomBound should be used instead
@@ -71,7 +71,7 @@ private:
 
    MPI_Comm mpiComm;
 
-   std::vector<double> getDomDiagDist(const DistributedQP& prob, SparseSymmetricMatrix& sc, bool isLeaf = false) const;
+   std::vector<double> getDomDiagDist(const DistributedProblem& prob, SparseSymmetricMatrix& sc, bool isLeaf = false) const;
 
 };
 

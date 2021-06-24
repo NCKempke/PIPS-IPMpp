@@ -66,6 +66,8 @@ public:
    void columnScale(const Vector<double>& vec) override;
    void rowScale(const Vector<double>& vec) override;
 
+   void sum_transform_rows(Vector<double>& result, const std::function<double(const double&)>& transform) const override;
+
    void addRowSums(Vector<double>& vec) const override;
    void addColSums(Vector<double>& vec) const override;
 
@@ -122,6 +124,9 @@ protected:
    virtual void getColMinMaxVecVertical(bool get_min, bool initialize_vec, const Vector<double>* row_scale, Vector<double>& minmax) const;
    virtual void getColMinMaxVecHorizontal(bool get_min, bool initialize_vec, const Vector<double>* row_scale, Vector<double>& minmax) const;
 
+   virtual void sum_transform_rows_vertical(Vector<double>& result, const std::function<double(const double&)>& transform) const;
+   virtual void sum_transform_rows_horizontal(Vector<double>& result, const std::function<double(const double&)>& transform) const;
+
    virtual void addRowSumsVertical(Vector<double>& vec) const;
    virtual void addRowSumsHorizontal(Vector<double>& vec) const;
 
@@ -154,6 +159,8 @@ public:
    void columnScale(const Vector<double>&) override {};
    void rowScale(const Vector<double>&) override {};
 
+   void sum_transform_rows(Vector<double>&, const std::function<double(const double&)>&) const override {};
+
    void addRowSums(Vector<double>&) const override {};
    void addColSums(Vector<double>&) const override {};
 
@@ -182,6 +189,9 @@ protected:
 
    void getColMinMaxVecVertical(bool, bool, const Vector<double>*, Vector<double>&) const override {};
    void getColMinMaxVecHorizontal(bool, bool, const Vector<double>*, Vector<double>&) const override {};
+
+   void sum_transform_rows_vertical(Vector<double>&, const std::function<double(const double&)>&) const override {};
+   void sum_transform_rows_horizontal(Vector<double>&, const std::function<double(const double&)>&) const override {};
 
    void addRowSumsVertical(Vector<double>&) const override {};
    void addRowSumsHorizontal(Vector<double>&) const override {};

@@ -29,13 +29,13 @@ bool PresolveData::iTrackRow() const {
    return track_row && (!nodeIsDummy(tracked_row.getNode()) && (my_rank == 0 || tracked_row.isLinkingRow() || tracked_row.getNode() != -1));
 }
 
-PresolveData::PresolveData(const DistributedQP& sorigprob, StochPostsolver* postsolver) : postsolver(postsolver),
+PresolveData::PresolveData(const DistributedProblem& sorigprob, StochPostsolver* postsolver) : postsolver(postsolver),
       limit_max_bound_accepted(pipsipmpp_options::get_double_parameter("PRESOLVE_MAX_BOUND_ACCEPTED")),
       array_outdated_indicators(new bool[length_array_outdated_indicators]), outdated_lhsrhs(array_outdated_indicators[0]),
       outdated_nnzs(array_outdated_indicators[1]), outdated_linking_var_bounds(array_outdated_indicators[2]),
       outdated_activities(array_outdated_indicators[3]), outdated_obj_vector(array_outdated_indicators[4]),
-      postsolve_linking_row_propagation_needed(array_outdated_indicators[5]), nnzs_row_A{cloneStochVector<double, int>(*sorigprob.bA)},
-      nnzs_row_C{cloneStochVector<double, int>(*sorigprob.inequality_upper_bound_indicators)}, nnzs_col{cloneStochVector<double, int>(*sorigprob.g)},
+      postsolve_linking_row_propagation_needed(array_outdated_indicators[5]), nnzs_row_A{cloneStochVector<double, int>(*sorigprob.equality_rhs)},
+      nnzs_row_C{cloneStochVector<double, int>(*sorigprob.inequality_upper_bound_indicators)}, nnzs_col{cloneStochVector<double, int>(*sorigprob.objective_gradient)},
       actmax_eq_part{cloneStochVector<int, double>(*nnzs_row_A)}, actmin_eq_part{dynamic_cast<DistributedVector<double>*>(actmax_eq_part->clone())},
       actmax_eq_ubndd{dynamic_cast<DistributedVector<int>*>(nnzs_row_A->clone())},
       actmin_eq_ubndd{dynamic_cast<DistributedVector<int>*>(nnzs_row_A->clone())}, actmax_ineq_part{cloneStochVector<int, double>(*nnzs_row_C)},
@@ -55,8 +55,8 @@ PresolveData::PresolveData(const DistributedQP& sorigprob, StochPostsolver* post
       upper_bound_implied_by_system{dynamic_cast<DistributedVector<int>*>(nnzs_col->clone())},
       upper_bound_implied_by_row{dynamic_cast<DistributedVector<int>*>(nnzs_col->clone())},
       upper_bound_implied_by_node{dynamic_cast<DistributedVector<int>*>(nnzs_col->clone())},
-      absmin_col{dynamic_cast<DistributedVector<double>*>(sorigprob.g->clone())},
-      absmax_col{dynamic_cast<DistributedVector<double>*>(sorigprob.g->clone())}, store_linking_row_boundTightening_A(nnzs_row_A->last->length(), 0),
+      absmin_col{dynamic_cast<DistributedVector<double>*>(sorigprob.objective_gradient->clone())},
+      absmax_col{dynamic_cast<DistributedVector<double>*>(sorigprob.objective_gradient->clone())}, store_linking_row_boundTightening_A(nnzs_row_A->last->length(), 0),
       store_linking_row_boundTightening_C(nnzs_row_C->last->length(), 0) {
    std::memset(array_outdated_indicators, 0, length_array_outdated_indicators * sizeof(bool));
    outdated_activities = true;
@@ -72,7 +72,7 @@ PresolveData::PresolveData(const DistributedQP& sorigprob, StochPostsolver* post
    absmax_col->setToZero();
    objective_vec_chgs->setToZero();
 
-   presProb = sorigprob.cloneFull(true);
+   presProb = sorigprob.cloneFull(true).release();
 
    const int n_linking_vars = (nnzs_col->first) ? nnzs_col->first->length() : 0;
 
@@ -172,7 +172,8 @@ void PresolveData::delete_transposed() {
    getSystemMatrix(EQUALITY_SYSTEM).deleteTransposed();
    getSystemMatrix(INEQUALITY_SYSTEM).deleteTransposed();
 }
-DistributedQP* PresolveData::finalize() {
+
+DistributedProblem* PresolveData::finalize() {
    delete_transposed();
 #ifndef NDEBUG
    if (distributed) {
@@ -188,7 +189,6 @@ DistributedQP* PresolveData::finalize() {
 
    // this removes all columns and rows that are now empty from the problem
    presProb->cleanUpPresolvedData(*nnzs_row_A, *nnzs_row_C, *nnzs_col);
-
 
    return presProb;
 }
@@ -227,7 +227,7 @@ void PresolveData::markColumnRemoved(const INDEX& col) {
    assert(col.isCol());
    assert(wasColumnRemoved(col));
 
-   getSimpleVecFromColStochVec(*presProb->g, col) = 0.0;
+   getSimpleVecFromColStochVec(*presProb->objective_gradient, col) = 0.0;
    getSimpleVecFromColStochVec(*presProb->primal_lower_bound_indicators, col) = 0.0;
    getSimpleVecFromColStochVec(*presProb->primal_upper_bound_indicators, col) = 0.0;
    getSimpleVecFromColStochVec(*presProb->primal_lower_bounds, col) = 0.0;
@@ -716,7 +716,7 @@ void PresolveData::allreduceAndApplyBoundChanges() {
    if (distributed)
       PIPS_MPIsumArrayInPlace(array_bound_chgs);
 
-   dynamic_cast<SimpleVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*presProb->bA).last).axpy(1.0, *bound_chgs_A);
+   dynamic_cast<SimpleVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*presProb->equality_rhs).last).axpy(1.0, *bound_chgs_A);
    dynamic_cast<SimpleVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*presProb->inequality_lower_bounds).last).axpy(1.0, *bound_chgs_C);
    dynamic_cast<SimpleVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*presProb->inequality_upper_bounds).last).axpy(1.0, *bound_chgs_C);
 
@@ -735,7 +735,7 @@ void PresolveData::allreduceAndApplyObjVecChanges() {
    if (distributed)
       PIPS_MPIsumArrayInPlace(objective_vec_chgs->elements(), objective_vec_chgs->length());
 
-   dynamic_cast<SimpleVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*presProb->g).first).axpy(1.0, *objective_vec_chgs);
+   dynamic_cast<SimpleVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*presProb->objective_gradient).first).axpy(1.0, *objective_vec_chgs);
 
    objective_vec_chgs->setToZero();
    outdated_obj_vector = false;
@@ -901,7 +901,7 @@ void PresolveData::deleteEntryAtIndex(const INDEX& row, const INDEX& col, int co
    reduceNnzCounterColumnBy(col, 1, at_root);
 }
 
-void PresolveData::resetOriginallyFreeVarsBounds(const DistributedQP& orig_prob) {
+void PresolveData::resetOriginallyFreeVarsBounds(const DistributedProblem& orig_prob) {
    // todo : tell postsolver about released variables
    assert(0 && "not yet properly implemented");
 
@@ -1120,8 +1120,8 @@ void PresolveData::varboundImpliedFreeFullCheck(bool& upper_implied, bool& lower
          --max_ubndd;
    }
 
-   const double rhs = row.inEqSys() ? getSimpleVecFromRowStochVec(*presProb->bA, row) : getSimpleVecFromRowStochVec(*presProb->inequality_upper_bounds, row);
-   const double lhs = row.inEqSys() ? getSimpleVecFromRowStochVec(*presProb->bA, row) : getSimpleVecFromRowStochVec(*presProb->inequality_lower_bounds, row);
+   const double rhs = row.inEqSys() ? getSimpleVecFromRowStochVec(*presProb->equality_rhs, row) : getSimpleVecFromRowStochVec(*presProb->inequality_upper_bounds, row);
+   const double lhs = row.inEqSys() ? getSimpleVecFromRowStochVec(*presProb->equality_rhs, row) : getSimpleVecFromRowStochVec(*presProb->inequality_lower_bounds, row);
 
    /* check bound implied by row */
    /* calculate an check implied upper bound */
@@ -1164,7 +1164,7 @@ void PresolveData::fixEmptyColumn(const INDEX& col, double val) {
    assert(col.hasValidNode(nChildren));
    assert(!wasColumnRemoved(col));
    if (postsolver) {
-      const double obj_value = getSimpleVecFromColStochVec(*presProb->g, col);
+      const double obj_value = getSimpleVecFromColStochVec(*presProb->objective_gradient, col);
       const auto [xlow, xupp] = getColBounds(col);
 
       assert(PIPSisLE(xlow, val));
@@ -1196,7 +1196,7 @@ void PresolveData::fixColumn(const INDEX& col, double value) {
 
    /* current upper and lower bound as well as column - linking variables have to be done by all processes simultaneously because communication in postsolve is required */
    if (postsolver) {
-      const double obj_coeff = getSimpleVecFromColStochVec(*presProb->g, col);
+      const double obj_coeff = getSimpleVecFromColStochVec(*presProb->objective_gradient, col);
       postsolver->notifyFixedColumn(col, value, obj_coeff, getSystemMatrix(EQUALITY_SYSTEM), getSystemMatrix(INEQUALITY_SYSTEM));
    }
 
@@ -1534,7 +1534,7 @@ void PresolveData::adjustMatrixRhsLhsBy(const INDEX& row, double value, bool at_
    }
 
    if (row.inEqSys()) {
-      getSimpleVecFromRowStochVec(*presProb->bA, row) += value;
+      getSimpleVecFromRowStochVec(*presProb->equality_rhs, row) += value;
    }
    else {
       if (PIPSisEQ(getSimpleVecFromRowStochVec(*presProb->inequality_upper_bound_indicators, row), 1.0))
@@ -1681,7 +1681,7 @@ void PresolveData::removeColumn(const INDEX& col, double fixation) {
 
    /* adjust objective function */
    if (!col.isLinkingCol() || my_rank == 0) {
-      double objective_factor = getSimpleVecFromColStochVec(*presProb->g, col);
+      double objective_factor = getSimpleVecFromColStochVec(*presProb->objective_gradient, col);
       obj_offset_chgs += objective_factor * fixation;
    }
 
@@ -1801,7 +1801,7 @@ void PresolveData::tightenBoundsNearlyParallelRows(const INDEX& row1, const INDE
       if (col2.isCol())
          assert(!PIPSisZero(coeff_col2));
 
-      const double rhs = row2.inInEqSys() ? getSimpleVecFromRowStochVec(*presProb->bA, row1) : 0.0;
+      const double rhs = row2.inInEqSys() ? getSimpleVecFromRowStochVec(*presProb->equality_rhs, row1) : 0.0;
 
       const double clow = row2.inInEqSys() ? (PIPSisZero(getSimpleVecFromRowStochVec(*presProb->inequality_lower_bound_indicators, row2)) ? INF_NEG : getSimpleVecFromRowStochVec(
             *presProb->inequality_lower_bounds, row2)) : 0.0;
@@ -1834,8 +1834,8 @@ void PresolveData::substituteVariableNearlyParallelRows(const INDEX& row1, const
 
    // TODO: track row
 
-   const double obj_col1 = col1.isCol() ? getSimpleVecFromColStochVec(*presProb->g, col1) : INF_POS;
-   const double obj_col2 = getSimpleVecFromColStochVec(*presProb->g, col2);
+   const double obj_col1 = col1.isCol() ? getSimpleVecFromColStochVec(*presProb->objective_gradient, col1) : INF_POS;
+   const double obj_col2 = getSimpleVecFromColStochVec(*presProb->objective_gradient, col2);
 
    if (postsolver) {
       const double xlow_col2 = getSimpleVecFromColStochVec(*presProb->primal_lower_bounds, col2);
@@ -1884,11 +1884,11 @@ void PresolveData::substituteVariableNearlyParallelRows(const INDEX& row1, const
          getSimpleVecFromRowStochVec(*presProb->primal_upper_bounds, row2) -= offset;
    }
    else
-      getSimpleVecFromRowStochVec(*presProb->bA, row2) -= offset;
+      getSimpleVecFromRowStochVec(*presProb->equality_rhs, row2) -= offset;
 
    if (col1.isCol()) {
       if (!col1.isLinkingCol() || col1_at_root) {
-         getSimpleVecFromColStochVec(*presProb->g, col1) += change_obj_var1;
+         getSimpleVecFromColStochVec(*presProb->objective_gradient, col1) += change_obj_var1;
          objOffset += val_offset;
       }
       else {
@@ -1900,10 +1900,10 @@ void PresolveData::substituteVariableNearlyParallelRows(const INDEX& row1, const
    }
 
    if (!col2.isLinkingCol() || col2_at_root)
-      getSimpleVecFromColStochVec(*presProb->g, col2) = 0.0;
+      getSimpleVecFromColStochVec(*presProb->objective_gradient, col2) = 0.0;
    else {
-      (*objective_vec_chgs)[col2.getIndex()] -= getSimpleVecFromColStochVec(*presProb->g, col2);
-      assert(PIPSisZero((*objective_vec_chgs)[col2.getIndex()] + getSimpleVecFromColStochVec(*presProb->g, col2)));
+      (*objective_vec_chgs)[col2.getIndex()] -= getSimpleVecFromColStochVec(*presProb->objective_gradient, col2);
+      assert(PIPSisZero((*objective_vec_chgs)[col2.getIndex()] + getSimpleVecFromColStochVec(*presProb->objective_gradient, col2)));
       outdated_obj_vector = true;
    }
 }
@@ -1915,7 +1915,7 @@ void PresolveData::removeRedundantParallelRow(const INDEX& rm_row, const INDEX& 
    assert(!wasRowRemoved(par_row));
 
    if (postsolver) {
-      const double cupp_row1 = rm_row.inEqSys() ? getSimpleVecFromRowStochVec(*presProb->bA, rm_row) : getSimpleVecFromRowStochVec(*presProb->inequality_upper_bounds,
+      const double cupp_row1 = rm_row.inEqSys() ? getSimpleVecFromRowStochVec(*presProb->equality_rhs, rm_row) : getSimpleVecFromRowStochVec(*presProb->inequality_upper_bounds,
             rm_row);
       const double clow_row1 = rm_row.inEqSys() ? cupp_row1 : getSimpleVecFromRowStochVec(*presProb->inequality_lower_bounds, rm_row);
       const int iclow_row1 = rm_row.inEqSys() ? 1 : getSimpleVecFromRowStochVec(*presProb->inequality_lower_bound_indicators, rm_row);
@@ -1960,7 +1960,7 @@ void PresolveData::removeRedundantRow(const INDEX& row) {
    if (postsolver) {
       assert(!wasRowRemoved(row));
 
-      const double rhs = row.inEqSys() ? getSimpleVecFromRowStochVec(*presProb->bA, row) : getSimpleVecFromRowStochVec(*presProb->inequality_upper_bounds, row);
+      const double rhs = row.inEqSys() ? getSimpleVecFromRowStochVec(*presProb->equality_rhs, row) : getSimpleVecFromRowStochVec(*presProb->inequality_upper_bounds, row);
       const double lhs = row.inEqSys() ? rhs : getSimpleVecFromRowStochVec(*presProb->inequality_lower_bounds, row);
       const int iclow = row.inEqSys() ? 1 : getSimpleVecFromRowStochVec(*presProb->inequality_lower_bound_indicators, row);
       const int icupp = row.inEqSys() ? 1 : getSimpleVecFromRowStochVec(*presProb->inequality_upper_bound_indicators, row);
@@ -2088,9 +2088,9 @@ void PresolveData::removeFreeColumnSingletonInequalityRow(const INDEX& row, cons
 
    assert(getNnzsCol(col) == 0);
    if (col.isLinkingCol() && my_rank == 0)
-      assert(PIPSisZero(getSimpleVecFromColStochVec(*presProb->g, col) + (*objective_vec_chgs)[col.getIndex()]));
+      assert(PIPSisZero(getSimpleVecFromColStochVec(*presProb->objective_gradient, col) + (*objective_vec_chgs)[col.getIndex()]));
    else if (!col.isLinkingCol())
-      assert(PIPSisZero(getSimpleVecFromColStochVec(*presProb->g, col)));
+      assert(PIPSisZero(getSimpleVecFromColStochVec(*presProb->objective_gradient, col)));
 }
 
 void PresolveData::removeFreeColumnSingletonInequalityRowSynced(const INDEX& row, const INDEX& col, double coeff) {
@@ -2147,7 +2147,7 @@ void PresolveData::removeFreeColumnSingletonInequalityRowSynced(const INDEX& row
       /* remove col and mark it for the fix empty columns presolver */
       ixlow = xlow = xupp = ixupp = 0;
 
-      assert(PIPSisZero(getSimpleVecFromColStochVec(*presProb->g, col)));
+      assert(PIPSisZero(getSimpleVecFromColStochVec(*presProb->objective_gradient, col)));
       assert(getSimpleVecFromColStochVec(*nnzs_col, col) == 0);
 
       if (col.isLinkingCol())
@@ -2198,15 +2198,15 @@ void PresolveData::removeImpliedFreeColumnSingletonEqualityRowSynced(const INDEX
       assert(!PIPSisZero(getSimpleVecFromRowStochVec(*presProb->inequality_upper_bound_indicators, row)));
    }
 
-   const double rhs = row.inEqSys() ? getSimpleVecFromRowStochVec(*presProb->bA, row) : getSimpleVecFromRowStochVec(*presProb->inequality_lower_bounds, row);
+   const double rhs = row.inEqSys() ? getSimpleVecFromRowStochVec(*presProb->equality_rhs, row) : getSimpleVecFromRowStochVec(*presProb->inequality_lower_bounds, row);
 
    double obj_coeff = 0.0;
    double col_coeff = 0.0;
 
    if (col.isCol()) {
       assert(!nodeIsDummy(col.getNode()));
-      obj_coeff = col.isLinkingCol() ? getSimpleVecFromColStochVec(*presProb->g, col) + (*objective_vec_chgs)[col.getIndex()]
-                                     : getSimpleVecFromColStochVec(*presProb->g, col);
+      obj_coeff = col.isLinkingCol() ? getSimpleVecFromColStochVec(*presProb->objective_gradient, col) + (*objective_vec_chgs)[col.getIndex()]
+                                     : getSimpleVecFromColStochVec(*presProb->objective_gradient, col);
       col_coeff = getRowCoeff(row, col);
    }
 
@@ -2245,7 +2245,7 @@ void PresolveData::removeImpliedFreeColumnSingletonEqualityRowSynced(const INDEX
       /* remove col and mark it for the fix empty columns presolver */
       ixlow = xlow = xupp = ixupp = 0;
 
-      assert(PIPSisZero(getSimpleVecFromColStochVec(*presProb->g, col)));
+      assert(PIPSisZero(getSimpleVecFromColStochVec(*presProb->objective_gradient, col)));
       assert(getSimpleVecFromColStochVec(*nnzs_col, col) == 0);
    }
 }
@@ -2274,9 +2274,9 @@ void PresolveData::removeImpliedFreeColumnSingletonEqualityRow(const INDEX& row,
       assert(!PIPSisZero(getSimpleVecFromRowStochVec(*presProb->inequality_upper_bound_indicators, row)));
    }
 
-   const double rhs = row.inEqSys() ? getSimpleVecFromRowStochVec(*presProb->bA, row) : getSimpleVecFromRowStochVec(*presProb->inequality_lower_bounds, row);
-   const double obj_coeff = col.isLinkingCol() ? getSimpleVecFromColStochVec(*presProb->g, col) + (*objective_vec_chgs)[col.getIndex()]
-                                               : getSimpleVecFromColStochVec(*presProb->g, col);
+   const double rhs = row.inEqSys() ? getSimpleVecFromRowStochVec(*presProb->equality_rhs, row) : getSimpleVecFromRowStochVec(*presProb->inequality_lower_bounds, row);
+   const double obj_coeff = col.isLinkingCol() ? getSimpleVecFromColStochVec(*presProb->objective_gradient, col) + (*objective_vec_chgs)[col.getIndex()]
+                                               : getSimpleVecFromColStochVec(*presProb->objective_gradient, col);
    const double col_coeff = getRowCoeff(row, col);
 
    double& ixlow = getSimpleVecFromColStochVec(*(presProb->primal_lower_bound_indicators), col);
@@ -2307,9 +2307,9 @@ void PresolveData::removeImpliedFreeColumnSingletonEqualityRow(const INDEX& row,
 
    assert(getNnzsCol(col) == 0);
    if (col.isLinkingCol() && my_rank == 0)
-      assert(PIPSisZero(getSimpleVecFromColStochVec(*presProb->g, col) + (*objective_vec_chgs)[col.getIndex()]));
+      assert(PIPSisZero(getSimpleVecFromColStochVec(*presProb->objective_gradient, col) + (*objective_vec_chgs)[col.getIndex()]));
    else if (!col.isLinkingCol())
-      assert(PIPSisZero(getSimpleVecFromColStochVec(*presProb->g, col)));
+      assert(PIPSisZero(getSimpleVecFromColStochVec(*presProb->objective_gradient, col)));
 }
 
 /* column col getting substituted with row - must be called simultaneously for linking rows */
@@ -2340,7 +2340,7 @@ void PresolveData::adaptObjectiveSubstitutedRow(const INDEX& row, const INDEX& c
       assert((col_mat_tp.getRowPtr(col.getIndex()).end - col_mat_tp.getRowPtr(col.getIndex()).start) == 1);
       assert(row.getIndex() == col_mat_tp.getJcolM(col_mat_tp.getRowPtr(col.getIndex()).start));
       assert(col_coeff == col_mat_tp.getMat(col_mat_tp.getRowPtr(col.getIndex()).start));
-      assert(obj_coeff == getSimpleVecFromColStochVec(*presProb->g, col));
+      assert(obj_coeff == getSimpleVecFromColStochVec(*presProb->objective_gradient, col));
    }
 
    assert(!PIPSisZero(col_coeff));
@@ -2358,7 +2358,7 @@ void PresolveData::adaptObjectiveSubstitutedRow(const INDEX& row, const INDEX& c
       for (int i = b_mat.getRowPtr(row.getIndex()).start; i < b_mat.getRowPtr(row.getIndex()).end; ++i) {
          const int col_idx = b_mat.getJcolM(i);
          if (col_idx != col.getIndex() || block_type == A_MAT)
-            getSimpleVecFromColStochVec(*presProb->g, row.getNode())[col_idx] -= obj_coeff * b_mat.getMat(i) / col_coeff;
+            getSimpleVecFromColStochVec(*presProb->objective_gradient, row.getNode())[col_idx] -= obj_coeff * b_mat.getMat(i) / col_coeff;
       }
 
       /* Amat */
@@ -2387,9 +2387,9 @@ void PresolveData::adaptObjectiveSubstitutedRow(const INDEX& row, const INDEX& c
          const double aij = bl0_mat.getMat(i);
 
          if (col.isEmpty())
-            getSimpleVecFromColStochVec(*presProb->g, -1)[col_ptr] -= obj_coeff * aij / col_coeff;
+            getSimpleVecFromColStochVec(*presProb->objective_gradient, -1)[col_ptr] -= obj_coeff * aij / col_coeff;
          else if (col_ptr != col.getIndex() || !col.isLinkingCol())
-            getSimpleVecFromColStochVec(*presProb->g, -1)[col_ptr] -= obj_coeff * aij / col_coeff;
+            getSimpleVecFromColStochVec(*presProb->objective_gradient, -1)[col_ptr] -= obj_coeff * aij / col_coeff;
       }
 
       /* Bl_i */
@@ -2403,9 +2403,9 @@ void PresolveData::adaptObjectiveSubstitutedRow(const INDEX& row, const INDEX& c
                const double aij = bli_mat.getMat(i);
 
                if (col.isEmpty())
-                  getSimpleVecFromColStochVec(*presProb->g, node)[col_ptr] -= obj_coeff * aij / col_coeff;
+                  getSimpleVecFromColStochVec(*presProb->objective_gradient, node)[col_ptr] -= obj_coeff * aij / col_coeff;
                else if (col_ptr != col.getIndex() || col.getNode() != node)
-                  getSimpleVecFromColStochVec(*presProb->g, node)[col_ptr] -= obj_coeff * aij / col_coeff;
+                  getSimpleVecFromColStochVec(*presProb->objective_gradient, node)[col_ptr] -= obj_coeff * aij / col_coeff;
             }
          }
       }
@@ -2418,7 +2418,7 @@ void PresolveData::adaptObjectiveSubstitutedRow(const INDEX& row, const INDEX& c
       assert(!PIPSisZero(getSimpleVecFromRowStochVec(*presProb->inequality_upper_bound_indicators, row)));
    }
 
-   const double rhs = row.inEqSys() ? getSimpleVecFromRowStochVec(*presProb->bA, row) : getSimpleVecFromRowStochVec(*presProb->inequality_upper_bounds, row);
+   const double rhs = row.inEqSys() ? getSimpleVecFromRowStochVec(*presProb->equality_rhs, row) : getSimpleVecFromRowStochVec(*presProb->inequality_upper_bounds, row);
 
    /* this is the case where everyone removes the same row in parallel */
    if (col.isCol()) {
@@ -2431,11 +2431,11 @@ void PresolveData::adaptObjectiveSubstitutedRow(const INDEX& row, const INDEX& c
 
       /* if a liking column in a local row gets removed we have to communicate the changes */
       if (col.isCol() && col.isLinkingCol() && row.getNode() != -1) {
-         (*objective_vec_chgs)[col.getIndex()] -= getSimpleVecFromColStochVec(*presProb->g, col);
+         (*objective_vec_chgs)[col.getIndex()] -= getSimpleVecFromColStochVec(*presProb->objective_gradient, col);
          outdated_obj_vector = true;
       }
       else if (col.isCol())
-         getSimpleVecFromColStochVec(*presProb->g, col) = 0.0;
+         getSimpleVecFromColStochVec(*presProb->objective_gradient, col) = 0.0;
    }
 }
 
@@ -2516,7 +2516,7 @@ void PresolveData::removeRow(const INDEX& row) {
 
    /* set lhs rhs to zero */
    if (row.inEqSys())
-      getSimpleVecFromRowStochVec(*presProb->bA, row) = 0.0;
+      getSimpleVecFromRowStochVec(*presProb->equality_rhs, row) = 0.0;
    else {
       getSimpleVecFromRowStochVec(*presProb->inequality_lower_bounds, row) = 0.0;
       getSimpleVecFromRowStochVec(*presProb->inequality_upper_bounds, row) = 0.0;
@@ -2839,7 +2839,7 @@ bool PresolveData::nodeIsDummy(int node) const {
       assert(dynamic_cast<DistributedVector<double>&>(*(presProb->primal_upper_bounds)).children[node]->isKindOf(kStochDummy));
       assert(dynamic_cast<DistributedVector<double>&>(*(presProb->primal_lower_bounds)).children[node]->isKindOf(kStochDummy));
 
-      assert(dynamic_cast<DistributedVector<double>&>(*(presProb->bA)).children[node]->isKindOf(kStochDummy));
+      assert(dynamic_cast<DistributedVector<double>&>(*(presProb->equality_rhs)).children[node]->isKindOf(kStochDummy));
       assert(dynamic_cast<DistributedVector<double>&>(*(presProb->primal_upper_bounds)).children[node]->isKindOf(kStochDummy));
       assert(dynamic_cast<DistributedVector<double>&>(*(presProb->primal_lower_bounds)).children[node]->isKindOf(kStochDummy));
       assert(nnzs_row_A->children[node]->isKindOf(kStochDummy));
@@ -3384,7 +3384,7 @@ std::pair<double,double> PresolveData::getRowBounds(const INDEX& row) const {
    double lhs, rhs;
 
    if (row.inEqSys()) {
-      rhs = getSimpleVecFromRowStochVec(*presProb->bA, row);
+      rhs = getSimpleVecFromRowStochVec(*presProb->equality_rhs, row);
 
       if (row.isLinkingRow() && outdated_lhsrhs) {
          rhs += (*bound_chgs_A)[row.getIndex()];
@@ -3427,16 +3427,16 @@ void PresolveData::setRowBounds(const INDEX& row, double clow, double cupp) {
       assert(clow == cupp);
       if (row.isLinkingRow()) {
          const int row_index = row.getIndex();
-         const double old_clow = getSimpleVecFromRowStochVec(*presProb->bA, row);
+         const double old_clow = getSimpleVecFromRowStochVec(*presProb->equality_rhs, row);
          double& clow_chgs = (*bound_chgs_A)[row_index];
 
          clow_chgs = clow - old_clow;
 
          outdated_lhsrhs = true;
-         assert(PIPSisEQ(getSimpleVecFromRowStochVec(*presProb->bA, row) + clow_chgs, clow));
+         assert(PIPSisEQ(getSimpleVecFromRowStochVec(*presProb->equality_rhs, row) + clow_chgs, clow));
       }
       else
-         getSimpleVecFromRowStochVec(*presProb->bA, row) = clow;
+         getSimpleVecFromRowStochVec(*presProb->equality_rhs, row) = clow;
    }
    else {
       if (row.isLinkingRow()) {
@@ -3592,10 +3592,10 @@ double PresolveData::getRowCoeff(const INDEX& row, const INDEX& col) const {
 
 DistributedMatrix& PresolveData::getSystemMatrix(SystemType system_type) const {
    if (system_type == EQUALITY_SYSTEM)
-      return dynamic_cast<DistributedMatrix&>(*presProb->A);
+      return dynamic_cast<DistributedMatrix&>(*presProb->equality_jacobian);
    else {
       assert(system_type == INEQUALITY_SYSTEM);
-      return dynamic_cast<DistributedMatrix&>(*presProb->C);
+      return dynamic_cast<DistributedMatrix&>(*presProb->inequality_jacobian);
    }
 }
 
@@ -3635,7 +3635,7 @@ void PresolveData::writeRowLocalToStreamDense(std::ostream& out, const INDEX& ro
    out << "SystemType: " << system_type << "\tnode: " << node << "\tLinkingCons: " << linking << "\trow: " << row_index << "\n";
 
    if (row.inEqSys())
-      out << getSimpleVecFromRowStochVec(*presProb->bA, row) << " = ";
+      out << getSimpleVecFromRowStochVec(*presProb->equality_rhs, row) << " = ";
    else {
       double iclow = getSimpleVecFromRowStochVec(*presProb->inequality_lower_bound_indicators, row);
       double clow = PIPSisEQ(iclow, 1.0) ? getSimpleVecFromRowStochVec(*presProb->inequality_lower_bounds, row) : INF_NEG;
@@ -3844,7 +3844,7 @@ void PresolveData::transform_inequalities_into_equalities(int node, bool linking
 
 void PresolveData::append_bounds_inequalities_to_equalities_transformation(int node, bool linking, int n_slack_variables) {
    /* extend variable bounds and row bounds */
-   SimpleVector<double>& bA = getSimpleVecFromRowStochVec(*presProb->bA, node, linking);
+   SimpleVector<double>& bA = getSimpleVecFromRowStochVec(*presProb->equality_rhs, node, linking);
    bA.appendToBack(n_slack_variables, 0.0);
 
    SimpleVector<double>& ixlow = getSimpleVecFromColStochVec(*presProb->primal_lower_bound_indicators, node);
@@ -3864,21 +3864,21 @@ void PresolveData::append_bounds_inequalities_to_equalities_transformation(int n
 }
 
 void PresolveData::append_new_slacks_to_objective_vector(int node, int n_slack_variables) {
-   SimpleVector<double>& obj = getSimpleVecFromColStochVec(*presProb->g, node);
+   SimpleVector<double>& obj = getSimpleVecFromColStochVec(*presProb->objective_gradient, node);
    obj.appendToBack(n_slack_variables, 0.0);
 }
 
 void PresolveData::extend_q_matrix_by_new_variables(int node, int n_variables) {
-   SparseSymmetricMatrix& Q_diag = getSparseSymmetricDiagFromStochMat(dynamic_cast<DistributedSymmetricMatrix&>(*presProb->Q), node);
+   SparseSymmetricMatrix& Q_diag = getSparseSymmetricDiagFromStochMat(dynamic_cast<DistributedSymmetricMatrix&>(*presProb->hessian), node);
    Q_diag.append_empty_diagonal(n_variables);
 
    if (node == -1) {
       for (int i = 0; i < nChildren; ++i ) {
-         SparseMatrix& border = getSparseBorderFromStochMat(dynamic_cast<DistributedSymmetricMatrix&>(*presProb->Q), i);
+         SparseMatrix& border = getSparseBorderFromStochMat(dynamic_cast<DistributedSymmetricMatrix&>(*presProb->hessian), i);
          border.append_empty_columns(n_variables);
       }
    } else {
-      SparseMatrix& Q_border = getSparseBorderFromStochMat(dynamic_cast<DistributedSymmetricMatrix&>(*presProb->Q), node);
+      SparseMatrix& Q_border = getSparseBorderFromStochMat(dynamic_cast<DistributedSymmetricMatrix&>(*presProb->hessian), node);
       Q_border.append_empty_rows(n_variables);
    }
 }

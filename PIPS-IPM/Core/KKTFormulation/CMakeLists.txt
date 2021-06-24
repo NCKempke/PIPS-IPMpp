@@ -15,7 +15,6 @@ target_sources(pips-ipmpp
         PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/LinearSystems/LinearSystem.C
         PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/LinearSystems/RACFG_BLOCK.cpp
         PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/LinearSystems/RegularizationStrategy.cpp
-        PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/LinearSystems/sLinsysLeafSchurSlv.C
         PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/LinearSystems/sLinsysRootAug.C
         PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/LinearSystems/sLinsysRootAugHierInner.C
         PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/LinearSystems/sLinsysRootBordered.C
@@ -26,3 +25,12 @@ target_sources(pips-ipmpp
         PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/Variables/DistributedVariables.cpp
         PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/Variables/Variables.C
     )
+
+if (HAVE_PARDISO)
+
+
+
+
+
+
+endif(HAVE_PARDISO)

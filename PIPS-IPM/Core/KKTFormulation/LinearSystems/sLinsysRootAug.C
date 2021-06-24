@@ -6,7 +6,7 @@
 #include "DeSymIndefSolver.h"
 #include "DeSymIndefSolver2.h"
 #include "DeSymPSDSolver.h"
-#include "DistributedQP.hpp"
+#include "DistributedProblem.hpp"
 #include "BorderedSymmetricMatrix.h"
 #include "PIPSIPMppOptions.h"
 #include "DistributedFactory.hpp"
@@ -33,7 +33,7 @@ static void biCGStabCommunicateStatus(int flag, int it) {
       gInnerBiCGFails++;
 }
 
-sLinsysRootAug::sLinsysRootAug(DistributedFactory* factory_, DistributedQP* prob_) : DistributedRootLinearSystem(
+sLinsysRootAug::sLinsysRootAug(const DistributedFactory& factory_, DistributedProblem* prob_) : DistributedRootLinearSystem(
    factory_, prob_) {
    if (pipsipmpp_options::get_bool_parameter("HIERARCHICAL"))
       assert(false && "should not end up here");
@@ -47,13 +47,13 @@ sLinsysRootAug::sLinsysRootAug(DistributedFactory* factory_, DistributedQP* prob
          std::cout << "setting up root regularization : " << locnx << " " << locmy << " " << locmz << " " << locmyl << " "
             << locmzl << "\n";
       }
-      regularization_strategy = factory_->make_regularization_strategy(locnx, locmy + locmyl + locmzl);
+      regularization_strategy = factory.make_regularization_strategy(locnx, locmy + locmyl + locmzl);
    }
 
    redRhs = std::make_unique<SimpleVector<double>>(locnx + locmy + locmz + locmyl + locmzl);
 }
 
-sLinsysRootAug::sLinsysRootAug(DistributedFactory* factory_, DistributedQP* prob_, std::shared_ptr<Vector<double>> dd_,
+sLinsysRootAug::sLinsysRootAug(const DistributedFactory& factory_, DistributedProblem* prob_, std::shared_ptr<Vector<double>> dd_,
    std::shared_ptr<Vector<double>> dq_,
    std::shared_ptr<Vector<double>> nomegaInv_, std::shared_ptr<Vector<double>> regP,
    std::shared_ptr<Vector<double>> regDy, std::shared_ptr<Vector<double>> regDz, std::shared_ptr<Vector<double>> rhs_,
@@ -74,7 +74,7 @@ sLinsysRootAug::sLinsysRootAug(DistributedFactory* factory_, DistributedQP* prob
          std::cout << "setting up root regularization : " << locnx << " " << locmy << " " << locmz << " " << locmyl
                    << " " << locmzl << "\n";
       }
-      regularization_strategy = factory_->make_regularization_strategy(locnx, locmy + locmyl + locmzl);
+      regularization_strategy = factory.make_regularization_strategy(locnx, locmy + locmyl + locmzl);
    }
 
    redRhs = std::make_unique<SimpleVector<double>>(locnx + locmy + locmz + locmyl + locmzl);

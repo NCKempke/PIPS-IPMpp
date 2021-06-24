@@ -12,9 +12,8 @@ add_library(pips-ipmpp STATIC
         Options/PIPSIPMppOptions.C
 
         Problems/DistributedFactory.cpp
-        Problems/DistributedQP.cpp
+        Problems/DistributedProblem.cpp
         Problems/Problem.cpp
-        Problems/QP.cpp
         Problems/StochResourcesMonitor.cpp
 
         Readers/Distributed/DistributedInputTree.C
@@ -25,7 +24,6 @@ add_library(pips-ipmpp STATIC
         Utilities/pipschecks.C
         Utilities/hash.C
         Utilities/sort.cpp
-        LinearAlgebra/Distributed/DistributedMatrixUtilities.cpp
         )
 
 target_include_directories(pips-ipmpp
@@ -37,6 +35,7 @@ target_include_directories(pips-ipmpp
         Problems
         Readers
         Utilities
+        ${BOOST_INCLUDE_DIRS}
     PUBLIC
         Readers/Distributed
     )
@@ -55,6 +54,6 @@ endforeach(linear_solver)
 add_subdirectory(Preprocessing)
 
 target_link_libraries(pips-ipmpp
-        PRIVATE MPI::MPI_CXX
+        PRIVATE Boost::boost
         PRIVATE ${MATH_LIBS}
 )

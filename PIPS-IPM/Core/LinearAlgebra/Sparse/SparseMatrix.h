@@ -190,6 +190,9 @@ public:
    /** fill vector with absolute minimum/maximum value of each column */
    void getColMinMaxVec(bool getMin, bool initializeVec, const Vector<double>* rowScaleVec, Vector<double>& minmaxVec) const override;
 
+   void
+   sum_transform_rows(Vector<double>& result, const std::function<double(const double&)>& transform) const override;
+
    void addRowSums(Vector<double>& sumVec) const override;
    void addColSums(Vector<double>& sumVec) const override;
 

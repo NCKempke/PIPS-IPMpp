@@ -2,6 +2,7 @@
 #define SOLVER_H
 
 #include "TerminationStatus.hpp"
+#include <memory>
 
 class Problem;
 
@@ -22,7 +23,7 @@ class Statistics;
 class Solver {
 public:
    Solver(DistributedFactory& factory, Problem& problem);
-   virtual ~Solver();
+   virtual ~Solver() = default;
 
    /** implements the interior-point method for solving the subproblem */
    virtual TerminationStatus solve(Problem& problem, Variables& iterate, Residuals& residuals) = 0;
@@ -32,7 +33,7 @@ public:
 protected:
    DistributedFactory& factory;
    /**  storage for step vector */
-   Variables* step;
+   std::unique_ptr<Variables> step;
    //AbstractLinearSystem* linear_system{};
 };
 

@@ -20,9 +20,10 @@ class Vector;
 class DistributedInputTree;
 class DistributedFactory;
 class PreprocessFactory;
-class DistributedResiduals;
-class DistributedVariables;
-class DistributedQP;
+class Residuals;
+class Variables;
+class DistributedProblem;
+class Problem;
 class Presolver;
 class Postsolver;
 class Scaler;
@@ -59,9 +60,28 @@ public:
 
    std::vector<double> gatherDualSolutionVarBoundsLow();
 
+   std::vector<double> gatherSlacksInequalityUp();
+
+   std::vector<double> gatherSlacksInequalityLow();
+
+   std::vector<double> gatherSlacksVarsUp();
+
+   std::vector<double> gatherSlacksVarsLow();
+
+   std::vector<double> gatherPrimalResidsEQ();
+
+   std::vector<double> gatherPrimalResidsIneqUp();
+
+   std::vector<double> gatherPrimalResidsIneqLow();
+
+   std::vector<double> gatherDualResids();
+
    [[nodiscard]] std::vector<double> getFirstStagePrimalColSolution() const;
 
    [[nodiscard]] std::vector<double> getSecondStagePrimalColSolution(int scen) const;
+
+   void allgatherBlocksizes(std::vector<unsigned int>& block_lengths_col,
+      std::vector<unsigned int>& block_lengths_A, std::vector<unsigned int>& block_lengths_C) const;
 
    void postsolveComputedSolution();
 
@@ -75,24 +95,25 @@ public:
    //more get methods to follow here
 
 private:
-   static void printComplementarityResiduals(const DistributedVariables& vars) ;
+   static void printComplementarityResiduals(const Variables& vars) ;
 
-   std::vector<double> gatherFromSolution(std::unique_ptr<Vector<double>> DistributedVariables::* member_to_gather);
+   std::vector<double> gatherFromSolution(std::unique_ptr<Vector<double>> Variables::* member_to_gather);
+   std::vector<double> gatherFromResiduals(std::unique_ptr<Vector<double>> Residuals::* member_to_gather);
 
 protected:
    std::unique_ptr<DistributedFactory> factory;
    std::unique_ptr<PreprocessFactory> preprocess_factory;
 
-   std::unique_ptr<DistributedQP> presolved_problem; // possibly presolved problem
-   std::unique_ptr<DistributedQP> dataUnpermNotHier; // data after presolve before permutation, scaling and hierarchical data
-   std::unique_ptr<DistributedQP> original_problem; // original data
-   std::unique_ptr<DistributedVariables> variables;
-   std::unique_ptr<DistributedVariables> unscaleUnpermNotHierVars;
-   std::unique_ptr<DistributedVariables> postsolved_variables;
+   std::unique_ptr<Problem> presolved_problem; // possibly presolved problem
+   std::unique_ptr<Problem> dataUnpermNotHier; // data after presolve before permutation, scaling and hierarchical data
+   std::unique_ptr<Problem> original_problem; // original data
+   std::unique_ptr<Variables> variables;
+   std::unique_ptr<Variables> unscaleUnpermNotHierVars;
+   std::unique_ptr<Variables> postsolved_variables;
 
-   std::unique_ptr<DistributedResiduals> residuals;
-   std::unique_ptr<DistributedResiduals> unscaleUnpermNotHierResids;
-   std::unique_ptr<DistributedResiduals> postsolvedResids;
+   std::unique_ptr<Residuals> residuals;
+   std::unique_ptr<Residuals> unscaleUnpermNotHierResids;
+   std::unique_ptr<Residuals> postsolvedResids;
 
    std::unique_ptr<Presolver> presolver;
    std::unique_ptr<Postsolver> postsolver;
