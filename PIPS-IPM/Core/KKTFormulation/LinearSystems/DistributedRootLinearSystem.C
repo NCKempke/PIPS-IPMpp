@@ -384,7 +384,7 @@ void DistributedRootLinearSystem::finalizeInnerSchurComplementContribution(Abstr
    if (has_RAC)
       assert(n_result == nF0V + mF0C + mG0C);
    else
-      assert(n_result >= mF0V);
+      assert(n_result >= nF0V);
 #endif
 
    if (is_sparse)
