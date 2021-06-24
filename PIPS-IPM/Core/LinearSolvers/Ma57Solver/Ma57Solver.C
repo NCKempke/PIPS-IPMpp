@@ -384,7 +384,7 @@ bool Ma57Solver::checkErrorsAndReact() {
       case 4: {
          if (print)
             std::cout << "WARNING MA57 " << name << ": rank deficient matrix detected; apparent rank is " << info[24]
-                      << "\n";
+               << " vs " << n << " expected\n";
       }
          break;
       case 5: {
