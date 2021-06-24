@@ -361,8 +361,7 @@ PardisoSolver::~PardisoSolver() {
 std::tuple<unsigned int, unsigned int, unsigned int> PardisoSolver::get_inertia() const {
    const int positive_eigenvalues = iparm[21];
    const int negative_eigenvalues = iparm[22];
-   const int number_pivot_perturbations = iparm[13]; // indicate zero pivots and thus rank deficiency
 
-   const int zero_eigenvalues = n - positive_eigenvalues - negative_eigenvalues + number_pivot_perturbations;
-   return {positive_eigenvalues - number_pivot_perturbations, negative_eigenvalues, zero_eigenvalues};
+   assert(positive_eigenvalues + negative_eigenvalues <= n);
+   return {positive_eigenvalues, negative_eigenvalues, n - positive_eigenvalues - negative_eigenvalues};
 }

@@ -25,6 +25,8 @@ class Residuals;
 
 class AbstractLinearSystem;
 
+class RegularizationStrategy;
+
 class ProblemFactory {
 public:
    ProblemFactory() = default;
@@ -38,6 +40,9 @@ public:
    [[nodiscard]] virtual std::unique_ptr<Variables> make_variables(const Problem& problem) const = 0;
 
    [[nodiscard]] virtual std::unique_ptr<AbstractLinearSystem> make_linear_system(Problem& problem) const = 0;
+
+   [[nodiscard]] virtual std::unique_ptr<RegularizationStrategy> make_regularization_strategy(unsigned int positive_eigenvalues,
+      unsigned int negative_eigenvalues) const = 0;
 
    /** create x vector */
    [[nodiscard]] virtual std::unique_ptr<Vector<double>> make_primal_vector() const = 0;

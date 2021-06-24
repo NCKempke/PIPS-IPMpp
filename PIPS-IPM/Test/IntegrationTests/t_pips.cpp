@@ -42,10 +42,9 @@ public:
 
    ScenarioTests() {
       if (const char* gams_env = std::getenv("GAMSSYSDIR")) {
-         if (!gams_env)
-            std::cout
-               << "For this test suite to run please set your environment variable GAMSSYSDIR pointing to the gams directory\n";
          gams_path = std::string(gams_env);
+      } else {
+        std::cout << "For this test suite to run please set your environment variable GAMSSYSDIR pointing to the gams directory\n";
       }
    }
 

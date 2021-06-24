@@ -350,8 +350,10 @@ void SimpleVector<T>::componentDiv(const Vector<T>& vec) {
    const auto& sv = dynamic_cast<const SimpleVector<T>&>(vec);
    const T* y = sv.v;
 
-   for (; pv < lv; pv++, y++)
+   for (; pv < lv; pv++, y++) {
+      assert(*y != 0.0);
       *pv /= *y;
+   }
 }
 
 template<typename T>
@@ -510,7 +512,7 @@ void SimpleVector<T>::axzpy(T alpha, const Vector<T>& xvec, const Vector<T>& zve
 
 template<typename T>
 void SimpleVector<T>::axdzpy(T alpha, const Vector<T>& xvec, const Vector<T>& zvec) {
-   const SimpleVector<T>& sxvec = dynamic_cast<const SimpleVector<T>&>(xvec);
+   const auto& sxvec = dynamic_cast<const SimpleVector<T>&>(xvec);
    T* x = sxvec.v;
    const auto& szvec = dynamic_cast<const SimpleVector<T>&>(zvec);
    T* z = szvec.v;

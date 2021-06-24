@@ -290,6 +290,8 @@ namespace pipsipmpp_options {
       // the dense Schur complement
       // - 2:BiCGStab with the factorization as preconditioner
       int_options["OUTER_SOLVE"] = 2;
+      bool_options["OUTER_SOLVE_REFINE_ORIGINAL_SYSTEM"] = false;
+
       // controls the type of error absortion/correction at the inner level when solving
       //with the dense Schur complement
       // - 0: no error correction
@@ -311,14 +313,17 @@ namespace pipsipmpp_options {
 
       /// REGULARIZATION FOR LINEAR SYSTEM
       bool_options["REGULARIZATION"] = false;
+      bool_options["REGULARIZATION_VERBOSE"] = false;
+      int_options["REGULARIZATION_STRATEGY"] = 1; // 0 -> Ipopt, 1 -> FriedlanderOrban
 
-      double_options["REGULARIZATION_INITIAL_PRIMAL"] = 1;
-      double_options["REGULARIZATION_INITIAL_DUAL_Y"] = 0;
-      double_options["REGULARIZATION_INITIAL_DUAL_Z"] = 0;
+      double_options["FRIEDLANDER_ORBAN_REGULARIZATION_INITIAL_PRIMAL"] = 1;
+      double_options["FRIEDLANDER_ORBAN_REGULARIZATION_INITIAL_DUAL_Y"] = 1;
+      double_options["FRIEDLANDER_ORBAN_REGULARIZATION_INITIAL_DUAL_Z"] = 1;
+      double_options["FRIEDLANDER_ORBAN_REGULARIZATION_PRIMAL_MIN"] = 1e-10;
+      double_options["FRIEDLANDER_ORBAN_REGULARIZATION_DUAL_MIN"] = 1e-10;
 
-      double_options["REGULARIZATION_MIN_PRIMAL"] = 1e-20;
-      double_options["REGULARIZATION_MIN_DUAL"] = 1e-20;
-      double_options["REGULARIZATION_MAX_PRIMAL"] = 1e40;
+      double_options["IPOPT_REGULARIZATION_MIN_PRIMAL"] = 1e-20;
+      double_options["IPOPT_REGULARIZATION_MAX_PRIMAL"] = 1e40;
 
       bool_options["SCHUR_COMPLEMENT_FORCE_SPARSE_COMPUTATIONS"] = false;
       setPresolveDefaults();

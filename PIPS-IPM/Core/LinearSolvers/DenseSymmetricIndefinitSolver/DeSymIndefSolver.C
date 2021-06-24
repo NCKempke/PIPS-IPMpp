@@ -160,6 +160,7 @@ void DeSymIndefSolver::calculate_inertia_from_factorization() const {
          ++negative_eigenvalues;
       }
    }
+   assert(n == positive_eigenvalues + negative_eigenvalues + zero_eigenvalues);
 }
 
 std::tuple<unsigned int, unsigned int, unsigned int> DeSymIndefSolver::get_inertia() const {

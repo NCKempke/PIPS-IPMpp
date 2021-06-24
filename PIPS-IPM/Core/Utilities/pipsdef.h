@@ -168,19 +168,6 @@ inline unsigned int getNDistinctValues(const std::vector<T>& values) {
 
 inline int PIPSgetnOMPthreads() {
    return omp_get_max_threads();
-//   int num_procs;
-//
-//   /* Numbers of processors, value of OMP_NUM_THREADS */
-//   char* var = getenv("OMP_NUM_THREADS");
-//   if( var != nullptr )
-//      sscanf(var, "%d", &num_procs);
-//   else
-//   {
-//      printf("Set environment OMP_NUM_THREADS to 1");
-//      exit(1);
-//   }
-//
-//   return num_procs;
 }
 
 inline MPI_Comm PIPS_MPIcreateGroupFromRanks(const int* chosen_ranks, unsigned int n_chosen_ranks, MPI_Comm mpi_comm_all = MPI_COMM_WORLD) {
@@ -232,9 +219,9 @@ inline bool PIPS_MPIgetDistributed(MPI_Comm comm = MPI_COMM_WORLD) {
 }
 
 void inline PIPS_MPIabortInfeasible(std::string message, std::string file, std::string function, MPI_Comm comm = MPI_COMM_WORLD) {
-   std::cerr << "Infesibility detected in " << file << " function " << function << "!" << std::endl;
-   std::cerr << "Message: " << message << std::endl;
-   std::cerr << "Aborting now." << std::endl;
+   std::cerr << "Infesibility detected in " << file << " function " << function << "!\n";
+   std::cerr << "Message: " << message << "\n";
+   std::cerr << "Aborting now.\n";
    MPI_Abort(comm, 1);
 }
 

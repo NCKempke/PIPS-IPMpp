@@ -47,6 +47,8 @@ class Residuals;
 
 class AbstractLinearSystem;
 
+class RegularizationStrategy;
+
 #include "StochResourcesMonitor.hpp"
 
 class DistributedFactory : public ProblemFactory {
@@ -60,6 +62,8 @@ public:
    [[nodiscard]] std::unique_ptr<Variables> make_variables(const Problem& problem) const override;
 
    [[nodiscard]] std::unique_ptr<AbstractLinearSystem> make_linear_system(Problem& problem) const override;
+
+   [[nodiscard]] std::unique_ptr<RegularizationStrategy> make_regularization_strategy(unsigned int positive_eigenvalues, unsigned int negative_eigenvalues) const override;
 
    /** create x shaped vector using tree */
    [[nodiscard]] std::unique_ptr<Vector<double>> make_primal_vector() const override;
