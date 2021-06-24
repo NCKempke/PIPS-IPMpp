@@ -16,7 +16,7 @@
 
 class DistributedTreeCallbacks;
 
-class DistributedQP;
+class DistributedProblem;
 
 class DistributedTree {
    friend DistributedTreeCallbacks;
@@ -30,7 +30,7 @@ public:
    [[nodiscard]] long long getMZ() const { return MZ; };
    [[nodiscard]] long long getMZL() const { return MZL; };
 
-   virtual DistributedTree* clone() const = 0;
+   [[nodiscard]] virtual std::unique_ptr<DistributedTree> clone() const = 0;
 protected:
 
    DistributedTree(const DistributedTree& other);
@@ -52,9 +52,9 @@ protected:
    int np{-1}; //n for the parent
 
    double IPMIterExecTIME{-1.0}; // not used since we currently do not compute loads for nodes and processes...
-   std::vector<DistributedTree*> children;
+   std::vector<std::unique_ptr<DistributedTree>> children;
    /* used for hierarchical approach - implies sub structure inside the current Bmat */
-   DistributedTree* sub_root{};
+   std::unique_ptr<DistributedTree> sub_root{};
 
    /* global number of all processes available */
    static int numProcs;
@@ -71,7 +71,7 @@ public:
 
    void assignProcesses(MPI_Comm comm = MPI_COMM_WORLD);
 
-   virtual ~DistributedTree();
+   virtual ~DistributedTree() = default;
 
    [[nodiscard]] bool distributedPreconditionerActive() const;
 
@@ -79,35 +79,35 @@ public:
    void startNodeMonitors();
    void stopMonitors();
    void stopNodeMonitors();
-   bool balanceLoad();
+   static bool balanceLoad();
 
    void getSyncInfo(int myRank, int& syncNeeded, int& sendOrRecv, int& toFromCPU);
 
-   [[nodiscard]] virtual DistributedSymmetricMatrix* createQ() const = 0;
-   [[nodiscard]] virtual DistributedVector<double>* createc() const = 0;
+   [[nodiscard]] virtual std::unique_ptr<DistributedSymmetricMatrix> createQ() const = 0;
+   [[nodiscard]] virtual std::unique_ptr<DistributedVector<double>> createc() const = 0;
 
-   [[nodiscard]] virtual DistributedVector<double>* createxlow() const = 0;
-   [[nodiscard]] virtual DistributedVector<double>* createixlow() const = 0;
-   [[nodiscard]] virtual DistributedVector<double>* createxupp() const = 0;
-   [[nodiscard]] virtual DistributedVector<double>* createixupp() const = 0;
+   [[nodiscard]] virtual std::unique_ptr<DistributedVector<double>> createxlow() const = 0;
+   [[nodiscard]] virtual std::unique_ptr<DistributedVector<double>> createixlow() const = 0;
+   [[nodiscard]] virtual std::unique_ptr<DistributedVector<double>> createxupp() const = 0;
+   [[nodiscard]] virtual std::unique_ptr<DistributedVector<double>> createixupp() const = 0;
 
-   [[nodiscard]] virtual DistributedMatrix* createA() const = 0;
-   [[nodiscard]] virtual DistributedVector<double>* createb() const = 0;
+   [[nodiscard]] virtual std::unique_ptr<DistributedMatrix> createA() const = 0;
+   [[nodiscard]] virtual std::unique_ptr<DistributedVector<double>> createb() const = 0;
 
-   [[nodiscard]] virtual DistributedMatrix* createC() const = 0;
-   [[nodiscard]] virtual DistributedVector<double>* createclow() const = 0;
-   [[nodiscard]] virtual DistributedVector<double>* createiclow() const = 0;
-   [[nodiscard]] virtual DistributedVector<double>* createcupp() const = 0;
-   [[nodiscard]] virtual DistributedVector<double>* createicupp() const = 0;
+   [[nodiscard]] virtual std::unique_ptr<DistributedMatrix> createC() const = 0;
+   [[nodiscard]] virtual std::unique_ptr<DistributedVector<double>> createclow() const = 0;
+   [[nodiscard]] virtual std::unique_ptr<DistributedVector<double>> createiclow() const = 0;
+   [[nodiscard]] virtual std::unique_ptr<DistributedVector<double>> createcupp() const = 0;
+   [[nodiscard]] virtual std::unique_ptr<DistributedVector<double>> createicupp() const = 0;
 
-   [[nodiscard]] DistributedVector<double>* new_primal_vector(bool empty = false) const;
-   [[nodiscard]] DistributedVector<double>* newDualYVector(bool empty = false) const;
-   [[nodiscard]] DistributedVector<double>* newDualZVector(bool empty = false) const;
+   [[nodiscard]] std::unique_ptr<DistributedVector<double>> new_primal_vector(bool empty = false) const;
+   [[nodiscard]] std::unique_ptr<DistributedVector<double>> newDualYVector(bool empty = false) const;
+   [[nodiscard]] std::unique_ptr<DistributedVector<double>> newDualZVector(bool empty = false) const;
 
-   [[nodiscard]] DistributedVector<double>* newRhs() const;
+   [[nodiscard]] std::unique_ptr<DistributedVector<double>> newRhs() const;
 
-   [[nodiscard]] const DistributedTree* getSubRoot() const { return sub_root; };
-   [[nodiscard]] const std::vector<DistributedTree*>& getChildren() const { return children; };
+   [[nodiscard]] const DistributedTree* getSubRoot() const { return sub_root.get(); };
+   [[nodiscard]] const std::vector<std::unique_ptr<DistributedTree>>& getChildren() const { return children; };
    [[nodiscard]] unsigned int nChildren() const { return children.size(); }
    [[nodiscard]] MPI_Comm getCommWorkers() const { return commWrkrs; };
 
@@ -132,12 +132,12 @@ public:
    [[nodiscard]] bool isHierarchicalInnerLeaf() const { return is_hierarchical_inner_leaf; };
 
    /* shave tree and add an additional top layer */
-   virtual DistributedTree* shaveDenseBorder(int nx_to_shave, int myl_to_shave, int mzl_to_shave) = 0;
+   [[nodiscard]] virtual std::unique_ptr<DistributedTree> shaveDenseBorder(int nx_to_shave, int myl_to_shave, int mzl_to_shave, std::unique_ptr<DistributedTree> pointer_to_this) = 0;
    /* add an additional layer below this one by adding sqrt(nChildren) children each with sqrt(nChildren) of our current children */
-   virtual std::pair<int, int> splitTree(int n_layers, DistributedQP* data) = 0;
+   [[nodiscard]] virtual std::pair<int, int> splitTree(int n_layers, DistributedProblem* data) = 0;
 
    // TODO : make sure that none of the not suitable methods get called...
-   virtual DistributedTree* switchToHierarchicalTree(DistributedQP*& data) = 0;
+   [[nodiscard]] virtual std::unique_ptr<DistributedTree> switchToHierarchicalTree(DistributedProblem*& data, std::unique_ptr<DistributedTree> pointer_to_this) = 0;
 
    void printProcessTree() const;
    [[nodiscard]] bool was_A0_moved_to_border() const { return was_a0_moved_to_border; };

@@ -10,7 +10,7 @@
 #include "mpi.h"
 #include "Options.h"
 #include "PIPSIPMppOptions.h"
-#include "DistributedFactory.hpp"
+#include "ProblemFactory.h"
 #include <utility>
 #include <vector>
 #include <functional>
@@ -23,15 +23,13 @@ extern double g_iterNumber;
 
 static std::vector<int> bicgIters;
 
-LinearSystem::LinearSystem(DistributedFactory* factory_, const Problem& problem, bool create_iter_ref_vecs) : factory(factory_),
+LinearSystem::LinearSystem(const ProblemFactory& factory_, const Problem& problem, bool create_iter_ref_vecs) : factory(factory_),
       apply_regularization(options::getBoolParameter("REGULARIZATION")), outerSolve(options::getIntParameter("OUTER_SOLVE")),
       innerSCSolve(options::getIntParameter("INNER_SC_SOLVE")), outer_bicg_print_statistics(options::getBoolParameter("OUTER_BICG_PRINT_STATISTICS")),
       outer_bicg_eps(options::getDoubleParameter("OUTER_BICG_EPSILON")), outer_bicg_max_iter(options::getIntParameter("OUTER_BICG_MAX_ITER")),
       outer_bicg_max_normr_divergences(options::getIntParameter("OUTER_BICG_MAX_NORMR_DIVERGENCES")),
       outer_bicg_max_stagnations(options::getIntParameter("OUTER_BICG_MAX_STAGNATIONS")),
       xyzs_solve_print_residuals(options::getBoolParameter("XYZS_SOLVE_PRINT_RESISDUAL")), problem(problem) {
-
-   assert(factory_);
 
    ixlow = problem.primal_lower_bound_indicators;
    ixupp = problem.primal_upper_bound_indicators;
@@ -46,26 +44,26 @@ LinearSystem::LinearSystem(DistributedFactory* factory_, const Problem& problem,
    if (create_iter_ref_vecs) {
       if (outerSolve || xyzs_solve_print_residuals) {
          //for iterative refinement or BICGStab
-         sol.reset(factory->make_right_hand_side());
-         sol2.reset(factory->make_right_hand_side());
-         res.reset(factory->make_right_hand_side());
-         resx.reset(factory->make_primal_vector());
-         resy.reset(factory->make_equalities_dual_vector());
-         resz.reset(factory->make_inequalities_dual_vector());
+         sol = factory.make_right_hand_side();
+         sol2 = factory.make_right_hand_side();
+         res = factory.make_right_hand_side();
+         resx = factory.make_primal_vector();
+         resy = factory.make_equalities_dual_vector();
+         resz = factory.make_inequalities_dual_vector();
 
          if (outerSolve == 2) {
             //BiCGStab; additional vectors needed
-            sol3.reset(factory->make_right_hand_side());
-            res2.reset(factory->make_right_hand_side());
-            res3.reset(factory->make_right_hand_side());
-            res4.reset(factory->make_right_hand_side());
-            res5.reset(factory->make_right_hand_side());
+            sol3 = factory.make_right_hand_side();
+            res2 = factory.make_right_hand_side();
+            res3 = factory.make_right_hand_side();
+            res4 = factory.make_right_hand_side();
+            res5 = factory.make_right_hand_side();
          }
       }
    }
 }
 
-LinearSystem::LinearSystem(DistributedFactory* factory_, const Problem& problem, std::shared_ptr<Vector<double>> primal_diagonal_, std::shared_ptr<Vector<double>> dq_,
+LinearSystem::LinearSystem(const ProblemFactory& factory_, const Problem& problem, std::shared_ptr<Vector<double>> primal_diagonal_, std::shared_ptr<Vector<double>> dq_,
       std::shared_ptr<Vector<double>> nomegaInv_, std::shared_ptr<Vector<double>> primal_regularization_, std::shared_ptr<Vector<double>> dual_equality_regularization_,
       std::shared_ptr<Vector<double>> dual_inequality_regularization_, std::shared_ptr<Vector<double>> rhs_, bool create_iter_ref_vecs) : LinearSystem(factory_, problem,
       create_iter_ref_vecs) {
@@ -78,19 +76,20 @@ LinearSystem::LinearSystem(DistributedFactory* factory_, const Problem& problem,
    rhs = std::move(rhs_);
 }
 
-LinearSystem::LinearSystem(DistributedFactory* factory_, const Problem& problem) : LinearSystem(factory_, problem, true) {
+LinearSystem::LinearSystem(const ProblemFactory& factory_, const Problem& problem) : LinearSystem(factory_, problem, true) {
    if (nxupp + nxlow > 0) {
-      primal_diagonal.reset(factory->make_primal_vector());
-      dq.reset(factory->make_primal_vector());
+      primal_diagonal = factory.make_primal_vector();
+      dq = factory.make_primal_vector();
       problem.hessian_diagonal(*dq);
    }
 
-   nomegaInv.reset(factory->make_inequalities_dual_vector());
-   rhs.reset(factory->make_right_hand_side());
+   nomegaInv = factory.make_inequalities_dual_vector();
+   rhs = factory.make_right_hand_side();
 
-   primal_regularization_diagonal.reset(factory->make_primal_vector());
-   dual_equality_regularization_diagonal.reset(factory->make_equalities_dual_vector());
-   dual_inequality_regularization_diagonal.reset(factory->make_inequalities_dual_vector());
+
+   primal_regularization_diagonal = factory.make_primal_vector();
+   dual_equality_regularization_diagonal = factory.make_equalities_dual_vector();
+   dual_inequality_regularization_diagonal = factory.make_inequalities_dual_vector();
 }
 
 int LinearSystem::getIntValue(const std::string& s) const {
@@ -765,15 +764,15 @@ LinearSystem::matXYZinfnorm(const Problem& problem, Vector<double>& solx, Vector
    if (use_regularized_system && primal_regularization_diagonal)
       solx.axpy(1.0, *primal_regularization_diagonal);
 
-   problem.A->addColSums(solx);
-   problem.C->addColSums(solx);
+   problem.equality_jacobian->addColSums(solx);
+   problem.inequality_jacobian->addColSums(solx);
    double infnorm = solx.inf_norm();
 
    soly.setToZero();
    if (use_regularized_system && dual_equality_regularization_diagonal)
       soly.axpy(1.0, *dual_equality_regularization_diagonal);
 
-   problem.A->addRowSums(soly);
+   problem.equality_jacobian->addRowSums(soly);
    infnorm = std::max(infnorm, soly.inf_norm());
 
    solz.copyFromAbs(*nomegaInv);
@@ -781,7 +780,7 @@ LinearSystem::matXYZinfnorm(const Problem& problem, Vector<double>& solx, Vector
    if (use_regularized_system && dual_inequality_regularization_diagonal)
       solz.axpy(1.0, *dual_inequality_regularization_diagonal);
 
-   problem.C->addRowSums(solz);
+   problem.inequality_jacobian->addRowSums(solz);
    infnorm = std::max(infnorm, solz.inf_norm());
 
    return infnorm;

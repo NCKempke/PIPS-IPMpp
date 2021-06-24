@@ -12,7 +12,7 @@
 
 class StochPresolverModelCleanup : public StochPresolverBase {
 public:
-   StochPresolverModelCleanup(PresolveData& presolve_data, const DistributedQP& origProb);
+   StochPresolverModelCleanup(PresolveData& presolve_data, const DistributedProblem& origProb);
 
    ~StochPresolverModelCleanup() override = default;
 

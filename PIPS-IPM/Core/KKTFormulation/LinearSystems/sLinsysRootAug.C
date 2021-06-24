@@ -3,7 +3,7 @@
    See license and copyright information in the documentation */
 
 #include "sLinsysRootAug.h"
-#include "DistributedQP.hpp"
+#include "DistributedProblem.hpp"
 #include "BorderedSymmetricMatrix.h"
 #include "PIPSIPMppOptions.h"
 #include <memory>
@@ -19,7 +19,7 @@
 extern double g_iterNumber;
 #endif
 
-sLinsysRootAug::sLinsysRootAug(DistributedFactory* factory_, DistributedQP* prob_, bool is_hierarchy_root) : DistributedRootLinearSystem(
+sLinsysRootAug::sLinsysRootAug(const DistributedFactory& factory_, DistributedProblem* prob_, bool is_hierarchy_root) : DistributedRootLinearSystem(
    factory_, prob_, is_hierarchy_root) {
 
    if (!is_hierarchy_root) {
@@ -33,7 +33,7 @@ sLinsysRootAug::sLinsysRootAug(DistributedFactory* factory_, DistributedQP* prob
    redRhs = std::make_unique<SimpleVector<double>>(locnx + locmy + locmz + locmyl + locmzl);
 }
 
-sLinsysRootAug::sLinsysRootAug(DistributedFactory* factory_, DistributedQP* prob_, std::shared_ptr<Vector<double>> dd_,
+sLinsysRootAug::sLinsysRootAug(const DistributedFactory& factory_, DistributedProblem* prob_, std::shared_ptr<Vector<double>> dd_,
    std::shared_ptr<Vector<double>> dq_,
    std::shared_ptr<Vector<double>> nomegaInv_, std::shared_ptr<Vector<double>> regP,
    std::shared_ptr<Vector<double>> regDy, std::shared_ptr<Vector<double>> regDz, std::shared_ptr<Vector<double>> rhs_,

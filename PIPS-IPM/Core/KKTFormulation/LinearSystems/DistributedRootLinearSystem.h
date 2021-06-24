@@ -13,7 +13,7 @@ class SCsparsifier;
 
 class DistributedFactory;
 
-class DistributedQP;
+class DistributedProblem;
 
 /** 
  * ROOT (= NON-leaf) linear system
@@ -34,11 +34,11 @@ private:
    void init();
 
 public:
-   std::vector<DistributedLinearSystem*> children;
+   std::vector<std::unique_ptr<DistributedLinearSystem>> children;
 
-   DistributedRootLinearSystem(DistributedFactory* factory_, DistributedQP* prob_, bool is_hierarchy_root = false);
+   DistributedRootLinearSystem(const DistributedFactory& factory_, DistributedProblem* prob_, bool is_hierarchy_root = false);
 
-   DistributedRootLinearSystem(DistributedFactory* factory, DistributedQP* prob_, std::shared_ptr<Vector<double>> dd_,
+   DistributedRootLinearSystem(const DistributedFactory& factory, DistributedProblem* prob_, std::shared_ptr<Vector<double>> dd_,
       std::shared_ptr<Vector<double>> dq_, std::shared_ptr<Vector<double>> nomegaInv_,
       std::shared_ptr<Vector<double>> primal_reg_, std::shared_ptr<Vector<double>> dual_y_reg_,
       std::shared_ptr<Vector<double>> dual_z_reg_, std::shared_ptr<Vector<double>> rhs_, bool create_sub_root_solver);
@@ -99,7 +99,7 @@ public:
 
    void put_barrier_parameter(double barrier) override;
 
-   virtual void AddChild(DistributedLinearSystem* child);
+   virtual void AddChild(std::unique_ptr<DistributedLinearSystem> child);
 
    virtual bool usingSparseKkt() { return hasSparseKkt; };
 

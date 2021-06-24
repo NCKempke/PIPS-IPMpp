@@ -14,26 +14,29 @@ Statistics::Statistics(const DistributedFactory& factory, const Scaler* scaler) 
 }
 
 void Statistics::print(const Problem* problem, const Variables* variables, const Residuals* residuals, double dnorm, double alpha, double sigma, int i,
-      double mu, TerminationStatus status_code, int level) {
+      double mu, TerminationStatus status_code, int level) const {
    Statistics::print(problem, variables, residuals, dnorm, alpha, -1.0, sigma, i, mu, status_code, level);
 }
 
 void
 Statistics::print(const Problem* problem, const Variables* variables, const Residuals* residuals, double dnorm, double alpha_primal, double alpha_dual,
       double sigma, int i, double mu, TerminationStatus status_code, int level) const {
-   double objective = problem->objective_value(*variables);
+   double objective = problem->evaluate_objective(*variables);
 
-   const Residuals* unscaled_residuals = residuals;
+   double residual_norm;
+   double duality_gap;
+
    if (scaler) {
+      std::unique_ptr<Residuals> unscaled_residuals = residuals->cloneFull();
       objective = scaler->get_unscaled_objective(objective);
-      unscaled_residuals = scaler->get_unscaled_residuals(*residuals);
+      scaler->unscale_residuals(*unscaled_residuals);
+
+      residual_norm = unscaled_residuals->get_residual_norm();
+      duality_gap = unscaled_residuals->get_duality_gap();
+   } else {
+      residual_norm = residuals->get_residual_norm();
+      duality_gap = residuals->get_duality_gap();
    }
-
-   const double residual_norm = unscaled_residuals->get_residual_norm();
-   const double duality_gap = unscaled_residuals->get_duality_gap();
-
-   if (scaler)
-      delete unscaled_residuals;
 
    // log only on the first proc
    if (rank > 0)

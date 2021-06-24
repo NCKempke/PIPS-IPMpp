@@ -171,6 +171,18 @@ void BorderedMatrix::getColMinMaxVec(bool get_min, bool initialize_vec, const Ve
    border_bottom->getColMinMaxVec(get_min, false, has_rowscale ? row_scale->last.get() : nullptr, *minmax.children[0]);
 }
 
+void BorderedMatrix::sum_transform_rows(Vector<double>& result_, const std::function<double(const double&)>& transform) const {
+   assert(hasVecStructureForBorderedMat(result_, false));
+
+   auto& result = dynamic_cast<DistributedVector<double>&>(result_);
+
+   border_left->sum_transform_rows(*result.children[0], transform);
+   inner_matrix->sum_transform_rows(*result.children[0], transform);
+
+   bottom_left_block->sum_transform_rows(*result.last, transform);
+   border_bottom->sum_transform_rows(*result.last, transform);
+}
+
 void BorderedMatrix::addRowSums(Vector<double>& vec_) const {
    assert(hasVecStructureForBorderedMat(vec_, false));
 

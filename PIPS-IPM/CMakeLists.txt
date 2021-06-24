@@ -128,6 +128,17 @@ target_link_libraries(gmspipsio
         PRIVATE ${DL_LIBRARY}
         )
 
+
+########### gmpipsreader ###########
+add_library(gmspips_reader Drivers/gmspips/gmspips_reader.cpp)
+
+target_include_directories(gmspips_reader PRIVATE Core/Readers/Distributed Core/Utilities)
+target_link_libraries(gmspips_reader
+        PRIVATE gmspipsio
+        PRIVATE pips-ipmpp
+        PRIVATE MPI::MPI_CXX
+        )
+
 ############## gmspips ##############
 add_executable(gmspips Drivers/gmspips/gmspips.cpp)
 target_include_directories(gmspips PRIVATE ${includes_for_interface})
@@ -137,15 +148,13 @@ target_compile_options(gmspips
         PRIVATE "$<$<COMPILE_LANGUAGE:CXX>:-Wsuggest-override>"
         )
 
-target_compile_definitions(gmspips
-        PRIVATE GMS_PIPS
-        PRIVATE GMS_MPI
-        PRIVATE LINKCONSTR
-        ) # -DGMS_LOG
+#target_compile_definitions(gmspips
+#        PRIVATE GMS_LOG
+#        )
 
 target_link_libraries(gmspips
-        PRIVATE gmspipsio
         PRIVATE pips-ipmpp
+        PRIVATE gmspips_reader
         PRIVATE OpenMP::OpenMP_CXX
         PRIVATE MPI::MPI_CXX
         )
@@ -158,13 +167,3 @@ target_link_libraries(gmschk
         PRIVATE gmspipsio
         PRIVATE OpenMP::OpenMP_CXX
      	)
-
-########### gmpipsreader ###########
-add_library(gmspips_reader Drivers/gmspips/gmspips_reader.cpp)
-
-target_include_directories(gmspips_reader PRIVATE Core/Readers/Distributed Core/Utilities)
-target_link_libraries(gmspips_reader
-        PRIVATE gmspipsio
-        PRIVATE pips-ipmpp
-        PRIVATE MPI::MPI_CXX
-        )

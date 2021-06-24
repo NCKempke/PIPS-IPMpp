@@ -14,7 +14,7 @@
 
 class StochPresolverSingletonRows : public StochPresolverBase {
 public:
-   StochPresolverSingletonRows(PresolveData& presolve_data, const DistributedQP& origProb);
+   StochPresolverSingletonRows(PresolveData& presolve_data, const DistributedProblem& origProb);
 
    ~StochPresolverSingletonRows();
 

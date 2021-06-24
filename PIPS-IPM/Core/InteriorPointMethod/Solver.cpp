@@ -32,7 +32,3 @@ void Solver::solve_linear_system(Variables& iterate, Problem& problem, Residuals
    double shift = 1e3 + 2 * iterate.violation();
    iterate.shift_bound_variables(shift, shift);
 }
-
-Solver::~Solver() {
-   delete step;
-}

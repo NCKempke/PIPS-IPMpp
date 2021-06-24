@@ -1,8 +1,9 @@
 target_include_directories(pips-ipmpp PRIVATE ./)
 
 target_sources(pips-ipmpp
-        PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/EquiStochScaler.C
-        PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/GeoStochScaler.C
+        PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/CurtisReidScaler.cpp
+        PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/EquilibriumScaler.C
+        PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/GeometricMeanScaler.C
         PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/PresolveData.C
         PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/Postsolver.cpp
         PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/Presolver.cpp
@@ -18,5 +19,4 @@ target_sources(pips-ipmpp
         PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/StochPresolverSingletonColumns.C
         PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/StochPresolverSingletonRows.C
         PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/StochRowStorage.C
-        PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/StochScaler.C
         )

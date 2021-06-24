@@ -90,6 +90,8 @@ public:
 
    void write_to_streamDense(std::ostream& out) const override;
 
+   void sum_transform_rows(Vector<double>& result, const std::function<double(const double&)>& transform) const override;
+
    void addRowSums(Vector<double>& vec) const override;
 
    void addColSums(Vector<double>& vec) const override;

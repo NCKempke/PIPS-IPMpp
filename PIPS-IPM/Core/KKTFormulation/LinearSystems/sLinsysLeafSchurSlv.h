@@ -9,14 +9,14 @@
 
 class DistributedFactory;
 
-class DistributedQP;
+class DistributedProblem;
 
 /** This class solves the linear system corresponding to a leaf node.
  *  It just redirects the call to QpGenSparseLinsys.
  */
 class sLinsysLeafSchurSlv : public DistributedLeafLinearSystem {
 public:
-   sLinsysLeafSchurSlv(DistributedFactory* factory, DistributedQP* prob_, std::shared_ptr<Vector<double>> dd_,
+   sLinsysLeafSchurSlv(const DistributedFactory& factory, DistributedProblem* prob_, std::shared_ptr<Vector<double>> dd_,
       std::shared_ptr<Vector<double>> dq_, std::shared_ptr<Vector<double>> nomegaInv_,
       std::shared_ptr<Vector<double>> primal_reg_, std::shared_ptr<Vector<double>> dual_y_reg_,
       std::shared_ptr<Vector<double>> dual_z_reg_, std::shared_ptr<Vector<double>> rhs_) : DistributedLeafLinearSystem(

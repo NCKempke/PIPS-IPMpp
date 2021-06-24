@@ -7,7 +7,7 @@
 
 #include "DistributedLeafLinearSystem.h"
 
-DistributedLeafLinearSystem::DistributedLeafLinearSystem(DistributedFactory* factory_, DistributedQP* prob,
+DistributedLeafLinearSystem::DistributedLeafLinearSystem(const DistributedFactory& factory_, DistributedProblem* prob,
    std::shared_ptr<Vector<double>> dd_, std::shared_ptr<Vector<double>> dq_, std::shared_ptr<Vector<double>> nomegaInv_,
    std::shared_ptr<Vector<double>> primal_reg_, std::shared_ptr<Vector<double>> dual_y_reg_,
    std::shared_ptr<Vector<double>> dual_z_reg_, std::shared_ptr<Vector<double>> rhs_) : DistributedLinearSystem(
@@ -63,12 +63,13 @@ void DistributedLeafLinearSystem::create_kkt() {
 
    kkt->symAtPutSubmatrix(0, 0, data->getLocalQ(), 0, 0, locnx, locnx);
 
-   // TODO this logic or is flawed - requires Bi to exist..
+   if (locmy > 0) {
+      kkt->symAtPutSubmatrix(locnx, 0, data->getLocalB(), 0, 0, locmy, locnx);
+   }
+
    if (locmz > 0) {
-      kkt->symAtPutSubmatrix(locnx, 0, data->getLocalB(), 0, 0, locmy, locnx);
       kkt->symAtPutSubmatrix(locnx + locmy, 0, data->getLocalD(), 0, 0, locmz, locnx);
-   } else
-      kkt->symAtPutSubmatrix(locnx, 0, data->getLocalB(), 0, 0, locmy, locnx);
+   }
 }
 
 void DistributedLeafLinearSystem::factor2() {

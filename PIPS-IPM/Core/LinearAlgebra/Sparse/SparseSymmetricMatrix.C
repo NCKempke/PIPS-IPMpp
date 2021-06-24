@@ -92,24 +92,27 @@ void SparseSymmetricMatrix::fromGetSpRow(int row, int col, double A[], int lenA,
 
 void SparseSymmetricMatrix::symAtPutSubmatrix(int destRow, int destCol, const AbstractMatrix& M, int srcRow, int srcCol,
    int rowExtent, int colExtent) {
-   int i, k;
-   int info, nnz;
 
-   auto* ja = new int[colExtent];
-   auto* a = new double[colExtent];
-
-   nnz = 0;
-   for (i = 0; i < rowExtent; i++) {
-      M.fromGetSpRow(srcRow + i, srcCol, a, colExtent, ja, nnz, colExtent, info);
-      for (k = 0; k < nnz; k++) {
-         ja[k] += (destCol - srcCol);
-      }
-      this->symAtPutSpRow(destRow + i, a, nnz, ja, info);
-      assert(info == 0);
+   if (rowExtent == 0 || colExtent == 0) {
+      return;
    }
 
-   delete[] a;
-   delete[] ja;
+   std::vector<int> ja(colExtent);
+   std::vector<double> a(colExtent);
+
+   for (int i = 0; i < rowExtent; i++) {
+
+      int info{0};
+      int nnz{0};
+      M.fromGetSpRow(srcRow + i, srcCol, a.data(), colExtent, ja.data(), nnz, colExtent, info);
+
+      for (int k = 0; k < nnz; k++) {
+         ja[k] += (destCol - srcCol);
+      }
+
+      this->symAtPutSpRow(destRow + i, a.data(), nnz, ja.data(), info);
+      assert(info == 0);
+   }
 }
 
 std::pair<long long, long long> SparseSymmetricMatrix::n_rows_columns() const {

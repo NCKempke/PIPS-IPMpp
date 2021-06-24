@@ -13,7 +13,7 @@
 class StochPresolverColumnFixation : public StochPresolverBase {
 public:
 
-   StochPresolverColumnFixation(PresolveData& presolve_data, const DistributedQP& origProb);
+   StochPresolverColumnFixation(PresolveData& presolve_data, const DistributedProblem& origProb);
 
    virtual ~StochPresolverColumnFixation();
 

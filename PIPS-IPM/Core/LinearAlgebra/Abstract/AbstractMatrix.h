@@ -40,6 +40,8 @@ public:
    virtual void getDiagonal(Vector<double>& vec) const = 0;
    virtual void setToDiagonal(const Vector<double>& vec) = 0;
 
+   virtual void sum_transform_rows(Vector<double>& result, const std::function<double(const double&)>& transform) const = 0;
+
    virtual void atPutDiagonal(int idiag, const Vector<double>& x) = 0;
    virtual void atAddDiagonal(int idiag, const Vector<double>& x) = 0;
    virtual void fromGetDiagonal(int idiag, Vector<double>& x) const = 0;
@@ -270,6 +272,9 @@ public:
 
    /** get number of elements per column to given vector */
    virtual void getNnzPerCol(Vector<int>& /*nnzVec*/) const { assert(0 && "not implemented"); };
+
+   /** sum rows after applying transform to every element */
+   virtual void sum_transform_rows(Vector<double>& result, const std::function<double(const double&)>& transform) const = 0;
 
    /** fill vector with absolute minimum/maximum value of each row */
    virtual void getRowMinMaxVec(bool /*getMin*/, bool /*initializeVec*/, const Vector<double>* /*colScaleVec*/, Vector<double>& /*minmaxVec*/ ) const {

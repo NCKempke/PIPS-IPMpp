@@ -13,7 +13,7 @@
 
 #include "Postsolver.hpp"
 #include "DistributedVector.h"
-#include "DistributedQP.hpp"
+#include "DistributedProblem.hpp"
 #include "DistributedVariables.h"
 #include "SystemType.h"
 #include "StochRowStorage.h"
@@ -22,7 +22,7 @@
 class StochPostsolver : public Postsolver {
 
 public:
-   StochPostsolver(const DistributedQP& original_problem);
+   StochPostsolver(const DistributedProblem& original_problem);
    ~StochPostsolver() override;
 
    void notifyRowModified(const INDEX& row);

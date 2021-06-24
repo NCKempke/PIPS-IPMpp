@@ -44,6 +44,8 @@ public:
 
    void putZeros();
 
+   void sum_transform_rows(Vector<double>& result, const std::function<double(const double&)>& transform) const override;
+
    void atAddOuterProductOf(int row, int col, double alpha, double* x, int incx, int nx);
 
    void addToDiagonalAt(double alpha, double x[], int incx, int idiag, int extent);

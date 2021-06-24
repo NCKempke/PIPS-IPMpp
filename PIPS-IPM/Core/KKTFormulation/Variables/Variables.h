@@ -74,6 +74,7 @@ public:
 
    Variables(const Variables& vars);
 
+   [[nodiscard]] virtual std::unique_ptr<Variables> cloneFull() const;
    /** computes mu = (t'lambda +u'pi + v'gamma + w'phi)/(mclow+mcupp+nxlow+nxupp) */
    [[nodiscard]] double mu() const;
 

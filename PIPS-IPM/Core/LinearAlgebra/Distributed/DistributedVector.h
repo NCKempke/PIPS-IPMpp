@@ -9,7 +9,7 @@
 
 class DistributedTree;
 
-class DistributedQP;
+class DistributedProblem;
 
 enum class VectorType { PRIMAL, DUAL_Y, DUAL_Z };
 
@@ -145,9 +145,9 @@ public:
          const std::vector<int>& twolinks_start_in_block = std::vector<int>(), int n_links_in_root = -1);
    void move_first_to_parent();
    virtual DistributedVector<T>* raiseBorder(int n_first_to_shave, int n_last_to_shave);
-   virtual void collapseFromHierarchical(const DistributedQP& data_hier, const DistributedTree& tree_hier, VectorType type, bool empty_vec = false);
+   virtual void collapseFromHierarchical(const DistributedProblem& data_hier, const DistributedTree& tree_hier, VectorType type, bool empty_vec = false);
    virtual void appendHierarchicalToThis(SimpleVector<T>* new_vec, SimpleVector<T>* new_vecl, std::vector<std::shared_ptr<DistributedVector<T>>>& new_children,
-         const DistributedTree& tree_hier, const DistributedQP& data_hier, VectorType type, bool empty_vec);
+         const DistributedTree& tree_hier, const DistributedProblem& data_hier, VectorType type, bool empty_vec);
 
    [[nodiscard]] virtual Vector<T>* getLinkingVecNotHierarchicalTop() const;
 
@@ -274,7 +274,7 @@ public:
    };
 
    void appendHierarchicalToThis(SimpleVector<T>* new_vec, SimpleVector<T>* new_vecl, std::vector<std::shared_ptr<DistributedVector<T>>>& new_children,
-         const DistributedTree& tree_hier, const DistributedQP& data_hier, VectorType type, bool empty_vec) override;
+         const DistributedTree& tree_hier, const DistributedProblem& data_hier, VectorType type, bool empty_vec) override;
 
    Vector<T>* getLinkingVecNotHierarchicalTop() const override {
       assert(false && "Should not end up here");

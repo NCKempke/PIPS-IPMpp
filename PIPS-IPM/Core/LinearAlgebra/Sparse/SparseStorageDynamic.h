@@ -116,6 +116,9 @@ public:
 
    void scaleRow(int row, double factor);
 
+
+   void sum_transform_rows(Vector<double>& result, const std::function<double(const double&)>& transform) const override;
+
    void addNnzPerRow(int* vec) const { addNnzPerRow(vec, 0, m); };
    void addNnzPerRow(int* vec, int begin_rows, int end_rows) const;
 

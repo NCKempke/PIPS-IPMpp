@@ -1,6 +1,6 @@
 #include "DistributedVector.h"
 #include "DistributedTree.h"
-#include "DistributedQP.hpp"
+#include "DistributedProblem.hpp"
 #include <cassert>
 #include <cstring>
 #include <iostream>
@@ -2073,7 +2073,7 @@ DistributedVector<T>* DistributedVector<T>::raiseBorder(int n_first_to_shave, in
 }
 
 template<typename T>
-void DistributedVector<T>::collapseFromHierarchical(const DistributedQP& data_hier, const DistributedTree& tree_hier, VectorType type, bool empty_vec) {
+void DistributedVector<T>::collapseFromHierarchical(const DistributedProblem& data_hier, const DistributedTree& tree_hier, VectorType type, bool empty_vec) {
    auto* new_first = new SimpleVector<T>();
    SimpleVector<T>* new_last{};
 
@@ -2115,7 +2115,7 @@ void DistributedVector<T>::collapseFromHierarchical(const DistributedQP& data_hi
 template<typename T>
 void
 DistributedVector<T>::appendHierarchicalToThis(SimpleVector<T>* new_vec, SimpleVector<T>* new_vecl, std::vector<std::shared_ptr<DistributedVector<T>>>& new_children,
-      const DistributedTree& tree_hier, const DistributedQP& data_hier, VectorType type, bool empty_vec) {
+      const DistributedTree& tree_hier, const DistributedProblem& data_hier, VectorType type, bool empty_vec) {
    assert(children.size() == tree_hier.nChildren());
    assert(children.size() == data_hier.children.size());
 
@@ -2164,7 +2164,7 @@ DistributedVector<T>::appendHierarchicalToThis(SimpleVector<T>* new_vec, SimpleV
 
 template<typename T>
 void DistributedDummyVector<T>::appendHierarchicalToThis(SimpleVector<T>*, SimpleVector<T>* new_vecl, std::vector<std::shared_ptr<DistributedVector<T>>>& new_children,
-      const DistributedTree& tree_hier, const DistributedQP&, VectorType type, bool empty_vec) {
+      const DistributedTree& tree_hier, const DistributedProblem&, VectorType type, bool empty_vec) {
    assert(tree_hier.getCommWorkers() == MPI_COMM_NULL);
    const unsigned int n_dummies = tree_hier.nChildren();
    /* insert the children this dummy is representing */
@@ -2248,12 +2248,15 @@ const {
       result += children[i]->barrier_directional_derivative(*x.children[i], *bound.children[i], *bound_indicator.children[i]);
    }
 
-   if (first && x.first && bound.first && bound_indicator.first) {
+   if (first && x.first && bound.first && bound_indicator.first && (iAmSpecial || first->isKindOf(kStochVector))) {
       result += first->barrier_directional_derivative(*x.first, *bound.first, *bound_indicator.first);
    }
 
-   if (last && x.last && bound.last && bound_indicator.last) {
+   if (iAmSpecial && last && x.last && bound.last && bound_indicator.last) {
       result += last->barrier_directional_derivative(*x.last, *bound.last, *bound_indicator.last);
+   }
+   if (iAmDistrib && parent == nullptr) {
+      PIPS_MPIgetSumInPlace(result, mpiComm);
    }
    return result;
 }
@@ -2270,12 +2273,15 @@ const {
       result += children[i]->barrier_directional_derivative(*x.children[i], bound, *bound_indicator.children[i]);
    }
 
-   if (first && x.first && bound_indicator.first) {
+   if (first && x.first && bound_indicator.first && (iAmSpecial || first->isKindOf(kStochVector))) {
       result += first->barrier_directional_derivative(*x.first, bound, *bound_indicator.first);
    }
 
-   if (last && x.last && bound_indicator.last) {
+   if (iAmSpecial && last && x.last && bound_indicator.last) {
       result += last->barrier_directional_derivative(*x.last, bound, *bound_indicator.last);
+   }
+   if (iAmDistrib && parent == nullptr) {
+      PIPS_MPIgetSumInPlace(result, mpiComm);
    }
    return result;
 }

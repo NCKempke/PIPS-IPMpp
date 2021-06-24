@@ -150,6 +150,8 @@ public:
 
    void getLinkVarsNnz(std::vector<int>& vec) const;
 
+   void sum_transform_rows(Vector<double>& result, const std::function<double(const double&)>& transform) const override;
+
    /** add abs. sum per row to given array (of size nRows) */
    void addRowSums(double* vec) const;
 

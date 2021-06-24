@@ -7,7 +7,8 @@
 #include "PIPSIPMppOptions.h"
 
 FilterStrategy::FilterStrategy(FilterStrategyParameters& filter_strategy_parameters, FilterParameters& filter_parameters) :
-filter(filter_parameters), parameters(filter_strategy_parameters), verbose{PIPS_MPIgetRank() == 0 && pipsipmpp_options::get_bool_parameter("FILTER_VERBOSE")} {
+filter(filter_parameters), parameters(filter_strategy_parameters), verbose{PIPS_MPIgetRank() == 0 && pipsipmpp_options::get_bool_parameter
+      ("FILTER_VERBOSE")} {
 }
 
 FilterStrategy::FilterStrategy() : filter(), parameters({0.1, 0.999, 1e2, 1.25}), verbose{PIPS_MPIgetRank() == 0 && pipsipmpp_options::get_bool_parameter("FILTER_VERBOSE")} {
@@ -17,14 +18,12 @@ void FilterStrategy::initialize(Residuals& initial_residuals) {
    /* set the filter upper bound */
    double upper_bound = std::max(this->parameters.ubd, this->parameters.fact * initial_residuals.get_residual_norm());
    this->filter.upper_bound = upper_bound;
-   return;
 }
 
 /* check acceptability of step(s) (filter & sufficient reduction)
  * precondition: feasible step
  * */
-bool FilterStrategy::check_acceptance(Variables& current_iterate, Residuals& current_residuals, Variables& trial_iterate, Residuals& trial_residuals,
-      double predicted_reduction) {
+bool FilterStrategy::check_acceptance(Residuals& current_residuals, Residuals& trial_residuals, double predicted_reduction) {
    const double current_feasibility = current_residuals.feasibility_measure();
    const double current_optimality = current_residuals.optimality_measure();
    const double trial_feasibility = trial_residuals.feasibility_measure();
@@ -32,9 +31,6 @@ bool FilterStrategy::check_acceptance(Variables& current_iterate, Residuals& cur
 
    if (verbose) std::cout << "Filter strategy: feasibility " << trial_feasibility << " vs " << current_feasibility << "\n";
    if (verbose) std::cout << "Filter strategy: objective " << trial_optimality << " vs " << current_optimality << "\n";
-
-   // double current_mu = current_iterate.mu();
-   // double trial_mu = trial_iterate.mu();
 
    bool accept = false;
    /* check acceptance */

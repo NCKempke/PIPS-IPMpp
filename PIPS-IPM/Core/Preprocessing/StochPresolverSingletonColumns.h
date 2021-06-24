@@ -14,7 +14,7 @@
 
 class StochPresolverSingletonColumns : public StochPresolverBase {
 public:
-   StochPresolverSingletonColumns(PresolveData& presolve_data, const DistributedQP& origProb);
+   StochPresolverSingletonColumns(PresolveData& presolve_data, const DistributedProblem& origProb);
 
    ~StochPresolverSingletonColumns() override = default;
 

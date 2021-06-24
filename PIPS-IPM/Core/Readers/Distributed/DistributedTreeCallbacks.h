@@ -15,44 +15,44 @@
  *  The new sTree implementation, C++-like is sTreeImpl.
  */
 
-class DistributedQP;
+class DistributedProblem;
 
 class DistributedTreeCallbacks : public DistributedTree {
-protected:
-   DistributedTreeCallbacks(const DistributedTreeCallbacks& other);
 public:
-
    using InputNode = DistributedInputTree::DistributedInputNode;
+
    using DATA_MAT = FMAT InputNode::*;
    using DATA_VEC = FVEC InputNode::*;
    using DATA_NNZ = FNNZ InputNode::*;
    using DATA_INT = int InputNode::*;
    using TREE_SIZE = long long DistributedTree::*;
+   [[nodiscard]] std::unique_ptr<DistributedTree> clone() const override;
 
-   DistributedTree* clone() const override;
+   DistributedTreeCallbacks();
+   explicit DistributedTreeCallbacks(DistributedInputTree* root);
+   DistributedTreeCallbacks(const DistributedTreeCallbacks& other);
 
-   DistributedTreeCallbacks(DistributedInputTree* root);
-   ~DistributedTreeCallbacks() = default;
+   ~DistributedTreeCallbacks() override = default;
 
-   void addChild(DistributedTreeCallbacks* child);
+   void addChild(std::unique_ptr<DistributedTree> child);
 
-   DistributedSymmetricMatrix* createQ() const override;
+   [[nodiscard]] std::unique_ptr<DistributedSymmetricMatrix> createQ() const override;
 
-   DistributedMatrix* createA() const override;
-   DistributedMatrix* createC() const override;
+   [[nodiscard]] std::unique_ptr<DistributedMatrix> createA() const override;
+   [[nodiscard]] std::unique_ptr<DistributedMatrix> createC() const override;
 
-   DistributedVector<double>* createc() const override;
+   [[nodiscard]] std::unique_ptr<DistributedVector<double>> createc() const override;
 
-   DistributedVector<double>* createxlow() const override;
-   DistributedVector<double>* createixlow() const override;
-   DistributedVector<double>* createxupp() const override;
-   DistributedVector<double>* createixupp() const override;
+   [[nodiscard]] std::unique_ptr<DistributedVector<double>> createxlow() const override;
+   [[nodiscard]] std::unique_ptr<DistributedVector<double>> createixlow() const override;
+   [[nodiscard]] std::unique_ptr<DistributedVector<double>> createxupp() const override;
+   [[nodiscard]] std::unique_ptr<DistributedVector<double>> createixupp() const override;
 
-   DistributedVector<double>* createb() const override;
-   DistributedVector<double>* createclow() const override;
-   DistributedVector<double>* createiclow() const override;
-   DistributedVector<double>* createcupp() const override;
-   DistributedVector<double>* createicupp() const override;
+   [[nodiscard]] std::unique_ptr<DistributedVector<double>> createb() const override;
+   [[nodiscard]] std::unique_ptr<DistributedVector<double>> createclow() const override;
+   [[nodiscard]] std::unique_ptr<DistributedVector<double>> createiclow() const override;
+   [[nodiscard]] std::unique_ptr<DistributedVector<double>> createcupp() const override;
+   [[nodiscard]] std::unique_ptr<DistributedVector<double>> createicupp() const override;
 
    [[nodiscard]] int nx() const override;
    [[nodiscard]] int my() const override;
@@ -67,11 +67,11 @@ public:
    virtual void switchToOriginalData();
    virtual bool isPresolved();
    virtual bool hasPresolved();
-   virtual void initPresolvedData(const DistributedQP& presolved_data);
+   virtual void initPresolvedData(const DistributedProblem& presolved_data);
 
    virtual void writeSizes(std::ostream& sout) const;
 
-   DistributedTree* switchToHierarchicalTree(DistributedQP*& data_to_split) override;
+   std::unique_ptr<DistributedTree> switchToHierarchicalTree(DistributedProblem*& data_to_split, std::unique_ptr<DistributedTree> pointer_to_this) override;
 
    [[nodiscard]] const std::vector<unsigned int>& getMapBlockSubTrees() const { return map_node_sub_root; };
    [[nodiscard]] std::vector<MPI_Comm> getChildComms() const;
@@ -91,11 +91,11 @@ protected:
    void initPresolvedData(const DistributedSymmetricMatrix& Q, const DistributedMatrix& A, const DistributedMatrix& C, const DistributedVector<double>& nxVec,
          const DistributedVector<double>& myVec, const DistributedVector<double>& mzVec, int mylParent, int mzlParent);
 
-   DistributedMatrix*
+   [[nodiscard]] std::unique_ptr<DistributedMatrix>
    createMatrix(TREE_SIZE my, TREE_SIZE myl, DATA_INT m_ABmat, DATA_INT n_Mat, DATA_INT nnzAmat, DATA_NNZ fnnzAmat, DATA_MAT Amat, DATA_INT nnzBmat,
          DATA_NNZ fnnzBmat, DATA_MAT Bmat, DATA_INT m_Blmat, DATA_INT nnzBlmat, DATA_NNZ fnnzBlmat, DATA_MAT Blmat,
          const std::string& prefix_for_print) const;
-   DistributedVector<double>* createVector(DATA_INT n_vec, DATA_VEC vec, DATA_INT n_linking_vec, DATA_VEC linking_vec) const;
+   [[nodiscard]] std::unique_ptr<DistributedVector<double>> createVector(DATA_INT n_vec, DATA_VEC vec, DATA_INT n_linking_vec, DATA_VEC linking_vec) const;
 
    void createSubcommunicatorsAndChildren(int& take_nth_root, std::vector<unsigned int>& map_child_to_sub_tree);
    void countTwoLinksForChildTrees(const std::vector<int>& two_links_start_in_child_A, const std::vector<int>& two_links_start_in_child_C,
@@ -106,9 +106,9 @@ protected:
    std::pair<int, int>
    adjustSizesAfterSplit(const std::vector<unsigned int>& two_links_children_eq, const std::vector<unsigned int>& two_links_children_ineq);
 
-   std::pair<int, int> splitTree(int n_layers, DistributedQP* data_to_split) override;
+   std::pair<int, int> splitTree(int n_layers, DistributedProblem* data_to_split) override;
 
-   DistributedTree* shaveDenseBorder(int nx_to_shave, int myl_to_shave, int mzl_to_shave) override;
+   [[nodiscard]] std::unique_ptr<DistributedTree> shaveDenseBorder(int nx_to_shave, int myl_to_shave, int mzl_to_shave, std::unique_ptr<DistributedTree> pointer_to_this) override;
 
    /* inactive sizes store the original state of the tree when switching to the presolved data */
    long long N_INACTIVE{-1};
@@ -137,7 +137,6 @@ protected:
    /* after this node has been split this will indicate how the children were assigned to the (new) sub_roots */
    std::vector<unsigned int> map_node_sub_root;
 
-   DistributedTreeCallbacks();
    InputNode* data{}; //input data
 };
 

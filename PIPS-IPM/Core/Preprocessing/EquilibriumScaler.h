@@ -1,5 +1,5 @@
 /*
- * EquiStochScaler.h
+ * EquilibriumScaler.h
  *
  *  Created on: 20.12.2017
  *      Author: bzfrehfe
@@ -8,7 +8,7 @@
 #ifndef PIPS_IPM_CORE_QPPREPROCESS_EQUISTOCHSCALER_H_
 #define PIPS_IPM_CORE_QPPREPROCESS_EQUISTOCHSCALER_H_
 
-#include "StochScaler.h"
+#include "Scaler.hpp"
 
 class Problem;
 
@@ -18,13 +18,13 @@ class Problem;
  * @{
  */
 
-class EquiStochScaler : public StochScaler {
+class EquilibriumScaler : public Scaler {
 protected:
-   void doObjScaling() override;
+   void doObjScaling() const override;
 
 public:
-   EquiStochScaler(const Problem& problem, bool bitshifting = true);
-   ~EquiStochScaler() override = default;
+   EquilibriumScaler(const ProblemFactory& problem_factory, const Problem& problem, bool bitshifting = true);
+   ~EquilibriumScaler() override = default;
 
    /** scale */
    void scale() override;

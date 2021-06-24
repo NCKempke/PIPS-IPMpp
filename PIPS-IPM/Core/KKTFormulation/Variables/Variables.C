@@ -54,6 +54,10 @@ Variables::Variables(const Variables& other)  :
    slack_upper_bound_gap{other.slack_upper_bound_gap->cloneFull()}, slack_upper_bound_gap_dual{other.slack_upper_bound_gap_dual->cloneFull()}
    {}
 
+std::unique_ptr<Variables> Variables::cloneFull() const {
+   return std::make_unique<Variables>(*this);
+}
+
 double Variables::get_average_distance_to_bound_for_converged_vars(const Problem&, double tol) const {
    assert(0 < tol);
 
@@ -599,7 +603,7 @@ void Variables::print_solution(MpsReader* reader, Problem* problem, int& iErr) {
    assert(primals->isKindOf(kSimpleVector)); // Otherwise this routine
 
    SimpleVector<double> g(nx);
-   problem->getg(g);
+   problem->get_objective_gradient(g);
    problem->hessian_multiplication(1.0, g, 0.5, *primals);
    double objective = g.dotProductWith(*primals);
 

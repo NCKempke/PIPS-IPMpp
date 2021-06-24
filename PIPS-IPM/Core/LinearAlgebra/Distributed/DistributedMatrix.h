@@ -158,6 +158,8 @@ public:
    /** fill vector with absolute minimum/maximum value of each column */
    void getColMinMaxVec(bool getMin, bool initializeVec, const Vector<double>* rowScaleVec, Vector<double>& minmaxVec) const override;
 
+   void sum_transform_rows(Vector<double>& result, const std::function<double(const double&)>& transform) const override;
+
    void addRowSums(Vector<double>& sumVec) const override { addRowSums(sumVec, nullptr); };
    void addColSums(Vector<double>& sumVec) const override { addColSums(sumVec, nullptr); };
 
@@ -295,6 +297,8 @@ public:
    void initTransposed() const override {};
    void initTransposed(bool) const override {};
    void deleteTransposed() const override {};
+
+   void sum_transform_rows(Vector<double>&, const std::function<double(const double&)>&) const override {};
 
    void getNnzPerRow(Vector<int>&, Vector<int>*) const override {};
    void getNnzPerCol(Vector<int>&, Vector<int>*) const override {};

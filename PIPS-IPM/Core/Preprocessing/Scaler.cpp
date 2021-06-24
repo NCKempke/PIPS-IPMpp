@@ -6,31 +6,25 @@
  */
 
 //#define PIPS_DEBUG
-#include <algorithm>
 #include "Scaler.hpp"
+
+#include <algorithm>
+
 #include "PIPSIPMppOptions.h"
-#include "DistributedVector.h"
-#include "QP.hpp"
+#include "ProblemFactory.h"
 #include "Variables.h"
+#include "Problem.hpp"
 #include "Residuals.h"
 #include "pipsdef.h"
 
-Scaler::Scaler(const Problem& problem, bool bitshifting, bool usesides) : do_bitshifting(bitshifting), with_sides(usesides),
-      dnorm_orig(problem.datanorm()),
-      scaling_output{pipsipmpp_options::get_bool_parameter("SCALER_OUTPUT")} {
-   A = problem.A;
-   C = problem.C;
-   obj = problem.g;
-   bA = problem.bA;
-   bux = problem.primal_upper_bounds; // upper bound of x
-   blx = problem.primal_lower_bounds; // lower bound of x
-   rhsC = problem.inequality_upper_bounds; // RHS of C
-   lhsC = problem.inequality_lower_bounds; // LHS of C
-   factor_objscale = 1.;
-}
+Scaler::Scaler(const ProblemFactory& problem_factory_, const Problem& problem, bool bitshifting, bool usesides) : problem_factory{problem_factory_},
+   A{problem.equality_jacobian}, C{problem.inequality_jacobian}, obj{problem.objective_gradient}, bA{problem.equality_rhs}, bux{problem.primal_upper_bounds}, blx{problem.primal_lower_bounds},
+   rhsC{problem.inequality_upper_bounds}, lhsC{problem.inequality_lower_bounds}, factor_objscale{1.},
+   dnorm_orig(problem.datanorm()), do_bitshifting(bitshifting), with_sides(usesides),
+   scaling_output{pipsipmpp_options::get_bool_parameter("SCALER_OUTPUT")} {}
 
 double Scaler::get_unscaled_objective(double objval) const {
-   assert(vec_colscale != nullptr);
+   assert(vec_colscale);
    assert(factor_objscale > 0.0);
 
    if (scaling_applied)
@@ -38,18 +32,6 @@ double Scaler::get_unscaled_objective(double objval) const {
    else
       return objval;
 }
-
-Variables* Scaler::get_unscaled_variables(const Variables& variables) const {
-   auto* unscaled_variables = new Variables(variables);
-   unscale_variables(*unscaled_variables);
-   return unscaled_variables;
-};
-
-Residuals* Scaler::get_unscaled_residuals(const Residuals& residuals) const {
-   Residuals* unscaled_residuals = new Residuals(residuals);
-   this->unscale_residuals(*unscaled_residuals);
-   return unscaled_residuals;
-};
 
 void Scaler::unscale_variables(Variables& variables) const {
    if (!scaling_applied)
@@ -98,7 +80,7 @@ void Scaler::unscale_residuals(Residuals& residuals) const {
 
    if (residuals.getMcupp() > 0)
       residuals.ru->componentDiv(*vec_rowscaleC);
-   // nothing to to for rgamma, rphi, rlambda, rpi;
+   // nothing to do for rgamma, rphi, rlambda, rpi;
 
    // gap is scaling resistant
 
@@ -160,8 +142,21 @@ Vector<double>* Scaler::get_dual_var_bounds_low_unscaled(const Vector<double>& d
    return unscaleddual;
 }
 
+void Scaler::invertAndRound(bool round, Vector<double>& vector) {
+   vector.safe_invert(1.0);
+   if (round)
+      vector.roundToPow2();
+}
 
-void Scaler::applyScaling() {
+void Scaler::create_scaling_vectors() {
+   assert(!vec_rowscaleA && !vec_rowscaleC && !vec_colscale);
+
+   vec_rowscaleA = problem_factory.make_equalities_dual_vector();
+   vec_rowscaleC = problem_factory.make_inequalities_dual_vector();
+   vec_colscale = problem_factory.make_primal_vector();
+}
+
+void Scaler::applyScaling() const {
    PIPSdebugMessage("before scaling: \n "
                     "objnorm: %f \n Anorm:  %f \n Cnorm  %f \n bAnorm %f \n rhsCnorm %f \n lhsCnorm %f \n buxnorm %f \n blxnorm %f \n  ",
             obj->inf_norm(), A->inf_norm(), C->inf_norm(), bA->inf_norm(), rhsC->inf_norm(), lhsC->inf_norm(), bux->inf_norm(), blx->inf_norm());
@@ -192,7 +187,7 @@ void Scaler::applyScaling() {
 }
 
 double Scaler::maxRowRatio(Vector<double>& maxvecA, Vector<double>& maxvecC, Vector<double>& minvecA, Vector<double>& minvecC,
-      const Vector<double>* colScalevec) {
+      const Vector<double>* colScalevec) const {
    A->getRowMinMaxVec(true, true, colScalevec, minvecA);
    A->getRowMinMaxVec(false, true, colScalevec, maxvecA);
    C->getRowMinMaxVec(true, true, colScalevec, minvecC);
@@ -225,8 +220,8 @@ double Scaler::maxRowRatio(Vector<double>& maxvecA, Vector<double>& maxvecC, Vec
       lhsC->absmaxVecUpdate(maxvecC);
    }
 
-   Vector<double>* const ratiovecA = maxvecA.clone();
-   Vector<double>* const ratiovecC = maxvecC.clone();
+   std::unique_ptr<Vector<double>> ratiovecA{maxvecA.clone()};
+   std::unique_ptr<Vector<double>> ratiovecC{maxvecC.clone()};
 
    ratiovecA->copyFrom(maxvecA);
    ratiovecC->copyFrom(maxvecC);
@@ -248,13 +243,10 @@ double Scaler::maxRowRatio(Vector<double>& maxvecA, Vector<double>& maxvecC, Vec
    if (maxvalC > maxratio)
       maxratio = maxvalC;
 
-   delete ratiovecA;
-   delete ratiovecC;
-
    return maxratio;
 }
 
-double Scaler::maxColRatio(Vector<double>& maxvec, Vector<double>& minvec, const Vector<double>* rowScaleVecA, const Vector<double>* rowScaleVecC) {
+double Scaler::maxColRatio(Vector<double>& maxvec, Vector<double>& minvec, const Vector<double>* rowScaleVecA, const Vector<double>* rowScaleVecC) const {
    A->getColMinMaxVec(true, true, rowScaleVecA, minvec);
    C->getColMinMaxVec(true, false, rowScaleVecC, minvec);
 
@@ -272,10 +264,9 @@ double Scaler::maxColRatio(Vector<double>& maxvec, Vector<double>& minvec, const
    }
 #endif
 
-   Vector<double>* const ratiovec = maxvec.clone();
+   std::unique_ptr<Vector<double>> ratiovec{maxvec.clone()};
 
    ratiovec->copyFrom(maxvec);
-
    ratiovec->divideSome(minvec, minvec);
 
    int i;
@@ -284,8 +275,6 @@ double Scaler::maxColRatio(Vector<double>& maxvec, Vector<double>& minvec, const
    assert(maxratio >= 0.0);
 
    PIPSdebugMessage("max column ratio: %f \n", maxratio);
-
-   delete ratiovec;
 
    return maxratio;
 }
@@ -314,14 +303,14 @@ void Scaler::scaleObjVector(double scaling_factor) {
    scaling_applied = true;
 }
 
-void Scaler::printRowColRatio() {
+void Scaler::printRowColRatio() const {
    if (scaling_output) {
-      std::unique_ptr<DistributedVector<double>> xrowmaxA(dynamic_cast<DistributedVector<double>*>(bA->clone()));
-      std::unique_ptr<DistributedVector<double>> xrowminA(dynamic_cast<DistributedVector<double>*>(bA->clone()));
-      std::unique_ptr<DistributedVector<double>> xrowmaxC(dynamic_cast<DistributedVector<double>*>(rhsC->clone()));
-      std::unique_ptr<DistributedVector<double>> xrowminC(dynamic_cast<DistributedVector<double>*>(rhsC->clone()));
-      std::unique_ptr<DistributedVector<double>> xcolmax(dynamic_cast<DistributedVector<double>*>(bux->clone()));
-      std::unique_ptr<DistributedVector<double>> xcolmin(dynamic_cast<DistributedVector<double>*>(bux->clone()));
+      std::unique_ptr<Vector<double>> xrowmaxA(problem_factory.make_equalities_dual_vector());
+      std::unique_ptr<Vector<double>> xrowminA(problem_factory.make_equalities_dual_vector());
+      std::unique_ptr<Vector<double>> xrowmaxC(problem_factory.make_inequalities_dual_vector());
+      std::unique_ptr<Vector<double>> xrowminC(problem_factory.make_inequalities_dual_vector());
+      std::unique_ptr<Vector<double>> xcolmax(problem_factory.make_primal_vector());
+      std::unique_ptr<Vector<double>> xcolmin(problem_factory.make_primal_vector());
 
       const double rowratio = maxRowRatio(*xrowmaxA, *xrowmaxC, *xrowminA, *xrowminC, nullptr);
       const double colratio = maxColRatio(*xcolmax, *xcolmin, nullptr, nullptr);

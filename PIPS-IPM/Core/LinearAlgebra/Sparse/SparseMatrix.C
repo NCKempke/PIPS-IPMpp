@@ -489,6 +489,13 @@ void SparseMatrix::addNnzPerCol(Vector<int>& nnzVec, int begin_cols, int end_col
    }
 }
 
+void SparseMatrix::sum_transform_rows(Vector<double>& result_, const std::function<double(const double&)>& transform) const {
+   assert(!mStorageDynamic && mStorage);
+   assert(result_.length() == mStorage->n_rows());
+
+   mStorage->sum_transform_rows(result_, transform);
+}
+
 void SparseMatrix::addRowSums(Vector<double>& sumVec) const {
    auto& vec = dynamic_cast<SimpleVector<double>&>(sumVec);
 

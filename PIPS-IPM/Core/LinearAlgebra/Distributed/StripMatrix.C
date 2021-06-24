@@ -584,6 +584,53 @@ void StripMatrix::addColSumsHorizontal(Vector<double>& vec_in) const {
       last->addColSums(*vec.last);
 }
 
+void StripMatrix::sum_transform_rows_vertical(Vector<double>& result_, const std::function<double(const double&)>& transform) const {
+   assert(is_vertical);
+
+   auto& result = dynamic_cast<DistributedVector<double>&>(result_);
+
+   assert(result.first);
+   assert(result.children.size() == children.size());
+   assert((result.last && last) || (!result.last && !last));
+
+   first->sum_transform_rows(*result.first, transform);
+
+   for (size_t i = 0; i < children.size(); i++) {
+      assert(result.children[i]);
+      if (children[i]->is_a(kStringGenDummyMatrix))
+         assert(result.children[i]->isKindOf(kStochDummy));
+
+      children[i]->sum_transform_rows(*result.children[i], transform);
+   }
+
+   if (last)
+      last->sum_transform_rows(*result.last, transform);
+}
+
+void StripMatrix::sum_transform_rows_horizontal(Vector<double>& result_, const std::function<double(const double&)>& transform) const {
+   assert(!is_vertical);
+   auto& result = dynamic_cast<SimpleVector<double>&>(result_);
+
+   for (const auto& i : children)
+      i->sum_transform_rows(result, transform);
+
+   if (distributed)
+      PIPS_MPIsumArrayInPlace(result.elements(), result.length(), mpi_comm);
+
+   first->sum_transform_rows(result, transform);
+
+   if (last)
+      last->sum_transform_rows(result, transform);
+}
+
+void StripMatrix::sum_transform_rows(Vector<double>& result, const std::function<double(const double&)>& transform) const {
+   if (is_vertical) {
+      sum_transform_rows_vertical(result, transform);
+   } else {
+      sum_transform_rows_horizontal(result, transform);
+   }
+}
+
 void StripMatrix::addRowSums(Vector<double>& vec) const {
    if (is_vertical)
       addRowSumsVertical(vec);

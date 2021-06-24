@@ -37,8 +37,7 @@ public:
    FilterStrategyParameters parameters; /*!< Set of parameters */
    void initialize(Residuals& initial_residuals);
 
-   bool check_acceptance(Variables& current_iterate, Residuals& current_residuals, Variables& trial_iterate, Residuals& trial_residuals,
-         double predicted_reduction);
+   bool check_acceptance(Residuals& current_residuals, Residuals& trial_residuals, double predicted_reduction);
 
 private:
    const bool verbose{false};
