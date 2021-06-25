@@ -15,13 +15,12 @@ void Filter::reset() {
    this->max_size = 50;
    this->upper_bound = INFINITY;
    this->entries_.clear();
-   return;
 }
 
 /*  add (infeasibility_measure, optimality_measure) to the filter */
 void Filter::add(double infeasibility_measure, double optimality_measure) {
    /* remove dominated filter entries */
-   std::list<FilterEntry>::iterator entry = this->entries_.begin();
+   auto entry = this->entries_.begin();
    while (entry != this->entries_.end()) {
       if (infeasibility_measure < entry->infeasibility_measure && optimality_measure <= entry->optimality_measure) {
          entry = this->entries_.erase(entry);
@@ -39,28 +38,12 @@ void Filter::add(double infeasibility_measure, double optimality_measure) {
    }
 
    /* add new entry to the filter */
-   std::list<FilterEntry>::iterator position = this->entries_.begin();
+   auto position = this->entries_.begin();
    while (position != this->entries_.end() && infeasibility_measure >= this->constants.Beta * position->infeasibility_measure) {
       position++;
    }
    FilterEntry new_entry{infeasibility_measure, optimality_measure};
    this->entries_.insert(position, new_entry);
-
-   return;
-}
-
-// filter must be nonempty
-
-double Filter::eta_min() {
-   FilterEntry& last_element = this->entries_.back();
-   return last_element.infeasibility_measure;
-}
-
-// filter must be nonempty
-
-double Filter::omega_min() {
-   FilterEntry& last_element = this->entries_.back();
-   return last_element.optimality_measure;
 }
 
 /* query: return true if (infeasibility_measure, optimality_measure) acceptable, false otherwise */
@@ -70,7 +53,7 @@ bool Filter::accept(double infeasibility_measure, double optimality_measure) {
       return false;
    }
 
-   std::list<FilterEntry>::iterator position = this->entries_.begin();
+   auto position = this->entries_.begin();
    while (position != this->entries_.end() && infeasibility_measure >= this->constants.Beta * position->infeasibility_measure) {
       position++;
    }
@@ -90,13 +73,9 @@ bool Filter::accept(double infeasibility_measure, double optimality_measure) {
 //! improves_current_iterate: check acceptable wrt current point 
 
 bool Filter::improves_current_iterate(double current_infeasibility_measure, double current_optimality_measure, double trial_infeasibility_measure,
-      double trial_optimality_measure) {
+      double trial_optimality_measure) const {
    return (trial_optimality_measure <= current_optimality_measure - this->constants.Gamma * trial_infeasibility_measure) ||
           (trial_infeasibility_measure < this->constants.Beta * current_infeasibility_measure);
-}
-
-double Filter::compute_actual_reduction(double current_objective, double /*current_residual*/, double trial_objective) {
-   return current_objective - trial_objective;
 }
 
 //! print: print the content of the filter

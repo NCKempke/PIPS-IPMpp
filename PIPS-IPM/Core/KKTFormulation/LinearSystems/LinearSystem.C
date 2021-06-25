@@ -67,10 +67,13 @@ LinearSystem::LinearSystem(const ProblemFactory& factory_, const Problem& proble
    }
 }
 
-LinearSystem::LinearSystem(const ProblemFactory& factory_, const Problem& problem, std::shared_ptr<Vector<double>> primal_diagonal_, std::shared_ptr<Vector<double>> dq_,
-      std::shared_ptr<Vector<double>> nomegaInv_, std::shared_ptr<Vector<double>> primal_regularization_, std::shared_ptr<Vector<double>> dual_equality_regularization_,
-      std::shared_ptr<Vector<double>> dual_inequality_regularization_, std::shared_ptr<Vector<double>> rhs_, bool create_iter_ref_vecs) : LinearSystem(factory_, problem,
-      create_iter_ref_vecs) {
+LinearSystem::LinearSystem(const ProblemFactory& factory_, const Problem& problem, std::shared_ptr<Vector<double>> primal_diagonal_,
+      std::shared_ptr<Vector<double>> dq_,
+      std::shared_ptr<Vector<double>> nomegaInv_, std::shared_ptr<Vector<double>> primal_regularization_,
+      std::shared_ptr<Vector<double>> dual_equality_regularization_,
+      std::shared_ptr<Vector<double>> dual_inequality_regularization_, std::shared_ptr<Vector<double>> rhs_, bool create_iter_ref_vecs) :
+      LinearSystem(factory_, problem,
+            create_iter_ref_vecs) {
    primal_diagonal = std::move(primal_diagonal_);
    dq = std::move(dq_);
    nomegaInv = std::move(nomegaInv_);
@@ -170,15 +173,16 @@ static bool isZero(double val, LinearSystem::IterativeSolverSolutionStatus& stat
    return false;
 }
 
-void LinearSystem::factorize(Variables& vars) {
+void LinearSystem::factorize(Variables& iterate) {
 
-   assert(vars.valid_non_zero_pattern());
-   assert(vars.valid_non_zero_pattern());
+   assert(iterate.valid_non_zero_pattern());
+   assert(iterate.valid_non_zero_pattern());
 
-   put_barrier_parameter(vars.mu());
+   put_barrier_parameter(iterate.mu());
 
-   computeDiagonals(*vars.slack_lower_bound_gap, *vars.slack_lower_bound_gap_dual, *vars.slack_upper_bound_gap, *vars.slack_upper_bound_gap_dual,
-         *vars.primal_lower_bound_gap, *vars.primal_lower_bound_gap_dual, *vars.primal_upper_bound_gap, *vars.primal_upper_bound_gap_dual);
+   computeDiagonals(*iterate.slack_lower_bound_gap, *iterate.slack_lower_bound_gap_dual, *iterate.slack_upper_bound_gap,
+         *iterate.slack_upper_bound_gap_dual, *iterate.primal_lower_bound_gap, *iterate.primal_lower_bound_gap_dual,
+         *iterate.primal_upper_bound_gap, *iterate.primal_upper_bound_gap_dual);
 
    if (pipsipmpp_options::get_bool_parameter("HIERARCHICAL_TESTING")) {
       std::cout << "Setting diags to 1.0 for Hierarchical debugging\n";
@@ -260,6 +264,7 @@ void LinearSystem::computeDiagonals(Vector<double>& t, Vector<double>& lambda, V
          primal_diagonal->axdzpy(1.0, phi, w, *ixupp);
    }
    assert(primal_diagonal->all_of([](const double& d) {
+      std::cout << "primal_diagonal has value " << d << "\n";
       return d >= 0;
    }));
 
@@ -282,11 +287,11 @@ void LinearSystem::computeDiagonals(Vector<double>& t, Vector<double>& lambda, V
 void LinearSystem::factorize_with_correct_inertia() {
    regularization_strategy->notify_new_step();
 
-   auto [last_primal_regularization, last_dual_equality_regularization, last_dual_inequality_regularization] =
+   auto[last_primal_regularization, last_dual_equality_regularization, last_dual_inequality_regularization] =
    this->regularization_strategy->get_default_regularization();
 
    this->add_regularization_local_kkt(last_primal_regularization,
-      last_dual_equality_regularization, last_dual_inequality_regularization);
+         last_dual_equality_regularization, last_dual_inequality_regularization);
 
    /* factor once without applying regularization */
    solver->matrixChanged();
@@ -304,8 +309,8 @@ void LinearSystem::factorize_with_correct_inertia() {
       assert(dual_inequality_regularization_value >= last_dual_inequality_regularization);
 
       this->add_regularization_local_kkt(primal_regularization_value - last_primal_regularization,
-         dual_equality_regularization_value - last_dual_equality_regularization,
-         dual_inequality_regularization_value - last_dual_inequality_regularization);
+            dual_equality_regularization_value - last_dual_equality_regularization,
+            dual_inequality_regularization_value - last_dual_inequality_regularization);
       solver->matrixChanged();
    }
 }
@@ -468,7 +473,8 @@ void LinearSystem::solveXYZS(Vector<double>& stepx, Vector<double>& stepy, Vecto
          };
 
          solveCompressedIterRefin(computeResiduals);
-      } else {
+      }
+      else {
          auto computeResiduals = [this, &stepx, &stepy, &stepz, &capture0 = problem](auto&& PH1, auto&& PH2) {
             compute_regularized_system_residuals(std::forward<decltype(PH1)>(PH1), std::forward<decltype(PH2)>(PH2), stepx, stepy, stepz, capture0);
          };

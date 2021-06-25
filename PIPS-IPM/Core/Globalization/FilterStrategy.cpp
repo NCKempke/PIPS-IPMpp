@@ -29,8 +29,10 @@ bool FilterStrategy::check_acceptance(Residuals& current_residuals, Residuals& t
    const double trial_feasibility = trial_residuals.feasibility_measure();
    const double trial_optimality = trial_residuals.optimality_measure();
 
+   verbose = true;
    if (verbose) std::cout << "Filter strategy: feasibility " << trial_feasibility << " vs " << current_feasibility << "\n";
    if (verbose) std::cout << "Filter strategy: objective " << trial_optimality << " vs " << current_optimality << "\n";
+   if (verbose) std::cout << this->filter << "\n";
 
    bool accept = false;
    /* check acceptance */
@@ -41,7 +43,7 @@ bool FilterStrategy::check_acceptance(Residuals& current_residuals, Residuals& t
       filter_acceptable = this->filter.improves_current_iterate(current_feasibility, current_optimality, trial_feasibility, trial_optimality);
       if (filter_acceptable) {
          if (verbose) std::cout << "Current-iterate acceptable\n";
-         double actual_reduction = this->filter.compute_actual_reduction(current_optimality, current_feasibility, trial_optimality);
+         double actual_reduction = current_optimality - trial_optimality;
          if (verbose) std::cout << "Filter predicted reduction: " << predicted_reduction << "\n";
          if (verbose) std::cout << "Filter actual reduction: " << actual_reduction << "\n";
 

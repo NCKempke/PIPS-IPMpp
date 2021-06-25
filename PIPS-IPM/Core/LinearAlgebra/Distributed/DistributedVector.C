@@ -2252,8 +2252,7 @@ const {
 }
 
 template<typename T>
-double DistributedVector<T>::barrier_directional_derivative(const Vector<T>& x_in, double bound, const Vector<T>& bound_indicator_in)
-const {
+double DistributedVector<T>::barrier_directional_derivative(const Vector<T>& x_in, double bound, const Vector<T>& bound_indicator_in) const {
    const auto& x = dynamic_cast<const DistributedVector<T>&>(x_in);
    const auto& bound_indicator = dynamic_cast<const DistributedVector<T>&>(bound_indicator_in);
    assert(this->children.size() == x.children.size());

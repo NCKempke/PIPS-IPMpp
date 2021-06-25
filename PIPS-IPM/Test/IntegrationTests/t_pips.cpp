@@ -8,7 +8,7 @@
 #include "gmock/gmock.h"
 #include "../Verbosity.hpp"
 
-#include "InteriorPointMethod.hpp"
+#include "PIPSIPMppSolver.hpp"
 #include "PIPSIPMppInterface.hpp"
 #include "gmspips_reader.hpp"
 #include "PIPSIPMppOptions.h"
@@ -51,11 +51,11 @@ public:
    std::string gams_path;
 
    void solveInstanceAndCheckResult(double expected_objective, int expected_iterations, const std::string& path, size_t n_blocks,
-      PresolverType presolver_type, ScalerType scaler_type, MehrotraStrategyType primal_dual_type);
+      PresolverType presolver_type, ScalerType scaler_type, InteriorPointMethodType primal_dual_type);
 
    [[nodiscard]] std::tuple<TerminationStatus, double, int, std::string>
    solveInstance(const std::string& path_instance, size_t n_blocks, PresolverType presolver, ScalerType scaler,
-      MehrotraStrategyType primal_dual_type) const;
+      InteriorPointMethodType primal_dual_type) const;
 };
 
 std::vector<Instance> getInstances() {
@@ -67,7 +67,7 @@ std::vector<Instance> getInstances() {
 
 std::tuple<TerminationStatus, double, int, std::string>
 ScenarioTests::solveInstance(const std::string& path_instance, size_t n_blocks, PresolverType presolver,
-   ScalerType scaler, MehrotraStrategyType primal_dual_type) const {
+   ScalerType scaler, InteriorPointMethodType primal_dual_type) const {
 
    if (!verbose) {
       testing::internal::CaptureStdout();
@@ -103,7 +103,7 @@ ScenarioTests::solveInstance(const std::string& path_instance, size_t n_blocks, 
 };
 
 void ScenarioTests::solveInstanceAndCheckResult(double expected_objective, int expected_iterations, const std::string& path, size_t n_blocks,
-   PresolverType presolver_type, ScalerType scaler_type, MehrotraStrategyType primal_dual_type) {
+   PresolverType presolver_type, ScalerType scaler_type, InteriorPointMethodType primal_dual_type) {
 
    ASSERT_GE(world_size, 1);
 
@@ -126,7 +126,7 @@ TEST_P(ScenarioTests, TestGamssmallPrimalDualStepScaleGeo) {
 
    const int n_expected_iterations(GetParam().n_iterations);
 
-   solveInstanceAndCheckResult(result, n_expected_iterations, root + problem_paths, n_blocks, PresolverType::PRESOLVER_NONE, ScalerType::SCALER_GEO_STOCH, MehrotraStrategyType::PRIMAL_DUAL);
+   solveInstanceAndCheckResult(result, n_expected_iterations, root + problem_paths, n_blocks, PresolverType::PRESOLVER_NONE, ScalerType::SCALER_GEO_STOCH, InteriorPointMethodType::PRIMAL_DUAL);
 };
 
 TEST_P(ScenarioTests, TestGamssmallPrimalDualStepScaleGeoPresolve) {
@@ -135,7 +135,7 @@ TEST_P(ScenarioTests, TestGamssmallPrimalDualStepScaleGeoPresolve) {
    const double result(GetParam().result);
    const int n_expected_iterations(GetParam().n_iterations);
 
-   solveInstanceAndCheckResult(result, n_expected_iterations, root + problem_paths, n_blocks, PresolverType::PRESOLVER_STOCH, ScalerType::SCALER_GEO_STOCH, MehrotraStrategyType::PRIMAL_DUAL);
+   solveInstanceAndCheckResult(result, n_expected_iterations, root + problem_paths, n_blocks, PresolverType::PRESOLVER_STOCH, ScalerType::SCALER_GEO_STOCH, InteriorPointMethodType::PRIMAL_DUAL);
 };
 
 TEST_P(ScenarioTests, TestGamssmallPrimalDualStep) {
@@ -144,7 +144,7 @@ TEST_P(ScenarioTests, TestGamssmallPrimalDualStep) {
    const double result(GetParam().result);
    const int n_expected_iterations(GetParam().n_iterations);
 
-   solveInstanceAndCheckResult(result, n_expected_iterations, root + problem_paths, n_blocks, PresolverType::PRESOLVER_NONE, ScalerType::SCALER_NONE, MehrotraStrategyType::PRIMAL_DUAL);
+   solveInstanceAndCheckResult(result, n_expected_iterations, root + problem_paths, n_blocks, PresolverType::PRESOLVER_NONE, ScalerType::SCALER_NONE, InteriorPointMethodType::PRIMAL_DUAL);
 };
 
 TEST_P(ScenarioTests, TestGamssmallPrimalDualStepPresolve) {
@@ -153,7 +153,7 @@ TEST_P(ScenarioTests, TestGamssmallPrimalDualStepPresolve) {
    const double result(GetParam().result);
    const int n_expected_iterations(GetParam().n_iterations);
 
-   solveInstanceAndCheckResult(result, n_expected_iterations, root + problem_paths, n_blocks, PresolverType::PRESOLVER_STOCH, ScalerType::SCALER_NONE, MehrotraStrategyType::PRIMAL_DUAL);
+   solveInstanceAndCheckResult(result, n_expected_iterations, root + problem_paths, n_blocks, PresolverType::PRESOLVER_STOCH, ScalerType::SCALER_NONE, InteriorPointMethodType::PRIMAL_DUAL);
 };
 
 TEST_P(ScenarioTests, TestGamssmallNoSettings) {
@@ -162,7 +162,7 @@ TEST_P(ScenarioTests, TestGamssmallNoSettings) {
    const double result(GetParam().result);
    const int n_expected_iterations(GetParam().n_iterations);
 
-   solveInstanceAndCheckResult(result, n_expected_iterations, root + problem_paths, n_blocks, PresolverType::PRESOLVER_NONE, ScalerType::SCALER_NONE, MehrotraStrategyType::PRIMAL);
+   solveInstanceAndCheckResult(result, n_expected_iterations, root + problem_paths, n_blocks, PresolverType::PRESOLVER_NONE, ScalerType::SCALER_NONE, InteriorPointMethodType::PRIMAL);
 };
 
 TEST_P(ScenarioTests, TestGamssmallPresolve) {
@@ -171,7 +171,7 @@ TEST_P(ScenarioTests, TestGamssmallPresolve) {
    const double result(GetParam().result);
    const int n_expected_iterations(GetParam().n_iterations);
 
-   solveInstanceAndCheckResult(result, n_expected_iterations, root + problem_paths, n_blocks, PresolverType::PRESOLVER_STOCH, ScalerType::SCALER_NONE, MehrotraStrategyType::PRIMAL);
+   solveInstanceAndCheckResult(result, n_expected_iterations, root + problem_paths, n_blocks, PresolverType::PRESOLVER_STOCH, ScalerType::SCALER_NONE, InteriorPointMethodType::PRIMAL);
 };
 
 TEST_P(ScenarioTests, TestGamssmallScaleGeoPresolve) {
@@ -180,7 +180,7 @@ TEST_P(ScenarioTests, TestGamssmallScaleGeoPresolve) {
    const double result(GetParam().result);
    const int n_expected_iterations(GetParam().n_iterations);
 
-   solveInstanceAndCheckResult(result, n_expected_iterations, root + problem_paths, n_blocks, PresolverType::PRESOLVER_STOCH, ScalerType::SCALER_GEO_STOCH, MehrotraStrategyType::PRIMAL);
+   solveInstanceAndCheckResult(result, n_expected_iterations, root + problem_paths, n_blocks, PresolverType::PRESOLVER_STOCH, ScalerType::SCALER_GEO_STOCH, InteriorPointMethodType::PRIMAL);
 };
 
 INSTANTIATE_TEST_SUITE_P(InstantiateTestsWithAllGamssmallInstances, ScenarioTests, ::testing::ValuesIn(getInstances()));

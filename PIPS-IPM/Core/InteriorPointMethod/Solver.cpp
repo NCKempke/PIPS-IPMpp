@@ -20,9 +20,6 @@ Solver::Solver(DistributedFactory& factory, Problem& problem) : factory(factory)
 }
 
 void Solver::solve_linear_system(Variables& iterate, Problem& problem, Residuals& residuals, Variables& step, AbstractLinearSystem& linear_system) {
-   double problem_norm = std::sqrt(problem.datanorm());
-   iterate.push_to_interior(problem_norm, problem_norm);
-
    residuals.evaluate(problem, iterate);
    residuals.set_complementarity_residual(iterate, 0.);
 

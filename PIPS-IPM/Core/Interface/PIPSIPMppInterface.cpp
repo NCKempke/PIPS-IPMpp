@@ -11,13 +11,13 @@
 #include "PreprocessFactory.h"
 #include "Scaler.hpp"
 #include "PIPSIPMppOptions.h"
-#include "InteriorPointMethod.hpp"
+#include "PIPSIPMppSolver.hpp"
 #include "DistributedTreeCallbacks.h"
 
 #include <functional>
 #include <memory>
 
-PIPSIPMppInterface::PIPSIPMppInterface(DistributedInputTree* tree, MehrotraStrategyType mehrotra_heuristic, MPI_Comm comm, ScalerType
+PIPSIPMppInterface::PIPSIPMppInterface(DistributedInputTree* tree, InteriorPointMethodType mehrotra_heuristic, MPI_Comm comm, ScalerType
 scaler_type, PresolverType presolver_type, const std::string& settings) : comm(comm), my_rank(PIPS_MPIgetRank(comm)) {
    factory = std::make_unique<DistributedFactory>(tree, comm);
    pipsipmpp_options::set_options(settings);
@@ -115,7 +115,7 @@ scaler_type, PresolverType presolver_type, const std::string& settings) : comm(c
          std::cout << "---scaling time (in sec.): " << t_scaling - t0_scaling << "\n";
    }
 
-   solver = std::make_unique<InteriorPointMethod>(*factory, *presolved_problem, mehrotra_heuristic, scaler.get());
+   solver = std::make_unique<PIPSIPMppSolver>(*factory, *presolved_problem, mehrotra_heuristic, scaler.get());
 #ifdef TIMING
    if( my_rank == 0 ) printf("solver created\n");
 #endif

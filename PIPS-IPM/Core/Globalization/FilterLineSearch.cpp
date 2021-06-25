@@ -1,4 +1,4 @@
-#include <InteriorPointMethod.hpp>
+#include <PIPSIPMppSolver.hpp>
 #include "FilterLineSearch.hpp"
 #include "FilterStrategy.hpp"
 #include "Problem.hpp"
@@ -6,9 +6,11 @@
 #include "Variables.h"
 #include "PIPSIPMppOptions.h"
 
-FilterLineSearch::FilterLineSearch(const Scaler* scaler, int max_iterations, double backtracking_ratio, double min_step_length) :
-filter_strategy(FilterStrategy()), backtracking_ratio(backtracking_ratio), scaler(scaler), min_step_length(min_step_length),
-max_iterations(max_iterations), verbose{PIPS_MPIgetRank() == 0 && pipsipmpp_options::get_bool_parameter("FILTER_VERBOSE")} {
+FilterLineSearch::FilterLineSearch(DistributedFactory& factory, Problem& problem, double dnorm, InteriorPointMethodType interior_point_method_type,
+      const Scaler* scaler) :
+      filter_strategy(FilterStrategy()),
+      interior_point_method(MehrotraFactory::create(factory, problem, dnorm, interior_point_method_type, scaler)),
+      scaler(scaler), verbose{PIPS_MPIgetRank() == 0 && pipsipmpp_options::get_bool_parameter("FILTER_VERBOSE")} {
 }
 
 void FilterLineSearch::initialize(Residuals& initial_residuals) {
@@ -16,25 +18,34 @@ void FilterLineSearch::initialize(Residuals& initial_residuals) {
    this->filter_strategy.initialize(initial_residuals);
 }
 
-void FilterLineSearch::compute_acceptable_iterate(Problem& problem, Variables& current_iterate, Variables& direction, Residuals& current_residuals,
-      double& primal_step_length, double& dual_step_length) {
+void FilterLineSearch::register_observer(AbstractLinearSystem* linear_system) {
+   this->interior_point_method->register_observer(linear_system);
+}
+
+void FilterLineSearch::compute_acceptable_iterate(Problem& problem, Variables& iterate, Residuals& residuals, Variables& step,
+      AbstractLinearSystem& linear_system, int iteration) {
+   this->interior_point_method->corrector_predictor(problem, iterate, residuals, step, linear_system, iteration);
+}
+
+double FilterLineSearch::compute_acceptable_iterate(Problem& problem, Variables& current_iterate, Variables& direction, Residuals& current_residuals) {
    bool is_accepted = false;
    this->number_iterations = 0;
+   double step_length = 1.;
 
    while (!this->termination_(is_accepted)) {
       this->number_iterations++;
-      if (verbose) std::cout << "Line search current step lengths: " << primal_step_length << ", " << dual_step_length << "\n";
+      if (verbose) std::cout << "Line search current step length: " << step_length << "\n";
       // compute the trial iterate
       std::unique_ptr<Variables> trial_iterate = current_iterate.cloneFull();
-      trial_iterate->saxpy_pd(direction, primal_step_length, dual_step_length);
+      trial_iterate->saxpy(direction, step_length);
 
       // evaluate the residuals at the trial iterate
       std::unique_ptr<Residuals> trial_residuals = current_residuals.cloneFull();
       trial_residuals->evaluate(problem, *trial_iterate);
       trial_residuals->recompute_residual_norm();
 
-      double predicted_reduction = InteriorPointMethod::predicted_reduction(problem, current_iterate, direction, primal_step_length);
-
+      const double predicted_reduction = PIPSIPMppSolver::predicted_reduction(problem, current_iterate, direction, step_length);
+      if (verbose) std::cout << "Predicted reduction: " << predicted_reduction << "\n";
       /* check whether the trial step is accepted */
       is_accepted = this->filter_strategy.check_acceptance(current_residuals, *trial_residuals, predicted_reduction);
       // if the trial iterate was accepted, overwrite current_iterate
@@ -43,14 +54,14 @@ void FilterLineSearch::compute_acceptable_iterate(Problem& problem, Variables& c
       }
       else {
          /* decrease the step length */
-         primal_step_length *= this->backtracking_ratio;
-         dual_step_length *= this->backtracking_ratio;
-         if (verbose) std::cout << "Trial iterate rejected, decreasing the step length to " << primal_step_length << ", " << dual_step_length << "\n";
+         step_length *= this->backtracking_ratio;
+         if (verbose) std::cout << "LS trial iterate rejected\n";
       }
    }
    if (!is_accepted) {
       assert(false && "Enter restoration phase (not implemented yet)");
    }
+   return step_length;
 }
 
 bool FilterLineSearch::termination_(bool is_accepted) const {

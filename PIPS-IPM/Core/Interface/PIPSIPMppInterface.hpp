@@ -10,7 +10,7 @@
 #include <memory>
 
 #include "TerminationStatus.hpp"
-#include "MehrotraStrategyType.h"
+#include "InteriorPointMethodType.hpp"
 #include "pipsdef.h"
 #include "PreprocessType.h"
 
@@ -27,11 +27,11 @@ class Problem;
 class Presolver;
 class Postsolver;
 class Scaler;
-class InteriorPointMethod;
+class PIPSIPMppSolver;
 
 class PIPSIPMppInterface {
 public:
-   PIPSIPMppInterface(DistributedInputTree* tree, MehrotraStrategyType mehrotra_heuristic, MPI_Comm = MPI_COMM_WORLD, ScalerType scaler_type = ScalerType::SCALER_NONE,
+   PIPSIPMppInterface(DistributedInputTree* tree, InteriorPointMethodType mehrotra_heuristic, MPI_Comm = MPI_COMM_WORLD, ScalerType scaler_type = ScalerType::SCALER_NONE,
          PresolverType presolver_type = PresolverType::PRESOLVER_NONE, const std::string& settings = "PIPSIPMpp.opt");
 
    ~PIPSIPMppInterface();
@@ -118,7 +118,7 @@ protected:
    std::unique_ptr<Presolver> presolver;
    std::unique_ptr<Postsolver> postsolver;
    std::unique_ptr<Scaler> scaler;
-   std::unique_ptr<InteriorPointMethod> solver;
+   std::unique_ptr<PIPSIPMppSolver> solver;
 
    MPI_Comm comm = MPI_COMM_NULL;
    const int my_rank = -1;
