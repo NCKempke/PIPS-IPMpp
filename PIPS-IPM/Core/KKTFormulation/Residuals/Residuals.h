@@ -148,9 +148,9 @@ public:
 
    virtual ~Residuals() = default;
 
-   double recompute_residual_norm();
+   double compute_residual_norm();
 
-   int valid_non_zero_pattern();
+   int valid_non_zero_pattern() const;
 
    void write_to_stream(std::ostream& out) const;
 

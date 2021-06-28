@@ -172,7 +172,7 @@ void Residuals::evaluate(Problem& problem, Variables& iterate, bool print_residu
    }
 }
 
-double Residuals::recompute_residual_norm() {
+double Residuals::compute_residual_norm() {
    residual_norm = 0.0;
 
    double componentNorm = 0.0;
@@ -292,7 +292,7 @@ void Residuals::project_r3(double rmin, double rmax) {
 }
 
 
-int Residuals::valid_non_zero_pattern() {
+int Residuals::valid_non_zero_pattern() const {
    if (nxlow > 0 && (!rv->matchesNonZeroPattern(*ixlow) || !rgamma->matchesNonZeroPattern(*ixlow))) {
       return 0;
    }

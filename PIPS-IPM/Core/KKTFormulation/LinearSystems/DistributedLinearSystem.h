@@ -40,7 +40,7 @@ public:
 
    ~DistributedLinearSystem() override = default;
 
-   void factorize(Variables& variables) override;
+   void factorize(const Variables& variables) override;
 
    virtual void factor2() = 0;
 

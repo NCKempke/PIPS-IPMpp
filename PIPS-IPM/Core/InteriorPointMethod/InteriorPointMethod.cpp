@@ -35,7 +35,7 @@ InteriorPointMethod::InteriorPointMethod(DistributedFactory& factory, Problem& p
    assert(n_linesearch_points > 0);
 
    if (abstract_options::get_bool_parameter("IP_ACCURACY_REDUCED")) {
-      mutol = 1.e-5;
+      mutol = 1e-5;
    }
 
    if (pipsipmpp_options::get_bool_parameter("GONDZIO_STOCH_ADAPTIVE_LINESEARCH")) {
@@ -55,48 +55,34 @@ InteriorPointMethod::InteriorPointMethod(DistributedFactory& factory, Problem& p
    this->sigma = 1.;
 }
 
-PrimalInteriorPointMethod::PrimalInteriorPointMethod(DistributedFactory& factory, Problem& problem, double dnorm, const Scaler* scaler) : InteriorPointMethod(
-      factory, problem, dnorm, scaler), primal_step_length(1.) {
+PrimalInteriorPointMethod::PrimalInteriorPointMethod(DistributedFactory& factory, Problem& problem, double dnorm, const Scaler* scaler) :
+   InteriorPointMethod(factory, problem, dnorm, scaler), primal_step_length(1.) {
    this->set_BiCGStab_tolerance(-1);
 }
 
-PrimalDualInteriorPointMethod::PrimalDualInteriorPointMethod(DistributedFactory& factory, Problem& problem, double dnorm, const Scaler* scaler)
-      : InteriorPointMethod(factory, problem, dnorm, scaler), primal_step_length(1.), dual_step_length(1.) {
+PrimalDualInteriorPointMethod::PrimalDualInteriorPointMethod(DistributedFactory& factory, Problem& problem, double dnorm, const Scaler* scaler) :
+   InteriorPointMethod(factory, problem, dnorm, scaler), primal_step_length(1.), dual_step_length(1.) {
    this->set_BiCGStab_tolerance(-1);
 }
 
-void PrimalInteriorPointMethod::fraction_to_boundary_rule(Variables& iterate, Variables& step) {
-   this->primal_step_length = iterate.stepbound(step);
-}
-
-double PrimalInteriorPointMethod::compute_centering_parameter(Variables& iterate, const Variables& step) {
-   double mu = iterate.mu();
-   double mu_affine = iterate.mustep_pd(step, this->primal_step_length, this->primal_step_length);
-
-   assert(!PIPSisZero(mu));
-   double sigma = pow(mu_affine / mu, tsig);
-   return sigma;
-}
-
-void PrimalInteriorPointMethod::take_step(Variables& iterate, Variables& step) {
-   iterate.saxpy(step, this->primal_step_length);
-}
-
-void PrimalInteriorPointMethod::corrector_predictor(Problem& problem, Variables& iterate, Residuals& residuals, Variables& step,
+bool InteriorPointMethod::compute_predictor_step(Problem& problem, Variables& current_iterate, Residuals& residuals, Variables& step,
       AbstractLinearSystem& linear_system, int iteration) {
-
    set_BiCGStab_tolerance(iteration);
-   bool small_corr = false;
-
-   double mu = iterate.mu();
 
    if (print_level >= 10) {
-      this->print_statistics(&problem, &iterate, &residuals, dnorm, sigma, iteration, mu, TerminationStatus::NOT_FINISHED, 0);
+      double mu = current_iterate.mu();
+      this->print_statistics(&problem, &current_iterate, &residuals, dnorm, sigma, iteration, mu, TerminationStatus::NOT_FINISHED, 0);
    }
 
-   // predictor step
+   bool small_corr = false;
+
+   // compute the affine predictor step
    if (!pure_centering_step) {
-      compute_predictor_step(iterate, residuals, linear_system, step);
+      residuals.set_complementarity_residual(current_iterate, 0.);
+      linear_system.factorize(current_iterate);
+
+      linear_system.solve(current_iterate, residuals, step);
+      step.negate();
       check_numerical_troubles(&residuals, numerical_troubles, small_corr);
    }
    else {
@@ -104,21 +90,40 @@ void PrimalInteriorPointMethod::corrector_predictor(Problem& problem, Variables&
    }
 
    // compute fraction-to-boundary rule
-   this->fraction_to_boundary_rule(iterate, step);
+   this->project_to_bounds(current_iterate, step);
+   return small_corr;
+}
 
+void PrimalInteriorPointMethod::project_to_bounds(const Variables& iterate, const Variables& step) {
+   this->primal_step_length = iterate.stepbound(step);
+}
+
+void PrimalDualInteriorPointMethod::project_to_bounds(const Variables& iterate, const Variables& step) {
+   std::tie(this->primal_step_length, this->dual_step_length) = iterate.stepbound_pd(step);
+}
+
+void PrimalInteriorPointMethod::compute_corrector_step(Problem& problem, Variables& current_iterate, Residuals& residuals, Variables& step,
+      AbstractLinearSystem& linear_system, int iteration, bool small_corr) {
    // calculate centering parameter
-   sigma = this->compute_centering_parameter(iterate, step);
+   sigma = this->compute_centering_parameter(current_iterate, step);
+   double mu = current_iterate.mu();
 
    if (print_level >= 10) {
-      this->print_statistics(&problem, &iterate, &residuals, dnorm, sigma, iteration, mu, TerminationStatus::NOT_FINISHED, 2);
+      this->print_statistics(&problem, &current_iterate, &residuals, dnorm, sigma, iteration, mu, TerminationStatus::NOT_FINISHED, 2);
    }
    g_iterNumber += 1.;
 
-   compute_corrector_step(iterate, linear_system, step, sigma, mu);
+   // form right hand side of linear system
+   corrector_residuals->clear_linear_residuals();
+   corrector_residuals->set_complementarity_residual(step, -sigma * mu);
+
+   // solve the linear system
+   linear_system.solve(current_iterate, *corrector_residuals, *corrector_step);
+   corrector_step->negate();
    check_numerical_troubles(&residuals, numerical_troubles, small_corr);
 
    // calculate weighted predictor-corrector step
-   std::tie(alpha_candidate, weight_candidate) = calculate_alpha_weight_candidate(iterate, step, *corrector_step, this->primal_step_length);
+   std::tie(alpha_candidate, weight_candidate) = calculate_alpha_weight_candidate(current_iterate, step, *corrector_step, this->primal_step_length);
    assert(weight_candidate >= 0. && weight_candidate <= 1.);
 
    step.saxpy(*corrector_step, weight_candidate);
@@ -127,33 +132,36 @@ void PrimalInteriorPointMethod::corrector_predictor(Problem& problem, Variables&
    corrector_residuals->clear_linear_residuals();
 
    // Gondzio correction loop:
-   this->gondzio_correction_loop(problem, iterate, residuals, step, linear_system, iteration, sigma, mu, small_corr, numerical_troubles);
+   this->gondzio_correction_loop(problem, current_iterate, residuals, step, linear_system, iteration, sigma, mu, small_corr, numerical_troubles);
 
    // We've finally decided on a step direction, now calculate the length using Mehrotra's heuristic
-   this->mehrotra_step_length(iterate, step);
+   this->mehrotra_step_length(current_iterate, step);
 
    // if we encountered numerical troubles while computing the step, enter a probing round
    if (numerical_troubles) {
       if (precond_decreased)
          precond_decreased = decrease_preconditioner_impact(&linear_system);
-      do_probing(problem, iterate, residuals, step);
+      do_probing(problem, current_iterate, residuals, step);
       if (is_poor_step(pure_centering_step, precond_decreased))
          return;
-      }
+   }
    pure_centering_step = false;
    numerical_troubles = false;
 
+   const double step_inf_norm = step.inf_norm();
    if (PIPS_MPIgetRank() == 0) {
       auto[primal_step_length, dual_step_length] = this->get_step_lengths();
-      const double step_inf_norm = step.inf_norm();
       std::cout << "Direction has length: " << step_inf_norm << "\n";
       std::cout << "Step length: " << primal_step_length << "\n";
    }
-   this->take_step(iterate, step);
 }
 
-void PrimalDualInteriorPointMethod::fraction_to_boundary_rule(Variables& iterate, Variables& step) {
-   std::tie(this->primal_step_length, this->dual_step_length) = iterate.stepbound_pd(step);
+double PrimalInteriorPointMethod::compute_centering_parameter(Variables& iterate, const Variables& step) {
+   double mu = iterate.mu();
+   double mu_affine = iterate.mustep_pd(step, this->primal_step_length, this->primal_step_length);
+
+   assert(!PIPSisZero(mu));
+   return pow(mu_affine / mu, tsig);
 }
 
 double PrimalDualInteriorPointMethod::compute_centering_parameter(Variables& iterate, const Variables& step) {
@@ -161,50 +169,41 @@ double PrimalDualInteriorPointMethod::compute_centering_parameter(Variables& ite
    double mu_affine = iterate.mustep_pd(step, this->primal_step_length, this->dual_step_length);
 
    assert(!PIPSisZero(mu));
-   double sigma = pow(mu_affine / mu, tsig);
-   return sigma;
+   return pow(mu_affine / mu, tsig);
 }
 
-void PrimalDualInteriorPointMethod::take_step(Variables& iterate, Variables& step) {
-   iterate.saxpy_pd(step, this->primal_step_length, this->dual_step_length);
+void PrimalInteriorPointMethod::take_step(Variables& iterate, Variables& step, double step_length) {
+   iterate.saxpy(step, this->primal_step_length*step_length);
 }
 
-void PrimalDualInteriorPointMethod::corrector_predictor(Problem& problem, Variables& iterate, Residuals& residuals, Variables& step,
-      AbstractLinearSystem& linear_system, int iteration) {
-   set_BiCGStab_tolerance(iteration);
-   bool small_corr = false;
+void PrimalDualInteriorPointMethod::take_step(Variables& iterate, Variables& step, double step_length) {
+   iterate.saxpy_pd(step, this->primal_step_length, this->dual_step_length*step_length);
+}
 
-   double mu = iterate.mu();
-
-   if (print_level >= 10) {
-      this->print_statistics(&problem, &iterate, &residuals, dnorm, sigma, iteration, mu, TerminationStatus::NOT_FINISHED, 0);
-   }
-   // *** Predictor step ***
-   if (!pure_centering_step) {
-      compute_predictor_step(iterate, residuals, linear_system, step);
-      check_numerical_troubles(&residuals, numerical_troubles, small_corr);
-   }
-   else
-      step.set_to_zero();
-
-   this->fraction_to_boundary_rule(iterate, step);
-
+void PrimalDualInteriorPointMethod::compute_corrector_step(Problem& problem, Variables& current_iterate, Residuals& residuals, Variables& step,
+      AbstractLinearSystem& linear_system, int iteration, bool small_corr) {
    // calculate centering parameter
-   sigma = this->compute_centering_parameter(iterate, step);
+   sigma = this->compute_centering_parameter(current_iterate, step);
+   double mu = current_iterate.mu();
 
    if (print_level >= 10) {
-      this->print_statistics(&problem, &iterate, &residuals, dnorm, sigma, iteration, mu, TerminationStatus::NOT_FINISHED, 2);
+      this->print_statistics(&problem, &current_iterate, &residuals, dnorm, sigma, iteration, mu, TerminationStatus::NOT_FINISHED, 2);
    }
 
    g_iterNumber += 1.;
 
    // *** Corrector step ***
-   compute_corrector_step(iterate, linear_system, step, sigma, mu);
+   corrector_residuals->clear_linear_residuals();
+   // form right hand side of linear system:
+   corrector_residuals->set_complementarity_residual(step, -sigma * mu);
+
+   linear_system.solve(current_iterate, *corrector_residuals, *corrector_step);
+   corrector_step->negate();
    check_numerical_troubles(&residuals, numerical_troubles, small_corr);
 
    // calculate weighted predictor-corrector step
    std::tie(alpha_primal_candidate, alpha_dual_candidate, weight_primal_candidate, weight_dual_candidate) = calculate_alpha_pd_weight_candidate(
-         iterate, step, *corrector_step, this->primal_step_length, this->dual_step_length);
+         current_iterate, step, *corrector_step, this->primal_step_length, this->dual_step_length);
 
    assert(weight_primal_candidate >= 0. && weight_primal_candidate <= 1.);
    assert(weight_dual_candidate >= 0. && weight_dual_candidate <= 1.);
@@ -214,29 +213,28 @@ void PrimalDualInteriorPointMethod::corrector_predictor(Problem& problem, Variab
    // prepare for Gondzio corrector loop: zero out the corrector_residuals structure:
    corrector_residuals->clear_linear_residuals();
 
-   this->gondzio_correction_loop(problem, iterate, residuals, step, linear_system, iteration, sigma, mu, small_corr, numerical_troubles);
+   this->gondzio_correction_loop(problem, current_iterate, residuals, step, linear_system, iteration, sigma, mu, small_corr,
+         numerical_troubles);
 
    // We've finally decided on a step direction, now calculate the length using Mehrotra's heuristic
-   this->mehrotra_step_length(iterate, step);
+   this->mehrotra_step_length(current_iterate, step);
 
    // if we encountered numerical troubles while computing the step check enter a probing round
    if (numerical_troubles) {
       if (precond_decreased)
          precond_decreased = decrease_preconditioner_impact(&linear_system);
 
-      do_probing(problem, iterate, residuals, step);
+      do_probing(problem, current_iterate, residuals, step);
       if (is_poor_step(pure_centering_step, precond_decreased))
          return;
    }
 
+   const double step_inf_norm = step.inf_norm();
    if (PIPS_MPIgetRank() == 0) {
       auto[initial_primal_step_length, initial_dual_step_length] = this->get_step_lengths();
-      const double step_inf_norm = step.inf_norm();
       std::cout << "Direction has length: " << step_inf_norm << "\n";
       std::cout << "Step lengths: " << initial_primal_step_length << " (primal), " << initial_dual_step_length << " (dual)\n";
    }
-   // actually take the step and calculate the new mu
-   this->take_step(iterate, step);
 
    pure_centering_step = false;
    numerical_troubles = false;
@@ -452,23 +450,6 @@ void PrimalInteriorPointMethod::gondzio_correction_loop(Problem& problem, Variab
    }
 }
 
-void InteriorPointMethod::compute_predictor_step(Variables& iterate, Residuals& residuals, AbstractLinearSystem& linear_system, Variables& step) {
-   residuals.set_complementarity_residual(iterate, 0.);
-   linear_system.factorize(iterate);
-
-   linear_system.solve(iterate, residuals, step);
-   step.negate();
-}
-
-void InteriorPointMethod::compute_corrector_step(Variables& iterate, AbstractLinearSystem& linear_system, const Variables& step, double sigma, double mu) {
-   corrector_residuals->clear_linear_residuals();
-   // form right hand side of linear system:
-   corrector_residuals->set_complementarity_residual(step, -sigma * mu);
-
-   linear_system.solve(iterate, *corrector_residuals, *corrector_step);
-   corrector_step->negate();
-}
-
 void InteriorPointMethod::compute_gondzio_corrector(Variables& iterate, AbstractLinearSystem& linear_system, double rmin, double rmax, bool small_corr) {
    // place XZ into the r3 component of corrector_residuals
    corrector_residuals->set_complementarity_residual(*corrector_step, 0.);
@@ -550,15 +531,13 @@ InteriorPointMethod::calculate_alpha_pd_weight_candidate(Variables& iterate, Var
 }
 
 double InteriorPointMethod::compute_probing_factor(Problem& problem, Variables& iterate, Residuals& residuals, Variables& step) {
-   const double mu_last = iterate.mu();
    const double resids_norm_last = residuals.get_residual_norm();
    this->compute_probing_step(*temp_step, iterate, step);
    residuals.evaluate(problem, *temp_step, false);
-   const double mu_probing = temp_step->mu();
    const double resids_norm_probing = residuals.get_residual_norm();
-
-   const double factor = compute_step_factor_probing(resids_norm_last, resids_norm_probing, mu_last, mu_probing);
-   return factor;
+   const double mu_last = iterate.mu();
+   const double mu_probing = temp_step->mu();
+   return compute_step_factor_probing(resids_norm_last, resids_norm_probing, mu_last, mu_probing);
 }
 
 void PrimalInteriorPointMethod::do_probing(Problem& problem, Variables& iterate, Residuals& residuals, Variables& step) {

@@ -84,7 +84,7 @@ void Scaler::unscale_residuals(Residuals& residuals) const {
 
    // gap is scaling resistant
 
-   residuals.recompute_residual_norm();
+   residuals.compute_residual_norm();
 }
 
 Vector<double>* Scaler::get_primal_unscaled(const Vector<double>& primal_solution) const {
