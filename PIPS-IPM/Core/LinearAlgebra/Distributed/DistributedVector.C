@@ -1503,6 +1503,40 @@ bool DistributedVector<T>::all_positive() const {
 }
 
 template<typename T>
+void DistributedVector<T>::transform(const std::function<T(const T&)>& transformation) {
+   if (this->first) {
+      this->first->transform(transformation);
+   }
+
+   if (this->last) {
+      this->last->transform(transformation);
+   }
+
+   for (auto& child : children) {
+      child->transform(transformation);
+   }
+}
+
+template<typename T>
+T DistributedVector<T>::sum_reduce(const std::function<T(const T&, const T&)>& reduce) const {
+   T sum_reduce{};
+
+   for (size_t it = 0; it < children.size(); it++)
+      sum_reduce += children[it]->sum_reduce(reduce);
+
+   if (first && (iAmSpecial || first->isKindOf(kStochVector)))
+      sum_reduce += first->sum_reduce(reduce);
+
+   if (iAmSpecial && last)
+      sum_reduce += last->sum_reduce(reduce);
+
+   if (iAmDistrib && !parent)
+      PIPS_MPIgetSumInPlace(sum_reduce, mpiComm);
+
+   return sum_reduce;
+}
+
+template<typename T>
 bool DistributedVector<T>::all_of(const std::function<bool(const T&)>& pred) const {
    bool all = true;
 
