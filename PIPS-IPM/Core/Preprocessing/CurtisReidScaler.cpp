@@ -18,6 +18,9 @@ void CurtisReidScaler::scale() {
    create_scaling_vectors();
    initialize_temp_vectors();
 
+   if (this->scaling_output)
+      this->printRowColRatio();
+
    auto [last_scaling_factors_columns, last_scaling_factors_equalities, last_scaling_factors_inequalities] =
       create_primal_dual_vector_triplet();
 
@@ -174,6 +177,20 @@ void CurtisReidScaler::scale() {
    }
 
    free_temp_vectors();
+
+   applyScaling();
+
+   if (!scaling_applied) {
+      setScalingVecsToOne();
+#ifndef NDEBUG
+      scaling_factors_equalities->setToConstant(NAN);
+      scaling_factors_inequalities->setToConstant(NAN);
+      scaling_factors_columns->setToConstant(NAN);
+#endif
+   }
+
+   if (this->scaling_output)
+      this->printRowColRatio();
 };
 
 void CurtisReidScaler::initialize_temp_vectors() {
@@ -229,8 +246,8 @@ PrimalDualTriplet CurtisReidScaler::get_and_calculate_initial_residuals(const Ve
 PrimalDualTriplet CurtisReidScaler::get_nonzero_vectors() const{
    auto [sum_non_zeros_columns, sum_non_zeros_equalities, sum_non_zeros_inequalities] = create_primal_dual_vector_triplet();
 
-   auto to_one = [](const double& val) {
-      return val != 0.0 ? 1 : 0;
+   auto to_one = [](const double& val)->double {
+      return val != 0.0 ? 1.0 : 0.0;
    };
 
    this->A->sum_transform_rows(*sum_non_zeros_equalities, to_one);

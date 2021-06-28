@@ -824,7 +824,7 @@ void DistributedMatrix::sum_transform_columns(Vector<double>& result_, const std
 
    // not at root?
    if (link_parent)
-      dynamic_cast<SparseMatrix&>(*Amat).sum_transform_rows(*link_parent, transform);
+      dynamic_cast<SparseMatrix&>(*Amat).sum_transform_columns(*link_parent, transform);
    else {
       for (size_t it = 0; it < children.size(); it++)
          children[it]->sum_transform_columns(*(result.children[it]), transform, &result_first);

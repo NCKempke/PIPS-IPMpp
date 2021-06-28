@@ -150,11 +150,11 @@ void Scaler::invertAndRound(bool round, Vector<double>& vector) {
 
 void Scaler::create_scaling_vectors() {
    assert(!scaling_factors_equalities && !scaling_factors_inequalities && !scaling_factors_columns);
-   std::tie(scaling_factors_equalities, scaling_factors_inequalities, scaling_factors_columns) = create_primal_dual_vector_triplet();
+   std::tie(scaling_factors_columns, scaling_factors_equalities, scaling_factors_inequalities) = create_primal_dual_vector_triplet();
 }
 
 PrimalDualTriplet Scaler::create_primal_dual_vector_triplet() const {
-   return {problem_factory.make_equalities_dual_vector(), problem_factory.make_inequalities_dual_vector(), problem_factory.make_primal_vector()};
+   return {problem_factory.make_primal_vector(), problem_factory.make_equalities_dual_vector(), problem_factory.make_inequalities_dual_vector()};
 }
 
 void Scaler::applyScaling() const {
@@ -306,12 +306,8 @@ void Scaler::scaleObjVector(double scaling_factor) {
 
 void Scaler::printRowColRatio() const {
    if (scaling_output) {
-      std::unique_ptr<Vector<double>> xrowmaxA(problem_factory.make_equalities_dual_vector());
-      std::unique_ptr<Vector<double>> xrowminA(problem_factory.make_equalities_dual_vector());
-      std::unique_ptr<Vector<double>> xrowmaxC(problem_factory.make_inequalities_dual_vector());
-      std::unique_ptr<Vector<double>> xrowminC(problem_factory.make_inequalities_dual_vector());
-      std::unique_ptr<Vector<double>> xcolmax(problem_factory.make_primal_vector());
-      std::unique_ptr<Vector<double>> xcolmin(problem_factory.make_primal_vector());
+      auto [xcolmax, xrowmaxA, xrowmaxC] = this->create_primal_dual_vector_triplet();
+      auto [xcolmin, xrowminA, xrowminC] = this->create_primal_dual_vector_triplet();
 
       const double rowratio = maxRowRatio(*xrowmaxA, *xrowmaxC, *xrowminA, *xrowminC, nullptr);
       const double colratio = maxColRatio(*xcolmax, *xcolmin, nullptr, nullptr);
