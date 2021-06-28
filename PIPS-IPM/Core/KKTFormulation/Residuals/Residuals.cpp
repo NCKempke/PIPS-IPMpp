@@ -292,7 +292,7 @@ void Residuals::project_r3(double rmin, double rmax) {
 }
 
 
-int Residuals::valid_non_zero_pattern() {
+int Residuals::valid_non_zero_pattern() const {
    if (nxlow > 0 && (!rv->matchesNonZeroPattern(*ixlow) || !rgamma->matchesNonZeroPattern(*ixlow))) {
       return 0;
    }

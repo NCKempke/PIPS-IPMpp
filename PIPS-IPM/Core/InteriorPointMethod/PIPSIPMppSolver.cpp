@@ -102,9 +102,7 @@ double PIPSIPMppSolver::barrier_directional_derivative(Problem& problem, Variabl
             *problem.inequality_upper_bound_indicators);
    }
    result *= iterate.mu();
-   std::cout << "IPM::barrier_directional_derivative -mu*sum(d_i/x_i) " << result << "\n";
    result += problem.objective_gradient->dotProductWith(*direction.primals);
-   std::cout << "IPM::barrier_directional_derivative c^T d = " << problem.objective_gradient->dotProductWith(*direction.primals) << "\n";
    return result;
 }
 

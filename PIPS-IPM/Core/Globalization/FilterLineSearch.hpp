@@ -30,7 +30,7 @@ public:
    int number_iterations{0};
    void initialize(Residuals& initial_residuals);
    void register_observer(AbstractLinearSystem* linear_system);
-   void compute_acceptable_iterate(Problem& problem, Variables& iterate, Residuals& residuals, Variables& step, AbstractLinearSystem& linear_system,
+   void compute_acceptable_iterate(Problem& problem, Variables& current_iterate, Residuals& current_residuals, Variables& step, AbstractLinearSystem& linear_system,
          int iteration);
    void compute_acceptable_iterate(Problem& problem, Variables& current_iterate, Variables& direction, Residuals& current_residuals);
 
@@ -39,7 +39,7 @@ private:
    std::unique_ptr<InteriorPointMethod> interior_point_method;
    const Scaler* scaler{};
    double min_step_length{1e-9};
-   const int max_iterations{30};
+   const int max_iterations{20};
    const bool verbose{false};
 
    [[nodiscard]] bool termination_(bool is_accepted) const;

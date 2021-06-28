@@ -22,12 +22,50 @@ void FilterLineSearch::register_observer(AbstractLinearSystem* linear_system) {
    this->interior_point_method->register_observer(linear_system);
 }
 
-void FilterLineSearch::compute_acceptable_iterate(Problem& problem, Variables& iterate, Residuals& residuals, Variables& step,
+void FilterLineSearch::compute_acceptable_iterate(Problem& problem, Variables& current_iterate, Residuals& current_residuals, Variables& step,
       AbstractLinearSystem& linear_system, int iteration) {
-   // compute a direction
-   //this->interior_point_method->corrector_predictor(problem, iterate, residuals, step, linear_system, iteration);
-   bool small_corr = this->interior_point_method->compute_predictor_step(problem, iterate, residuals, step, linear_system, iteration);
-   this->interior_point_method->compute_corrector_step(problem, iterate, residuals, step, linear_system, iteration, small_corr);
+   // compute the predictor direction
+   bool small_corr = this->interior_point_method->compute_predictor_step(problem, current_iterate, current_residuals, step,
+         linear_system, iteration);
+   this->interior_point_method->compute_corrector_step(problem, current_iterate, current_residuals, step, linear_system, iteration, small_corr);
+   this->interior_point_method->take_step(current_iterate, step, 1.);
+
+//   bool is_accepted = false;
+//   this->number_iterations = 0;
+//   double step_length = 1.;
+//   while (!this->termination_(is_accepted)) {
+//      this->number_iterations++;
+//      std::cout << "Line search current step length: " << step_length << "\n";
+//      // compute the trial iterate
+//      std::unique_ptr<Variables> trial_iterate = current_iterate.cloneFull();
+//      this->interior_point_method->take_step(*trial_iterate, step, step_length);
+//
+//      // evaluate the residuals at the trial iterate
+//      std::unique_ptr<Residuals> trial_residuals = current_residuals.cloneFull();
+//      trial_residuals->evaluate(problem, *trial_iterate);
+//      trial_residuals->compute_residual_norm();
+//
+//      const double predicted_reduction = PIPSIPMppSolver::predicted_reduction(problem, current_iterate, step, step_length);
+//      std::cout << "Predicted reduction: " << predicted_reduction << "\n";
+//
+//      /* check whether the trial step is accepted */
+//      is_accepted = true || this->filter_strategy.check_acceptance(current_residuals, *trial_residuals, predicted_reduction);
+//      if (is_accepted) {
+//         // if the trial iterate was accepted, overwrite current_iterate
+//         current_iterate.copy(*trial_iterate);
+//      }
+//      else {
+//         // decrease the step length
+//         step_length *= this->backtracking_ratio;
+//         if (verbose) std::cout << "LS trial iterate rejected\n";
+//
+//         //this->interior_point_method->compute_corrector_step(problem, current_iterate, current_residuals, step, linear_system, iteration, small_corr);
+//         //this->interior_point_method->take_step(current_iterate, step);
+//      }
+//   }
+//   if (!is_accepted) {
+//      assert(false && "Enter restoration phase (not implemented yet)");
+//   }
 }
 
 void FilterLineSearch::compute_acceptable_iterate(Problem& problem, Variables& current_iterate, Variables& direction, Residuals& current_residuals) {
@@ -49,6 +87,7 @@ void FilterLineSearch::compute_acceptable_iterate(Problem& problem, Variables& c
 
       const double predicted_reduction = PIPSIPMppSolver::predicted_reduction(problem, current_iterate, direction, step_length);
       if (verbose) std::cout << "Predicted reduction: " << predicted_reduction << "\n";
+
       /* check whether the trial step is accepted */
       is_accepted = this->filter_strategy.check_acceptance(current_residuals, *trial_residuals, predicted_reduction);
       if (is_accepted) {

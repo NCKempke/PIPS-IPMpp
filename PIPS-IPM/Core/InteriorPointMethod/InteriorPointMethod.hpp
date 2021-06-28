@@ -29,12 +29,12 @@ public:
    bool compute_predictor_step(Problem& problem, Variables& current_iterate, Residuals& residuals, Variables& step, AbstractLinearSystem& linear_system, int iteration);
    virtual void compute_corrector_step(Problem& problem, Variables& iterate, Residuals& residuals, Variables& step, AbstractLinearSystem&
    linear_system, int iteration, bool small_corr) = 0;
-   virtual void fraction_to_boundary_rule(const Variables& iterate, const Variables& step) = 0;
+   virtual void project_to_bounds(const Variables& iterate, const Variables& step) = 0;
    virtual double compute_centering_parameter(Variables& iterate, const Variables& step) = 0;
    virtual void
    print_statistics(const Problem* problem, const Variables* iterate, const Residuals* residuals, double dnorm, double sigma, int i, double mu,
       TerminationStatus stop_code, int level) = 0;
-   virtual void take_step(Variables& iterate, Variables& step) = 0;
+   virtual void take_step(Variables& iterate, Variables& step, double step_length) = 0;
    virtual void
    gondzio_correction_loop(Problem& problem, Variables& iterate, Residuals& residuals, Variables& step, AbstractLinearSystem& linear_system,
          int iteration, double sigma, double mu, bool& small_corr, bool& numerical_troubles) = 0;
@@ -123,11 +123,11 @@ protected:
 class PrimalInteriorPointMethod : public InteriorPointMethod {
 public:
    PrimalInteriorPointMethod(DistributedFactory& factory, Problem& problem, double dnorm, const Scaler* scaler);
-   void compute_corrector_step(Problem& problem, Variables& iterate, Residuals& residuals, Variables& step, AbstractLinearSystem&
+   void compute_corrector_step(Problem& problem, Variables& current_iterate, Residuals& residuals, Variables& step, AbstractLinearSystem&
    linear_system, int iteration, bool small_corr) override;
-   void fraction_to_boundary_rule(const Variables& iterate, const Variables& step) override;
+   void project_to_bounds(const Variables& iterate, const Variables& step) override;
    double compute_centering_parameter(Variables& iterate, const Variables& step) override;
-   void take_step(Variables& iterate, Variables& step) override;
+   void take_step(Variables& iterate, Variables& step, double step_length) override;
    void gondzio_correction_loop(Problem& problem, Variables& iterate, Residuals& residuals, Variables& step, AbstractLinearSystem& linear_system,
          int iteration, double sigma, double mu, bool& small_corr, bool& numerical_troubles) override;
    void mehrotra_step_length(Variables& iterate, Variables& step) override;
@@ -146,11 +146,11 @@ protected:
 class PrimalDualInteriorPointMethod : public InteriorPointMethod {
 public:
    PrimalDualInteriorPointMethod(DistributedFactory& factory, Problem& problem, double dnorm, const Scaler* scaler);
-   void compute_corrector_step(Problem& problem, Variables& iterate, Residuals& residuals, Variables& step, AbstractLinearSystem&
+   void compute_corrector_step(Problem& problem, Variables& current_iterate, Residuals& residuals, Variables& step, AbstractLinearSystem&
    linear_system, int iteration, bool small_corr) override;
-   void fraction_to_boundary_rule(const Variables& iterate, const Variables& step) override;
+   void project_to_bounds(const Variables& iterate, const Variables& step) override;
    double compute_centering_parameter(Variables& iterate, const Variables& step) override;
-   void take_step(Variables& iterate, Variables& step) override;
+   void take_step(Variables& iterate, Variables& step, double step_length) override;
    void gondzio_correction_loop(Problem& problem, Variables& iterate, Residuals& residuals, Variables& step, AbstractLinearSystem& linear_system,
          int iteration, double sigma, double mu, bool& small_corr, bool& numerical_troubles) override;
    void mehrotra_step_length(Variables& iterate, Variables& step) override;

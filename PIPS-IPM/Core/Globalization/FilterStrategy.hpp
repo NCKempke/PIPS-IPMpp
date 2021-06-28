@@ -40,7 +40,7 @@ public:
    bool check_acceptance(Residuals& current_residuals, Residuals& trial_residuals, double predicted_reduction);
 
 private:
-   bool verbose{false};
+   const bool verbose{false};
 };
 
 #endif // FILTERSTRATEGY_H

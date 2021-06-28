@@ -190,7 +190,7 @@ public:
     * @see QpGenSparseLinsys::solveCompressed
     * @see QpGenDenseLinsys::solveCompressed
  */
-   void solve(Variables& variables, Residuals& residuals, Variables& step) override;
+   void solve(const Variables& variables, const Residuals& residuals, Variables& step) override;
 
    /** assembles a single vector object from three given vectors
     *

@@ -258,13 +258,13 @@ void LinearSystem::computeDiagonals(Vector<double>& t, Vector<double>& lambda, V
       primal_diagonal->copyFrom(*dq);
    }
    if (nxupp + nxlow > 0) {
-      if (nxlow > 0)
+      if (nxlow > 0) {
          primal_diagonal->axdzpy(1.0, gamma, v, *ixlow);
+      }
       if (nxupp > 0)
          primal_diagonal->axdzpy(1.0, phi, w, *ixupp);
    }
    assert(primal_diagonal->all_of([](const double& d) {
-      std::cout << "primal_diagonal has value " << d << "\n";
       return d >= 0;
    }));
 
@@ -315,7 +315,7 @@ void LinearSystem::factorize_with_correct_inertia() {
    }
 }
 
-void LinearSystem::solve(Variables& variables, Residuals& residuals, Variables& step) {
+void LinearSystem::solve(const Variables& variables, const Residuals& residuals, Variables& step) {
    assert(variables.valid_non_zero_pattern());
    assert(residuals.valid_non_zero_pattern());
 
@@ -435,7 +435,6 @@ void LinearSystem::solve(Variables& variables, Residuals& residuals, Variables& 
       step.primal_upper_bound_gap_dual->selectNonZeros(*ixupp);
    }
    assert(step.valid_non_zero_pattern());
-
 }
 
 void LinearSystem::solveXYZS(Vector<double>& stepx, Vector<double>& stepy, Vector<double>& stepz, Vector<double>& steps) {

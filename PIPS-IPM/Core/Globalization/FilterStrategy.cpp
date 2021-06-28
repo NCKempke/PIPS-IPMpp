@@ -29,7 +29,6 @@ bool FilterStrategy::check_acceptance(Residuals& current_residuals, Residuals& t
    const double trial_feasibility = trial_residuals.feasibility_measure();
    const double trial_optimality = trial_residuals.optimality_measure();
 
-   verbose = true;
    if (verbose) std::cout << "Filter strategy: feasibility " << trial_feasibility << " vs " << current_feasibility << "\n";
    if (verbose) std::cout << "Filter strategy: objective " << trial_optimality << " vs " << current_optimality << "\n";
    if (verbose) std::cout << this->filter << "\n";
@@ -66,6 +65,6 @@ bool FilterStrategy::check_acceptance(Residuals& current_residuals, Residuals& t
       }
    }
    // TODO remove
-   accept = true;
+   //accept = true;
    return accept;
 }
