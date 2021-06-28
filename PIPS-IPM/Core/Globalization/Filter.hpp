@@ -36,11 +36,7 @@ public:
    void add(double infeasibility_measure, double optimality_measure);
    bool accept(double infeasibility_measure, double optimality_measure);
    bool improves_current_iterate(double current_infeasibility_measure, double current_optimality_measure, double trial_infeasibility_measure,
-         double trial_optimality_measure);
-   double compute_actual_reduction(double current_objective, double current_residual, double trial_objective);
-
-   double eta_min();
-   double omega_min();
+         double trial_optimality_measure) const;
 
    friend std::ostream& operator<<(std::ostream& stream, Filter& filter);
 

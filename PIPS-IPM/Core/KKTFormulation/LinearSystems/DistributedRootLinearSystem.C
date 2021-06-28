@@ -384,7 +384,7 @@ void DistributedRootLinearSystem::finalizeInnerSchurComplementContribution(Abstr
    if (has_RAC)
       assert(n_result == nF0V + mF0C + mG0C);
    else
-      assert(n_result >= mF0V);
+      assert(n_result >= nF0V);
 #endif
 
    if (is_sparse)
@@ -830,7 +830,6 @@ void DistributedRootLinearSystem::put_dual_inequalites_diagonal() {
    const auto& nomegaInv_stoch = dynamic_cast<const DistributedVector<double>&>(*nomegaInv);
    assert(children.size() == nomegaInv_stoch.children.size());
 
-   //kkt->atPutDiagonal( locnx+locmy, *zdiag.first );
    zDiag = nomegaInv_stoch.first.get();
    zDiagLinkCons = nomegaInv_stoch.last.get();
 
@@ -1449,12 +1448,6 @@ void DistributedRootLinearSystem::reduceKKTdist() {
 }
 
 void DistributedRootLinearSystem::factorizeKKT() {
-   //stochNode->resMon.recFactTmLocal_start();
-#ifdef TIMING
-   MPI_Barrier(mpiComm);
-   extern double g_iterNumber;
-   double st=MPI_Wtime();
-#endif
    if (is_hierarchy_root)
       assert(!usePrecondDist);
 
@@ -1469,29 +1462,6 @@ void DistributedRootLinearSystem::factorizeKKT() {
       // todo do that properly
       precondSC.updateStats();
 
-#if 0
-      {
-         ofstream myfile;
-         int mype; MPI_Comm_rank(mpiComm, &mype);
-
-         if( mype == 0 )
-         {
-            printf("\n\n ...WRITE OUT kktDist! \n\n");
-            myfile.open("../ADist.txt");
-            int* ia = kktDist->krowM(); int* ja = kktDist->jcolM(); double* a = kktDist->M();
-
-            for( int i = 0; i < kktDist->size(); i++ )
-               for( int k = ia[i]; k < ia[i + 1]; k++ )
-                  myfile << i << '\t' << ja[k - 1] << '\t' << a[k - 1] << endl;
-
-            myfile.close();
-         }
-
-         MPI_Barrier(mpiComm);
-         printf("...exiting (root) \n");
-         exit(1);
-      }
-#endif
       if (apply_regularization) {
          assert(false && "TODO: implement");
          solver->matrixRebuild(*kktDist);
@@ -1505,16 +1475,6 @@ void DistributedRootLinearSystem::factorizeKKT() {
          solver->matrixChanged();
       }
    }
-
-   //stochNode->resMon.recFactTmLocal_stop();
-#ifdef TIMING
-   st = MPI_Wtime()-st;
-   MPI_Barrier(mpiComm);
-   int mype; MPI_Comm_rank(mpiComm, &mype);
-   // note, this will include noop scalapack processors
-   if( (mype/512)*512==mype )
-     printf("  rank %d 1stSTAGE FACT %g SEC ITER %d\n", mype, st, (int)g_iterNumber);
-#endif
 }
 
 //faster than DenseSymmetricMatrix::atPutZeros

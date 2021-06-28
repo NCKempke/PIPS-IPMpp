@@ -3,7 +3,7 @@
 
 #include "PIPSIPMppOptions.h"
 #include "PreprocessType.h"
-#include "MehrotraStrategyType.h"
+#include "InteriorPointMethodType.hpp"
 
 #include "mpi.h"
 
@@ -125,7 +125,7 @@ int main(int argc, char** argv) {
    if( my_rank == 0 )
       std::cout << "Creating PIPSIpmInterface ...\n";
 
-   PIPSIPMppInterface pipsIpm(root.get(), primal_dual_step_length ? MehrotraStrategyType::PRIMAL_DUAL : MehrotraStrategyType::PRIMAL, MPI_COMM_WORLD, scaler_type,
+   PIPSIPMppInterface pipsIpm(root.get(), primal_dual_step_length ? InteriorPointMethodType::PRIMAL_DUAL : InteriorPointMethodType::PRIMAL, MPI_COMM_WORLD, scaler_type,
          presolve ? PresolverType::PRESOLVE : PresolverType::NONE);
 
    if (my_rank == 0) {

@@ -64,9 +64,10 @@ public:
 
    void
    add_regularization_local_kkt(double primal_regularization, double dual_equality_regularization, double dual_inequality_regularization) override;
+   void put_dual_inequalites_diagonal() override;
 
 protected:
-   SymmetricMatrix* createKKT() const;
+   [[nodiscard]] SymmetricMatrix* createKKT() const;
    void createSolversSparse(SolverType solver);
    void createSolversDense();
 
@@ -90,7 +91,7 @@ private:
    void add_CtDC_to_sparse_schur_complement(const SymmetricMatrix& CtDC);
    void add_CtDC_to_dense_schur_complement(const SymmetricMatrix& CtDC);
 
-   /** computes CtDC and stores it  in CtDC_loc + adds it to the Schur complement. If CtDC == nullptr it will also allocate CtDC */
+   /** computes CtDC and stores it in CtDC_loc + adds it to the Schur complement. If CtDC == nullptr it will also allocate CtDC */
    void compute_CtDC_and_add_to_Schur_complement(SymmetricMatrix*& CtDC_loc, const Vector<double>& diagonal);
 
    void clear_CtDC_from_sparse_schur_complement(const SymmetricMatrix& CtDC);
@@ -105,13 +106,22 @@ private:
    /** y = beta*y - alpha* SC * x */
    void SCmult(double beta, SimpleVector<double>& y, double alpha, SimpleVector<double>& x);
 
+   void schur_complement_put_primal_block(const Vector<double>* diagonal, SymmetricMatrix& schur_complement) const;
+   void schur_complement_add_CTDC_block(const Vector<double>* diagonal, SymmetricMatrix& schur_complement);
+   void schur_complement_put_AT_block(SymmetricMatrix& schur_complement) const;
+
+   // TODO : unused ..
+   const bool eliminate_C_block_from_kkt{true};
    /** stores C^T (Omega + Reg)^-1 C from the KKT matrix */
    std::unique_ptr<SymmetricMatrix> CtDC;
-   /** stores Omeag + Reg for computation of CtDC */
-   std::unique_ptr<SimpleVector<double>> dual_inequality_non_link_diagonal_regularized;
+
+   /** since we eliminate the C0 block we need a buffer for (D + reg)^-1 */
+   std::unique_ptr<Vector<double>> dual_inequality_diagonal_regularized{};
 
    std::vector<double> reduced_rhss_blocked;
    std::unique_ptr<SimpleVector<double>> redRhs;
+
+
 };
 
 #endif

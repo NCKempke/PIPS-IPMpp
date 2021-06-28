@@ -51,3 +51,7 @@ void Ma57SolverRoot::solve(Vector<double>& rhs) {
    if (!solve_in_parallel && PIPS_MPIgetSize(comm) > 0)
       MPI_Bcast(sv.elements(), n, MPI_DOUBLE, 0, comm);
 }
+
+bool Ma57SolverRoot::reports_inertia() const {
+   return solve_in_parallel || PIPS_MPIgetRank(comm) == 0;
+}

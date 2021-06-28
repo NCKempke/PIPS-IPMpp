@@ -9,6 +9,7 @@
 #include "DistributedProblem.hpp"
 #include "BorderedSymmetricMatrix.h"
 #include "PIPSIPMppOptions.h"
+#include "DistributedFactory.hpp"
 #include <memory>
 #include <unistd.h>
 #include <cmath>
@@ -42,9 +43,11 @@ sLinsysRootAug::sLinsysRootAug(const DistributedFactory& factory_, DistributedPr
    createSolversAndKKts();
 
    if (apply_regularization) {
-      std::cout << "setting up root regularization : " << locnx << " " << locmy << " " << locmz << " " << locmyl << " "
-                << locmzl << std::endl;
-      regularization_strategy = std::make_unique<RegularizationStrategy>(locnx, locmy + locmyl + locmzl);
+      if (pipsipmpp_options::get_bool_parameter("REGULARIZATION_VERBOSE") && PIPS_MPIgetRank(mpiComm) == 0) {
+         std::cout << "setting up root regularization : " << locnx << " " << locmy << " " << locmz << " " << locmyl << " "
+            << locmzl << "\n";
+      }
+      regularization_strategy = factory.make_regularization_strategy(locnx, locmy + locmyl + locmzl);
    }
 
    redRhs = std::make_unique<SimpleVector<double>>(locnx + locmy + locmz + locmyl + locmzl);
@@ -67,17 +70,17 @@ sLinsysRootAug::sLinsysRootAug(const DistributedFactory& factory_, DistributedPr
    }
 
    if (apply_regularization) {
-      std::cout << "setting up root regularization : " << locnx << " " << locmy << " " << locmz << " " << locmyl << " "
-                << locmzl << std::endl;
-      regularization_strategy = std::make_unique<RegularizationStrategy>(locnx, locmy + locmyl + locmzl);
+      if (pipsipmpp_options::get_bool_parameter("REGULARIZATION_VERBOSE") && PIPS_MPIgetRank(mpiComm) == 0) {
+         std::cout << "setting up root regularization : " << locnx << " " << locmy << " " << locmz << " " << locmyl
+                   << " " << locmzl << "\n";
+      }
+      regularization_strategy = factory.make_regularization_strategy(locnx, locmy + locmyl + locmzl);
    }
 
    redRhs = std::make_unique<SimpleVector<double>>(locnx + locmy + locmz + locmyl + locmzl);
 }
 
 SymmetricMatrix* sLinsysRootAug::createKKT() const {
-   const int n = locnx + locmy + locmyl + locmzl;
-
    if (hasSparseKkt) {
       SparseSymmetricMatrix* sparsekkt;
 
@@ -86,10 +89,10 @@ SymmetricMatrix* sLinsysRootAug::createKKT() const {
       else
          sparsekkt = data->createSchurCompSymbSparseUpper();
 
-      assert(sparsekkt->size() == n);
-
       return sparsekkt;
-   } else {
+   }
+   else {
+      const int n = locnx + locmy + locmyl + locmzl;
       return new DenseSymmetricMatrix(n);
    }
 }
@@ -152,7 +155,7 @@ void sLinsysRootAug::createSolversAndKKts() {
       if (hasSparseKkt)
          std::cout << "sLinsysRootAug: getSchurCompMaxNnz " << data->getSchurCompMaxNnz() << "\n";
       else {
-         const int n = locnx + locmy + locmyl + locmzl;
+         const long long n = kkt->size();
          std::cout << "sLinsysRootAug: getSchurCompMaxNnz " << n * n << "\n";
       }
    }
@@ -211,62 +214,19 @@ void sLinsysRootAug::finalizeKKTdist() {
    assert(kkts.size() == locnx + locmy + locmyl + locmzl);
    assert(!kkts.is_lower());
    assert(locmyl >= 0 && locmzl >= 0);
-   assert(data->getLocalQ().krowM()[locnx] == 0 && "Q currently not supported for dist. sparse kkt");
 
-   /////////////////////////////////////////////////////////////
-   // update the KKT with the diagonals
-   // xDiag is in fact diag(Q)+X^{-1}S
-   /////////////////////////////////////////////////////////////
-   if (xDiag && iAmLastRank) {
-      // TODO : use addDiag method
-      const auto& sxDiag = dynamic_cast<const SimpleVector<double>&>(*xDiag);
+   /* put Q+ X^{-1} Z - C' * diag(zDiag) * C into Schur complement */
 
-      for (int i = 0; i < locnx; i++) {
-         const int diagIdx = krowKkt[i];
-         assert(jcolKkt[diagIdx] == i);
+   if (iAmLastRank) {
+      /* put Q + diag(q) + X^{-1} Z */
+      schur_complement_put_primal_block(xDiag, *kkt);
 
-         MKkt[diagIdx] += sxDiag[i];
-      }
-   }
+      /* update Schur complement with - C' * diag(zDiag) *C */
+      schur_complement_add_CTDC_block(zDiag, *kkt);
 
-   /////////////////////////////////////////////////////////////
-   // update the KKT with   - C' * diag(zDiag) *C
-   /////////////////////////////////////////////////////////////
-   if (locmz > 0 && iAmLastRank) {
-      assert(zDiag);
-      SymmetricMatrix* CtDCptr = CtDC ? CtDC.get() : nullptr;
-
-      compute_CtDC_and_add_to_Schur_complement(CtDCptr, *zDiag);
-      if (!CtDC) {
-         CtDC.reset(CtDCptr);
-      }
-   }
-
-   /////////////////////////////////////////////////////////////
-   // update the KKT with At (symmetric update forced)
-   /////////////////////////////////////////////////////////////
-   if (locmy > 0 && iAmLastRank) {
-      const SparseMatrix& At = data->getLocalB().getTranspose(); // yes, B
-      const double* MAt = At.M();
-      const int* krowAt = At.krowM();
-
-      for (int i = 0; i < locnx; ++i) {
-         const int pstart = krowAt[i];
-         const int pend = krowAt[i + 1];
-
-         // get start position of sparse kkt block
-         const int blockStart = krowKkt[i] + locnx - i;
-
-         assert(blockStart <= krowKkt[i + 1]);
-
-         for (int p = pstart; p < pend; ++p) {
-            assert(At.jcolM()[p] < locmy);
-            assert(blockStart + (p - pstart) <= krowKkt[i + 1]);
-            assert(jcolKkt[blockStart + (p - pstart)] == (locnx + At.jcolM()[p]));
-
-            MKkt[blockStart + (p - pstart)] += MAt[p];
-         }
-      }
+      /* put AT into Schur complement */
+      if (locmy > 0)
+        schur_complement_put_AT_block(*kkt);
    }
 
    int local2linksStartEq;
@@ -380,7 +340,101 @@ void sLinsysRootAug::assembleLocalKKT() {
       addTermToSchurCompl(c, !is_layer_only_twolinks);
 
       //---------------------------------------------
+
       children[c]->stochNode->resMon.recFactTmChildren_stop();
+   }
+}
+
+void sLinsysRootAug::schur_complement_put_primal_block(const Vector<double>* diagonal, SymmetricMatrix& schur_complement) const {
+   if (locnx <= 0) {
+      return;
+   }
+
+   /* update the schur complement with Q (DO NOT PUT DIAG) */
+   if (hasSparseKkt) {
+      assert(data->getLocalQ().krowM()[locnx] == 0 && "Q currently not supported for sparse kkt");
+   } else {
+      auto& dense_schur_complement = dynamic_cast<DenseSymmetricMatrix&>(schur_complement);
+      const SparseSymmetricMatrix& Q = data->getLocalQ();
+      const int* krowQ = Q.krowM();
+      const int* jcolQ = Q.jcolM();
+      const double* dQ = Q.M();
+      for (int i = 0; i < locnx; i++) {
+         const int pend = krowQ[i + 1];
+         for (int p = krowQ[i]; p < pend; p++) {
+            const int j = jcolQ[p];
+            if (i == j)
+               continue;
+            double val = dQ[p];
+            dense_schur_complement[i][j] += val;
+            dense_schur_complement[j][i] += val;
+
+            assert(0 && "non-empty Q currently not supported");
+         }
+      }
+   }
+
+   assert(diagonal);
+   assert(diagonal->length() == locnx);
+
+   /* put diagonal diag = diag(Q) + X^{-1} Z + primal_regularization */
+   schur_complement.atAddDiagonal(0, *diagonal);
+}
+
+void sLinsysRootAug::schur_complement_add_CTDC_block(const Vector<double>* diagonal,
+   SymmetricMatrix& schur_complement) {
+   if (locmz <= 0) {
+      return;
+   }
+
+   assert(diagonal);
+   SymmetricMatrix* CtDCptr = CtDC ? CtDC.get() : nullptr;
+
+   compute_CtDC_and_add_to_Schur_complement(CtDCptr, *diagonal);
+   if (!CtDC){
+      CtDC.reset(CtDCptr);
+   }
+}
+
+void sLinsysRootAug::schur_complement_put_AT_block(SymmetricMatrix& schur_complement) const {
+   assert(locnx >= 0);
+   if (locmy <= 0) {
+      return;
+   }
+
+   if (hasSparseKkt) {
+      const SparseMatrix& AT = data->getLocalB().getTranspose(); // yes, B
+      auto& sparse_schur_complement = dynamic_cast<SparseSymmetricMatrix&>(schur_complement);
+
+      int* krowM_schur_complement = sparse_schur_complement.krowM();
+
+      /* the structure for At has been pre-allocated in the schur complement */
+      const double* MAt = AT.M();
+      const int* krowAt = AT.krowM();
+
+      for (int i = 0; i < locnx; ++i) {
+
+         const int At_row_start = krowAt[i];
+         const int At_row_end = krowAt[i + 1];
+
+         /* start position of sparse At block in the Schur complement */
+         const int At_block_start = krowM_schur_complement[i] + locnx - i;
+
+         assert(At_block_start <= krowM_schur_complement[i + 1]);
+
+         for (int p = At_row_start; p < At_row_end; ++p) {
+            assert(AT.jcolM()[p] < locmy);
+            assert(At_block_start + (p - At_row_start) <= krowM_schur_complement[i + 1]);
+            assert(sparse_schur_complement.jcolM()[At_block_start + (p - At_row_start)] == (locnx + AT.jcolM()[p]));
+
+            sparse_schur_complement.M()[At_block_start + (p - At_row_start)] += MAt[p];
+         }
+      }
+   } else {
+      const SparseMatrix& A = data->getLocalB(); // yes, B
+
+      auto& dense_schur_complement = dynamic_cast<DenseSymmetricMatrix&>(schur_complement);
+      dense_schur_complement.add_matrix_at(A, locnx, 0); // yes, B
    }
 }
 
@@ -487,10 +541,9 @@ void sLinsysRootAug::Ltsolve(Vector<double>& x) {
 #endif
 }
 
-/* gets called for computing the dense schur complement*/
-void sLinsysRootAug::LsolveHierarchyBorder(DenseMatrix& result, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border,
-   bool two_link_border,
-   int begin_cols, int end_cols) {
+/* gets called for computing the dense schur complement */
+void sLinsysRootAug::LsolveHierarchyBorder(DenseMatrix& result, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border, bool two_link_border,
+      int begin_cols, int end_cols) {
    LsolveHierarchyBorder(result, Br, Br_mod_border, true, two_link_border, begin_cols, end_cols);
 }
 
@@ -506,11 +559,6 @@ sLinsysRootAug::LtsolveHierarchyBorder(AbstractMatrix& res, const DenseMatrix& X
 extern int gLackOfAccuracy;
 
 void sLinsysRootAug::solveReducedLinkCons(SimpleVector<double>& b_vec) {
-#ifdef TIMING
-   t_start = MPI_Wtime();
-   troot_total = tchild_total = tcomm_total = 0.0;
-#endif
-
    assert(locmyl >= 0 && locmzl >= 0);
    assert(locnx + locmy + locmz + locmyl + locmzl == b_vec.length());
 
@@ -525,7 +573,7 @@ void sLinsysRootAug::solveReducedLinkCons(SimpleVector<double>& b_vec) {
    ///////////////////////////////////////////////////////////////////////
    // b = [b1; b2; b3; b4; b5] is a locnx + locmy + locmz + locmyl + locmz vector
    // the new rhs should be
-   //           r = [b1-C^T*(zDiagReg)^{-1}*b3; b2; b4; b5]
+   //           r = [b1-C^T*((Diag + regularization)^{-1}*b3; b2; b4; b5]
    ///////////////////////////////////////////////////////////////////////
    double* b = b_vec.elements();
 
@@ -543,14 +591,14 @@ void sLinsysRootAug::solveReducedLinkCons(SimpleVector<double>& b_vec) {
    SimpleVector<double> rhs_reduced_b3(rhs_reduced + locnx + locmy + locmyl + locmzl, locmz);
 
    ///////////////////////////////////////////////////////////////////////
-   // compute r1 = b1 - C^T * (zDiag)^{-1} * rhs_reduced_b3
+   // compute r1 = b1 - C^T * (zDiag + regularization)^{-1} * rhs_reduced_b3
    ///////////////////////////////////////////////////////////////////////
    // if we have C part
    if (locmz > 0) {
-      assert(zDiag);
-      assert(rhs_reduced_b3.length() == zDiag->length());
+      assert(dual_inequality_diagonal_regularized);
+      assert(rhs_reduced_b3.length() == dual_inequality_diagonal_regularized->length());
 
-      rhs_reduced_b3.componentDiv(*zDiag);
+      rhs_reduced_b3.componentDiv(*dual_inequality_diagonal_regularized);
       C.transpose_mult(1.0, rhs1, -1.0, rhs_reduced_b3);
    }
 
@@ -576,7 +624,7 @@ void sLinsysRootAug::solveReducedLinkCons(SimpleVector<double>& b_vec) {
    ///////////////////////////////////////////////////////////////////////
    // rhs_small is now the solution to the reduced system
    // the solution to the augmented system can now be computed as
-   //      x = [rhs1; rhs2; zDiag^{-1} * (b3 - C * r1); rhs3; rhs4]
+   //      x = [rhs1; rhs2; (zDiag + regularization)^-1 * (b3 - C * r1); rhs3; rhs4]
    ///////////////////////////////////////////////////////////////////////
 
    // copy the solution components and calculate r3
@@ -586,25 +634,15 @@ void sLinsysRootAug::solveReducedLinkCons(SimpleVector<double>& b_vec) {
    if (locmz > 0) {
       SimpleVector<double> b3(b + locnx + locmy, locmz);
       C.mult(1.0, b3, -1.0, rhs1);
-      b3.componentDiv(*zDiag);
+
+      b3.componentDiv(*dual_inequality_diagonal_regularized);
    }
 
    // copy rhs3 and rhs4
    std::copy(rhs_reduced + locnx + locmy, rhs_reduced + locnx + locmy + locmyl + locmzl, b + locnx + locmy + locmz);
-
-#ifdef TIMING
-   if( myRank == 0 && innerSCSolve >= 1 )
-     std::cout << "Root - Refin times: child=" << tchild_total << " root=" << troot_total
-        << " comm=" << tcomm_total << " total=" << MPI_Wtime()-t_start << "\n";
-#endif
 }
 
 void sLinsysRootAug::solveReducedLinkConsBlocked(DenseMatrix& rhs_mat_transp, int rhs_start, int n_rhs) {
-#ifdef TIMING
-   t_start = MPI_Wtime();
-   troot_total = tchild_total = tcomm_total = 0.0;
-#endif
-
    const int length_rhs = rhs_mat_transp.n_columns();
 
    assert(locmyl >= 0 && locmzl >= 0);
@@ -619,7 +657,7 @@ void sLinsysRootAug::solveReducedLinkConsBlocked(DenseMatrix& rhs_mat_transp, in
    ///////////////////////////////////////////////////////////////////////
    const SparseMatrix& C = data->getLocalD();
 
-#pragma omp parallel for schedule(dynamic, 1)
+   #pragma omp parallel for schedule(dynamic, 1)
    for (int rhs_i = rhs_start; rhs_i < rhs_start + n_rhs; ++rhs_i) {
       assert(rhs_i < rhs_mat_transp.n_rows());
 
@@ -632,7 +670,7 @@ void sLinsysRootAug::solveReducedLinkConsBlocked(DenseMatrix& rhs_mat_transp, in
       ///////////////////////////////////////////////////////////////////////
       // b = [b1; b2; b3; b4; b5] is a locnx + locmy + locmz + locmyl + locmz vector
       // the new rhs should be
-      //           r = [b1-C^T*(zDiag)^{-1}*b3; b2; b4; b5]
+      //           r = [b1-C^T*(zDiag + regularization)^{-1}*b3; b2; b4; b5]
       ///////////////////////////////////////////////////////////////////////
 
       //copy all elements from b into r except for the the residual values corresponding to z0 = b3
@@ -649,18 +687,17 @@ void sLinsysRootAug::solveReducedLinkConsBlocked(DenseMatrix& rhs_mat_transp, in
       SimpleVector<double> b3(b + locnx + locmy, locmz);
 
       ///////////////////////////////////////////////////////////////////////
-      // compute r1 = b1 - C^T * (zDiag)^{-1} * b3
+      // compute r1 = b1 - C^T * (zDiag + regularization)^{-1} * b3
       ///////////////////////////////////////////////////////////////////////
       // if we have C part
       if (locmz > 0) {
-         assert(zDiag);
-         assert(b3.length() == zDiag->length());
-         b3.componentDiv(*zDiag);
+         assert(dual_inequality_diagonal_regularized);
+         assert(b3.length() == dual_inequality_diagonal_regularized->length());
+         b3.componentDiv(*dual_inequality_diagonal_regularized);
          C.transpose_mult(1.0, rhs1, -1.0, b3);
-//         C.transMultD(1.0, rhs1, -1.0, b3, *zDiag);
+//         C.transMultD(1.0, rhs1, -1.0, b3, *dual_inequality_diagonal_regularized);
       }
    }
-
 
    ///////////////////////////////////////////////////////////////////////
    // reduced_rhss_blocked now contains all reduced rhs -> solve for it
@@ -673,13 +710,13 @@ void sLinsysRootAug::solveReducedLinkConsBlocked(DenseMatrix& rhs_mat_transp, in
    ///////////////////////////////////////////////////////////////////////
    // rhs_small is now the solution to the reduced system
    // the solution to the augmented system can now be computed as
-   //      x = [rhs1; rhs2; zDiag^{-1} * (b3 - C * r1); rhs3; rhs4]
+   //      x = [rhs1; rhs2; (zDiag + regularization)^{-1} * (b3 - C * r1); rhs3; rhs4]
    ///////////////////////////////////////////////////////////////////////
 
 
    // copy the solution components and calculate r3
    // copy rhs1 and rhs2
-#pragma omp parallel for schedule(dynamic, 1)
+   #pragma omp parallel for schedule(dynamic, 1)
    for (int rhs_i = rhs_start; rhs_i < rhs_start + n_rhs; ++rhs_i) {
       double* rhs_reduced = reduced_rhss_blocked.data() + (rhs_i - rhs_start) * length_reduced;
 
@@ -692,18 +729,12 @@ void sLinsysRootAug::solveReducedLinkConsBlocked(DenseMatrix& rhs_mat_transp, in
          SimpleVector<double> rhs1(rhs_reduced, locnx);
          SimpleVector<double> b3(b + locnx + locmy, locmz);
          C.mult(1.0, b3, -1.0, rhs1);
-         b3.componentDiv(*zDiag);
+         b3.componentDiv(*dual_inequality_diagonal_regularized);
       }
 
       // copy rhs3 and rhs4
       std::copy(rhs_reduced + locnx + locmy, rhs_reduced + locnx + locmy + locmyl + locmzl, b + locnx + locmy + locmz);
    }
-#ifdef TIMING
-   // TODO
-  if( myRank == 0 && innerSCSolve >= 1 )
-    std::cout << "Root - Refin times: child=" << tchild_total << " root=" << troot_total
-       << " comm=" << tcomm_total << " total=" << MPI_Wtime()-t_start << "\n";
-#endif
 }
 
 
@@ -1469,8 +1500,8 @@ void sLinsysRootAug::add_CtDC_to_sparse_schur_complement(const SymmetricMatrix& 
    }
 }
 
-void
-sLinsysRootAug::compute_CtDC_and_add_to_Schur_complement(SymmetricMatrix*& CtDC_loc, const Vector<double>& diagonal) {
+void sLinsysRootAug::compute_CtDC_and_add_to_Schur_complement(SymmetricMatrix*& CtDC_loc, const Vector<double>& diagonal)
+{
    assert(diagonal.all_of([](auto& v) { return v <= 0.0; }));
 
    const SparseMatrix& C = data->getLocalD();
@@ -1552,14 +1583,13 @@ void sLinsysRootAug::add_regularization_local_kkt(double primal_regularization, 
    assert(dynamic_cast<const DistributedVector<double>*>(this->dual_equality_regularization_diagonal.get()));
    assert(dynamic_cast<const DistributedVector<double>*>(this->dual_inequality_regularization_diagonal.get()));
 
-
    assert(primal_regularization >= 0);
    assert(dual_inequality_regularization >= 0);
    assert(dual_equality_regularization >= 0);
 
-   if (PIPS_MPIgetRank() == 0) {
+   if (pipsipmpp_options::get_bool_parameter("REGULARIZATION_VERBOSE") && PIPS_MPIgetRank(mpiComm) == 0) {
       std::cout << "regularizing with root " << primal_regularization << " " << dual_equality_regularization << " "
-                << dual_inequality_regularization << std::endl;
+                << dual_inequality_regularization << "\n";
    }
 
    /* primal diagonal */
@@ -1574,25 +1604,25 @@ void sLinsysRootAug::add_regularization_local_kkt(double primal_regularization, 
    /* C^T reg^-1 C block */
    if (locmz > 0) {
       const auto& dual_inequality_regularization_vec = dynamic_cast<DistributedVector<double>&>(*this->dual_inequality_regularization_diagonal).first;
-      dual_inequality_regularization_vec->addConstant(-dual_inequality_regularization);
       assert(dual_inequality_regularization_vec);
+      dual_inequality_regularization_vec->addConstant(-dual_inequality_regularization);
 
       assert(zDiag);
       assert(CtDC);
+      assert(dual_inequality_diagonal_regularized);
 
-      if (!dual_inequality_non_link_diagonal_regularized)
-         dual_inequality_non_link_diagonal_regularized.reset(dynamic_cast<SimpleVector<double>*>(zDiag->clone()));
+      assert(std::all_of(dynamic_cast<const SimpleVector<double>&>(*zDiag).elements(),
+         dynamic_cast<const SimpleVector<double>&>(*zDiag).elements(), [](const double& d) {
+            return d <= 0;
+         }));
 
-      dual_inequality_non_link_diagonal_regularized->copyFrom(*zDiag);
-      dual_inequality_non_link_diagonal_regularized->axpy(1.0, *dual_inequality_regularization_vec);
+      dual_inequality_diagonal_regularized->addConstant(-dual_inequality_regularization);
 
       SymmetricMatrix* CTDC_ptr = CtDC.get();
       clear_CtDC_from_schur_complement(*CtDC);
-      compute_CtDC_and_add_to_Schur_complement(CTDC_ptr, *dual_inequality_non_link_diagonal_regularized);
+      compute_CtDC_and_add_to_Schur_complement(CTDC_ptr, *dual_inequality_diagonal_regularized);
    }
 
-
-   /* A0 dual equalities */
    if (locmy > 0) {
       const auto& dual_equality_regularization_vec = dynamic_cast<DistributedVector<double>&>(*this->dual_equality_regularization_diagonal).first;
       assert(dual_equality_regularization_vec);
@@ -1601,7 +1631,6 @@ void sLinsysRootAug::add_regularization_local_kkt(double primal_regularization, 
       kkt->diagonal_add_constant_from(locnx, locmy, -dual_equality_regularization);
    }
 
-   /* dual linking equalities */
    if (locmyl > 0) {
       const auto& dual_equality_regularization_link_cons = dynamic_cast<DistributedVector<double>&>(*this->dual_equality_regularization_diagonal).last;
       assert(dual_equality_regularization_link_cons);
@@ -1619,9 +1648,18 @@ void sLinsysRootAug::add_regularization_local_kkt(double primal_regularization, 
    }
 }
 
+void sLinsysRootAug::put_dual_inequalites_diagonal() {
+   DistributedRootLinearSystem::put_dual_inequalites_diagonal();
+
+   if (!dual_inequality_diagonal_regularized) {
+      dual_inequality_diagonal_regularized.reset(dynamic_cast<SimpleVector<double>*>(zDiag->cloneFull()));
+   } else {
+      dual_inequality_diagonal_regularized->copyFrom(*zDiag);
+   }
+}
+
 void sLinsysRootAug::finalizeKKTsparse() {
    auto& kkts = dynamic_cast<SparseSymmetricMatrix&>(*kkt);
-
 #ifndef NDEBUG
    int* const jcolKkt = kkts.jcolM();
 #endif
@@ -1633,65 +1671,16 @@ void sLinsysRootAug::finalizeKKTsparse() {
    assert(!kkts.is_lower());
    assert(locmyl >= 0 && locmzl >= 0);
 
-   //////////////////////////////////////////////////////
-   // compute Q+diag(xdiag) - C' * diag(zDiag) * C
-   // and update the KKT
-   //////////////////////////////////////////////////////
+   /* put Q+ X^{-1} Z - C' * diag(zDiag) * C into Schur complement */
 
-   /////////////////////////////////////////////////////////////
-   // update the KKT with Q (DO NOT PUT DIAG)
-   /////////////////////////////////////////////////////////////
-   assert(data->getLocalQ().krowM()[locnx] == 0 && "Q currently not supported for sparse kkt");
+   /* put Q + diag(q) + X^{-1} Z */
+   schur_complement_put_primal_block(xDiag, *kkt);
 
-   /////////////////////////////////////////////////////////////
-   // update the KKT with the diagonals
-   // xDiag is in fact diag(Q)+X^{-1} S
-   /////////////////////////////////////////////////////////////
-   if (locnx > 0) {
-      assert(xDiag);
-      assert(xDiag->all_of([](const auto& d) { return d >= 0.0; }));
-      kkt->atAddDiagonal(0, *xDiag);
-   }
+   /* update Schur complement with - C' * diag(zDiag) *C */
+   schur_complement_add_CTDC_block(zDiag, *kkt);
 
-   /////////////////////////////////////////////////////////////
-   // update the KKT with   - C' * diag(zDiag) *C
-   /////////////////////////////////////////////////////////////
-   if (locmz > 0) {
-      assert(zDiag);
-
-      SymmetricMatrix* CtDCptr = CtDC ? CtDC.get() : nullptr;
-      compute_CtDC_and_add_to_Schur_complement(CtDCptr, *zDiag);
-      if (!CtDC) {
-         CtDC.reset(CtDCptr);
-      }
-   }
-
-   /////////////////////////////////////////////////////////////
-   // update the KKT with At (symmetric update forced)
-   /////////////////////////////////////////////////////////////
-   if (locmy > 0) {
-      const SparseMatrix& At = data->getLocalB().getTranspose(); // yes, B
-      const double* MAt = At.M();
-      const int* krowAt = At.krowM();
-
-      for (int i = 0; i < locnx; ++i) {
-         const int pstart = krowAt[i];
-         const int pend = krowAt[i + 1];
-
-         // get start position of sparse kkt block
-         const int blockStart = krowKkt[i] + locnx - i;
-
-         assert(blockStart <= krowKkt[i + 1]);
-
-         for (int p = pstart; p < pend; ++p) {
-            assert(At.jcolM()[p] < locmy);
-            assert(blockStart + (p - pstart) <= krowKkt[i + 1]);
-            assert(jcolKkt[blockStart + (p - pstart)] == (locnx + At.jcolM()[p]));
-
-            MKkt[blockStart + (p - pstart)] += MAt[p];
-         }
-      }
-   }
+   /* put AT into Schur complement */
+   schur_complement_put_AT_block(*kkt);
 
    /////////////////////////////////////////////////////////////
    // update the KKT with Ft
@@ -1806,75 +1795,27 @@ void sLinsysRootAug::finalizeKKTsparse() {
    myfile.close();
 
    assert(0);
-
 #endif
 }
 
 void sLinsysRootAug::finalizeKKTdense() {
-   auto* const kktd = dynamic_cast<DenseSymmetricMatrix*>(kkt.get());
+   auto& kktd = dynamic_cast<DenseSymmetricMatrix&>(*kkt.get());
+   /* put Q+ X^{-1} Z - C' * diag(zDiag) * C into Schur complement */
 
-   //alias for internal buffer of kkt
-   double** const dKkt = kktd->Mat();
+   /* put Q + diag(q) + X^{-1} Z */
+   schur_complement_put_primal_block(xDiag, kktd);
 
-   //////////////////////////////////////////////////////
-   // compute Q+diag(xdiag) - C' * diag(zDiag) * C
-   // and update the KKT
-   //////////////////////////////////////////////////////
+   /* update Schur complement with - C' * diag(zDiag) *C */
+   schur_complement_add_CTDC_block(zDiag, kktd);
 
-
-   /////////////////////////////////////////////////////////////
-   // update the KKT with Q (DO NOT PUT DIAG)
-   /////////////////////////////////////////////////////////////
-   const SparseSymmetricMatrix& Q = data->getLocalQ();
-   const int* krowQ = Q.krowM();
-   const int* jcolQ = Q.jcolM();
-   const double* dQ = Q.M();
-   for (int i = 0; i < locnx; i++) {
-      const int pend = krowQ[i + 1];
-      for (int p = krowQ[i]; p < pend; p++) {
-         const int j = jcolQ[p];
-         if (i == j)
-            continue;
-         double val = dQ[p];
-         dKkt[i][j] += val;
-         dKkt[j][i] += val;
-
-         assert(0 && "non-empty Q currently not supported");
-      }
-   }
-
-   /////////////////////////////////////////////////////////////
-   // update the KKT with the diagonals
-   // xDiag is in fact diag(Q)+X^{-1}S
-   /////////////////////////////////////////////////////////////
-   kktd->atAddDiagonal(0, *xDiag);
-
-   /////////////////////////////////////////////////////////////
-   // update the KKT with   - C' * diag(zDiag) *C
-   /////////////////////////////////////////////////////////////
-   if (locmz > 0) {
-      assert(zDiag);
-      SymmetricMatrix* CtDCptr = CtDC ? CtDC.get() : nullptr;
-
-      compute_CtDC_and_add_to_Schur_complement(CtDCptr, *zDiag);
-
-      if (!CtDC) {
-         CtDC.reset(CtDCptr);
-      }
-   }
-
-   /////////////////////////////////////////////////////////////
-   // update the KKT with A
-   /////////////////////////////////////////////////////////////
-   if (locmy > 0) {
-      kktd->add_matrix_at(data->getLocalB(), locnx, 0); // yes, B
-   }
+   /* put AT into Schur complement */
+   schur_complement_put_AT_block(kktd);
 
    /////////////////////////////////////////////////////////////
    // update the KKT with F
    /////////////////////////////////////////////////////////////
    if (locmyl > 0) {
-      kktd->add_matrix_at(data->getLocalF(), locnx + locmy, 0);
+      kktd.add_matrix_at(data->getLocalF(), locnx + locmy, 0);
    }
 
    /////////////////////////////////////////////////////////////
@@ -1882,8 +1823,8 @@ void sLinsysRootAug::finalizeKKTdense() {
    /////////////////////////////////////////////////////////////
    if (locmzl > 0) {
       assert(zDiagLinkCons);
-      kktd->add_matrix_at(data->getLocalG(), locnx + locmy + locmyl, 0);
-      kktd->atAddDiagonal(locnx + locmy + locmyl, *zDiagLinkCons);
+      kktd.add_matrix_at(data->getLocalG(), locnx + locmy + locmyl, 0);
+      kktd.atAddDiagonal(locnx + locmy + locmyl, *zDiagLinkCons);
    }
 
 #ifdef DUMPKKT
@@ -1906,9 +1847,6 @@ void sLinsysRootAug::finalizeKKTdense() {
 void sLinsysRootAug::DsolveHierarchyBorder(DenseMatrix& rhs_mat_transp, int n_cols) {
    /* b holds all rhs in transposed form - C part from schur complement is already missing in b */
    const int my_rank = PIPS_MPIgetRank(mpiComm);
-#ifdef TIMING
-   // TODO
-#endif
 
    const auto[m, n] = rhs_mat_transp.n_rows_columns();
 #ifndef NDEBUG
@@ -1924,7 +1862,7 @@ void sLinsysRootAug::DsolveHierarchyBorder(DenseMatrix& rhs_mat_transp, int n_co
     * Every process has to do n_rhs / n_procs right hand sides while the first few might have to solve with one additional one
     */
    const int size = PIPS_MPIgetSize(mpiComm);
-   const int n_blockrhs = static_cast<int>( n_cols / size );
+   const int n_blockrhs = static_cast<int>(n_cols / size);
    const int leftover = n_cols % size;
 
    const int n_rhs = (my_rank < leftover) ? n_blockrhs + 1 : n_blockrhs;

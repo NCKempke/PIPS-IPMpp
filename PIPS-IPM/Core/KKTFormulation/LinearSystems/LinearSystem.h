@@ -21,6 +21,10 @@ class Variables;
 
 class Residuals;
 
+class SymmetricMatrix;
+
+class DoubleLinearSolver;
+
 /** 
  * Linear System solvers. This class
  * contains definitions of methods and data common to the sparse and
@@ -63,6 +67,10 @@ public:
    }
 
 protected:
+   /* symmetric Schur Complement / whole KKT system in lower triangular from */
+   std::unique_ptr<SymmetricMatrix> kkt{};
+   std::unique_ptr<DoubleLinearSolver> solver{};
+
    /** observer pattern for convergence status of BiCGStab when calling solve */
    IterativeSolverSolutionStatus bicg_conv_flag{IterativeSolverSolutionStatus::DID_NOT_RUN};
    int bicg_niterations{-1};
@@ -117,8 +125,6 @@ protected:
    long long mcupp{0};
    long long mclow{0};
 
-   bool useRefs{false};
-
    /** Work vectors for iterative refinement of the XYZ linear system */
    std::unique_ptr<Vector<double>> sol{};
    std::unique_ptr<Vector<double>> sol2{};
@@ -138,6 +144,8 @@ protected:
    const int outerSolve;
    const int innerSCSolve;
 
+   /// do iterative refinement/BiCGStab with the original or regularized system
+   const bool outer_solve_refine_original_system{false};
    /// parameters for the bicg solve
    const bool outer_bicg_print_statistics;
 
@@ -221,6 +229,9 @@ public:
     * augmented system matrix */
    virtual void put_primal_diagonal() = 0;
 
+   /** reset Schur complements and regularization from last iteration */
+   void reset_regularization();
+
    /** set diagonal in kkt system associated with equalities to zero (necessary after regularization) */
    virtual void clear_dual_equality_diagonal() = 0;
 
@@ -238,7 +249,11 @@ public:
          Vector<double>& w, Vector<double>& phi);
 
    /** will factorize and regularize kkt until inertia criterion is met */
-   virtual void factorize_with_correct_inertia() = 0;
+   void factorize_with_correct_inertia();
+
+   /** regularizes kkt of LinearSystem - called by factorize with correct inertia */
+   virtual void
+   add_regularization_local_kkt(double primal_regularization, double dual_equality_regularization, double dual_inequality_regularization) = 0;
 
    void print_regularization_statistics() const;
 protected:

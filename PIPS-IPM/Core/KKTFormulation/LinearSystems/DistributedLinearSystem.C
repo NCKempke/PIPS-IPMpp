@@ -57,8 +57,6 @@ DistributedLinearSystem::DistributedLinearSystem(const DistributedFactory& facto
       mpiComm = MPI_COMM_NULL;
       iAmDistrib = false;
    }
-
-   useRefs = true;
 }
 
 void DistributedLinearSystem::factorize(Variables& vars) {
@@ -82,65 +80,6 @@ void DistributedLinearSystem::factorize(Variables& vars) {
    if( 0 == myRank )
        std::cout << "Outer fact. total time " << tTot << std::endl;
 #endif
-}
-
-void DistributedLinearSystem::factorize_with_correct_inertia() {
-   regularization_strategy->notify_new_step();
-
-   /* factor once without applying regularization */
-   solver->matrixChanged();
-   if (!solver->reports_inertia()) {
-      return;
-   }
-
-   // TODO : add max tries..
-   while (!regularization_strategy->is_inertia_correct(solver->get_inertia())) {
-      auto[primal_regularization_value, dual_equality_regularization_value, dual_inequality_regularization_value] =
-      this->regularization_strategy->get_regularization_parameters(solver->get_inertia(),
-         barrier_parameter_current_iterate);
-      solver->matrixChanged();
-
-      regularization_strategy->is_inertia_correct(solver->get_inertia());
-      solver->matrixChanged();
-      regularization_strategy->is_inertia_correct(solver->get_inertia());
-
-      this->add_regularization_local_kkt(primal_regularization_value, dual_equality_regularization_value,
-         dual_inequality_regularization_value);
-      solver->matrixChanged();
-   }
-}
-
-/**
- *       [ R^i^T Ai^T Ci^T ]          [    ]
- * z0 -= [ 0      0   0    ] * Li\Di\ [ zi ]
- *       [ 0      0   0    ]          [    ]
- *
- * 
- */
-void DistributedLinearSystem::addLnizi(Vector<double>& z0_, Vector<double>& zi_) {
-   auto& z0 = dynamic_cast<SimpleVector<double>&>(z0_);
-   auto& zi = dynamic_cast<SimpleVector<double>&>(zi_);
-
-   solver->Dsolve(zi);
-   solver->Ltsolve(zi);
-
-   const SparseMatrix& A = data->getLocalA();
-   const SparseMatrix& C = data->getLocalC();
-   const SparseMatrix& R = data->getLocalCrossHessian();
-
-   //get n0= nx(parent)= #cols of A or C
-   const auto n0 = A.n_columns();
-
-   // zi2 and zi3 are just references to fragments of zi
-   SimpleVector<double> zi1(&zi[0], locnx);
-   SimpleVector<double> zi2(&zi[locnx], locmy);
-   SimpleVector<double> zi3(&zi[locnx + locmy], locmz);
-   // same for z01 (only the first n0 entries in the output z0 are computed)
-   SimpleVector<double> z01(&z0[0], n0);
-
-   R.transpose_mult(1.0, z01, -1.0, zi1);
-   A.transpose_mult(1.0, z01, -1.0, zi2);
-   C.transpose_mult(1.0, z01, -1.0, zi3);
 }
 
 void
@@ -1295,34 +1234,4 @@ int DistributedLinearSystem::allocateAndZeroBlockedComputationsBuffer(int buffer
    buffer_blocked_hierarchical->putZeros();
 
    return buffer_m_blocked;
-}
-
-template<>
-bool DistributedLinearSystem::BorderLinsys::isEmpty() const {
-   if (use_local_RAC)
-      return false;
-   else {
-      if (F.numberOfNonZeros() == 0 && G.numberOfNonZeros() == 0) {
-         if (has_RAC)
-            return R.numberOfNonZeros() == 0 && A.numberOfNonZeros() == 0 && C.numberOfNonZeros() == 0;
-         else
-            return true;
-      } else
-         return false;
-   }
-}
-
-template<>
-bool DistributedLinearSystem::BorderBiBlock::isEmpty() const {
-   if (use_local_RAC)
-      return false;
-   else {
-      if (F.numberOfNonZeros() == 0 && G.numberOfNonZeros() == 0) {
-         if (has_RAC)
-            return R.numberOfNonZeros() == 0 && A.numberOfNonZeros() == 0 && C.numberOfNonZeros() == 0;
-         else
-            return true;
-      } else
-         return false;
-   }
 }

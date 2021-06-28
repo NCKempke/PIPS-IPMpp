@@ -25,8 +25,7 @@ DistributedLeafLinearSystem::DistributedLeafLinearSystem(const DistributedFactor
    prob->getLocalNnz(nnzQ, nnzB, nnzD);
 
    if (apply_regularization) {
-      regularization_strategy = std::make_unique<RegularizationStrategy>(static_cast<unsigned int>(locnx),
-         static_cast<unsigned int>(locmy + locmz));
+      regularization_strategy = factory.make_regularization_strategy(static_cast<unsigned int>(locnx), static_cast<unsigned int>(locmy + locmz));
    }
 #ifdef TIMING
    if( myRank == 0 )
@@ -95,7 +94,7 @@ void DistributedLeafLinearSystem::put_primal_diagonal() {
 }
 
 void DistributedLeafLinearSystem::clear_dual_equality_diagonal() {
-   kkt->diagonal_add_constant_from(locnx, locmy, 0.0);
+   kkt->diagonal_set_to_constant_from(locnx, locmy, 0.0);
 };
 
 void DistributedLeafLinearSystem::put_dual_inequalites_diagonal() {
@@ -126,8 +125,11 @@ DistributedLeafLinearSystem::add_regularization_local_kkt(double primal_regulari
    assert(this->dual_equality_regularization_diagonal);
    assert(this->dual_inequality_regularization_diagonal);
 
-   std::cout << "regularizing leaf with " << primal_regularization << " " << dual_equality_regularization << " "
-             << dual_inequality_regularization << std::endl;
+   if (pipsipmpp_options::get_bool_parameter("REGULARIZATION_VERBOSE") && PIPS_MPIgetRank(mpiComm) == 0) {
+      std::cout << "regularizing leaf with " << primal_regularization << " " << dual_equality_regularization << " "
+         << dual_inequality_regularization << "\n";
+   }
+
    if (locnx > 0) {
       add_regularization_diagonal(0, primal_regularization, *this->primal_regularization_diagonal);
    }
