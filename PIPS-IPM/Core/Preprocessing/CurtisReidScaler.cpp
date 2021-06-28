@@ -5,6 +5,7 @@
 #include "CurtisReidScaler.h"
 #include "ProblemFactory.h"
 #include "AbstractMatrix.h"
+#include "PIPSIPMppOptions.h"
 
 CurtisReidScaler::CurtisReidScaler(const ProblemFactory& problem_factory, const Problem& problem, bool bitshifting) : Scaler(problem_factory, problem, bitshifting) {
    if (PIPS_MPIgetRank() == 0 && scaling_output)
@@ -177,7 +178,7 @@ void CurtisReidScaler::scale() {
    }
 
    free_temp_vectors();
-
+   scaling_factors_to_power2();
    applyScaling();
 
    if (!scaling_applied) {
@@ -214,6 +215,9 @@ void CurtisReidScaler::set_initial_scaling_factors(const Vector<double>& log_sum
 
    scaling_factors_inequalities->copyFrom(log_sum_inequalities); // p_2
    scaling_factors_inequalities->componentDiv(sum_non_zeros_inequalities);
+
+   log_sum_equalities.write_to_stream(std::cout);
+   scaling_factors_equalities->write_to_stream(std::cout);
 }
 
 PrimalDualTriplet CurtisReidScaler::get_and_calculate_initial_residuals(const Vector<double>& log_sum_columns,
@@ -271,8 +275,8 @@ PrimalDualTriplet CurtisReidScaler::get_nonzero_vectors() const{
 PrimalDualTriplet CurtisReidScaler::get_log_sum_vectors() const {
    auto [log_sum_columns, log_sum_equalities, log_sum_inequalities] = create_primal_dual_vector_triplet();
 
-   auto two_log_if_nonzero = [](const double& val) {
-      return val == 0.0 ? 0.0 : std::log2(val);
+   auto two_log_if_nonzero = [](const double& val)->double {
+      return val == 0.0 ? 0.0 : std::log2(std::abs(val));
    };
 
    this->A->sum_transform_rows(*log_sum_equalities, two_log_if_nonzero);
@@ -283,6 +287,17 @@ PrimalDualTriplet CurtisReidScaler::get_log_sum_vectors() const {
 
    return {std::move(log_sum_columns), std::move(log_sum_equalities), std::move(log_sum_inequalities)};
 }
+
+void CurtisReidScaler::scaling_factors_to_power2() {
+   auto to_power_to = [](const double& val)->double {
+      return std::pow(val,2);
+   };
+
+   this->scaling_factors_columns->transform(to_power_to);
+   this->scaling_factors_equalities->transform(to_power_to);
+   this->scaling_factors_inequalities->transform(to_power_to);
+};
+
 
 void CurtisReidScaler::scale_objective() const {
    assert(scaling_factors_columns);
