@@ -32,7 +32,7 @@ public:
    void register_observer(AbstractLinearSystem* linear_system);
    void compute_acceptable_iterate(Problem& problem, Variables& iterate, Residuals& residuals, Variables& step, AbstractLinearSystem& linear_system,
          int iteration);
-   double compute_acceptable_iterate(Problem& problem, Variables& current_iterate, Variables& direction, Residuals& current_residuals);
+   void compute_acceptable_iterate(Problem& problem, Variables& current_iterate, Variables& direction, Residuals& current_residuals);
 
 private:
 

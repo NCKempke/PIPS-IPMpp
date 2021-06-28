@@ -214,7 +214,7 @@ void Variables::negate() {
    }
 }
 
-double Variables::stepbound(const Variables& iterate) {
+double Variables::stepbound(const Variables& iterate) const {
    double max_step = 1.0;
    if (mclow > 0) {
       assert(slack_lower_bound_gap->somePositive(*iclow));
@@ -252,7 +252,7 @@ double Variables::stepbound(const Variables& iterate) {
    return max_step;
 }
 
-std::pair<double, double> Variables::stepbound_pd(const Variables& iterate) {
+std::pair<double, double> Variables::stepbound_pd(const Variables& iterate) const {
    double maxStep_primal = 1.0;
    double maxStep_dual = 1.0;
 
@@ -544,7 +544,7 @@ void Variables::set_to_zero() {
    slack_upper_bound_gap_dual->setToZero();
 }
 
-int Variables::valid_non_zero_pattern() {
+int Variables::valid_non_zero_pattern() const {
    if (nxlow > 0 && (!primal_lower_bound_gap->matchesNonZeroPattern(*ixlow) || !primal_lower_bound_gap_dual->matchesNonZeroPattern(*ixlow))) {
 
       if (!primal_lower_bound_gap->matchesNonZeroPattern(*ixlow))

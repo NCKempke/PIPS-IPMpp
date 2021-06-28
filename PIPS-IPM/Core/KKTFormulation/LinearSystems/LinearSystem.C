@@ -173,7 +173,7 @@ static bool isZero(double val, LinearSystem::IterativeSolverSolutionStatus& stat
    return false;
 }
 
-void LinearSystem::factorize(Variables& iterate) {
+void LinearSystem::factorize(const Variables& iterate) {
 
    assert(iterate.valid_non_zero_pattern());
    assert(iterate.valid_non_zero_pattern());

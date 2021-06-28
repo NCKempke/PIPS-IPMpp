@@ -59,7 +59,7 @@ DistributedLinearSystem::DistributedLinearSystem(const DistributedFactory& facto
    }
 }
 
-void DistributedLinearSystem::factorize(Variables& vars) {
+void DistributedLinearSystem::factorize(const Variables& vars) {
 #ifdef TIMING
    double tTot = MPI_Wtime();
 #endif

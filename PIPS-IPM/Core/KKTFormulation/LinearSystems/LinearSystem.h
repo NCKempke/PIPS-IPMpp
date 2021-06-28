@@ -178,7 +178,7 @@ public:
     * @see QpGenSparseLinsys::factorize
     * @see QpGenDenseLinsys::factorize
     */
-   void factorize(Variables& iterate) override;
+   void factorize(const Variables& iterate) override;
 
    /** solves the system for a given set of residuals. Assembles the
     * right-hand side appropriate to the matrix factored in factor,

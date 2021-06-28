@@ -92,7 +92,7 @@ public:
     * (b->t,b->u,b->v,b->w,b->lambda,b->pi,b->phi,b->gamma) >= 0.
     *
     * @see find_blocking */
-   double stepbound(const Variables& iterate);
+   double stepbound(const Variables& iterate) const;
 
    /** calculate the largest alpha_primal and alpha_dual in (0,1] such that the nonnegative
     * variables stay nonnegative in the given search direction b. In the
@@ -101,7 +101,7 @@ public:
     *
     * @see stepbound
     */
-   std::pair<double, double> stepbound_pd(const Variables& iterate);
+   std::pair<double, double> stepbound_pd(const Variables& iterate) const;
 
    /** Performs the same function as stepbound, and supplies additional
     * information about which component of the nonnegative variables is
@@ -150,7 +150,7 @@ public:
    void unscale_solution(Problem* problem);
    void unscale_bounds(Problem* problem);
 
-   int valid_non_zero_pattern();
+   int valid_non_zero_pattern() const;
 
    void copy(const Variables& b);
 

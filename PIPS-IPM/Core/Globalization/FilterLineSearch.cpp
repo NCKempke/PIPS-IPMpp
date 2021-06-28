@@ -24,10 +24,13 @@ void FilterLineSearch::register_observer(AbstractLinearSystem* linear_system) {
 
 void FilterLineSearch::compute_acceptable_iterate(Problem& problem, Variables& iterate, Residuals& residuals, Variables& step,
       AbstractLinearSystem& linear_system, int iteration) {
-   this->interior_point_method->corrector_predictor(problem, iterate, residuals, step, linear_system, iteration);
+   // compute a direction
+   //this->interior_point_method->corrector_predictor(problem, iterate, residuals, step, linear_system, iteration);
+   bool small_corr = this->interior_point_method->compute_predictor_step(problem, iterate, residuals, step, linear_system, iteration);
+   this->interior_point_method->compute_corrector_step(problem, iterate, residuals, step, linear_system, iteration, small_corr);
 }
 
-double FilterLineSearch::compute_acceptable_iterate(Problem& problem, Variables& current_iterate, Variables& direction, Residuals& current_residuals) {
+void FilterLineSearch::compute_acceptable_iterate(Problem& problem, Variables& current_iterate, Variables& direction, Residuals& current_residuals) {
    bool is_accepted = false;
    this->number_iterations = 0;
    double step_length = 1.;
@@ -42,18 +45,18 @@ double FilterLineSearch::compute_acceptable_iterate(Problem& problem, Variables&
       // evaluate the residuals at the trial iterate
       std::unique_ptr<Residuals> trial_residuals = current_residuals.cloneFull();
       trial_residuals->evaluate(problem, *trial_iterate);
-      trial_residuals->recompute_residual_norm();
+      trial_residuals->compute_residual_norm();
 
       const double predicted_reduction = PIPSIPMppSolver::predicted_reduction(problem, current_iterate, direction, step_length);
       if (verbose) std::cout << "Predicted reduction: " << predicted_reduction << "\n";
       /* check whether the trial step is accepted */
       is_accepted = this->filter_strategy.check_acceptance(current_residuals, *trial_residuals, predicted_reduction);
-      // if the trial iterate was accepted, overwrite current_iterate
       if (is_accepted) {
+         // if the trial iterate was accepted, overwrite current_iterate
          current_iterate.copy(*trial_iterate);
       }
       else {
-         /* decrease the step length */
+         // decrease the step length
          step_length *= this->backtracking_ratio;
          if (verbose) std::cout << "LS trial iterate rejected\n";
       }
@@ -61,7 +64,6 @@ double FilterLineSearch::compute_acceptable_iterate(Problem& problem, Variables&
    if (!is_accepted) {
       assert(false && "Enter restoration phase (not implemented yet)");
    }
-   return step_length;
 }
 
 bool FilterLineSearch::termination_(bool is_accepted) const {

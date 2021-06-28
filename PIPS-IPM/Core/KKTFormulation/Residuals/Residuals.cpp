@@ -172,7 +172,7 @@ void Residuals::evaluate(Problem& problem, Variables& iterate, bool print_residu
    }
 }
 
-double Residuals::recompute_residual_norm() {
+double Residuals::compute_residual_norm() {
    residual_norm = 0.0;
 
    double componentNorm = 0.0;
