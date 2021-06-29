@@ -142,8 +142,6 @@ void CurtisReidScaler::scale() {
       s_curr = s_next;
 
       done = s_next <= conv_tol;
-
-      std::cout << "done " << done << std::endl;
    }
 
    // final iteration - getting the factors into phase
