@@ -29,7 +29,7 @@ private:
       const Vector<double>& sum_non_zeros_equalities, const Vector<double>& sum_non_zeros_inequalities);
    PrimalDualTriplet get_and_calculate_initial_residuals(const Vector<double>& log_sum_columns, const Vector<double>& log_sum_equalities,
       const Vector<double>& log_sum_inequalities, const Vector<double>& sum_non_zeros_equalities, const Vector<double>& sum_non_zeros_inequalities) const;
-   void scaling_factors_to_power2();
+   void two_to_power_scaling_factors();
 
 protected:
    void scale_objective() const override;

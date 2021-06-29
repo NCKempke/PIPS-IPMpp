@@ -720,7 +720,7 @@ void SimpleVector<T>::transform(const std::function<T(const T&)>& transformation
 
 template<typename T>
 T SimpleVector<T>::sum_reduce(const std::function<T(const T& a, const T& b)>& reduce) const {
-   return std::accumulate(v, v + this->n, T{}, reduce);
+   return std::accumulate(v, v + this->n, T{}, reduce); // no reduce for now we are forcing in order?
 }
 
 template<typename T>

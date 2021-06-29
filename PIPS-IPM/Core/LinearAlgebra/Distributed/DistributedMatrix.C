@@ -776,8 +776,6 @@ void DistributedMatrix::sum_transform_rows(Vector<double>& result_, const std::f
    assert(result.children.size() == children.size());
    if (at_root) {
       assert(amatEmpty());
-   } else {
-      assert(children.empty());
    }
 
    const bool has_linking = at_root ? result.last != nullptr : result.parent->last != nullptr;
@@ -791,8 +789,10 @@ void DistributedMatrix::sum_transform_rows(Vector<double>& result_, const std::f
 
    if (has_linking) {
       if (at_root && iAmSpecial(iAmDistrib, mpiComm)) {
+         assert(result.last);
          Blmat->sum_transform_rows(*result.last, transform);
-      } else {
+      } else if (!at_root) {
+         assert(result.parent && result.parent->last);
          Blmat->sum_transform_rows(*result.parent->last, transform);
       }
    }
@@ -813,22 +813,25 @@ void DistributedMatrix::sum_transform_columns(Vector<double>& result_, const std
    assert(result.children.size() == children.size());
    if (at_root) {
       assert(amatEmpty());
-   } else {
-      assert(children.empty());
    }
-
-   const bool has_linking = Blmat->n_rows() > 0;
 
    auto& result_linking_vec = dynamic_cast<SimpleVector<double>&>(*result.getLinkingVecNotHierarchicalTop());
    if (iAmSpecial(iAmDistrib, mpiComm) || !at_root) {
 
       Bmat->sum_transform_columns(*result.first, transform);
-      if (has_linking)
-         dynamic_cast<SparseMatrix&>(*Blmat).sum_transform_columns(*result.first, transform);
+
+      if (Blmat->n_rows() > 0) {
+         if (at_root) {
+            Blmat->sum_transform_columns(result_linking_vec, transform);
+         } else {
+            Blmat->sum_transform_columns(*result.first, transform);
+         }
+      }
    }
 
    if (!amatEmpty()) {
-      dynamic_cast<SparseMatrix&>(*Amat).sum_transform_columns(result_linking_vec, transform);
+      assert(children.empty() && iAmSpecial(iAmDistrib, mpiComm));
+      Amat->sum_transform_columns(result_linking_vec, transform);
    }
 
    for (size_t it = 0; it < children.size(); it++)

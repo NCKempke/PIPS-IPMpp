@@ -162,6 +162,9 @@ void Scaler::applyScaling() const {
                     "objnorm: %f \n Anorm:  %f \n Cnorm  %f \n bAnorm %f \n rhsCnorm %f \n lhsCnorm %f \n buxnorm %f \n blxnorm %f \n  ",
             obj->inf_norm(), A->inf_norm(), C->inf_norm(), bA->inf_norm(), rhsC->inf_norm(), lhsC->inf_norm(), bux->inf_norm(), blx->inf_norm());
 
+   scaling_factors_columns->write_to_stream(std::cout);
+   scaling_factors_equalities->write_to_stream(std::cout);
+   scaling_factors_inequalities->write_to_stream(std::cout);
    // todo scale Q
    scale_objective();
 
