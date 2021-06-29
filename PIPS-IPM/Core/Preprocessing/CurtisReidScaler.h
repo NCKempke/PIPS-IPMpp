@@ -17,7 +17,7 @@ private:
    std::unique_ptr<Vector<double>> temp_dual_equalities;
    std::unique_ptr<Vector<double>> temp_dual_inequalities;
 
-   const double convergence_constant{1e-2};
+   const double convergence_constant{1.e-6};
    const int max_iter{10};
 
    PrimalDualTriplet get_nonzero_vectors() const;

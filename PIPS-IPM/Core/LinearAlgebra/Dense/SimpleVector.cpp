@@ -574,7 +574,7 @@ T SimpleVector<T>::scaled_dot_product_self(const Vector<T>& scale_) const {
    assert(this->n == scale_.length());
    const auto& scale = dynamic_cast<const SimpleVector<T>&>(scale_);
 
-   double scaled_dot_product_self{0.0};
+   T scaled_dot_product_self = T{};
    for (int i = 0; i < this->n; ++i) {
       assert(scale[i] != 0.0);
       scaled_dot_product_self += v[i] * v[i] / scale[i];

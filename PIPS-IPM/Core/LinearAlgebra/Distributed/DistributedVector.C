@@ -1353,7 +1353,7 @@ T DistributedVector<T>::dotProductSelf(T scaleFactor) const {
 
 template<typename T>
 T DistributedVector<T>::scaled_dot_product_self(const Vector<T>& scale_) const {
-   T dot_product = 0.0;
+   T dot_product = T{};
    const auto& scale = dynamic_cast<const DistributedVector<T>&>(scale_);
 
    for (size_t it = 0; it < children.size(); it++)
@@ -1362,7 +1362,7 @@ T DistributedVector<T>::scaled_dot_product_self(const Vector<T>& scale_) const {
    if (first && (iAmSpecial || first->isKindOf(kStochVector)))
       dot_product += first->scaled_dot_product_self(*scale.first);
 
-   if (iAmSpecial && last)
+   if (last && iAmSpecial)
       dot_product += last->scaled_dot_product_self(*scale.last);
 
    if (iAmDistrib && !parent)

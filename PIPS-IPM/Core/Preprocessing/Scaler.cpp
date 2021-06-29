@@ -8,8 +8,6 @@
 //#define PIPS_DEBUG
 #include "Scaler.hpp"
 
-#include <algorithm>
-
 #include "PIPSIPMppOptions.h"
 #include "ProblemFactory.h"
 #include "Variables.h"

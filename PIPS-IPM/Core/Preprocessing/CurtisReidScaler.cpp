@@ -101,10 +101,10 @@ void CurtisReidScaler::scale() {
       e_curr = q_curr * s_next / s_curr;
 
       // q_{k+1} = 1 - e_curr
-      q_next = 1 - e_curr;
+      q_next = 1.0 - e_curr;
 
       // update one of the factors
-      const double qq = 1.0 / q_curr * q_next;
+      const double qq = 1.0 / (q_curr * q_next);
       const double ee_qq = e_last * e_lastlast * qq;
 
       if (even_iter) {
@@ -113,7 +113,7 @@ void CurtisReidScaler::scale() {
          //       = -ee_qq c_{2m-2} + (1 + ee_qq) c_{2m} + qq N^-1 r_{2m}
 
          last_scaling_factors_columns->scale(-1.0 * ee_qq);
-         last_scaling_factors_columns->axpy(1 + ee_qq, *scaling_factors_columns);
+         last_scaling_factors_columns->axpy(1.0 + ee_qq, *scaling_factors_columns);
          last_scaling_factors_columns->axpy(qq, *temp_primal);
 
          std::swap(last_scaling_factors_columns, scaling_factors_columns);
@@ -136,6 +136,12 @@ void CurtisReidScaler::scale() {
       }
 
       // update for next iteration
+
+      const double error_primal = least_squares_primal_residuals->two_norm();
+      const double error_duals = least_squares_equality_residuals->two_norm() + least_squares_inequality_residuals->two_norm();
+      std::cout << "Curtis Reid ||r_primal||_2 = " << error_primal << " ||r_dual||_2 = " << error_duals << std::endl;
+      std::cout << "Curtis Reid sk and sk+1 " << s_curr << " " << s_next << std::endl;
+      std::cout << "Curtis Reid converged : s_next <= 0.01 * nnzs " << s_next << " <= " << conv_tol << " = " << (s_next <= conv_tol) << std::endl;
       q_curr = q_next;
       e_lastlast = e_last;
       e_last = e_curr;
@@ -155,7 +161,7 @@ void CurtisReidScaler::scale() {
       temp_primal->componentDiv(*sum_non_zeros_columns);
 
       last_scaling_factors_columns->scale(-1.0 * ee_qq);
-      last_scaling_factors_columns->axpy(1 + ee_qq, *scaling_factors_columns);
+      last_scaling_factors_columns->axpy(1.0 + ee_qq, *scaling_factors_columns);
       last_scaling_factors_columns->axpy(qq, *temp_primal);
 
       std::swap(last_scaling_factors_columns, scaling_factors_columns);
@@ -163,6 +169,9 @@ void CurtisReidScaler::scale() {
       // M^-1 r_k
       temp_dual_equalities->copyFrom(*least_squares_equality_residuals);
       temp_dual_inequalities->copyFrom(*least_squares_inequality_residuals);
+
+      temp_dual_equalities->componentDiv(*sum_non_zeros_equalities);
+      temp_dual_inequalities->copyFrom(*sum_non_zeros_inequalities);
 
       last_scaling_factors_equalities->scale(-1.0 * ee_qq);
       last_scaling_factors_inequalities->scale(-1.0 * ee_qq);
@@ -207,7 +216,8 @@ void CurtisReidScaler::free_temp_vectors() {
 void CurtisReidScaler::set_initial_scaling_factors(const Vector<double>& log_sum_equalities, const Vector<double>& log_sum_inequalities,
    const Vector<double>& sum_non_zeros_equalities, const Vector<double>& sum_non_zeros_inequalities) {
 
-   scaling_factors_columns->setToZero(); // c
+   // c_0 = 0
+   scaling_factors_columns->setToZero();
 
    // p_0 = M^{-1} \sigma
    scaling_factors_equalities->copyFrom(log_sum_equalities); // p_1
@@ -291,7 +301,7 @@ PrimalDualTriplet CurtisReidScaler::get_log_sum_vectors() const {
 
 void CurtisReidScaler::two_to_power_scaling_factors() {
    auto two_to_power_val = [](const double& val)->double {
-      return std::pow(2, val);
+      return std::pow(2.0, val);
    };
 
    this->scaling_factors_columns->transform(two_to_power_val);
