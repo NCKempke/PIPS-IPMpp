@@ -217,9 +217,6 @@ void CurtisReidScaler::set_initial_scaling_factors(const Vector<double>& log_sum
 
    scaling_factors_inequalities->copyFrom(log_sum_inequalities); // p_2
    scaling_factors_inequalities->componentDiv(sum_non_zeros_inequalities);
-
-   log_sum_inequalities.write_to_stream(std::cout);
-   scaling_factors_inequalities->write_to_stream(std::cout);
 }
 
 PrimalDualTriplet CurtisReidScaler::get_and_calculate_initial_residuals(const Vector<double>& log_sum_columns,
