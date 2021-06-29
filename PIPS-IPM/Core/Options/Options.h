@@ -18,17 +18,17 @@
 
 namespace options {
    void setOptions(const std::string& opt_file);
-   int getIntParameter(const std::string& identifier);
-   double getDoubleParameter(const std::string& identifier);
-   bool getBoolParameter(const std::string& identifier);
+   int get_int_parameter(const std::string& identifier);
+   double get_double_parameter(const std::string& identifier);
+   bool get_bool_parameter(const std::string& identifier);
 
    class Options : public abstract_options::AbstractOptions {
 
    protected :
       friend void setOptions(const std::string& opt_file);
-      friend int getIntParameter(const std::string& identifier);
-      friend double getDoubleParameter(const std::string& identifier);
-      friend bool getBoolParameter(const std::string& identifier);
+      friend int get_int_parameter(const std::string& identifier);
+      friend double get_double_parameter(const std::string& identifier);
+      friend bool get_bool_parameter(const std::string& identifier);
 
       static Options& getInstance() {
          static Options opt;
@@ -45,15 +45,15 @@ namespace options {
       return Options::getInstance().load_options_from_file(opt_file);
    }
 
-   inline int getIntParameter(const std::string& identifier) {
+   inline int get_int_parameter(const std::string& identifier) {
       return Options::getInstance().get_int_param(identifier);
    }
 
-   inline bool getBoolParameter(const std::string& identifier) {
+   inline bool get_bool_parameter(const std::string& identifier) {
       return Options::getInstance().get_bool_param(identifier);
    }
 
-   inline double getDoubleParameter(const std::string& identifier) {
+   inline double get_double_parameter(const std::string& identifier) {
       return Options::getInstance().get_double_param(identifier);
    }
 }

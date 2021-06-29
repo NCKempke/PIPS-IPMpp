@@ -158,6 +158,10 @@ public:
 
    [[nodiscard]] double barrier_directional_derivative(const Vector<T>& x, const Vector<T>& bound, const Vector<T>& bound_indicator) const override;
    [[nodiscard]] double barrier_directional_derivative(const Vector<T>& x, double bound, const Vector<T>& bound_indicator) const override;
-};
+
+   [[nodiscard]] std::tuple<double, double, double, double> find_abs_nonzero_max_min_pair_a_by_b_plus_c_by_d(const Vector<T>& a_in, const Vector<T>& b_in,
+      const Vector<T>& select_ab_in, bool use_ab, const Vector<T>& c_in, const Vector<T>& d_in, const Vector<T>& select_cd_in, bool use_cd, bool find_min) const override;
+
+   };
 
 #endif
