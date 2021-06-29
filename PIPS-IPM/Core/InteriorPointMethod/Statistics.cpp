@@ -13,14 +13,14 @@ Statistics::Statistics(const DistributedFactory& factory, const Scaler* scaler) 
       rank{PIPS_MPIgetRank(mpi_comm)}, global_rank{PIPS_MPIgetRank()} {
 }
 
-void Statistics::print(const Problem* problem, const Variables* variables, const Residuals* residuals, double dnorm, double alpha, double sigma, int i,
+void Statistics::print(const Problem* problem, const Variables* variables, const Residuals* residuals, double dnorm, double alpha, int i,
       double mu, TerminationStatus status_code, int level) const {
-   Statistics::print(problem, variables, residuals, dnorm, alpha, -1.0, sigma, i, mu, status_code, level);
+   Statistics::print(problem, variables, residuals, dnorm, alpha, -1.0, i, mu, status_code, level);
 }
 
 void
 Statistics::print(const Problem* problem, const Variables* variables, const Residuals* residuals, double dnorm, double alpha_primal, double alpha_dual,
-      double sigma, int i, double mu, TerminationStatus status_code, int level) const {
+      int i, double mu, TerminationStatus status_code, int level) const {
    double objective = problem->evaluate_objective(*variables);
 
    double residual_norm;
