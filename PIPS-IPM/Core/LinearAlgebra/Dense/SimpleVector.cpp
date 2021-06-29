@@ -1112,6 +1112,47 @@ double SimpleVector<T>::barrier_directional_derivative(const Vector<T>& x_in, do
    return result;
 }
 
+template <typename T>
+std::tuple<double, double, double, double> SimpleVector<T>::find_abs_nonzero_max_min_pair_a_by_b_plus_c_by_d(const Vector<T>& a_in, const Vector<T>& b_in,
+   const Vector<T>& select_ab_in, bool use_ab, const Vector<T>& c_in, const Vector<T>& d_in, const Vector<T>& select_cd_in, bool use_cd, bool find_min) const {
+
+   const auto& a = dynamic_cast<const SimpleVector<T>&>(a_in);
+   const auto& b = dynamic_cast<const SimpleVector<T>&>(b_in);
+   const auto& c = dynamic_cast<const SimpleVector<T>&>(c_in);
+   const auto& d = dynamic_cast<const SimpleVector<T>&>(d_in);
+   const auto& select_ab = dynamic_cast<const SimpleVector<T>&>(select_ab_in);
+   const auto& select_cd = dynamic_cast<const SimpleVector<T>&>(select_cd_in);
+
+   auto compute_value = [use_ab, use_cd](const double& a, const double&b, const double& select_ab, const double& c, const double& d, const double select_cd) {
+      if(use_ab && select_ab == 1.0) assert(b != 0.0);
+      if(use_cd && select_cd == 1.0) assert(d != 0.0);
+
+      double val = (use_ab && select_ab == 1.0) ? a/b : 0.0;
+      val += (use_cd && select_cd == 1.0) ? c/d : 0.0;
+      return val;
+   };
+
+   double a_val = find_min ? std::numeric_limits<double>::infinity() : 0.0;
+   double b_val = 1.0;
+   double c_val = find_min ? std::numeric_limits<double>::infinity() : 0.0;
+   double d_val = 1.0;
+
+   double val_curr = compute_value(a_val, b_val, 1.0, c_val, d_val, 1.0);
+
+   for (int i = 0; i < this->n; ++i) {
+      double val_tmp = compute_value(a[i], b[i], select_ab[i], c[i], d[i], select_cd[i]);
+      if ( (find_min && val_tmp < val_curr) || (!find_min && val_tmp > val_curr) ) {
+         a_val = select_ab[i] ? a[i] : 0.0;
+         b_val = select_ab[i] ? b[i] : 1.0;
+         c_val = select_cd[i] ? c[i] : 0.0;
+         d_val = select_cd[i] ? d[i] : 1.0;
+         std::swap(val_curr, val_tmp);
+      }
+   }
+
+   return {a_val, b_val, c_val, d_val};
+}
+
 template
 class SimpleVector<int>;
 

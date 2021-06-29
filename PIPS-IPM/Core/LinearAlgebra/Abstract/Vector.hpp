@@ -277,6 +277,10 @@ public:
 
    [[nodiscard]] virtual double barrier_directional_derivative(const Vector<T>& x, const Vector<T>& bound, const Vector<T>& bound_indicator) const = 0;
    [[nodiscard]] virtual double barrier_directional_derivative(const Vector<T>& x, double bound, const Vector<T>& bound_indicator) const = 0;
+
+   /*** find and the return the set a[i] b[i] c[i] d[i] where a[i]/b[i] + c[i]/d[i] is min/max ***/
+   [[nodiscard]] virtual std::tuple<double, double, double, double> find_abs_nonzero_max_min_pair_a_by_b_plus_c_by_d(const Vector<T>& a,
+      const Vector<T>& b, const Vector<T>& select_ab, bool use_ab, const Vector<T>& c, const Vector<T>& d, const Vector<T>& select_cd, bool use_cd, bool find_min) const = 0;
 };
 
 // TODO : should be a proper enum class..

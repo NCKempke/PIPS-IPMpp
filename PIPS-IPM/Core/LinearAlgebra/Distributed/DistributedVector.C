@@ -2294,6 +2294,100 @@ double DistributedVector<T>::barrier_directional_derivative(const Vector<T>& x_i
    return result;
 }
 
+template<typename T>
+std::tuple<double, double, double, double> DistributedVector<T>::find_abs_nonzero_max_min_pair_a_by_b_plus_c_by_d(const Vector<T>& a_in,
+   const Vector<T>& b_in, const Vector<T>& select_ab_in, bool use_ab, const Vector<T>& c_in, const Vector<T>& d_in, const Vector<T>& select_cd_in, bool use_cd, bool find_min) const {
+
+   const auto& a = dynamic_cast<const DistributedVector<T>&>(a_in);
+   const auto& b = dynamic_cast<const DistributedVector<T>&>(b_in);
+   const auto& c = dynamic_cast<const DistributedVector<T>&>(c_in);
+   const auto& d = dynamic_cast<const DistributedVector<T>&>(d_in);
+   const auto& select_ab = dynamic_cast<const DistributedVector<T>&>(select_ab_in);
+   const auto& select_cd = dynamic_cast<const DistributedVector<T>&>(select_cd_in);
+
+   double a_val = find_min ? std::numeric_limits<double>::infinity() : 0.0;
+   double b_val = 1.0;
+   double c_val = find_min ? std::numeric_limits<double>::infinity() : 0.0;
+   double d_val = 1.0;
+
+   auto compute_value = [use_ab, use_cd](const double& a, const double&b, const double& c, const double& d) {
+      if(use_ab) assert(b != 0.0);
+      if(use_cd) assert(d != 0.0);
+      double val = use_ab ? a/b : 0.0;
+      val += use_cd ? c/d : 0.0;
+      return val;
+   };
+
+   if (first) {
+      auto [a_tmp, b_tmp, c_tmp, d_tmp] = first->find_abs_nonzero_max_min_pair_a_by_b_plus_c_by_d(*a.first, *b.first, *select_ab.first, use_ab,
+         *c.first, *d.first, *select_cd.first, use_cd, find_min);
+
+      const double val = compute_value(a_val, b_val, c_val, d_val);
+      const double val_tmp = compute_value(a_tmp, b_tmp, c_tmp, d_tmp);
+
+      if ( (find_min && val_tmp < val) || (!find_min && val_tmp > val) ) {
+         std::swap(a_val, a_tmp);
+         std::swap(b_val, b_tmp);
+         std::swap(c_val, c_tmp);
+         std::swap(d_val, d_tmp);
+      }
+   }
+
+   if (last) {
+      auto [a_tmp, b_tmp, c_tmp, d_tmp] = last->find_abs_nonzero_max_min_pair_a_by_b_plus_c_by_d(*a.last, *b.last, *select_ab.last, use_ab,
+         *c.last, *d.last, *select_cd.last, use_cd, find_min);
+
+      const double val = compute_value(a_val, b_val, c_val, d_val);
+      const double val_tmp = compute_value(a_tmp, b_tmp, c_tmp, d_tmp);
+
+      if ( (find_min && val_tmp < val) || (!find_min && val_tmp > val) ) {
+         std::swap(a_val, a_tmp);
+         std::swap(b_val, b_tmp);
+         std::swap(c_val, c_tmp);
+         std::swap(d_val, d_tmp);
+      }
+   }
+
+   for (size_t it = 0; it < children.size(); it++) {
+      auto [a_tmp, b_tmp, c_tmp, d_tmp] = children[it]->find_abs_nonzero_max_min_pair_a_by_b_plus_c_by_d(*a.children[it], *b.children[it], *select_ab.children[it], use_ab,
+         *c.children[it], *d.children[it], *select_cd.children[it], use_cd, find_min);
+
+      const double val = compute_value(a_val, b_val, c_val, d_val);
+      const double val_tmp = compute_value(a_tmp, b_tmp, c_tmp, d_tmp);
+
+      if ( (find_min && val_tmp < val) || (!find_min && val_tmp > val) ) {
+         std::swap(a_val, a_tmp);
+         std::swap(b_val, b_tmp);
+         std::swap(c_val, c_tmp);
+         std::swap(d_val, d_tmp);
+      }
+   }
+
+   if (iAmDistrib) {
+      const double my_val = compute_value(a_val, b_val, c_val, d_val);
+      const std::vector<double> val_vec = {my_val};
+
+      std::vector<std::pair<double,int>> minmax_loc = find_min ? PIPS_MPIminlocArray(val_vec, mpiComm) : PIPS_MPImaxlocArray(val_vec, mpiComm);
+      assert(minmax_loc.size() == 1);
+
+      if (minmax_loc[0].second == PIPS_MPIgetRank(mpiComm)) {
+         std::vector<double> values_for_scatter = {a_val, b_val, c_val, d_val};
+         PIPS_MPIsumArrayInPlace(values_for_scatter, mpiComm);
+      } else {
+         std::vector<double> values_for_scatter = {0.0, 0.0, 0.0, 0.0};
+         PIPS_MPIsumArrayInPlace(values_for_scatter, mpiComm);
+
+         a_val = values_for_scatter[0];
+         b_val = values_for_scatter[1];
+         c_val = values_for_scatter[2];
+         d_val = values_for_scatter[3];
+      }
+   }
+
+   return {a_val, b_val, c_val, d_val};
+}
+
+
 template
 class DistributedVector<int>;
 

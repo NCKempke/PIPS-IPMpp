@@ -23,6 +23,7 @@ namespace options {
       bool_options["IP_ACCURACY_REDUCED"] = false;
       bool_options["IP_PRINT_TIMESTAMP"] = false;
       bool_options["IP_STEPLENGTH_CONSERVATIVE"] = false;
+      bool_options["IPM_PRINT_LINEAR_SYSTEM_DIAGONAL_STATISTICS"] = false;
 
       /// GONDZIO SOLVER
       /** maximum of Gondzio correctors computed */

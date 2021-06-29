@@ -157,6 +157,9 @@ public:
    [[nodiscard]] double barrier_directional_derivative(const Vector<T>& x, const Vector<T>& bound, const Vector<T>& bound_indicator) const override;
    [[nodiscard]] double barrier_directional_derivative(const Vector<T>& x, double bound, const Vector<T>& bound_indicator) const override;
 
+   [[nodiscard]] std::tuple<double, double, double, double> find_abs_nonzero_max_min_pair_a_by_b_plus_c_by_d(const Vector<T>& a,
+      const Vector<T>& b, const Vector<T>& select_ab, bool use_ab, const Vector<T>& c, const Vector<T>& d, const Vector<T>& select_cd, bool use_cd, bool find_min) const override;
+
 protected:
    DistributedVector() = default;
 
@@ -289,6 +292,15 @@ public:
 
    [[nodiscard]] double barrier_directional_derivative(const Vector<T>& x, const Vector<T>& bound, const Vector<T>& bound_indicator) const override { return 0.;};
    [[nodiscard]] double barrier_directional_derivative(const Vector<T>& x, double bound, const Vector<T>& bound_indicator) const override { return 0.; };
+
+   [[nodiscard]] std::tuple<double, double, double, double> find_abs_nonzero_max_min_pair_a_by_b_plus_c_by_d(const Vector<T>& a,
+      const Vector<T>& b, const Vector<T>& select_ab, bool use_ab, const Vector<T>& c, const Vector<T>& d, const Vector<T>& select_cd, bool use_cd, bool find_min) const override {
+      if (find_min) {
+         return {std::numeric_limits<double>::infinity(), 1.0, std::numeric_limits<double>::infinity(), 1.0};
+      } else {
+         return {0.0, 1.0, 0.0, 1.0};
+      }
+   }
 };
 
 #endif

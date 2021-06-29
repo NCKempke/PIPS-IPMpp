@@ -147,7 +147,8 @@ protected:
    /// do iterative refinement/BiCGStab with the original or regularized system
    const bool outer_solve_refine_original_system{false};
    /// parameters for the bicg solve
-   const bool outer_bicg_print_statistics;
+   const bool outer_bicg_print_statistics{false};
+   const bool print_linear_system_diagonal_statistics{false};
 
    const double outer_bicg_eps;
 
@@ -274,7 +275,8 @@ protected:
    //void matReducedInfnorm(const QP& data);
 
    //void matFullInfnorm(const QP& data);
-   void printDiagonalNorms() const;
+   void print_diagonal_statistics(Vector<double>& t, Vector<double>& lambda, Vector<double>& u, Vector<double>& pi, Vector<double>& v,
+      Vector<double>& gamma, Vector<double>& w, Vector<double>& phi) const;
 
    // TODO : move to LinearSystem level
    void solveCompressedBiCGStab(const std::function<void(double, Vector<double>&, double, Vector<double>&)>& matMult,

@@ -24,14 +24,16 @@ extern int gOuterBiCGFails;
 static std::vector<int> bicgIters;
 
 LinearSystem::LinearSystem(const ProblemFactory& factory_, const Problem& problem, bool create_iter_ref_vecs) : factory(factory_),
-      apply_regularization(options::getBoolParameter("REGULARIZATION")), outerSolve(options::getIntParameter("OUTER_SOLVE")),
-      innerSCSolve(options::getIntParameter("INNER_SC_SOLVE")),
-      outer_solve_refine_original_system{options::getBoolParameter("OUTER_SOLVE_REFINE_ORIGINAL_SYSTEM")},
-      outer_bicg_print_statistics(options::getBoolParameter("OUTER_BICG_PRINT_STATISTICS")),
-      outer_bicg_eps(options::getDoubleParameter("OUTER_BICG_EPSILON")), outer_bicg_max_iter(options::getIntParameter("OUTER_BICG_MAX_ITER")),
-      outer_bicg_max_normr_divergences(options::getIntParameter("OUTER_BICG_MAX_NORMR_DIVERGENCES")),
-      outer_bicg_max_stagnations(options::getIntParameter("OUTER_BICG_MAX_STAGNATIONS")),
-      xyzs_solve_print_residuals(options::getBoolParameter("XYZS_SOLVE_PRINT_RESISDUAL")), problem(problem) {
+      apply_regularization(options::get_bool_parameter("REGULARIZATION")), outerSolve(
+      options::get_int_parameter("OUTER_SOLVE")),
+      innerSCSolve(options::get_int_parameter("INNER_SC_SOLVE")),
+      outer_solve_refine_original_system{options::get_bool_parameter("OUTER_SOLVE_REFINE_ORIGINAL_SYSTEM")},
+      outer_bicg_print_statistics(options::get_bool_parameter("OUTER_BICG_PRINT_STATISTICS")),
+      print_linear_system_diagonal_statistics{options::get_bool_parameter("IPM_PRINT_LINEAR_SYSTEM_DIAGONAL_STATISTICS")},
+      outer_bicg_eps(options::get_double_parameter("OUTER_BICG_EPSILON")), outer_bicg_max_iter(options::get_int_parameter("OUTER_BICG_MAX_ITER")),
+      outer_bicg_max_normr_divergences(options::get_int_parameter("OUTER_BICG_MAX_NORMR_DIVERGENCES")),
+      outer_bicg_max_stagnations(options::get_int_parameter("OUTER_BICG_MAX_STAGNATIONS")),
+      xyzs_solve_print_residuals(options::get_bool_parameter("XYZS_SOLVE_PRINT_RESISDUAL")), problem(problem) {
    nx = problem.nx;
    my = problem.my;
    mz = problem.mz;
@@ -200,7 +202,10 @@ void LinearSystem::factorize(const Variables& iterate) {
       put_dual_inequalites_diagonal();
    }
 
-   printDiagonalNorms();
+   if (print_linear_system_diagonal_statistics)
+      print_diagonal_statistics(*iterate.slack_lower_bound_gap, *iterate.slack_lower_bound_gap_dual, *iterate.slack_upper_bound_gap,
+         *iterate.slack_upper_bound_gap_dual, *iterate.primal_lower_bound_gap, *iterate.primal_lower_bound_gap_dual,
+         *iterate.primal_upper_bound_gap, *iterate.primal_upper_bound_gap_dual);
 }
 
 void LinearSystem::reset_regularization() {
@@ -212,26 +217,37 @@ void LinearSystem::reset_regularization() {
    clear_dual_equality_diagonal();
 }
 
-void LinearSystem::printDiagonalNorms() const {
+void LinearSystem::print_diagonal_statistics(Vector<double>& t, Vector<double>& lambda, Vector<double>& u, Vector<double>& pi, Vector<double>& v,
+   Vector<double>& gamma, Vector<double>& w, Vector<double>& phi) const {
    assert(primal_diagonal);
    assert(nomegaInv);
+
    const double infnorm_primal_diagonal = primal_diagonal->inf_norm();
    const double twonorm_primal_diagonal = primal_diagonal->two_norm();
+
+   /* find biggest Gamma/V + Phi/W */
+   const bool find_max = false;
+   const auto [dual_lower_bound_primal, slack_lower_bound_primal, dual_upper_bound_primal, slack_upper_bound_primal] =
+      primal_diagonal->find_abs_nonzero_max_min_pair_a_by_b_plus_c_by_d(gamma, v, *ixlow, nxlow > 0, phi, w, *ixupp, nxupp > 0, find_max);
+
    const double infnorm_inequalities_diagonal = nomegaInv->inf_norm();
    const double twonorm_inequalities_diagonal = nomegaInv->two_norm();
 
-   double min_primal_diagonal;
-   int dummy;
-   primal_diagonal->min(min_primal_diagonal, dummy);
-
-   double min_inequalities_diagonal;
-   primal_diagonal->min(min_inequalities_diagonal, dummy);
+   /*** find smallest Lambda/T + Pi/U (nOmegaInv is the negative inverse of that value) ***/
+   const bool find_min = true;
+   const auto [dual_lower_bound_inequalities, slack_lower_bound_inequalitites, dual_upper_bound_inequalities, slack_upper_bound_inequalities] =
+      nomegaInv->find_abs_nonzero_max_min_pair_a_by_b_plus_c_by_d(lambda, t, *iclow, mclow > 0, pi, u, *icupp, mcupp > 0, find_min);
 
    if (PIPS_MPIgetRank() == 0) {
-      std::cout << "Primal diagonal: ||.||_inf=" << infnorm_primal_diagonal << ", ||.||_2=" << twonorm_primal_diagonal << ", min="
-                << min_primal_diagonal << "\n";
-      std::cout << "Inequalities diagonal: ||.||_inf=" << infnorm_inequalities_diagonal << ", ||.||_2=" << twonorm_inequalities_diagonal << ", min "
-                << min_inequalities_diagonal << "\n";
+      std::cout << "Primal diagonal: ||.||_inf=" << infnorm_primal_diagonal << ", ||.||_2=" << twonorm_primal_diagonal << "\n";
+      std::cout << "\tBiggest entry in diagonal Gamma/V + Phi/W :\n";
+      std::cout << "\tGamma/V = " << dual_lower_bound_primal << " / " << slack_lower_bound_primal << " = " << dual_lower_bound_primal/slack_lower_bound_primal << "\n";
+      std::cout << "\tPhi/W = " << dual_upper_bound_primal << " / " << slack_upper_bound_primal << " = " << dual_upper_bound_primal/slack_upper_bound_primal << "\n\n";
+      std::cout << "Inequalities diagonal: ||.||_inf=" << infnorm_inequalities_diagonal << ", ||.||_2=" << twonorm_inequalities_diagonal << "\n";
+      std::cout << "\tSmallest entry in diagonal Lambda/T + Pi/U (gets inverted) :\n";
+      std::cout << "\tLambda/T = " << dual_lower_bound_inequalities << " / " << slack_lower_bound_inequalitites << " = " << dual_lower_bound_inequalities/slack_lower_bound_inequalitites << "\n";
+      std::cout << "\tPi/U = " << dual_upper_bound_inequalities << " / " << slack_upper_bound_inequalities << " = " << dual_upper_bound_inequalities/slack_upper_bound_inequalities << "\n";
+      std::cout << "\t(Lambda/T + Pi/U)^-1 = " << 1.0 / (dual_lower_bound_inequalities/slack_lower_bound_inequalitites + dual_upper_bound_inequalities/slack_upper_bound_inequalities) << std::endl;
    }
 }
 
@@ -544,7 +560,7 @@ void LinearSystem::solveCompressedBiCGStab(const std::function<void(double, Vect
    Vector<double>& r0 = *res2, & dx = *sol2, & best_x = *sol3, & v = *res3, & t = *res4, & p = *res5;
    Vector<double>& x = *sol, & r = *res, & b = *rhs;
 
-   const double tol = options::getDoubleParameter("OUTER_BICG_TOL");
+   const double tol = options::get_double_parameter("OUTER_BICG_TOL");
    const double n2b = b.two_norm();
    const double tolb = std::max(n2b * tol, outer_bicg_eps);
 
