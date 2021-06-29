@@ -139,9 +139,11 @@ void CurtisReidScaler::scale() {
 
       const double error_primal = least_squares_primal_residuals->two_norm();
       const double error_duals = least_squares_equality_residuals->two_norm() + least_squares_inequality_residuals->two_norm();
-      std::cout << "Curtis Reid ||r_primal||_2 = " << error_primal << " ||r_dual||_2 = " << error_duals << std::endl;
-      std::cout << "Curtis Reid sk and sk+1 " << s_curr << " " << s_next << std::endl;
-      std::cout << "Curtis Reid converged : s_next <= 0.01 * nnzs " << s_next << " <= " << conv_tol << " = " << (s_next <= conv_tol) << std::endl;
+      if (PIPS_MPIgetRank() == 0 ) {
+         std::cout << "Curtis Reid ||r_primal||_2 = " << error_primal << " ||r_dual||_2 = " << error_duals << std::endl;
+         std::cout << "Curtis Reid sk and sk+1 " << s_curr << " " << s_next << std::endl;
+         std::cout << "Curtis Reid converged : s_next <= 0.01 * nnzs " << s_next << " <= " << conv_tol << " = " << (s_next <= conv_tol) << std::endl;
+      }
       q_curr = q_next;
       e_lastlast = e_last;
       e_last = e_curr;
