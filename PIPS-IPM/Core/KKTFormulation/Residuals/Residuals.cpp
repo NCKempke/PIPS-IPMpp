@@ -56,9 +56,6 @@ double compute_inf_norm(const Vector<double>& vec, bool print, std::string&& nam
 }
 
 void Residuals::evaluate(Problem& problem, Variables& iterate, bool print_residuals) {
-#ifdef TIMING
-   print_resids = true;
-#endif
    const int myRank = PIPS_MPIgetRank();
 
    this->residual_norm = 0.0;
@@ -75,12 +72,13 @@ void Residuals::evaluate(Problem& problem, Variables& iterate, bool print_residu
    problem.ATransmult(1.0, *this->lagrangian_gradient, -1.0, *iterate.equality_duals);
    problem.CTransmult(1.0, *this->lagrangian_gradient, -1.0, *iterate.inequality_duals);
 
-   iterate.primal_lower_bound_gap_dual->selectNonZeros(*ixlow);
-   iterate.primal_upper_bound_gap_dual->selectNonZeros(*ixupp);
-   if (nxlow > 0)
+   if (nxlow > 0) {
       this->lagrangian_gradient->axpy(-1.0, *iterate.primal_lower_bound_gap_dual);
-   if (nxupp > 0)
+   }
+
+   if (nxupp > 0) {
       this->lagrangian_gradient->axpy(1.0, *iterate.primal_upper_bound_gap_dual);
+   }
 
    this->residual_norm = std::max(this->residual_norm, compute_inf_norm(*this->lagrangian_gradient, print_residuals, "rQ"));
 

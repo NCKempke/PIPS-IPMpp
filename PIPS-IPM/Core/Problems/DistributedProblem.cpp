@@ -1174,6 +1174,7 @@ std::unique_ptr<DistributedProblem> DistributedProblem::cloneFull(bool switchToD
    std::shared_ptr<DistributedVector<double>> clow_clone(dynamic_cast<DistributedVector<double>*>(inequality_lower_bounds->cloneFull()));
    std::shared_ptr<DistributedVector<double>> iclow_clone(dynamic_cast<DistributedVector<double>*>(inequality_lower_bound_indicators->cloneFull()));
 
+   // TODO : tree is not actually cloned..
    const DistributedTree* tree_clone = stochNode;
 
    // TODO : proper copy ctor..
@@ -1735,8 +1736,10 @@ DistributedProblem::getVarsUnperm(const Variables& vars, const Problem& unpermDa
    const auto& unpermData = dynamic_cast<const DistributedProblem&>(unpermData_in);
 
    if (is_hierarchy_root)
-      unperm_vars->collapseHierarchicalStructure(*this, unpermData.stochNode, unpermData.primal_lower_bound_indicators, unpermData.primal_upper_bound_indicators,
-         unpermData.inequality_lower_bound_indicators, unpermData.inequality_upper_bound_indicators);
+      unperm_vars->collapseHierarchicalStructure(*this, unpermData.stochNode);
+
+   unperm_vars->update_indicators(unpermData.primal_lower_bound_indicators, unpermData.primal_upper_bound_indicators,
+      unpermData.inequality_lower_bound_indicators, unpermData.inequality_upper_bound_indicators);
 
    const Permutation perm_inv_link_vars = getLinkVarsPermInv();
    const Permutation perm_inv_link_cons_eq = getLinkConsEqPermInv();
@@ -1760,14 +1763,17 @@ DistributedProblem::getResidsUnperm(const Residuals& resids, const Problem& unpe
    const auto& unpermData = dynamic_cast<const DistributedProblem&>(unpermData_in);
 
    if (is_hierarchy_root)
-      unperm_resids->collapse_hierarchical_structure(*this, stochNode, unpermData.primal_lower_bound_indicators, unpermData.primal_upper_bound_indicators, unpermData.inequality_lower_bound_indicators, unpermData.inequality_upper_bound_indicators);
+      unperm_resids->collapse_hierarchical_structure(*this, stochNode);
+
+   unperm_resids->update_indicators(unpermData.primal_lower_bound_indicators, unpermData.primal_upper_bound_indicators,
+      unpermData.inequality_lower_bound_indicators, unpermData.inequality_upper_bound_indicators);
 
    const Permutation perm_inv_link_vars = this->getLinkVarsPermInv();
    const Permutation perm_inv_link_cons_eq = this->getLinkConsEqPermInv();
    const Permutation perm_inv_link_cons_ineq = this->getLinkConsIneqPermInv();
 
    /* when using the hierarchical approach the unpermute is done in collapsHierarchicalStructure already */
-   const bool do_not_permut_bounds = is_hierarchy_root;
+   const bool do_not_permut_bounds = true;
 
    if (!perm_inv_link_vars.empty())
       unperm_resids->permute_vec_0_entries(perm_inv_link_vars, do_not_permut_bounds);

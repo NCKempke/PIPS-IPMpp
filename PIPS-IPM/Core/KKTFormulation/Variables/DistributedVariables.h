@@ -30,9 +30,9 @@ public:
 
    [[nodiscard]] bool isRootNodeInSync() const;
 
-   void collapseHierarchicalStructure(const DistributedProblem& hier_data, const DistributedTree* stochNode_,
-      std::shared_ptr<Vector<double>> ixlow_, std::shared_ptr<Vector<double>> ixupp_, std::shared_ptr<Vector<double>> iclow_,
-      std::shared_ptr<Vector<double>> icupp_);
+   void collapseHierarchicalStructure(const DistributedProblem& hier_data, const DistributedTree* stochNode_);
+   void update_indicators(std::shared_ptr<Vector<double>> ixlow_, std::shared_ptr<Vector<double>> ixupp_,
+      std::shared_ptr<Vector<double>> iclow_, std::shared_ptr<Vector<double>> icupp_);
 
    void permuteVec0Entries(const std::vector<unsigned int>& perm, bool vars_only = false);
    void permuteEqLinkingEntries(const std::vector<unsigned int>& perm);
