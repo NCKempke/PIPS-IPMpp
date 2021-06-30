@@ -27,9 +27,6 @@ StochPresolverBase::StochPresolverBase(PresolveData& presolve_data, const Distri
    setPointersToNull();
 }
 
-StochPresolverBase::~StochPresolverBase() {
-}
-
 void StochPresolverBase::setPointersToNull() {
    currAmat = currAmatTrans = currBmat = currBmatTrans = currBlmat = currBlmatTrans = nullptr;
 

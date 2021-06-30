@@ -43,10 +43,11 @@ scaler_type, PresolverType presolver_type, const std::string& settings) : comm(c
       const double t0_presolve = MPI_Wtime();
 
       if (postsolve)
-         postsolver.reset(preprocess_factory->make_postsolver(original_problem.get()));
+         postsolver = preprocess_factory->make_postsolver(original_problem.get());
 
-      presolver.reset(preprocess_factory->make_presolver(*factory->tree, original_problem.get(), presolver_type, postsolver.get()));
+      presolver = preprocess_factory->make_presolver(*factory->tree, original_problem.get(), presolver_type, postsolver.get());
 
+      // this changes the tree and switches it to the one of the presolved data!
       presolved_problem.reset(dynamic_cast<DistributedProblem*>(presolver->presolve()));
 
       MPI_Barrier(comm);
@@ -97,7 +98,7 @@ scaler_type, PresolverType presolver_type, const std::string& settings) : comm(c
    if( my_rank == 0 ) printf("resids created\n");
 #endif
 
-   scaler.reset(preprocess_factory->make_scaler(*factory, *presolved_problem, scaler_type));
+   scaler = preprocess_factory->make_scaler(*factory, *presolved_problem, scaler_type);
 
 #ifdef TIMING
    if( my_rank == 0 ) printf("scaler created\n");
@@ -126,7 +127,7 @@ scaler_type, PresolverType presolver_type, const std::string& settings) : comm(c
       std::cout << "---reading time (in sec.): " << t1 - t0 << "\n";
 }
 
-PIPSIPMppInterface::~PIPSIPMppInterface() = default;;
+PIPSIPMppInterface::~PIPSIPMppInterface() = default;
 
 TerminationStatus PIPSIPMppInterface::run() {
    if (my_rank == 0)
@@ -157,10 +158,9 @@ TerminationStatus PIPSIPMppInterface::run() {
 #endif
 
 #if defined(PRESOLVE_POSTSOLVE_ONLY) && !defined(NDEBUG)
-   const int result = 0;
+   const int result = TerminationStatus::DID_NOT_RUN;
 #else
    //---------------------------------------------
-   //result = solver->solve(presolved_problem.get(), vars.get(), resids.get());
    result = solver->solve(*presolved_problem, *variables, *residuals);
    //---------------------------------------------
 #endif
@@ -169,32 +169,6 @@ TerminationStatus PIPSIPMppInterface::run() {
       std::cout << "failed to solve instance, result code: " << result << "\n";
 
    ran_solver = true;
-
-#ifdef TIMING
-   if ( 0 != result )
-      return;
-
-   tmElapsed = MPI_Wtime()-tmElapsed;
-
-   const double objective = getObjective();
-
-   if( my_rank == 0 ) {
-    //std::cout << " " << data->nx << " variables, " << data->my
-    // << " equality constraints, " << data->mz << " inequality constraints.\n";
-
-    std::cout << " Iterates: " << solver->iter <<",    Optimal Solution:  "
-          << objective << "\n";
-
-    std::cout << "Solve time: " << tmElapsed << " seconds." << endl;
-
-    char *var = getenv("OMP_NUM_THREADS");
-    if(var != nullptr) {
-      int num_threads;
-      sscanf( var, "%d", &num_threads );
-      std::cout << "Num threads: " << num_threads << "\n";
-    }
-  }
-#endif
 
 #if !defined(NDEBUG) && defined(PRESOLVE_POSTSOLVE_ONLY)
    postsolveComputedSolution();
@@ -215,7 +189,7 @@ double PIPSIPMppInterface::getObjective() {
    if (!ran_solver)
       throw std::logic_error("Must call run() and start solution process before trying to retrieve original solution");
 
-   if (postsolver != nullptr && postsolved_variables == nullptr)
+   if (postsolver && !postsolved_variables)
       this->postsolveComputedSolution();
 
    double obj;
@@ -231,13 +205,14 @@ double PIPSIPMppInterface::getObjective() {
 }
 
 double PIPSIPMppInterface::getFirstStageObjective() const {
-   Vector<double>& x = *(dynamic_cast<DistributedVector<double>&>(*variables->primals).first);
-   Vector<double>& c = *(dynamic_cast<DistributedVector<double>&>(*presolved_problem->objective_gradient).first);
+   const auto& x = *(dynamic_cast<DistributedVector<double>&>(*variables->primals).first);
+   const auto& c = *(dynamic_cast<DistributedVector<double>&>(*presolved_problem->objective_gradient).first);
+
    return c.dotProductWith(x);
 }
 
 void PIPSIPMppInterface::getVarsUnscaledUnperm() {
-   assert(unscaleUnpermNotHierVars == nullptr);
+   assert(!unscaleUnpermNotHierVars);
    assert(dataUnpermNotHier);
 
    const auto& qp_presolved_problem = dynamic_cast<DistributedProblem&>(*presolved_problem);
@@ -245,7 +220,7 @@ void PIPSIPMppInterface::getVarsUnscaledUnperm() {
    if (!ran_solver)
       throw std::logic_error("Must call run() and start solution process before trying to retrieve unscaled unpermuted solution");
    if (scaler) {
-      std::unique_ptr<DistributedVariables> unscaled_vars = std::make_unique<DistributedVariables>(dynamic_cast<DistributedVariables&>(*variables));
+      std::unique_ptr<DistributedVariables> unscaled_vars = std::make_unique<DistributedVariables>(dynamic_cast<const DistributedVariables&>(*variables));
       scaler->unscale_variables(*unscaled_vars);
       unscaleUnpermNotHierVars.reset(qp_presolved_problem.getVarsUnperm(*unscaled_vars, *dataUnpermNotHier));
    }
@@ -255,7 +230,7 @@ void PIPSIPMppInterface::getVarsUnscaledUnperm() {
 }
 
 void PIPSIPMppInterface::getResidsUnscaledUnperm() {
-   assert(unscaleUnpermNotHierResids == nullptr);
+   assert(!unscaleUnpermNotHierResids);
    assert(dataUnpermNotHier);
 
    const auto& qp_presolved_problem = dynamic_cast<DistributedProblem&>(*presolved_problem);
@@ -263,7 +238,7 @@ void PIPSIPMppInterface::getResidsUnscaledUnperm() {
    if (!ran_solver)
       throw std::logic_error("Must call run() and start solution process before trying to retrieve unscaled unpermuted residuals");
    if (scaler) {
-      std::unique_ptr<DistributedResiduals> unscaled_residuals = std::make_unique<DistributedResiduals>(dynamic_cast<DistributedResiduals&>(*residuals));
+      std::unique_ptr<DistributedResiduals> unscaled_residuals = std::make_unique<DistributedResiduals>(dynamic_cast<const DistributedResiduals&>(*residuals));
       scaler->unscale_residuals(*unscaled_residuals);
       unscaleUnpermNotHierResids.reset(qp_presolved_problem.getResidsUnperm(*unscaled_residuals, *dataUnpermNotHier));
    }
@@ -516,7 +491,6 @@ void PIPSIPMppInterface::allgatherBlocksizes(std::vector<unsigned int>& block_le
 void PIPSIPMppInterface::printComplementarityResiduals(const Variables& svars) {
    const int my_rank = PIPS_MPIgetRank();
 
-   /* complementarity residuals before postsolve */
    std::unique_ptr<Vector<double>> t_clone{svars.slack_lower_bound_gap->cloneFull()};
    std::unique_ptr<Vector<double>> u_clone{svars.slack_upper_bound_gap->cloneFull()};
    std::unique_ptr<Vector<double>> v_clone{svars.primal_lower_bound_gap->cloneFull()};
@@ -560,16 +534,16 @@ void PIPSIPMppInterface::postsolveComputedSolution() {
    resids->evaluate(data, vars);
 #endif
 
-   if (unscaleUnpermNotHierVars == nullptr)
+   if (!unscaleUnpermNotHierVars)
       this->getVarsUnscaledUnperm();
 
-   if (unscaleUnpermNotHierResids == nullptr)
+   if (!unscaleUnpermNotHierResids)
       this->getResidsUnscaledUnperm();
 
-   if (postsolved_variables != nullptr || postsolvedResids != nullptr)
+   if (postsolved_variables || postsolvedResids)
       return;
 
-   if (postsolver == nullptr) {
+   if (!postsolver) {
       assert("no postsolver available" && 0);
       return;
    }

@@ -20,10 +20,7 @@ std::unique_ptr<Residuals> DistributedResiduals::cloneFull() const{
 };
 
 void
-DistributedResiduals::collapse_hierarchical_structure(const DistributedProblem& data_hier, const DistributedTree* tree_hier,
-   std::shared_ptr<Vector<double>> ixlow_,
-   std::shared_ptr<Vector<double>> ixupp_, std::shared_ptr<Vector<double>> iclow_,
-   std::shared_ptr<Vector<double>> icupp_) {
+DistributedResiduals::collapse_hierarchical_structure(const DistributedProblem& data_hier, const DistributedTree* tree_hier) {
    dynamic_cast<DistributedVector<double>&>(*lagrangian_gradient).collapseFromHierarchical(data_hier, *tree_hier,
       VectorType::PRIMAL);
 
@@ -50,10 +47,13 @@ DistributedResiduals::collapse_hierarchical_structure(const DistributedProblem& 
          VectorType::PRIMAL, empty_vec);
    }
 
-   dynamic_cast<DistributedVector<double>&>(*equality_residuals).collapseFromHierarchical(data_hier, *tree_hier, VectorType::DUAL_Y);
+   dynamic_cast<DistributedVector<double>&>(*equality_residuals).collapseFromHierarchical(data_hier, *tree_hier,
+      VectorType::DUAL_Y);
 
-   dynamic_cast<DistributedVector<double>&>(*inequality_residuals).collapseFromHierarchical(data_hier, *tree_hier, VectorType::DUAL_Z);
-   dynamic_cast<DistributedVector<double>&>(*inequality_dual_residuals).collapseFromHierarchical(data_hier, *tree_hier, VectorType::DUAL_Z);
+   dynamic_cast<DistributedVector<double>&>(*inequality_residuals).collapseFromHierarchical(data_hier, *tree_hier,
+      VectorType::DUAL_Z);
+   dynamic_cast<DistributedVector<double>&>(*inequality_dual_residuals).collapseFromHierarchical(data_hier, *tree_hier,
+      VectorType::DUAL_Z);
 
    if (mcupp > 0) {
       dynamic_cast<DistributedVector<double>&>(*ru).collapseFromHierarchical(data_hier, *tree_hier, VectorType::DUAL_Z);
@@ -76,8 +76,10 @@ DistributedResiduals::collapse_hierarchical_structure(const DistributedProblem& 
       dynamic_cast<DistributedVector<double>&>(*rlambda).collapseFromHierarchical(data_hier, *tree_hier,
          VectorType::DUAL_Z, empty_vec);
    }
+}
 
-
+void DistributedResiduals::update_indicators(std::shared_ptr<Vector<double>> ixlow_, std::shared_ptr<Vector<double>> ixupp_,
+   std::shared_ptr<Vector<double>> iclow_, std::shared_ptr<Vector<double>> icupp_) {
    ixlow = std::move(ixlow_);
    ixupp = std::move(ixupp_);
    iclow = std::move(iclow_);

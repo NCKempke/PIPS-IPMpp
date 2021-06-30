@@ -36,9 +36,7 @@ std::unique_ptr<Variables> DistributedVariables::cloneFull() const {
 }
 
 void
-DistributedVariables::collapseHierarchicalStructure(const DistributedProblem& hier_data, const DistributedTree* stochNode_,
- std::shared_ptr<Vector<double>> ixlow_, std::shared_ptr<Vector<double>> ixupp_, std::shared_ptr<Vector<double>> iclow_,
- std::shared_ptr<Vector<double>> icupp_) {
+DistributedVariables::collapseHierarchicalStructure(const DistributedProblem& hier_data, const DistributedTree* stochNode_) {
    dynamic_cast<DistributedVector<double>&>(*primals).collapseFromHierarchical(hier_data, *stochNode,
       VectorType::PRIMAL);
 
@@ -68,12 +66,15 @@ DistributedVariables::collapseHierarchicalStructure(const DistributedProblem& hi
       VectorType::DUAL_Z);
 
    stochNode = stochNode_;
+}
 
+
+void DistributedVariables::update_indicators(std::shared_ptr<Vector<double>> ixlow_, std::shared_ptr<Vector<double>> ixupp_,
+   std::shared_ptr<Vector<double>> iclow_, std::shared_ptr<Vector<double>> icupp_) {
    ixlow = std::move(ixlow_);
    ixupp = std::move(ixupp_);
    iclow = std::move(iclow_);
    icupp = std::move(icupp_);
-
 }
 
 void DistributedVariables::permuteVec0Entries(const std::vector<unsigned int>& perm, bool vars_only) {

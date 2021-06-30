@@ -19,7 +19,7 @@
 class StochPresolverBase {
 public:
    StochPresolverBase(PresolveData& presolve_data, const DistributedProblem& origProb);
-   virtual ~StochPresolverBase();
+   virtual ~StochPresolverBase() = default;
 
    virtual bool applyPresolving() = 0;
    void countRowsCols(); // theoretically const but sets pointers
