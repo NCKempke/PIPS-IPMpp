@@ -12,7 +12,7 @@ FilterLineSearch::FilterLineSearch(DistributedFactory& factory, Problem& problem
       const Scaler* scaler) :
       filter_strategy(FilterStrategy()),
       interior_point_method(MehrotraFactory::create(factory, problem, dnorm, interior_point_method_type, scaler)),
-      scaler(scaler), verbose{PIPS_MPIgetRank() == 0 && pipsipmpp_options::get_bool_parameter("FILTER_VERBOSE")} {
+      verbose{PIPS_MPIgetRank() == 0 && pipsipmpp_options::get_bool_parameter("FILTER_VERBOSE")} {
 }
 
 void FilterLineSearch::initialize(Residuals& initial_residuals) {
@@ -31,18 +31,18 @@ void FilterLineSearch::compute_acceptable_iterate(Problem& problem, Variables& c
    if (print_level >= 10) {
       this->print_statistics(problem, current_iterate, current_residuals, iteration, mu, TerminationStatus::NOT_FINISHED, 0);
    }
+   bool small_corr = this->interior_point_method->compute_predictor_step(problem, current_iterate, current_residuals, step,
+         linear_system, iteration);
    if (print_level >= 10) {
       this->print_statistics(problem, current_iterate, current_residuals, iteration, mu, TerminationStatus::NOT_FINISHED, 2);
    }
-   bool small_corr = this->interior_point_method->compute_predictor_step(problem, current_iterate, current_residuals, step,
-         linear_system, iteration);
    this->interior_point_method->compute_corrector_step(problem, current_iterate, current_residuals, step, linear_system, iteration, small_corr);
    this->interior_point_method->take_step(current_iterate, step, 1.);
 
 //   bool is_accepted = false;
 //   this->number_iterations = 0;
 //   double step_length = 1.;
-//   while (!this->termination_(is_accepted)) {
+//   while (!this->termination(is_accepted)) {
 //      this->number_iterations++;
 //      std::cout << "Line search current step length: " << step_length << "\n";
 //      // compute the trial iterate
@@ -77,7 +77,7 @@ void FilterLineSearch::compute_acceptable_iterate(Problem& problem, Variables& c
 //   }
 }
 
-bool FilterLineSearch::termination_(bool is_accepted) const {
+bool FilterLineSearch::termination(bool is_accepted) const {
    if (is_accepted) {
       return true;
    }

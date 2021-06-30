@@ -36,14 +36,12 @@ public:
          TerminationStatus stop_code, int level);
 
 private:
-
    std::unique_ptr<InteriorPointMethod> interior_point_method;
-   const Scaler* scaler{};
    double min_step_length{1e-9};
    const int max_iterations{20};
    const bool verbose{false};
 
-   [[nodiscard]] bool termination_(bool is_accepted) const;
+   [[nodiscard]] bool termination(bool is_accepted) const;
 };
 
 #endif // FILTERLINESEARCH_H
