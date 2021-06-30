@@ -39,8 +39,6 @@ private:
 
    std::unique_ptr<InteriorPointMethod> interior_point_method;
    const Scaler* scaler{};
-   /** norm of problem data */
-   double dnorm{0.};
    double min_step_length{1e-9};
    const int max_iterations{20};
    const bool verbose{false};
