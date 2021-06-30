@@ -32,12 +32,15 @@ public:
    void register_observer(AbstractLinearSystem* linear_system);
    void compute_acceptable_iterate(Problem& problem, Variables& current_iterate, Residuals& current_residuals, Variables& step, AbstractLinearSystem& linear_system,
          int iteration);
-   void compute_acceptable_iterate(Problem& problem, Variables& current_iterate, Variables& direction, Residuals& current_residuals);
+   void print_statistics(const Problem& problem, const Variables& iterate, const Residuals& residuals, int i, double mu,
+         TerminationStatus stop_code, int level);
 
 private:
 
    std::unique_ptr<InteriorPointMethod> interior_point_method;
    const Scaler* scaler{};
+   /** norm of problem data */
+   double dnorm{0.};
    double min_step_length{1e-9};
    const int max_iterations{20};
    const bool verbose{false};

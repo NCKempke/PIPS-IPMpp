@@ -74,8 +74,7 @@ TerminationStatus PIPSIPMppSolver::solve(Problem& problem, Variables& iterate, R
             termination = true;
             residuals.evaluate(problem, iterate);
             if (print_level >= 10) {
-               //this->interior_point_method->print_statistics(&problem, &iterate, &residuals, dnorm, this->interior_point_method->sigma,
-               //      this->iteration, iterate.mu(), status, 1);
+               this->filter_line_search.print_statistics(problem, iterate, residuals, this->iteration, iterate.mu(), status, 1);
             }
          }
       }

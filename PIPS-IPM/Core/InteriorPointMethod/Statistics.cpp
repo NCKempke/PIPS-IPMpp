@@ -13,29 +13,28 @@ Statistics::Statistics(const DistributedFactory& factory, const Scaler* scaler) 
       rank{PIPS_MPIgetRank(mpi_comm)}, global_rank{PIPS_MPIgetRank()} {
 }
 
-void Statistics::print(const Problem* problem, const Variables* variables, const Residuals* residuals, double dnorm, double alpha, int i,
+void Statistics::print(const Problem& problem, const Variables& variables, const Residuals& residuals, double dnorm, double alpha, int i,
       double mu, TerminationStatus status_code, int level) const {
    Statistics::print(problem, variables, residuals, dnorm, alpha, -1.0, i, mu, status_code, level);
 }
 
-void
-Statistics::print(const Problem* problem, const Variables* variables, const Residuals* residuals, double dnorm, double alpha_primal, double alpha_dual,
-      int i, double mu, TerminationStatus status_code, int level) const {
-   double objective = problem->evaluate_objective(*variables);
+void Statistics::print(const Problem& problem, const Variables& variables, const Residuals& residuals, double dnorm, double alpha_primal, double
+alpha_dual, int i, double mu, TerminationStatus status_code, int level) const {
+   double objective = problem.evaluate_objective(variables);
 
    double residual_norm;
    double duality_gap;
 
    if (scaler) {
-      std::unique_ptr<Residuals> unscaled_residuals = residuals->cloneFull();
+      std::unique_ptr<Residuals> unscaled_residuals = residuals.cloneFull();
       objective = scaler->get_unscaled_objective(objective);
       scaler->unscale_residuals(*unscaled_residuals);
 
       residual_norm = unscaled_residuals->get_residual_norm();
       duality_gap = unscaled_residuals->get_duality_gap();
    } else {
-      residual_norm = residuals->get_residual_norm();
-      duality_gap = residuals->get_duality_gap();
+      residual_norm = residuals.get_residual_norm();
+      duality_gap = residuals.get_duality_gap();
    }
 
    // log only on the first proc

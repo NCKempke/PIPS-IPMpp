@@ -32,7 +32,7 @@ public:
    virtual void project_to_bounds(const Variables& iterate, const Variables& step) = 0;
    virtual double compute_centering_parameter(Variables& iterate, const Variables& step) = 0;
    virtual void
-   print_statistics(const Problem* problem, const Variables* iterate, const Residuals* residuals, double dnorm, int i, double mu,
+   print_statistics(const Problem& problem, const Variables& iterate, const Residuals& residuals, int i, double mu,
       TerminationStatus stop_code, int level) = 0;
    virtual void take_step(Variables& iterate, Variables& step, double step_length) = 0;
    virtual void
@@ -135,7 +135,7 @@ public:
    void do_probing(Problem& problem, Variables& iterate, Residuals& residuals, Variables& step) override;
    void compute_probing_step(Variables& probing_step, const Variables& iterate, const Variables& step) const override;
    [[nodiscard]] std::pair<double, double> get_step_lengths() const override;
-   void print_statistics(const Problem* problem, const Variables* iterate, const Residuals* residuals, double dnorm, int i, double mu,
+   void print_statistics(const Problem& problem, const Variables& iterate, const Residuals& residuals, int i, double mu,
       TerminationStatus stop_code, int level) override;
 
 protected:
@@ -158,7 +158,7 @@ public:
    void do_probing(Problem& problem, Variables& iterate, Residuals& residuals, Variables& step) override;
    void compute_probing_step(Variables& probing_step, const Variables& iterate, const Variables& step) const override;
    [[nodiscard]] std::pair<double, double> get_step_lengths() const override;
-   void print_statistics(const Problem* problem, const Variables* iterate, const Residuals* residuals, double dnorm, int i, double mu,
+   void print_statistics(const Problem& problem, const Variables& iterate, const Residuals& residuals, int i, double mu,
       TerminationStatus stop_code, int level) override;
 
 protected:

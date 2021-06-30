@@ -11,7 +11,6 @@
 #include "DistributedFactory.hpp"
 #include "DistributedRootLinearSystem.h"
 
-extern int print_level;
 extern double g_iterNumber;
 
 const unsigned int max_linesearch_points = 50;
@@ -69,13 +68,7 @@ bool InteriorPointMethod::compute_predictor_step(Problem& problem, Variables& cu
       AbstractLinearSystem& linear_system, int iteration) {
    set_BiCGStab_tolerance(iteration);
 
-   if (print_level >= 10) {
-      double mu = current_iterate.mu();
-      this->print_statistics(&problem, &current_iterate, &residuals, dnorm, iteration, mu, TerminationStatus::NOT_FINISHED, 0);
-   }
-
    bool small_corr = false;
-
    // compute the affine predictor step
    if (!pure_centering_step) {
       residuals.set_complementarity_residual(current_iterate, 0.);
@@ -108,9 +101,6 @@ void PrimalInteriorPointMethod::compute_corrector_step(Problem& problem, Variabl
    sigma = this->compute_centering_parameter(current_iterate, step);
    double mu = current_iterate.mu();
 
-   if (print_level >= 10) {
-      this->print_statistics(&problem, &current_iterate, &residuals, dnorm, iteration, mu, TerminationStatus::NOT_FINISHED, 2);
-   }
    g_iterNumber += 1.;
 
    // form right hand side of linear system
@@ -188,10 +178,6 @@ void PrimalDualInteriorPointMethod::compute_corrector_step(Problem& problem, Var
    // calculate centering parameter
    sigma = this->compute_centering_parameter(current_iterate, step);
    double mu = current_iterate.mu();
-
-   if (print_level >= 10) {
-      this->print_statistics(&problem, &current_iterate, &residuals, dnorm, iteration, mu, TerminationStatus::NOT_FINISHED, 2);
-   }
 
    g_iterNumber += 1.;
 
@@ -693,13 +679,13 @@ void InteriorPointMethod::check_numerical_troubles(Residuals* residuals, bool& n
 }
 
 void
-PrimalInteriorPointMethod::print_statistics(const Problem* problem, const Variables* iterate, const Residuals* residuals, double dnorm,
+PrimalInteriorPointMethod::print_statistics(const Problem& problem, const Variables& iterate, const Residuals& residuals,
       int i, double mu, TerminationStatus stop_code, int level) {
    statistics.print(problem, iterate, residuals, dnorm, this->primal_step_length, i, mu, stop_code, level);
 }
 
 void
-PrimalDualInteriorPointMethod::print_statistics(const Problem* problem, const Variables* iterate, const Residuals* residuals, double dnorm,
+PrimalDualInteriorPointMethod::print_statistics(const Problem& problem, const Variables& iterate, const Residuals& residuals,
       int i, double mu, TerminationStatus stop_code, int level) {
    statistics.print(problem, iterate, residuals, dnorm, this->primal_step_length, this->dual_step_length, i, mu, stop_code, level);
 }
