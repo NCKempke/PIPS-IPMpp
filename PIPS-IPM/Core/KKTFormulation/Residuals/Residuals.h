@@ -114,7 +114,7 @@ public:
    [[nodiscard]] double get_dual_objective() const { return dual_objective; };
 
    /** calculate residuals, their norms, and duality/complementarity gap, given a problem and variable set.  */
-   void evaluate(Problem& problem, Variables& iterate_in, bool print_residuals = false);
+   void evaluate(const Problem& problem, const Variables& iterate_in, bool print_residuals = false);
 
    /** Modify the "complementarity" component of the residuals, by
    * adding the pairwise products of the complementary variables plus

@@ -31,8 +31,8 @@ void FilterLineSearch::compute_acceptable_iterate(Problem& problem, Variables& c
    if (print_level >= 10) {
       this->print_statistics(problem, current_iterate, current_residuals, iteration, mu, TerminationStatus::NOT_FINISHED, 0);
    }
-   bool small_corr = this->interior_point_method->compute_predictor_step(problem, current_iterate, current_residuals, step,
-         linear_system, iteration);
+   bool small_corr = this->interior_point_method->compute_predictor_step(current_iterate, current_residuals, step, linear_system, iteration);
+   // compute the correctors
    if (print_level >= 10) {
       this->print_statistics(problem, current_iterate, current_residuals, iteration, mu, TerminationStatus::NOT_FINISHED, 2);
    }

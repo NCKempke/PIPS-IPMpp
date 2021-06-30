@@ -26,22 +26,23 @@ class Scaler;
 class InteriorPointMethod : public Observer {
 public:
    InteriorPointMethod(DistributedFactory& factory, Problem& problem, double dnorm, const Scaler* scaler = nullptr);
-   bool compute_predictor_step(Problem& problem, Variables& current_iterate, Residuals& residuals, Variables& step, AbstractLinearSystem& linear_system, int iteration);
-   virtual void compute_corrector_step(Problem& problem, Variables& iterate, Residuals& residuals, Variables& step, AbstractLinearSystem&
+   bool compute_predictor_step(const Variables& current_iterate, Residuals& residuals, Variables& step, AbstractLinearSystem& linear_system, int
+   iteration);
+   virtual void compute_corrector_step(const Problem& problem, Variables& iterate, Residuals& residuals, Variables& step, AbstractLinearSystem&
    linear_system, int iteration, bool small_corr) = 0;
    virtual void project_to_bounds(const Variables& iterate, const Variables& step) = 0;
-   virtual double compute_centering_parameter(Variables& iterate, const Variables& step) = 0;
+   virtual double compute_centering_parameter(const Variables& iterate, const Variables& step) = 0;
    virtual void
    print_statistics(const Problem& problem, const Variables& iterate, const Residuals& residuals, int i, double mu,
       TerminationStatus stop_code, int level) = 0;
    virtual void take_step(Variables& iterate, Variables& step, double step_length) = 0;
    virtual void
-   gondzio_correction_loop(Problem& problem, Variables& iterate, Residuals& residuals, Variables& step, AbstractLinearSystem& linear_system,
+   gondzio_correction_loop(Variables& iterate, Residuals& residuals, Variables& step, AbstractLinearSystem& linear_system,
          int iteration, double sigma, double mu, bool& small_corr, bool& numerical_troubles) = 0;
    virtual void mehrotra_step_length(Variables& iterate, Variables& step) = 0;
    virtual bool is_poor_step(bool& pure_centering_step, bool precond_decreased) const = 0;
-   double compute_probing_factor(Problem& problem, Variables& iterate, Residuals& residuals, Variables& step);
-   virtual void do_probing(Problem& problem, Variables& iterate, Residuals& residuals, Variables& step) = 0;
+   double compute_probing_factor(const Problem& problem, const Variables& iterate, Residuals& residuals, Variables& step);
+   virtual void do_probing(const Problem& problem, const Variables& iterate, Residuals& residuals, Variables& step) = 0;
    virtual void compute_probing_step(Variables& probing_step, const Variables& iterate, const Variables& step) const = 0;
    [[nodiscard]] virtual std::pair<double, double> get_step_lengths() const = 0;
    void set_BiCGStab_tolerance(int iteration) const;
@@ -106,12 +107,12 @@ protected:
    bool numerical_troubles;
    bool precond_decreased;
 
-   void compute_gondzio_corrector(Variables& iterate, AbstractLinearSystem& linear_system, double rmin, double rmax, bool small_corr);
-   std::pair<double, double>
-   calculate_alpha_weight_candidate(Variables& iterate, Variables& predictor_step, Variables& corrector_step, double alpha_predictor);
+   void compute_gondzio_corrector(const Variables& iterate, AbstractLinearSystem& linear_system, double rmin, double rmax, bool small_corr);
+   std::pair<double, double> calculate_alpha_weight_candidate(const Variables& iterate, const Variables& predictor_step,
+         const Variables& corrector_step, double alpha_predictor);
    std::tuple<double, double, double, double>
-   calculate_alpha_pd_weight_candidate(Variables& iterate, Variables& predictor_step, Variables& corrector_step, double alpha_primal,
-         double alpha_dual);
+   calculate_alpha_pd_weight_candidate(const Variables& iterate, const Variables& predictor_step, const Variables& corrector_step, double
+      alpha_primal, double alpha_dual);
    bool is_poor_step(bool& pure_centering_step, bool precond_decreased, double alpha_max) const;
    static double compute_step_factor_probing(double resids_norm_last, double resids_norm_probing, double mu_last, double mu_probing);
    static bool decrease_preconditioner_impact(AbstractLinearSystem* sys);
@@ -123,16 +124,16 @@ protected:
 class PrimalInteriorPointMethod : public InteriorPointMethod {
 public:
    PrimalInteriorPointMethod(DistributedFactory& factory, Problem& problem, double dnorm, const Scaler* scaler);
-   void compute_corrector_step(Problem& problem, Variables& current_iterate, Residuals& residuals, Variables& step, AbstractLinearSystem&
+   void compute_corrector_step(const Problem& problem, Variables& current_iterate, Residuals& residuals, Variables& step, AbstractLinearSystem&
    linear_system, int iteration, bool small_corr) override;
    void project_to_bounds(const Variables& iterate, const Variables& step) override;
-   double compute_centering_parameter(Variables& iterate, const Variables& step) override;
+   double compute_centering_parameter(const Variables& iterate, const Variables& step) override;
    void take_step(Variables& iterate, Variables& step, double step_length) override;
-   void gondzio_correction_loop(Problem& problem, Variables& iterate, Residuals& residuals, Variables& step, AbstractLinearSystem& linear_system,
+   void gondzio_correction_loop(Variables& iterate, Residuals& residuals, Variables& step, AbstractLinearSystem& linear_system,
          int iteration, double sigma, double mu, bool& small_corr, bool& numerical_troubles) override;
    void mehrotra_step_length(Variables& iterate, Variables& step) override;
    bool is_poor_step(bool& pure_centering_step, bool precond_decreased) const override;
-   void do_probing(Problem& problem, Variables& iterate, Residuals& residuals, Variables& step) override;
+   void do_probing(const Problem& problem, const Variables& iterate, Residuals& residuals, Variables& step) override;
    void compute_probing_step(Variables& probing_step, const Variables& iterate, const Variables& step) const override;
    [[nodiscard]] std::pair<double, double> get_step_lengths() const override;
    void print_statistics(const Problem& problem, const Variables& iterate, const Residuals& residuals, int i, double mu,
@@ -146,16 +147,16 @@ protected:
 class PrimalDualInteriorPointMethod : public InteriorPointMethod {
 public:
    PrimalDualInteriorPointMethod(DistributedFactory& factory, Problem& problem, double dnorm, const Scaler* scaler);
-   void compute_corrector_step(Problem& problem, Variables& current_iterate, Residuals& residuals, Variables& step, AbstractLinearSystem&
+   void compute_corrector_step(const Problem& problem, Variables& current_iterate, Residuals& residuals, Variables& step, AbstractLinearSystem&
    linear_system, int iteration, bool small_corr) override;
    void project_to_bounds(const Variables& iterate, const Variables& step) override;
-   double compute_centering_parameter(Variables& iterate, const Variables& step) override;
+   double compute_centering_parameter(const Variables& iterate, const Variables& step) override;
    void take_step(Variables& iterate, Variables& step, double step_length) override;
-   void gondzio_correction_loop(Problem& problem, Variables& iterate, Residuals& residuals, Variables& step, AbstractLinearSystem& linear_system,
+   void gondzio_correction_loop(Variables& iterate, Residuals& residuals, Variables& step, AbstractLinearSystem& linear_system,
          int iteration, double sigma, double mu, bool& small_corr, bool& numerical_troubles) override;
    void mehrotra_step_length(Variables& iterate, Variables& step) override;
    bool is_poor_step(bool& pure_centering_step, bool precond_decreased) const override;
-   void do_probing(Problem& problem, Variables& iterate, Residuals& residuals, Variables& step) override;
+   void do_probing(const Problem& problem, const Variables& iterate, Residuals& residuals, Variables& step) override;
    void compute_probing_step(Variables& probing_step, const Variables& iterate, const Variables& step) const override;
    [[nodiscard]] std::pair<double, double> get_step_lengths() const override;
    void print_statistics(const Problem& problem, const Variables& iterate, const Residuals& residuals, int i, double mu,

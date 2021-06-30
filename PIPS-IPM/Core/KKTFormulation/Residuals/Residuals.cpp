@@ -55,7 +55,7 @@ double compute_inf_norm(const Vector<double>& vec, bool print, std::string&& nam
    return infnorm;
 }
 
-void Residuals::evaluate(Problem& problem, Variables& iterate, bool print_residuals) {
+void Residuals::evaluate(const Problem& problem, const Variables& iterate, bool print_residuals) {
    const int myRank = PIPS_MPIgetRank();
 
    this->residual_norm = 0.0;
