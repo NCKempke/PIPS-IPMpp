@@ -20,7 +20,7 @@ public:
 
    TerminationStatus solve(Problem& problem, Variables& iterate, Residuals& residuals) override;
 
-   static double predicted_reduction(Problem& problem, Variables& iterate, Variables& direction, double step_length);
+   static double predicted_reduction(Problem& problem, Variables& iterate, Variables& direction, double mu, double step_length);
 
    [[nodiscard]] int n_iterations() const { return iteration; };
 protected:
@@ -59,7 +59,7 @@ protected:
    std::pair<double, double> compute_unscaled_gap_and_residual_norm(const Problem& problem, const Residuals& residuals);
    void update_history(double duality_gap, double residual_norm, int iteration, double mu);
    TerminationStatus compute_status(double duality_gap, double residual_norm, int iteration, double mu);
-   static double barrier_directional_derivative(Problem& problem, Variables& iterate, Variables& direction);
+   static double barrier_directional_derivative(Problem& problem, Variables& iterate, Variables& direction, double mu);
 };
 
 #endif /* PIPSIPMPPSOLVER_H */

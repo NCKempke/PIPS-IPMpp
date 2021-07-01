@@ -47,14 +47,15 @@ void FilterLineSearch::compute_acceptable_iterate(Problem& problem, Variables& c
 //      if (verbose) std::cout << "Line search current step length: " << step_length << "\n";
 //      // compute the trial iterate
 //      std::unique_ptr<Variables> trial_iterate = current_iterate.clone_full();
-//      this->interior_point_method->take_step(*trial_iterate, step, step_length);
+//      auto [primal_length, dual_length] = this->interior_point_method->get_step_lengths();
+//      this->interior_point_method->take_step(*trial_iterate, step, step_length*primal_length);
 //
 //      // evaluate the residuals at the trial iterate
 //      std::unique_ptr<Residuals> trial_residuals = current_residuals.clone_full();
 //      trial_residuals->evaluate(problem, *trial_iterate);
 //      trial_residuals->compute_residual_norm();
 //
-//      const double predicted_reduction = PIPSIPMppSolver::predicted_reduction(problem, current_iterate, step, step_length);
+//      const double predicted_reduction = PIPSIPMppSolver::predicted_reduction(problem, current_iterate, step, trial_iterate->mu(), step_length);
 //      if (verbose) std::cout << "Predicted reduction: " << predicted_reduction << "\n";
 //
 //      /* check whether the trial step is accepted */

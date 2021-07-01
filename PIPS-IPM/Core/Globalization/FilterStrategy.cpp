@@ -7,8 +7,8 @@
 #include "PIPSIPMppOptions.h"
 
 FilterStrategy::FilterStrategy(FilterStrategyParameters& filter_strategy_parameters, FilterParameters& filter_parameters) :
-filter(filter_parameters), parameters(filter_strategy_parameters), verbose{PIPS_MPIgetRank() == 0 && pipsipmpp_options::get_bool_parameter
-      ("FILTER_VERBOSE")} {
+filter(filter_parameters), parameters(filter_strategy_parameters),
+verbose{PIPS_MPIgetRank() == 0 && pipsipmpp_options::get_bool_parameter("FILTER_VERBOSE")} {
 }
 
 FilterStrategy::FilterStrategy() : filter(), parameters({0.1, 0.999, 1e2, 1.25}), verbose{PIPS_MPIgetRank() == 0 && pipsipmpp_options::get_bool_parameter("FILTER_VERBOSE")} {

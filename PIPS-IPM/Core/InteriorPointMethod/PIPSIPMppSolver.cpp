@@ -82,7 +82,7 @@ TerminationStatus PIPSIPMppSolver::solve(Problem& problem, Variables& iterate, R
    return status;
 }
 
-double PIPSIPMppSolver::barrier_directional_derivative(Problem& problem, Variables& iterate, Variables& direction) {
+double PIPSIPMppSolver::barrier_directional_derivative(Problem& problem, Variables& iterate, Variables& direction, double mu) {
    double result = 0.;
    if (0 < problem.number_primal_lower_bounds) { // v
       result -= direction.primal_lower_bound_gap->barrier_directional_derivative(*iterate.primal_lower_bound_gap, 0.,
@@ -100,14 +100,14 @@ double PIPSIPMppSolver::barrier_directional_derivative(Problem& problem, Variabl
       result -= direction.slack_upper_bound_gap->barrier_directional_derivative(*iterate.slack_upper_bound_gap, 0.,
             *problem.inequality_upper_bound_indicators);
    }
-   result *= iterate.mu();
+   result *= mu;
    result += problem.objective_gradient->dotProductWith(*direction.primals);
    return result;
 }
 
-double PIPSIPMppSolver::predicted_reduction(Problem& problem, Variables& iterate, Variables& direction, double step_length) {
+double PIPSIPMppSolver::predicted_reduction(Problem& problem, Variables& iterate, Variables& direction, double mu, double step_length) {
    // scale it with the step length and return the predicted reduction (should be positive for a descent direction)
-   return -step_length * PIPSIPMppSolver::barrier_directional_derivative(problem, iterate, direction);
+   return -step_length * PIPSIPMppSolver::barrier_directional_derivative(problem, iterate, direction, mu);
 }
 
 std::pair<double, double> PIPSIPMppSolver::compute_unscaled_gap_and_residual_norm(const Problem& problem, const Residuals& residuals) {

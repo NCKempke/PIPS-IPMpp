@@ -92,7 +92,7 @@ public:
     * (b->t,b->u,b->v,b->w,b->lambda,b->pi,b->phi,b->gamma) >= 0.
     *
     * @see find_blocking */
-   double fraction_to_boundary(const Variables& iterate) const;
+   double fraction_to_boundary(const Variables& iterate, double fraction=1.) const;
 
    /** calculate the largest alpha_primal and alpha_dual in (0,1] such that the nonnegative
     * variables stay nonnegative in the given search direction b. In the

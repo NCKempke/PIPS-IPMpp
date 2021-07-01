@@ -30,7 +30,7 @@ public:
    iteration);
    virtual void compute_corrector_step(const Problem& problem, Variables& iterate, Residuals& residuals, Variables& step, AbstractLinearSystem&
    linear_system, int iteration, bool small_corr) = 0;
-   virtual void project_to_bounds(const Variables& iterate, const Variables& step) = 0;
+   virtual void compute_fraction_to_boundary(const Variables& iterate, const Variables& step, double fraction) = 0;
    virtual double compute_centering_parameter(const Variables& iterate, const Variables& step) = 0;
    virtual void
    print_statistics(const Problem& problem, const Variables& iterate, const Residuals& residuals, int i, double mu,
@@ -126,7 +126,7 @@ public:
    PrimalInteriorPointMethod(DistributedFactory& factory, Problem& problem, double dnorm, const Scaler* scaler);
    void compute_corrector_step(const Problem& problem, Variables& current_iterate, Residuals& residuals, Variables& step, AbstractLinearSystem&
    linear_system, int iteration, bool small_corr) override;
-   void project_to_bounds(const Variables& iterate, const Variables& step) override;
+   void compute_fraction_to_boundary(const Variables& iterate, const Variables& step, double fraction) override;
    double compute_centering_parameter(const Variables& iterate, const Variables& step) override;
    void take_step(Variables& iterate, const Variables& step, double step_length) override;
    void gondzio_correction_loop(Variables& iterate, Residuals& residuals, Variables& step, AbstractLinearSystem& linear_system,
@@ -149,7 +149,7 @@ public:
    PrimalDualInteriorPointMethod(DistributedFactory& factory, Problem& problem, double dnorm, const Scaler* scaler);
    void compute_corrector_step(const Problem& problem, Variables& current_iterate, Residuals& residuals, Variables& step, AbstractLinearSystem&
    linear_system, int iteration, bool small_corr) override;
-   void project_to_bounds(const Variables& iterate, const Variables& step) override;
+   void compute_fraction_to_boundary(const Variables& iterate, const Variables& step, double fraction) override;
    double compute_centering_parameter(const Variables& iterate, const Variables& step) override;
    void take_step(Variables& iterate, const Variables& step, double step_length) override;
    void gondzio_correction_loop(Variables& iterate, Residuals& residuals, Variables& step, AbstractLinearSystem& linear_system,

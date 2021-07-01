@@ -3,6 +3,7 @@
 //
 
 #include <cassert>
+#include <iomanip>
 #include "InteriorPointMethod.hpp"
 #include "PIPSIPMppOptions.h"
 #include "Problem.hpp"
@@ -65,8 +66,7 @@ PrimalDualInteriorPointMethod::PrimalDualInteriorPointMethod(DistributedFactory&
 }
 
 bool InteriorPointMethod::compute_predictor_step(const Variables& current_iterate, Residuals& residuals, Variables& step, AbstractLinearSystem&
-linear_system,
-      int iteration) {
+linear_system, int iteration) {
    set_BiCGStab_tolerance(iteration);
 
    bool small_corr = false;
@@ -84,15 +84,17 @@ linear_system,
    }
 
    // compute fraction-to-boundary rule
-   this->project_to_bounds(current_iterate, step);
+   double tau = std::max(0.99, 1. - current_iterate.mu());
+   this->compute_fraction_to_boundary(current_iterate, step, tau);
    return small_corr;
 }
 
-void PrimalInteriorPointMethod::project_to_bounds(const Variables& iterate, const Variables& step) {
-   this->primal_step_length = iterate.fraction_to_boundary(step);
+void PrimalInteriorPointMethod::compute_fraction_to_boundary(const Variables& iterate, const Variables& step, double fraction) {
+   this->primal_step_length = iterate.fraction_to_boundary(step, fraction);
 }
 
-void PrimalDualInteriorPointMethod::project_to_bounds(const Variables& iterate, const Variables& step) {
+void PrimalDualInteriorPointMethod::compute_fraction_to_boundary(const Variables& iterate, const Variables& step, double fraction) {
+   // TODO use fraction
    std::tie(this->primal_step_length, this->dual_step_length) = iterate.stepbound_pd(step);
 }
 

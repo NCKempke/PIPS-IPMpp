@@ -188,43 +188,43 @@ void Variables::negate() {
    }
 }
 
-double Variables::fraction_to_boundary(const Variables& iterate) const {
-   double length = 1.0;
+double Variables::fraction_to_boundary(const Variables& iterate, double fraction) const {
+   double length = 1.;
    if (mclow > 0) {
       assert(slack_lower_bound_gap->are_positive(*inequality_lower_bound_indicators));
       assert(slack_lower_bound_gap_dual->are_positive(*inequality_lower_bound_indicators));
 
-      length = std::min(length, slack_lower_bound_gap->fraction_to_boundary(*iterate.slack_lower_bound_gap));
-      length = std::min(length, slack_lower_bound_gap_dual->fraction_to_boundary(*iterate.slack_lower_bound_gap_dual));
+      length = std::min(length, slack_lower_bound_gap->fraction_to_boundary(*iterate.slack_lower_bound_gap, fraction));
+      length = std::min(length, slack_lower_bound_gap_dual->fraction_to_boundary(*iterate.slack_lower_bound_gap_dual, fraction));
    }
    if (mcupp > 0) {
       assert(slack_upper_bound_gap->are_positive(*inequality_upper_bound_indicators));
       assert(slack_upper_bound_gap_dual->are_positive(*inequality_upper_bound_indicators));
 
-      length = std::min(length, slack_upper_bound_gap->fraction_to_boundary(*iterate.slack_upper_bound_gap));
-      length = std::min(length, slack_upper_bound_gap_dual->fraction_to_boundary(*iterate.slack_upper_bound_gap_dual));
+      length = std::min(length, slack_upper_bound_gap->fraction_to_boundary(*iterate.slack_upper_bound_gap, fraction));
+      length = std::min(length, slack_upper_bound_gap_dual->fraction_to_boundary(*iterate.slack_upper_bound_gap_dual, fraction));
    }
    if (nxlow > 0) {
       assert(primal_lower_bound_gap->are_positive(*primal_lower_bound_indicators));
       assert(primal_lower_bound_gap_dual->are_positive(*primal_lower_bound_indicators));
 
-      length = std::min(length, primal_lower_bound_gap->fraction_to_boundary(*iterate.primal_lower_bound_gap));
-      length = std::min(length, primal_lower_bound_gap_dual->fraction_to_boundary(*iterate.primal_lower_bound_gap_dual));
+      length = std::min(length, primal_lower_bound_gap->fraction_to_boundary(*iterate.primal_lower_bound_gap, fraction));
+      length = std::min(length, primal_lower_bound_gap_dual->fraction_to_boundary(*iterate.primal_lower_bound_gap_dual, fraction));
    }
    if (nxupp > 0) {
       assert(primal_upper_bound_gap->are_positive(*primal_upper_bound_indicators));
       assert(primal_upper_bound_gap_dual->are_positive(*primal_upper_bound_indicators));
 
-      length = std::min(length, primal_upper_bound_gap->fraction_to_boundary(*iterate.primal_upper_bound_gap));
-      length = std::min(length, primal_upper_bound_gap_dual->fraction_to_boundary(*iterate.primal_upper_bound_gap_dual));
+      length = std::min(length, primal_upper_bound_gap->fraction_to_boundary(*iterate.primal_upper_bound_gap, fraction));
+      length = std::min(length, primal_upper_bound_gap_dual->fraction_to_boundary(*iterate.primal_upper_bound_gap_dual, fraction));
    }
-   assert(length <= 1.0);
+   assert(length <= 1.);
    return length;
 }
 
 std::pair<double, double> Variables::stepbound_pd(const Variables& iterate) const {
-   double primal_length = 1.0;
-   double dual_length = 1.0;
+   double primal_length = 1.;
+   double dual_length = 1.;
 
    if (mclow > 0) {
       assert(slack_lower_bound_gap->are_positive(*inequality_lower_bound_indicators));
@@ -254,8 +254,8 @@ std::pair<double, double> Variables::stepbound_pd(const Variables& iterate) cons
       primal_length = std::min(primal_length, primal_upper_bound_gap->fraction_to_boundary(*iterate.primal_upper_bound_gap));
       dual_length = std::min(dual_length, primal_upper_bound_gap_dual->fraction_to_boundary(*iterate.primal_upper_bound_gap_dual));
    }
-   assert(primal_length <= 1.0);
-   assert(dual_length <= 1.0);
+   assert(primal_length <= 1.);
+   assert(dual_length <= 1.);
    return std::make_pair(primal_length, dual_length);
 }
 
@@ -283,7 +283,7 @@ void
 Variables::find_blocking(const Variables& step_in, double& primalValue, double& primalStep, double& dualValue, double& dualStep, double& primalValue_d,
       double& primalStep_d, double& dualValue_d, double& dualStep_d, double& alphaPrimal, double& alphaDual, bool& primalBlocking,
       bool& dualBlocking) const {
-   alphaPrimal = 1.0, alphaDual = 1.0;
+   alphaPrimal = 1., alphaDual = 1.;
    primalBlocking = false, dualBlocking = false;
 
    if (mclow > 0) {
