@@ -54,9 +54,6 @@ public:
    add_regularization_local_kkt(double primal_regularization, double dual_equality_regularization,
       double dual_inequality_regularization) override;
 
-   //void Ltsolve_internal(  DistributedQP *prob, DistributedVector<double>& x, SimpleVector<double>& xp);
-   void deleteChildren() override;
-
    void addTermToSchurComplBlocked(bool sparseSC, SymmetricMatrix& SC, bool use_local_RAC, int) override;
 
    void addLniziLinkCons(Vector<double>& z0_, Vector<double>& zi_, bool) override;
@@ -72,9 +69,9 @@ public:
       bool sparse_res, bool sym_res, bool, int begin_cols, int end_cols, int n_empty_rows_inner_border) override;
 
 protected:
-   void add_regularization_diagonal(int offset, double regularization, Vector<double>& regularization_vector);
+   void create_kkt();
 
-   static void mySymAtPutSubmatrix(SymmetricMatrix& kkt, const GeneralMatrix& B, int locnx, int locmy, int);
+   void add_regularization_diagonal(int offset, double regularization, Vector<double>& regularization_vector);
 
    void addBorderTimesRhsToB0(DistributedVector<double>& rhs, SimpleVector<double>& b0, BorderLinsys& border) override;
 

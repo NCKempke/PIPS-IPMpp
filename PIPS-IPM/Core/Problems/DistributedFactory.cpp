@@ -369,7 +369,7 @@ DistributedFactory::make_linear_system_root(DistributedProblem* prob, std::share
       return std::make_unique<sLinsysRootAug>(*this, prob, std::move(primal_diagonal), std::move(dq), std::move(nomegaInv),
          std::move(primal_regularization),
          std::move(dual_equality_regularization),
-         std::move(dual_inequality_regularization), rhs, true);
+         std::move(dual_inequality_regularization), rhs, false);
 }
 
 std::unique_ptr<DistributedRootLinearSystem>

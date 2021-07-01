@@ -56,9 +56,9 @@ public:
 
    [[nodiscard]] int getLocalmzl() const;
 
-   int getLocalSizes(int& nx, int& my, int& mz, int& myl, int& mzl) const;
+   void getLocalSizes(int& nx, int& my, int& mz, int& myl, int& mzl) const;
 
-   int getLocalNnz(int& nnzQ, int& nnzB, int& nnzD);
+   void getLocalNnz(int& nnzQ, int& nnzB, int& nnzD) const;
 
    [[nodiscard]] int getN0LinkVars() const { return n0LinkVars; }
 
@@ -70,10 +70,10 @@ public:
 
    [[nodiscard]] bool exploitingLinkStructure() const { return useLinkStructure; };
 
-   SparseSymmetricMatrix* createSchurCompSymbSparseUpper() const;
+   std::unique_ptr<SparseSymmetricMatrix> createSchurCompSymbSparseUpper() const;
 
    // distributed version
-   SparseSymmetricMatrix* createSchurCompSymbSparseUpperDist(int blocksStart, int blocksEnd) const;
+   std::unique_ptr<SparseSymmetricMatrix> createSchurCompSymbSparseUpperDist(int blocksStart, int blocksEnd) const;
 
    const SparseSymmetricMatrix& getLocalQ() const;
 
@@ -183,7 +183,7 @@ public:
    bool isHierarchySparseTopLayerOnlyTwolinks() const {
       return (pipsipmpp_options::get_bool_parameter("HIERARCHICAL")) &&
          (pipsipmpp_options::get_int_parameter("HIERARCHICAL_APPROACH_N_LAYERS") > 1) &&
-         threshold_global_cons <= 1 && threshold_global_vars == 0;
+         threshold_global_cons <= 2 && threshold_global_vars <= 0;
    };
 
    bool isHierarchyRoot() const { return is_hierarchy_root; };
@@ -205,8 +205,10 @@ private:
    int n0LinkVars{0};
 
    /* trimming everything that is not a 2 link and everything that is not a 0vec at the moment - makes border computations sparser */
-   constexpr static int threshold_global_cons{1};
-   constexpr static int threshold_global_vars{0}; // TODO: adapt properly
+   /* a constraint is global if it is in more than threshold_global_cons blocks */
+   constexpr static int threshold_global_cons{2};
+   constexpr static bool shave_nonlocal_2links{true};
+   constexpr static int threshold_global_vars{1}; // TODO: adapt properly
    constexpr static int nLinkStats{6};
    constexpr static double minStructuredLinksRatio{0.5};
 

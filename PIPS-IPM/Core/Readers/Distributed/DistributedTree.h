@@ -94,7 +94,6 @@ public:
    [[nodiscard]] virtual std::unique_ptr<DistributedMatrix> createA() const = 0;
    [[nodiscard]] virtual std::unique_ptr<DistributedVector<double>> createb() const = 0;
 
-
    [[nodiscard]] virtual std::unique_ptr<DistributedMatrix> createC() const = 0;
    [[nodiscard]] virtual std::unique_ptr<DistributedVector<double>> createclow() const = 0;
    [[nodiscard]] virtual std::unique_ptr<DistributedVector<double>> createiclow() const = 0;
@@ -119,8 +118,8 @@ public:
 
    [[nodiscard]] virtual int nx() const = 0;
    [[nodiscard]] virtual int my() const = 0;
-   [[nodiscard]] virtual int myl() const;
-   [[nodiscard]] virtual int mzl() const;
+   [[nodiscard]] virtual int myl() const = 0;
+   [[nodiscard]] virtual int mzl() const = 0;
    [[nodiscard]] virtual int mz() const = 0;
    [[nodiscard]] virtual int id() const = 0;
 
@@ -146,7 +145,10 @@ public:
    [[nodiscard]] virtual std::unique_ptr<DistributedTree> switchToHierarchicalTree(DistributedProblem*& data, std::unique_ptr<DistributedTree> pointer_to_this) = 0;
 
    void printProcessTree() const;
+   [[nodiscard]] bool was_A0_moved_to_border() const { return was_a0_moved_to_border; };
 protected:
+   bool was_a0_moved_to_border{false};
+
    void appendPrintTreeLayer(std::vector<std::string>& layer_outputs, unsigned int level) const;
 
    DistributedTree() = default;

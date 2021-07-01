@@ -519,10 +519,12 @@ void SparseMatrix::sum_transform_columns(Vector<double>& result, const std::func
       initTransposed(mStorageDynamic != nullptr);
    }
 
-   if (mStorageDynamic)
+   if (mStorageDynamic) {
       m_Mt->mStorageDynamic->sum_transform_rows(result, transform);
-   else
+   }
+   else {
       m_Mt->mStorage->sum_transform_rows(result, transform);
+   }
 }
 
 void SparseMatrix::addRowSums(Vector<double>& sumVec) const {

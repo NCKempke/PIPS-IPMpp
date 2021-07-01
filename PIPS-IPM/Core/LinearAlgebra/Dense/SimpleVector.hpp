@@ -107,7 +107,10 @@ public:
    void sqrt() override;
    void roundToPow2() override;
    bool all_positive() const override;
-   bool all_of(const std::function<bool(const T&)>& pred) const override;
+
+   void transform(const std::function<T(const T&)>& transformation) override;
+   [[nodiscard]] virtual T sum_reduce(const std::function<T(const T& a, const T& b)>& reduce) const override;
+   [[nodiscard]] bool all_of(const std::function<bool(const T&)>& pred) const override;
 
    long long number_nonzeros() const override;
 

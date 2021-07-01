@@ -174,11 +174,13 @@ long long BorderedMatrix::n_columns() const {
 
 void BorderedMatrix::getRowMinMaxVec(bool get_min, bool initialize_vec, const Vector<double>* col_scale_in, Vector<double>& minmax_in) const {
    assert(hasVecStructureForBorderedMat(minmax_in, false));
+
    const bool has_colscale = (col_scale_in != nullptr);
    if (has_colscale)
       assert(hasVecStructureForBorderedMat(*col_scale_in, true));
 
    auto& minmax = dynamic_cast<DistributedVector<double>&>(minmax_in);
+
    const DistributedVector<double>* col_scale = has_colscale ? dynamic_cast<const DistributedVector<double>*>(col_scale_in) : nullptr;
 
    border_left->getRowMinMaxVec(get_min, initialize_vec, has_colscale ? col_scale->first.get() : nullptr, *minmax.children[0]);
@@ -259,53 +261,53 @@ bool BorderedMatrix::hasVecStructureForBorderedMat(const Vector<T>& vec, bool ro
    const auto& vecs = dynamic_cast<const DistributedVector<T>&>(vec);
 
    if (vecs.children.size() != 1) {
-      std::cout << "children" << std::endl;
+      std::cout << "children\n";
       return false;
    }
 
    if (!vecs.children[0]) {
-      std::cout << "child[0]" << std::endl;
+      std::cout << "child[0]\n";
       return false;
    }
 
    if (row_vec) {
       if (vecs.last) {
-         std::cout << "row-first but root.last" << std::endl;
+         std::cout << "row-first but root.last\n";
          return false;
       }
       if (!vecs.first) {
-         std::cout << "row-first but NO root.first" << std::endl;
+         std::cout << "row-first but NO root.first\n";
          return false;
       }
    }
    else {
       if (vecs.first) {
-         std::cout << "col-first but root.first" << std::endl;
+         std::cout << "col-first but root.first\n";
          return false;
       }
       if (!vecs.last) {
-         std::cout << "col-first but NO root.last" << std::endl;
+         std::cout << "col-first but NO root.last\n";
          return false;
       }
    }
 
    if (row_vec && vecs.length() != n) {
-      std::cout << "ROW: root.length = " << vecs.length() << " != " << n << " = border.n " << std::endl;
+      std::cout << "ROW: root.length = " << vecs.length() << " != " << n << " = border.n \n";
       return false;
    }
    if (!row_vec && vecs.length() != m) {
-      std::cout << "COL: root.length = " << vecs.length() << " != " << m << " = border.m " << std::endl;
+      std::cout << "COL: root.length = " << vecs.length() << " != " << m << " = border.m \n";
       return false;
    }
 
    const auto [m_border, n_border] = border_left->n_rows_columns();
 
    if (row_vec && vecs.first->length() != n_border) {
-      std::cout << "ROW: root.first.length = " << vecs.first->length() << " != " << n_border << " = border.n " << std::endl;
+      std::cout << "ROW: root.first.length = " << vecs.first->length() << " != " << n_border << " = border.n \n";
       return false;
    }
    if (!row_vec && vecs.length() != m) {
-      std::cout << "COL: root.last.length = " << vecs.last->length() << " != " << m_border << " = border.m " << std::endl;
+      std::cout << "COL: root.last.length = " << vecs.last->length() << " != " << m_border << " = border.m \n";
       return false;
    }
 

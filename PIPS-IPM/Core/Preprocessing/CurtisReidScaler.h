@@ -17,7 +17,7 @@ private:
    std::unique_ptr<Vector<double>> temp_dual_equalities;
    std::unique_ptr<Vector<double>> temp_dual_inequalities;
 
-   const double convergence_constant{1e-2};
+   const double convergence_constant{1.e-6};
    const int max_iter{10};
 
    PrimalDualTriplet get_nonzero_vectors() const;
@@ -29,6 +29,7 @@ private:
       const Vector<double>& sum_non_zeros_equalities, const Vector<double>& sum_non_zeros_inequalities);
    PrimalDualTriplet get_and_calculate_initial_residuals(const Vector<double>& log_sum_columns, const Vector<double>& log_sum_equalities,
       const Vector<double>& log_sum_inequalities, const Vector<double>& sum_non_zeros_equalities, const Vector<double>& sum_non_zeros_inequalities) const;
+   void two_to_power_scaling_factors();
 
 protected:
    void scale_objective() const override;

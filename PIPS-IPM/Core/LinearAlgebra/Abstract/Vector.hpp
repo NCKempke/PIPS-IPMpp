@@ -153,6 +153,10 @@ public:
    /** True if all elements of this Vector<double> are positive. */
    virtual bool all_positive() const = 0;
 
+   virtual void transform(const std::function<T(const T&)>& transformation) = 0;
+
+   virtual T sum_reduce(const std::function<T(const T& a, const T& b)>& reduce) const = 0;
+
    virtual bool all_of(const std::function<bool(const T&)>& pred) const = 0;
 
    /** Return the number of non-zero elements in this Vector<double>. */

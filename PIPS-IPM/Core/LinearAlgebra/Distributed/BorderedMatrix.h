@@ -20,6 +20,9 @@ class DistributedMatrix;
 
 class SparseMatrix;
 
+template<typename T>
+class DistributedVector;
+
 
 /*
  * representing a matrix of type
@@ -32,12 +35,12 @@ class SparseMatrix;
 // TODO : make more general ? K B B' and C can be any matrices in theory..
 class BorderedMatrix : public GeneralMatrix {
 public:
-   std::shared_ptr<DistributedMatrix> const inner_matrix{};
-   std::unique_ptr<StripMatrix> const border_left{};
-   std::unique_ptr<StripMatrix> const border_bottom{};
+   std::shared_ptr<DistributedMatrix> inner_matrix{};
+   std::unique_ptr<StripMatrix> border_left{};
+   std::unique_ptr<StripMatrix> border_bottom{};
 
    // TODO: is SparseGenMatrix appropriate? What does this block look like -> it has parts of the diagonals in it for inequality linking constraints and nothing else?
-   std::unique_ptr<GeneralMatrix> const bottom_left_block{};
+   std::unique_ptr<GeneralMatrix> bottom_left_block{};
 
 protected:
 
@@ -54,6 +57,8 @@ public:
       MPI_Comm mpi_comm_);
 
    ~BorderedMatrix() override = default;
+
+   MPI_Comm get_mpi_comm() const { return mpi_comm; };
 
    [[nodiscard]] int is_a(int matrixType) const override;
 
@@ -147,11 +152,12 @@ public:
 
    void atPutSpRow(int, const double*, int, const int*, int&) override { assert(0 && "not implemented"); };
 private:
-   void mult(double beta, Vector<double>& y, double alpha, const Vector<double>& x, const std::function<void(const GeneralMatrix*, double, Vector<double>&, double, const Vector<double>&)>& mult) const;
-   void transpose_mult(double beta, Vector<double>& y, double alpha, const Vector<double>& x, const std::function<void(const GeneralMatrix*, double, Vector<double>&, double, const Vector<double>&)>& transpose_mult) const;
-
    template<typename T>
    bool hasVecStructureForBorderedMat(const Vector<T>& vec, bool row_vec) const;
+   void transpose_mult(double beta, Vector<double>& y_in, double alpha, const Vector<double>& x_in,
+      const std::function<void(const GeneralMatrix*, double, Vector<double>&, double, const Vector<double>&)>& transpose_mult) const;
+   void mult(double beta, Vector<double>& y_in, double alpha, const Vector<double>& x_in,
+      const std::function<void(const GeneralMatrix*, double, Vector<double>&, double, const Vector<double>&)>& mult) const;
 };
 
 #endif /* BORDEREDMATRIX_H */

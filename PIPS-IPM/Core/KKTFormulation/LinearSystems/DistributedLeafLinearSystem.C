@@ -13,70 +13,68 @@ DistributedLeafLinearSystem::DistributedLeafLinearSystem(const DistributedFactor
    std::shared_ptr<Vector<double>> dual_z_reg_, std::shared_ptr<Vector<double>> rhs_) : DistributedLinearSystem(
    factory_,
    prob, std::move(dd_), std::move(dq_), std::move(nomegaInv_), std::move(primal_reg_), std::move(dual_y_reg_), std::move(dual_z_reg_), std::move(rhs_), false) {
-#ifdef TIMING
-   const int myRank = PIPS_MPIgetRank(mpiComm);
-   const double t0 = MPI_Wtime();
-#endif
 
-   prob->getLocalSizes(locnx, locmy, locmz, locmyl, locmzl);
-   const int n = locnx + locmy + locmz;
-
-   int nnzQ, nnzB, nnzD;
-   prob->getLocalNnz(nnzQ, nnzB, nnzD);
+   create_kkt();
+   sparse_solver_type = pipsipmpp_options::get_solver_leaf();
+   solver = DistributedFactory::make_leaf_solver(kkt.get());
 
    if (apply_regularization) {
       regularization_strategy = factory.make_regularization_strategy(static_cast<unsigned int>(locnx), static_cast<unsigned int>(locmy + locmz));
    }
-#ifdef TIMING
-   if( myRank == 0 )
-      std::cout << "Rank 0: building local Schur matrix ..." << std::endl;
-#endif
-
-   /* allocate and copy lower triangular:
-    *
-    * [ Qq BiT DiT ]
-    * [ Bi  0   0  ]
-    * [ Di  0   0  ]
-    *
-    * where  Qq = Q + V^-1 Gamma + W^-1 Phi (so we estimate its nnzs as n_1 + nnzQ)
-    */
-
-   auto* kkt_sp = new SparseSymmetricMatrix(n, n + nnzQ + nnzB + nnzD);
-
-   SimpleVector<double> v(n);
-   v.setToZero();
-   kkt_sp->setToDiagonal(v);
-
-   kkt_sp->symAtPutSubmatrix(0, 0, prob->getLocalQ(), 0, 0, locnx, locnx);
-
-   if (locmy > 0) {
-      kkt_sp->symAtPutSubmatrix(locnx, 0, prob->getLocalB(), 0, 0, locmy, locnx);
-   }
-
-   if (locmz > 0) {
-      kkt_sp->symAtPutSubmatrix(locnx + locmy, 0, prob->getLocalD(), 0, 0, locmz, locnx);
-   }
-
-#ifdef TIMING
-   if( myRank == 0 ) std::cout << "Rank 0: finished " << std::endl;
-#endif
-
-   kkt.reset(kkt_sp);
-   solver = DistributedFactory::make_leaf_solver(kkt_sp);
-
-#ifdef TIMING
-   const double t1 = MPI_Wtime() - t0;
-   if (myRank == 0) printf("Rank 0: new sLinsysLeaf took %f sec\n",t1);
-#endif
 
    assert(this->primal_diagonal);
    mpiComm = (dynamic_cast<DistributedVector<double>&>(*this->primal_diagonal)).mpiComm;
+
+   static bool printed = false;
+   if( !printed && PIPS_MPIgetRank() == 0) {
+
+      int nnzQ, nnzB, nnzD;
+      data->getLocalNnz(nnzQ, nnzB, nnzD);
+
+      std::cout << "DistributedLeafLinearSystem: sparse Schur complement (dim " <<  kkt->size() << "): max non-zeros: " << nnzQ + nnzB * 2 + nnzD * 2 << "\n";
+      std::cout << "DistributedLeafLinearSystem: linear solver: " << sparse_solver_type << "\n";
+      if (apply_regularization) {
+         std::cout << "setting up root regularization : " << locnx << " " << locmy << " " << locmz << " " << locmyl << " "
+            << locmzl << std::endl;
+      }
+      printed = true;
+   }
+}
+
+/* allocate and copy lower triangular:
+ *
+ * [ Qq BiT DiT ]
+ * [ Bi  0   0  ]
+ * [ Di  0   0  ]
+ *
+ * where  Qq = Q + V^-1 Gamma + W^-1 Phi (so we estimate its nnzs as n_1 + nnzQ)
+ */
+void DistributedLeafLinearSystem::create_kkt() {
+   const int n = locnx + locmy + locmz;
+
+   int nnzQ, nnzB, nnzD;
+   data->getLocalNnz(nnzQ, nnzB, nnzD);
+
+   kkt = std::make_unique<SparseSymmetricMatrix>(n, n + nnzQ + nnzB + nnzD);
+   SimpleVector<double> v(n);
+   v.setToZero();
+   kkt->setToDiagonal(v);
+
+   kkt->symAtPutSubmatrix(0, 0, data->getLocalQ(), 0, 0, locnx, locnx);
+
+   if (locmy > 0) {
+      kkt->symAtPutSubmatrix(locnx, 0, data->getLocalB(), 0, 0, locmy, locnx);
+   }
+
+   if (locmz > 0) {
+      kkt->symAtPutSubmatrix(locnx + locmy, 0, data->getLocalD(), 0, 0, locmz, locnx);
+   }
 }
 
 void DistributedLeafLinearSystem::factor2() {
    // Diagonals were already updated, so
    // just trigger a local refactorization (if needed, depends on the type of lin solver).
-   stochNode->resMon.recFactTmLocal_start();
+   resource_monitor->recFactTmLocal_start();
 
    if (apply_regularization) {
       factorize_with_correct_inertia();
@@ -84,7 +82,7 @@ void DistributedLeafLinearSystem::factor2() {
       solver->matrixChanged();
    }
 
-   stochNode->resMon.recFactTmLocal_stop();
+   resource_monitor->recFactTmLocal_stop();
 }
 
 void DistributedLeafLinearSystem::put_primal_diagonal() {
@@ -147,9 +145,9 @@ DistributedLeafLinearSystem::add_regularization_local_kkt(double primal_regulari
 void DistributedLeafLinearSystem::Dsolve(Vector<double>& x_in) {
    auto& x = dynamic_cast<DistributedVector<double>&>(x_in);
    assert(x.children.empty());
-   stochNode->resMon.recDsolveTmChildren_start();
+   resource_monitor->recDsolveTmChildren_start();
    solver->Dsolve(*x.first);
-   stochNode->resMon.recDsolveTmChildren_stop();
+   resource_monitor->recDsolveTmChildren_stop();
 }
 
 void DistributedLeafLinearSystem::Ltsolve2(DistributedVector<double>& x, SimpleVector<double>& xp, bool) {
@@ -164,13 +162,10 @@ void DistributedLeafLinearSystem::Ltsolve2(DistributedVector<double>& x, SimpleV
 
    //b_i -= Lni^T x0
    LniTransMult(bi, -1.0, xp);
-   //  solver->Ltsolve(bi); -> empty
 #ifdef TIMING
    stochNode->resMon.recLtsolveTmChildren_stop();
 #endif
 }
-
-void DistributedLeafLinearSystem::deleteChildren() {}
 
 /** sum up right hand side for (current) scenario i and add it to right hand side of scenario 0 */
 void DistributedLeafLinearSystem::addLniziLinkCons(Vector<double>& z0_, Vector<double>& zi_, bool /*use_local_RAC*/) {
@@ -179,7 +174,7 @@ void DistributedLeafLinearSystem::addLniziLinkCons(Vector<double>& z0_, Vector<d
 
    solver->solve(zi);
 
-   int nx0 = data->hasRAC() ? data->getLocalA().n_columns() : 0;
+   const int nx0 = data->hasRAC() ? data->getLocalA().n_columns() : 0;
 
    SimpleVector<double> z01(&z0[0], nx0);
    SimpleVector<double> zi1(&zi[0], locnx);
@@ -256,41 +251,6 @@ DistributedLeafLinearSystem::addTermToSchurComplBlocked(bool sparseSC, Symmetric
       SC.size(), 0, SC.size());
 }
 
-void
-DistributedLeafLinearSystem::mySymAtPutSubmatrix(SymmetricMatrix& kkt_, const GeneralMatrix& B_, int locnx, int locmy,
-   int) {
-   auto& kkt = dynamic_cast<SparseSymmetricMatrix&>(kkt_);
-   auto& B = dynamic_cast<const SparseMatrix&>(B_);
-
-   int* jcolK = kkt.jcolM();
-   const int* jcolB = B.jcolM(); //int* jcolD = D.jcolM();
-   int* krowK = kkt.krowM();
-   const int* krowB = B.krowM(); //int* krowD =  D.krowM();
-   double* MK = kkt.M();
-   const double* MB = B.M();
-
-   for (int i = 0; i < locmy; i++) {
-      int itK = krowK[i + locnx];
-      int j = krowB[i];
-
-      for (; j < krowB[i + 1]; j++) {
-
-         if (jcolB[j] < i + locnx) {
-            jcolK[itK] = jcolB[j];
-            MK[itK] = MB[j];
-            itK++;
-         }
-      }
-      jcolK[itK] = i + locnx;
-      MK[itK] = 0.0;
-      itK++;
-
-      assert(j == krowB[i + 1]);
-
-      krowK[i + locnx + 1] = itK;
-   }
-}
-
 /* compute result += B_inner^T K^-1 Br */
 void DistributedLeafLinearSystem::addInnerBorderKiInvBrToRes(DenseMatrix& result, BorderLinsys& Br, int begin_cols,
    int end_cols) {
@@ -363,7 +323,6 @@ void DistributedLeafLinearSystem::addLeftBorderKiInvBrToRes(AbstractMatrix& resu
       else
          BriT = std::make_unique<BorderBiBlock>(Br.n_empty_rows, dynamic_cast<SparseMatrix&>(*Br.F.first),
             dynamic_cast<SparseMatrix&>(*Br.G.first), false);
-
 
       // TODO : return early if all Bordermods and Br were empty
       if (!BriT->isEmpty())

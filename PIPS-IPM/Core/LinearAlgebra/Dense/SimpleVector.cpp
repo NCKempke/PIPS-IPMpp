@@ -5,12 +5,13 @@
 #include "VectorUtilities.h"
 #include "SimpleVector.hpp"
 #include "OoqpBlas.h"
-#include <pipsdef.h>
+#include "pipsdef.h"
+
 #include <cassert>
 #include <cmath>
-#include <cstdio>
 #include <limits>
 #include <algorithm>
+#include <numeric>
 #include <functional>
 #include <memory>
 
@@ -260,7 +261,7 @@ double SimpleVector<double>::inf_norm() const {
       return -std::numeric_limits<double>::max();
 
    const int one = 1;
-   return std::fabs(v[idamax_(&this->n, v, &one) - 1]);
+   return std::fabs(v[idamax(&this->n, v, &one) - 1]);
 }
 
 template<typename T>
@@ -414,7 +415,7 @@ void SimpleVector<double>::scale(double alpha) {
       return;
 
    const int one = 1;
-   dscal_(&this->n, &alpha, v, &one);
+   dscal(&this->n, &alpha, v, &one);
 }
 
 // generic implementation without boost 
@@ -432,7 +433,7 @@ void SimpleVector<double>::axpy(double alpha, const Vector<double>& vec) {
 
    const auto& sv = dynamic_cast<const SimpleVector<double>&>(vec);
    const int one = 1;
-   daxpy_(&this->n, &alpha, sv.v, &one, v, &one);
+   daxpy(&this->n, &alpha, sv.v, &one, v, &one);
 }
 
 template<typename T>
@@ -565,7 +566,7 @@ double SimpleVector<double>::dotProductWith(const Vector<double>& vec) const {
    const auto& svec = dynamic_cast<const SimpleVector<double>&>(vec);
 
    const int incx = 1;
-   return ddot_(&this->n, v, &incx, svec.v, &incx);
+   return ddot(&this->n, v, &incx, svec.v, &incx);
 }
 
 template<typename T>
@@ -573,7 +574,7 @@ T SimpleVector<T>::scaled_dot_product_self(const Vector<T>& scale_) const {
    assert(this->n == scale_.length());
    const auto& scale = dynamic_cast<const SimpleVector<T>&>(scale_);
 
-   double scaled_dot_product_self{0.0};
+   T scaled_dot_product_self = T{};
    for (int i = 0; i < this->n; ++i) {
       assert(scale[i] != 0.0);
       scaled_dot_product_self += v[i] * v[i] / scale[i];
@@ -713,16 +714,25 @@ bool SimpleVector<T>::all_positive() const {
 }
 
 template<typename T>
+void SimpleVector<T>::transform(const std::function<T(const T&)>& transformation) {
+   std::transform(v, v + this->n, v, transformation);
+}
+
+template<typename T>
+T SimpleVector<T>::sum_reduce(const std::function<T(const T& a, const T& b)>& reduce) const {
+   return std::accumulate(v, v + this->n, T{}, reduce); // no reduce for now we are forcing in order?
+}
+
+template<typename T>
 bool SimpleVector<T>::all_of(const std::function<bool(const T&)>& pred) const {
    return std::all_of(v, v + this->n, pred);
 }
-
 
 template<typename T>
 T SimpleVector<T>::stepbound(const Vector<T>& pvec, T maxStep) const {
    assert(this->n == pvec.length());
 
-   const SimpleVector<T>& spvec = dynamic_cast<const SimpleVector<T>&>(pvec);
+   const auto& spvec = dynamic_cast<const SimpleVector<T>&>(pvec);
    T* p = spvec.v;
    T* w = v;
    T bound = maxStep;

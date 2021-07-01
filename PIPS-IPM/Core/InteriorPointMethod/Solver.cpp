@@ -10,11 +10,8 @@
 double g_iterNumber = 0.;
 int print_level = 1000;
 
-int gOuterBiCGFails = 0;
 int gOuterBiCGIter = 0;
 double gOuterBiCGIterAvg = 0.;
-int gInnerBiCGFails = 0;
-int gInnerBiCGIter = 0;
 
 Solver::Solver(DistributedFactory& factory, Problem& problem) : factory(factory), step(factory.make_variables(problem)) {
 }

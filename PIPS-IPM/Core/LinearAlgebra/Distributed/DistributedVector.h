@@ -112,6 +112,9 @@ public:
    void roundToPow2() override;
 
    [[nodiscard]] bool all_positive() const override;
+
+   void transform(const std::function<T(const T&)>& transformation) override;
+   [[nodiscard]] T sum_reduce(const std::function<T(const T& a, const T& b)>& reduce) const override;
    [[nodiscard]] bool all_of(const std::function<bool(const T&)>& pred) const override;
 
    [[nodiscard]] bool matchesNonZeroPattern(const Vector<T>& select) const override;
@@ -144,6 +147,7 @@ public:
 
    virtual void split(const std::vector<unsigned int>& map_blocks_children, const std::vector<MPI_Comm>& child_comms,
          const std::vector<int>& twolinks_start_in_block = std::vector<int>(), int n_links_in_root = -1);
+   void move_first_to_parent();
    virtual DistributedVector<T>* raiseBorder(int n_first_to_shave, int n_last_to_shave);
    virtual void collapseFromHierarchical(const DistributedProblem& data_hier, const DistributedTree& tree_hier, VectorType type, bool empty_vec = false);
    virtual void appendHierarchicalToThis(SimpleVector<T>* new_vec, SimpleVector<T>* new_vecl, std::vector<std::shared_ptr<DistributedVector<T>>>& new_children,
@@ -242,6 +246,9 @@ public:
    void sqrt() override {};
    void roundToPow2() override {};
    [[nodiscard]] bool all_positive() const override { return true; };
+
+   void transform(const std::function<T(const T&)>& transformation) override {};
+   [[nodiscard]] T sum_reduce(const std::function<T(const T& a, const T& b)>& reduce) const override { return T{}; };
    [[nodiscard]] bool all_of(const std::function<bool(const T&)>&) const override { return true; };
 
    [[nodiscard]] bool matchesNonZeroPattern(const Vector<T>&) const override { return true; }

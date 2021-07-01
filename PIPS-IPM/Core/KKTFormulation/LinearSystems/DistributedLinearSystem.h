@@ -14,6 +14,7 @@
 #include "SimpleVector.hpp"
 #include "DistributedVector.h"
 #include "StripMatrix.h"
+#include "PIPSIPMppOptions.h"
 
 #include "RACFG_BLOCK.h"
 #include "BorderMod_Block.h"
@@ -29,6 +30,8 @@ class DistributedTree;
 class DistributedFactory;
 
 class DistributedProblem;
+
+class StochNodeResourcesMonitor;
 
 class DistributedLinearSystem : public LinearSystem {
 
@@ -57,8 +60,6 @@ public:
    virtual void Ltsolve2(DistributedVector<double>& x, SimpleVector<double>& xp, bool use_local_RAC) = 0;
 
    void solveCompressed(Vector<double>& rhs) override;
-
-   virtual void deleteChildren() = 0;
 
    [[nodiscard]] virtual bool isDummy() const { return false; };
 
@@ -91,8 +92,8 @@ protected:
 
 public:
    MPI_Comm mpiComm{MPI_COMM_NULL};
-   DistributedTree* stochNode{};
-
+   const DistributedTree* distributed_tree{};
+   StochNodeResourcesMonitor* resource_monitor{};
 protected:
    /* depending on SC_HIERARCHICAL_COMPUTE_BLOCKWISE either allocated a full buffer of buffer_m rows or a smaller one - returns number of rows in buffer */
    int allocateAndZeroBlockedComputationsBuffer(int buffer_m, int buffer_n);
@@ -126,16 +127,11 @@ public:
       assert(false && "not implemented here");
    };
 
-public:
    /* add you part of the border times rhs to b0 */
-   virtual void addBorderTimesRhsToB0(DistributedVector<double>& /*rhs*/, SimpleVector<double>& /*b0*/, BorderLinsys& /*border*/ ) {
-      assert(false && "not implemented here");
-   };
+   virtual void addBorderTimesRhsToB0(DistributedVector<double>& rhs, SimpleVector<double>& b0, BorderLinsys& border) = 0;
 
    /* add you part of the border times rhs to b0 */
-   virtual void addBorderX0ToRhs(DistributedVector<double>& /*rhs*/, const SimpleVector<double>& /*x0*/, BorderLinsys& /*border*/ ) {
-      assert(false && "not implemented here");
-   };
+   virtual void addBorderX0ToRhs(DistributedVector<double>& rhs, const SimpleVector<double>& x0, BorderLinsys& border)  = 0;
 
    virtual void addBiTLeftKiBiRightToResBlockedParallelSolvers(bool sparse_res, bool sym_res, const BorderBiBlock& border_left_transp,
          /* const */ BorderBiBlock& border_right, AbstractMatrix& result, int begin_cols, int end_cols, int begin_rows_res, int end_rows_res);
@@ -157,12 +153,12 @@ public:
 
    /* compute Bi_{inner}^T Ki^{-1} ( Bri - sum_j Bmodij Xij ) and add it up in result */
    virtual void
-   LsolveHierarchyBorder(DenseMatrix& /*result*/, BorderLinsys& /*Br*/, std::vector<BorderMod>& /*Br_mod_border*/, bool /*two_link_border*/,
-         int /*begin_cols*/, int /*end_cols*/) { assert(false && "not implemented here"); };
+   LsolveHierarchyBorder(DenseMatrix& /*result*/, BorderLinsys& /*Br*/, std::vector<BorderMod>& /*Br_mod_border*/,
+      int /*begin_cols*/, int /*end_cols*/) { assert(false && "not implemented here"); };
 
    virtual void
    LsolveHierarchyBorder(DenseMatrix& /*result*/, BorderLinsys& /*Br*/, std::vector<BorderMod>& /*Br_mod_border*/, bool /*use_local_RAC*/,
-         bool /*two_link_border*/, int /*begin_cols*/, int /*end_cols*/) { assert(false && "not implemented here"); };
+         int /*begin_cols*/, int /*end_cols*/) { assert(false && "not implemented here"); };
 
    /* solve with SC and comput X_0 = SC^-1 B_0 */
    virtual void DsolveHierarchyBorder(DenseMatrix& /*buffer_b0*/, int /*n_cols*/) { assert(false && "not implemented here"); };

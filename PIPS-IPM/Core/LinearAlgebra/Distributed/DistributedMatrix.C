@@ -771,13 +771,11 @@ void DistributedMatrix::getNnzPerRow(Vector<int>& nnzVec, Vector<int>* linkParen
 
 void DistributedMatrix::sum_transform_rows(Vector<double>& result_, const std::function<double(const double&)>& transform) const {
    const bool at_root = !children.empty();
-
    auto& result = dynamic_cast<DistributedVector<double>&>(result_);
 
-   if (at_root)
-   {
+   assert(result.children.size() == children.size());
+   if (at_root) {
       assert(amatEmpty());
-      assert(result.children.size() == children.size());
    }
 
    const bool has_linking = at_root ? result.last != nullptr : result.parent->last != nullptr;
@@ -791,8 +789,10 @@ void DistributedMatrix::sum_transform_rows(Vector<double>& result_, const std::f
 
    if (has_linking) {
       if (at_root && iAmSpecial(iAmDistrib, mpiComm)) {
+         assert(result.last);
          Blmat->sum_transform_rows(*result.last, transform);
-      } else {
+      } else if (!at_root) {
+         assert(result.parent && result.parent->last);
          Blmat->sum_transform_rows(*result.parent->last, transform);
       }
    }
@@ -806,37 +806,49 @@ void DistributedMatrix::sum_transform_rows(Vector<double>& result_, const std::f
    }
 }
 
-void DistributedMatrix::sum_transform_columns(Vector<double>& result_, const std::function<double(const double&)>& transform, Vector<double>* link_parent) const {
-   assert(hasSparseMatrices());
+void DistributedMatrix::sum_transform_columns(Vector<double>& result_, const std::function<double(const double&)>& transform) const {
+   const bool at_root = !children.empty();
    auto& result = dynamic_cast<DistributedVector<double>&>(result_);
 
    assert(result.children.size() == children.size());
-
-   auto& result_first = dynamic_cast<SimpleVector<double>&>(*result.first);
-
-   if (iAmSpecial(iAmDistrib, mpiComm) || link_parent) {
-      dynamic_cast<SparseMatrix&>(*Bmat).sum_transform_columns(result_first, transform);
-
-      /* with linking constraints? */
-      if (Blmat->n_rows() > 0)
-         dynamic_cast<SparseMatrix&>(*Blmat).sum_transform_columns(result_first, transform);
+   if (at_root) {
+      assert(amatEmpty());
    }
 
-   // not at root?
-   if (link_parent)
-      dynamic_cast<SparseMatrix&>(*Amat).sum_transform_rows(*link_parent, transform);
-   else {
-      for (size_t it = 0; it < children.size(); it++)
-         children[it]->sum_transform_columns(*(result.children[it]), transform, &result_first);
+   auto& result_linking_vec = dynamic_cast<SimpleVector<double>&>(*result.getLinkingVecNotHierarchicalTop());
+   if (iAmSpecial(iAmDistrib, mpiComm) || !at_root) {
+
+      Bmat->sum_transform_columns(*result.first, transform);
+
+      if (Blmat->n_rows() > 0) {
+         if (at_root) {
+            Blmat->sum_transform_columns(result_linking_vec, transform);
+         } else {
+            Blmat->sum_transform_columns(*result.first, transform);
+         }
+      }
    }
+
+   if (!amatEmpty()) {
+      assert(children.empty() && iAmSpecial(iAmDistrib, mpiComm));
+      Amat->sum_transform_columns(result_linking_vec, transform);
+   }
+
+   for (size_t it = 0; it < children.size(); it++)
+      children[it]->sum_transform_columns(*(result.children[it]), transform);
+
+   const bool at_top = result.first.get() == result.getLinkingVecNotHierarchicalTop();
 
    // distributed and at root?
-   if (iAmDistrib && !link_parent) {
-      PIPS_MPIsumArrayInPlace(result_first.elements(), result_first.length(), mpiComm);
+   if (iAmDistrib && at_top) {
+      PIPS_MPIsumArrayInPlace(result_linking_vec.elements(), result_linking_vec.length(), mpiComm);
    }
 }
 
 void DistributedMatrix::getNnzPerCol(Vector<int>& nnzVec, Vector<int>* linkParent) const {
+   if (pipsipmpp_options::get_bool_parameter("HIERARCHICAL"))
+      assert(false && "TODO : hierarchical version");
+
    assert(hasSparseMatrices());
    auto& nnzVecStoch = dynamic_cast<DistributedVector<int>&>(nnzVec);
 

@@ -9,6 +9,7 @@
 #include "Vector.hpp"
 #include "Observer.h"
 #include "RegularizationStrategy.h"
+#include "PIPSIPMppOptions.h"
 
 #include <functional>
 #include <memory>
@@ -70,6 +71,7 @@ protected:
    /* symmetric Schur Complement / whole KKT system in lower triangular from */
    std::unique_ptr<SymmetricMatrix> kkt{};
    std::unique_ptr<DoubleLinearSolver> solver{};
+   SolverType sparse_solver_type{SOLVER_NONE};
 
    /** observer pattern for convergence status of BiCGStab when calling solve */
    IterativeSolverSolutionStatus bicg_conv_flag{IterativeSolverSolutionStatus::DID_NOT_RUN};
@@ -103,11 +105,6 @@ protected:
    std::shared_ptr<Vector<double>> dual_inequality_regularization_diagonal{};
 
    LinearSystem(const ProblemFactory& factory_, const Problem& problem, bool create_iter_ref_vecs);
-
-   /** dimensions of the vectors */
-   long long nx{0};
-   long long my{0};
-   long long mz{0};
 
    /** dq = diag(Q); dd = dq - gamma/ v + phi/w */
    std::shared_ptr<Vector<double>> primal_diagonal{};

@@ -26,8 +26,8 @@ enum SolverTypeDense {
    SOLVER_DENSE_SYM_INDEF = 0, SOLVER_DENSE_SYM_INDEF_SADDLE_POINT = 1, SOLVER_DENSE_SYM_PSD = 2
 };
 
-std::ostream& operator<<(std::ostream& os, const SolverType solver);
-std::ostream& operator<<(std::ostream& os, const SolverTypeDense solver);
+std::ostream& operator<<(std::ostream& os, SolverType solver);
+std::ostream& operator<<(std::ostream& os, SolverTypeDense solver);
 
 
 namespace pipsipmpp_options {

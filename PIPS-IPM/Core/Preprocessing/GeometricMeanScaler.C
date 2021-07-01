@@ -69,9 +69,7 @@ void GeometricMeanScaler::scale() {
    /* We want to do the direction with lower maximal ratio first,
     * since the absolute smallest value in the scaled matrix is bounded from below by
     * the inverse of the maximum ratio of the direction that is done first */
-   std::unique_ptr<Vector<double>> rowminA{problem_factory.make_equalities_dual_vector()};
-   std::unique_ptr<Vector<double>> rowminC{problem_factory.make_inequalities_dual_vector()};
-   std::unique_ptr<Vector<double>> colmin{problem_factory.make_primal_vector()};
+   auto [colmin, rowminA, rowminC] = this->create_primal_dual_vector_triplet();
 
    const double rowratio = maxRowRatio(*scaling_factors_equalities, *scaling_factors_inequalities, *rowminA, *rowminC, nullptr);
    const double colratio = maxColRatio(*scaling_factors_columns, *colmin, nullptr, nullptr);
@@ -222,12 +220,8 @@ void GeometricMeanScaler::applyGeoMean(Vector<double>& maxvec, const Vector<doub
 void GeometricMeanScaler::postEquiScale() {
    assert(scaling_factors_equalities && scaling_factors_inequalities && scaling_factors_columns);
 
-   std::unique_ptr<Vector<double>> rowmaxA{problem_factory.make_equalities_dual_vector()};
-   std::unique_ptr<Vector<double>> rowminA{problem_factory.make_equalities_dual_vector()};
-   std::unique_ptr<Vector<double>> rowmaxC{problem_factory.make_inequalities_dual_vector()};
-   std::unique_ptr<Vector<double>> rowminC{problem_factory.make_inequalities_dual_vector()};
-   std::unique_ptr<Vector<double>> colmax{problem_factory.make_primal_vector()};
-   std::unique_ptr<Vector<double>> colmin{problem_factory.make_primal_vector()};
+   auto [colmin, rowminA, rowminC] = this->create_primal_dual_vector_triplet();
+   auto [colmax, rowmaxA, rowmaxC] = this->create_primal_dual_vector_triplet();
 
    const double rowratio = maxRowRatio(*rowmaxA, *rowmaxC, *rowminA, *rowminC, scaling_factors_columns.get());
    const double colratio = maxColRatio(*colmax, *colmin, scaling_factors_equalities.get(), scaling_factors_inequalities.get());
