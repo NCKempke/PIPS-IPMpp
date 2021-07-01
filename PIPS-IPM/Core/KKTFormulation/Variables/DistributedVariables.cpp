@@ -71,16 +71,16 @@ DistributedVariables::collapseHierarchicalStructure(const DistributedProblem& hi
 
 void DistributedVariables::update_indicators(std::shared_ptr<Vector<double>> ixlow_, std::shared_ptr<Vector<double>> ixupp_,
    std::shared_ptr<Vector<double>> iclow_, std::shared_ptr<Vector<double>> icupp_) {
-   ixlow = std::move(ixlow_);
-   ixupp = std::move(ixupp_);
-   iclow = std::move(iclow_);
-   icupp = std::move(icupp_);
+   primal_lower_bound_indicators = std::move(ixlow_);
+   primal_upper_bound_indicators = std::move(ixupp_);
+   inequality_lower_bound_indicators = std::move(iclow_);
+   inequality_upper_bound_indicators = std::move(icupp_);
 }
 
 void DistributedVariables::permuteVec0Entries(const std::vector<unsigned int>& perm, bool vars_only) {
    if (!vars_only) {
-      dynamic_cast<DistributedVector<double>&>(*ixlow).permuteVec0Entries(perm);
-      dynamic_cast<DistributedVector<double>&>(*ixupp).permuteVec0Entries(perm);
+      dynamic_cast<DistributedVector<double>&>(*primal_lower_bound_indicators).permuteVec0Entries(perm);
+      dynamic_cast<DistributedVector<double>&>(*primal_upper_bound_indicators).permuteVec0Entries(perm);
    }
 
    dynamic_cast<DistributedVector<double>&>(*primals).permuteVec0Entries(perm);
@@ -96,8 +96,8 @@ void DistributedVariables::permuteEqLinkingEntries(const std::vector<unsigned in
 
 void DistributedVariables::permuteIneqLinkingEntries(const std::vector<unsigned int>& perm, bool vars_only) {
    if (!vars_only) {
-      dynamic_cast<DistributedVector<double>&>(*iclow).permuteLinkingEntries(perm);
-      dynamic_cast<DistributedVector<double>&>(*icupp).permuteLinkingEntries(perm);
+      dynamic_cast<DistributedVector<double>&>(*inequality_lower_bound_indicators).permuteLinkingEntries(perm);
+      dynamic_cast<DistributedVector<double>&>(*inequality_upper_bound_indicators).permuteLinkingEntries(perm);
    }
 
    dynamic_cast<DistributedVector<double>&>(*slacks).permuteLinkingEntries(perm);

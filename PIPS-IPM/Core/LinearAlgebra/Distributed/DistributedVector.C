@@ -626,35 +626,30 @@ void DistributedVector<T>::absminNonZero(T& m, T zero_eps) const {
 
 
 template<typename T>
-T DistributedVector<T>::stepbound(const Vector<T>& v_, T maxStep) const {
+T DistributedVector<T>::fraction_to_boundary(const Vector<T>& v_, T fraction) const {
    const auto& v = dynamic_cast<const DistributedVector<T>&>(v_);
 
-   T step = 1.0;
-
+   T length = T{1};
    if (first) {
       assert(v.first);
-      T stepvec = first->stepbound(*v.first, maxStep);
-      if (stepvec < step)
-         step = stepvec;
+      length = std::min(length, first->fraction_to_boundary(*v.first, fraction));
    }
 
    if (last) {
       assert(v.last);
-      T stepl = last->stepbound(*v.last, maxStep);
-      if (stepl < step)
-         step = stepl;
+      length = std::min(length, last->fraction_to_boundary(*v.last, fraction));
    }
 
    //check tree compatibility
    assert(children.size() == v.children.size());
 
    for (size_t it = 0; it < children.size(); it++)
-      step = children[it]->stepbound(*v.children[it], step);
+      length = std::min(length, children[it]->fraction_to_boundary(*v.children[it], fraction));
 
    if (iAmDistrib)
-      PIPS_MPIgetMinInPlace(step, mpiComm);
+      PIPS_MPIgetMinInPlace(length, mpiComm);
 
-   return step;
+   return length;
 }
 
 template<typename T>
@@ -1724,15 +1719,15 @@ void DistributedVector<T>::add_quotient(T alpha, const Vector<T>& x_, const Vect
 }
 
 template<typename T>
-bool DistributedVector<T>::somePositive(const Vector<T>& select_) const {
+bool DistributedVector<T>::are_positive(const Vector<T>& select_) const {
    const auto& select = dynamic_cast<const DistributedVector<T>&>(select_);
 
-   bool some_positive = true;;
+   bool some_positive = true;
 
    assert(children.size() == select.children.size());
 
    for (size_t it = 0; it < children.size(); it++) {
-      const bool some_pos_tmp = children[it]->somePositive(*select.children[it]);
+      const bool some_pos_tmp = children[it]->are_positive(*select.children[it]);
       some_positive = some_positive && some_pos_tmp;
    }
 
@@ -1741,7 +1736,7 @@ bool DistributedVector<T>::somePositive(const Vector<T>& select_) const {
 
    if (first) {
       assert(select.first);
-      const bool some_pos_tmp = first->somePositive(*select.first);
+      const bool some_pos_tmp = first->are_positive(*select.first);
       some_positive = some_positive && some_pos_tmp;
    }
    else
@@ -1749,7 +1744,7 @@ bool DistributedVector<T>::somePositive(const Vector<T>& select_) const {
 
    if (last) {
       assert(select.last);
-      const bool some_pos_tmp = last->somePositive(*select.last);
+      const bool some_pos_tmp = last->are_positive(*select.last);
       some_positive = some_positive && some_pos_tmp;
    }
    else

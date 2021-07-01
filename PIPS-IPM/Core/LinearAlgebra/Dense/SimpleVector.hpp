@@ -124,10 +124,10 @@ public:
 
    bool isKindOf(int kind) const override;
 
-   bool somePositive(const Vector<T>& select) const override;
+   bool are_positive(const Vector<T>& select) const override;
    void divideSome(const Vector<T>& div, const Vector<T>& select) override;
 
-   T stepbound(const Vector<T>& v, T maxStep) const override;
+   T fraction_to_boundary(const Vector<T>& step_in, T fraction) const override;
    T find_blocking(const Vector<T>& wstep_vec, const Vector<T>& u_vec, const Vector<T>& ustep_vec, T maxStep, T* w_elt, T* wstep_elt, T* u_elt,
          T* ustep_elt, int& first_or_second) const override;
 

@@ -89,7 +89,7 @@ linear_system,
 }
 
 void PrimalInteriorPointMethod::project_to_bounds(const Variables& iterate, const Variables& step) {
-   this->primal_step_length = iterate.stepbound(step);
+   this->primal_step_length = iterate.fraction_to_boundary(step);
 }
 
 void PrimalDualInteriorPointMethod::project_to_bounds(const Variables& iterate, const Variables& step) {
@@ -473,7 +473,7 @@ InteriorPointMethod::calculate_alpha_weight_candidate(const Variables& iterate, 
       temp_step->copy(predictor_step);
       temp_step->add(corrector_step, weight_curr);
 
-      const double alpha_curr = iterate.stepbound(*temp_step);
+      const double alpha_curr = iterate.fraction_to_boundary(*temp_step);
       assert(alpha_curr > 0. && alpha_curr <= 1.);
 
       if (alpha_curr > alpha_candidate) {

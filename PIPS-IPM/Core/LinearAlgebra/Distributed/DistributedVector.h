@@ -69,7 +69,7 @@ public:
    void absmaxVecUpdate(Vector<T>& absmaxvec) const override;
    void absmin(T& m) const override;
    void absminNonZero(T& m, T zero_eps) const override;
-   [[nodiscard]] T stepbound(const Vector<T>& v, T maxStep) const override;
+   [[nodiscard]] T fraction_to_boundary(const Vector<T>& v, T fraction) const override;
    [[nodiscard]] T find_blocking(const Vector<T>& wstep_vec, const Vector<T>& u_vec, const Vector<T>& ustep_vec, T maxStep, T* w_elt, T* wstep_elt, T* u_elt,
          T* ustep_elt, int& first_or_second) const override;
    void find_blocking_pd(const Vector<T>& wstep_vec, const Vector<T>& u_vec, const Vector<T>& ustep_vec, T& maxStepPri, T& maxStepDual, T& w_elt_p,
@@ -126,7 +126,7 @@ public:
    void writefSomeToStream(std::ostream&, const char[], const Vector<T>&) const override { assert(false && "Not yet implemented"); };
    void add_quotient(T alpha, const Vector<T>& x, const Vector<T>& z, const Vector<T>& select) override;
 
-   [[nodiscard]] bool somePositive(const Vector<T>& select) const override;
+   [[nodiscard]] bool are_positive(const Vector<T>& select) const override;
    void divideSome(const Vector<T>& div, const Vector<T>& select) override;
    void copyIntoArray(T[]) const override { assert("Not supported" && 0); };
    void copyFromArray(const T[]) override { assert("Not supported" && 0); };
@@ -205,7 +205,7 @@ public:
    void absmaxVecUpdate(Vector<T>&) const override {};
    void absmin(T& m) const override { m = std::numeric_limits<T>::infinity(); };
    void absminNonZero(T& m, T) const override { m = std::numeric_limits<T>::infinity(); };
-   T stepbound(const Vector<T>&, T maxStep) const override { return maxStep; }
+   T fraction_to_boundary(const Vector<T>&, T fraction) const override { return T{1}; }
    T find_blocking(const Vector<T>&, const Vector<T>&, const Vector<T>&, T maxStep, T*, T*, T*, T*, int&) const override { return maxStep; };
    void
    find_blocking_pd(const Vector<T>&, const Vector<T>&, const Vector<T>&, T&, T&, T&, T&, T&, T&, T&, T&, T&, T&, bool&, bool&) const override {};
@@ -260,7 +260,7 @@ public:
    void writefSomeToStream(std::ostream&, const char[], const Vector<T>&) const override {};
    void add_quotient(T, const Vector<T>&, const Vector<T>&, const Vector<T>&) override {};
 
-   [[nodiscard]] bool somePositive(const Vector<T>&) const override { return 1; }
+   [[nodiscard]] bool are_positive(const Vector<T>&) const override { return 1; }
    void divideSome(const Vector<T>&, const Vector<T>&) override {};
    void copyIntoArray(T[]) const override {};
    void copyFromArray(const T[]) override {};
