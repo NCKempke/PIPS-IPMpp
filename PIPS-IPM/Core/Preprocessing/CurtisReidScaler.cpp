@@ -113,8 +113,8 @@ void CurtisReidScaler::scale() {
          //       = -ee_qq c_{2m-2} + (1 + ee_qq) c_{2m} + qq N^-1 r_{2m}
 
          last_scaling_factors_columns->scale(-1.0 * ee_qq);
-         last_scaling_factors_columns->axpy(1.0 + ee_qq, *scaling_factors_columns);
-         last_scaling_factors_columns->axpy(qq, *temp_primal);
+         last_scaling_factors_columns->add(1.0 + ee_qq, *scaling_factors_columns);
+         last_scaling_factors_columns->add(qq, *temp_primal);
 
          std::swap(last_scaling_factors_columns, scaling_factors_columns);
       } else {
@@ -125,11 +125,11 @@ void CurtisReidScaler::scale() {
          last_scaling_factors_equalities->scale(-1.0 * ee_qq);
          last_scaling_factors_inequalities->scale(-1.0 * ee_qq);
 
-         last_scaling_factors_equalities->axpy(1.0 + ee_qq, *scaling_factors_equalities);
-         last_scaling_factors_inequalities->axpy(1.0 + ee_qq, *scaling_factors_inequalities);
+         last_scaling_factors_equalities->add(1.0 + ee_qq, *scaling_factors_equalities);
+         last_scaling_factors_inequalities->add(1.0 + ee_qq, *scaling_factors_inequalities);
 
-         last_scaling_factors_equalities->axpy(qq, *temp_dual_equalities);
-         last_scaling_factors_inequalities->axpy(qq, *temp_dual_inequalities);
+         last_scaling_factors_equalities->add(qq, *temp_dual_equalities);
+         last_scaling_factors_inequalities->add(qq, *temp_dual_inequalities);
 
          std::swap(last_scaling_factors_equalities, scaling_factors_equalities);
          std::swap(last_scaling_factors_inequalities, scaling_factors_inequalities);
@@ -163,8 +163,8 @@ void CurtisReidScaler::scale() {
       temp_primal->componentDiv(*sum_non_zeros_columns);
 
       last_scaling_factors_columns->scale(-1.0 * ee_qq);
-      last_scaling_factors_columns->axpy(1.0 + ee_qq, *scaling_factors_columns);
-      last_scaling_factors_columns->axpy(qq, *temp_primal);
+      last_scaling_factors_columns->add(1.0 + ee_qq, *scaling_factors_columns);
+      last_scaling_factors_columns->add(qq, *temp_primal);
 
       std::swap(last_scaling_factors_columns, scaling_factors_columns);
    } else {
@@ -178,11 +178,11 @@ void CurtisReidScaler::scale() {
       last_scaling_factors_equalities->scale(-1.0 * ee_qq);
       last_scaling_factors_inequalities->scale(-1.0 * ee_qq);
 
-      last_scaling_factors_equalities->axpy(1.0 + ee_qq, *scaling_factors_equalities);
-      last_scaling_factors_inequalities->axpy(1.0 + ee_qq, *scaling_factors_inequalities);
+      last_scaling_factors_equalities->add(1.0 + ee_qq, *scaling_factors_equalities);
+      last_scaling_factors_inequalities->add(1.0 + ee_qq, *scaling_factors_inequalities);
 
-      last_scaling_factors_equalities->axpy(qq, *temp_dual_equalities);
-      last_scaling_factors_inequalities->axpy(qq, *temp_dual_inequalities);
+      last_scaling_factors_equalities->add(qq, *temp_dual_equalities);
+      last_scaling_factors_inequalities->add(qq, *temp_dual_inequalities);
 
       std::swap(last_scaling_factors_equalities, scaling_factors_equalities);
       std::swap(last_scaling_factors_inequalities, scaling_factors_inequalities);
@@ -269,7 +269,7 @@ PrimalDualTriplet CurtisReidScaler::get_nonzero_vectors() const{
    this->A->sum_transform_columns(*sum_non_zeros_columns, to_one);
    temp_primal->setToZero();
    this->C->sum_transform_columns(*temp_primal, to_one);
-   sum_non_zeros_columns->axpy(1.0, *temp_primal);
+   sum_non_zeros_columns->add(1.0, *temp_primal);
 
 #ifndef NDEBUG
    auto positive_predicate = [](const auto& val) {
@@ -296,7 +296,7 @@ PrimalDualTriplet CurtisReidScaler::get_log_sum_vectors() const {
    this->A->sum_transform_columns(*log_sum_columns, two_log_if_nonzero);
    temp_primal->setToZero();
    this->C->sum_transform_columns(*temp_primal, two_log_if_nonzero);
-   log_sum_columns->axpy(1.0, *temp_primal);
+   log_sum_columns->add(1.0, *temp_primal);
 
    return {std::move(log_sum_columns), std::move(log_sum_equalities), std::move(log_sum_inequalities)};
 }

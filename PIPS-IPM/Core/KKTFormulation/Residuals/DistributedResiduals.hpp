@@ -28,7 +28,7 @@ public:
 
    DistributedResiduals(const DistributedResiduals& res) = default;
 
-   [[nodiscard]] std::unique_ptr<Residuals> cloneFull() const override;
+   [[nodiscard]] std::unique_ptr<Residuals> clone_full() const override;
 
    ~DistributedResiduals() override = default;
 

@@ -71,7 +71,7 @@ scaler_type, PresolverType presolver_type, const std::string& settings) : comm(c
    if( my_rank == 0 ) printf("data created\n");
 #endif
 
-   dataUnpermNotHier = presolved_problem->cloneFull();
+   dataUnpermNotHier = presolved_problem->clone_full();
 
    // after identifying the linking structure switch to hierarchical data structure
    if (pipsipmpp_options::get_bool_parameter("PARDISO_FOR_GLOBAL_SC"))
@@ -336,13 +336,13 @@ std::vector<double> PIPSIPMppInterface::gatherEqualityConsValues() {
       this->postsolveComputedSolution();
 
    DistributedVector<double>* eq_vals = (postsolved_variables == nullptr)
-                                        ? dynamic_cast<DistributedVector<double>*>(unscaleUnpermNotHierResids->equality_residuals->cloneFull())
-                                        : dynamic_cast<DistributedVector<double>*>(postsolvedResids->equality_residuals->cloneFull());
+                                        ? dynamic_cast<DistributedVector<double>*>(unscaleUnpermNotHierResids->equality_residuals->clone_full())
+                                        : dynamic_cast<DistributedVector<double>*>(postsolvedResids->equality_residuals->clone_full());
 
    if (!original_problem || !postsolved_variables)
-      eq_vals->axpy(1.0, *presolved_problem->equality_rhs);
+      eq_vals->add(1.0, *presolved_problem->equality_rhs);
    else
-      eq_vals->axpy(1.0, *original_problem->equality_rhs);
+      eq_vals->add(1.0, *original_problem->equality_rhs);
 
    std::vector<double> eq_vals_vec = eq_vals->gatherStochVector();
 
@@ -362,13 +362,13 @@ std::vector<double> PIPSIPMppInterface::gatherInequalityConsValues() {
       this->postsolveComputedSolution();
 
    DistributedVector<double>* ineq_vals = (postsolved_variables == nullptr)
-                                          ? dynamic_cast<DistributedVector<double>*>(unscaleUnpermNotHierResids->inequality_residuals->cloneFull())
-                                          : dynamic_cast<DistributedVector<double>*>(postsolvedResids->inequality_residuals->cloneFull());
+                                          ? dynamic_cast<DistributedVector<double>*>(unscaleUnpermNotHierResids->inequality_residuals->clone_full())
+                                          : dynamic_cast<DistributedVector<double>*>(postsolvedResids->inequality_residuals->clone_full());
 
    if (postsolved_variables == nullptr)
-      ineq_vals->axpy(1.0, *unscaleUnpermNotHierVars->slacks);
+      ineq_vals->add(1.0, *unscaleUnpermNotHierVars->slacks);
    else
-      ineq_vals->axpy(1.0, *postsolved_variables->slacks);
+      ineq_vals->add(1.0, *postsolved_variables->slacks);
 
    std::vector<double> ineq_vals_vec = ineq_vals->gatherStochVector();
 
@@ -491,10 +491,10 @@ void PIPSIPMppInterface::allgatherBlocksizes(std::vector<unsigned int>& block_le
 void PIPSIPMppInterface::printComplementarityResiduals(const Variables& svars) {
    const int my_rank = PIPS_MPIgetRank();
 
-   std::unique_ptr<Vector<double>> t_clone{svars.slack_lower_bound_gap->cloneFull()};
-   std::unique_ptr<Vector<double>> u_clone{svars.slack_upper_bound_gap->cloneFull()};
-   std::unique_ptr<Vector<double>> v_clone{svars.primal_lower_bound_gap->cloneFull()};
-   std::unique_ptr<Vector<double>> w_clone{svars.primal_upper_bound_gap->cloneFull()};
+   std::unique_ptr<Vector<double>> t_clone{svars.slack_lower_bound_gap->clone_full()};
+   std::unique_ptr<Vector<double>> u_clone{svars.slack_upper_bound_gap->clone_full()};
+   std::unique_ptr<Vector<double>> v_clone{svars.primal_lower_bound_gap->clone_full()};
+   std::unique_ptr<Vector<double>> w_clone{svars.primal_upper_bound_gap->clone_full()};
 
    t_clone->componentMult(*svars.slack_lower_bound_gap_dual);
    t_clone->selectNonZeros(*svars.iclow);

@@ -479,7 +479,7 @@ void DistributedLinearSystem::LniTransMult(SimpleVector<double>& y, double alpha
 
 //  solver->Lsolve(LniTx); -> empty
    solver->Dsolve(LniTx);
-   y.axpy(alpha, LniTx);
+   y.add(alpha, LniTx);
 }
 
 

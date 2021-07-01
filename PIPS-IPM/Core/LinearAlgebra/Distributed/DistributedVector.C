@@ -72,16 +72,16 @@ Vector<T>* DistributedVector<T>::clone() const {
 }
 
 template<typename T>
-Vector<T>* DistributedVector<T>::cloneFull() const {
+Vector<T>* DistributedVector<T>::clone_full() const {
    assert(first || last);
-   std::unique_ptr<Vector<T>> clone_first{first ? first->cloneFull() : nullptr};
-   std::unique_ptr<Vector<T>> clone_last{last ? last->cloneFull() : nullptr};
+   std::unique_ptr<Vector<T>> clone_first{first ? first->clone_full() : nullptr};
+   std::unique_ptr<Vector<T>> clone_last{last ? last->clone_full() : nullptr};
    assert(clone_first || clone_last);
 
    auto* clone = new DistributedVector<T>(std::move(clone_first), std::move(clone_last), mpiComm);
 
    for (size_t it = 0; it < children.size(); it++) {
-      std::shared_ptr<DistributedVector<T>> clone_child{dynamic_cast<DistributedVector<T>*>(children[it]->cloneFull())};
+      std::shared_ptr<DistributedVector<T>> clone_child{dynamic_cast<DistributedVector<T>*>(children[it]->clone_full())};
       clone->AddChild(clone_child);
    }
 
@@ -1176,7 +1176,7 @@ void DistributedVector<T>::writefToStream(std::ostream& out, const char format[]
 
 /** this += alpha * x */
 template<typename T>
-void DistributedVector<T>::axpy(T alpha, const Vector<T>& x_) {
+void DistributedVector<T>::add(T alpha, const Vector<T>& x_) {
    const auto& x = dynamic_cast<const DistributedVector<T>&>(x_);
 
    if (alpha == 0.0)
@@ -1184,14 +1184,14 @@ void DistributedVector<T>::axpy(T alpha, const Vector<T>& x_) {
 
    if (first) {
       assert(x.first);
-      first->axpy(alpha, *x.first);
+      first->add(alpha, *x.first);
    }
    else
       assert(x.first == nullptr);
 
    if (last) {
       assert(x.last);
-      last->axpy(alpha, *x.last);
+      last->add(alpha, *x.last);
    }
    else
       assert(x.last == nullptr);
@@ -1199,19 +1199,19 @@ void DistributedVector<T>::axpy(T alpha, const Vector<T>& x_) {
    assert(x.children.size() == children.size());
 
    for (size_t it = 0; it < children.size(); ++it)
-      children[it]->axpy(alpha, *x.children[it]);
+      children[it]->add(alpha, *x.children[it]);
 }
 
 /** this += alpha * x * z */
 template<typename T>
-void DistributedVector<T>::axzpy(T alpha, const Vector<T>& x_, const Vector<T>& z_) {
+void DistributedVector<T>::add_product(T alpha, const Vector<T>& x_, const Vector<T>& z_) {
    const auto& x = dynamic_cast<const DistributedVector<T>&>(x_);
    const auto& z = dynamic_cast<const DistributedVector<T>&>(z_);
 
    if (first) {
       assert(x.first);
       assert(z.first);
-      first->axzpy(alpha, *x.first, *z.first);
+      first->add_product(alpha, *x.first, *z.first);
    }
    else {
       assert(x.first == nullptr);
@@ -1221,7 +1221,7 @@ void DistributedVector<T>::axzpy(T alpha, const Vector<T>& x_, const Vector<T>& 
    if (last) {
       assert(x.last);
       assert(z.last);
-      last->axzpy(alpha, *x.last, *z.last);
+      last->add_product(alpha, *x.last, *z.last);
    }
    else {
       assert(x.last == nullptr);
@@ -1232,19 +1232,19 @@ void DistributedVector<T>::axzpy(T alpha, const Vector<T>& x_, const Vector<T>& 
    assert(z.children.size() == children.size());
 
    for (size_t it = 0; it < children.size(); ++it)
-      children[it]->axzpy(alpha, *x.children[it], *z.children[it]);
+      children[it]->add_product(alpha, *x.children[it], *z.children[it]);
 }
 
 /** this += alpha * x / z */
 template<typename T>
-void DistributedVector<T>::axdzpy(T alpha, const Vector<T>& x_, const Vector<T>& z_) {
+void DistributedVector<T>::add_quotient(T alpha, const Vector<T>& x_, const Vector<T>& z_) {
    const auto& x = dynamic_cast<const DistributedVector<T>&>(x_);
    const auto& z = dynamic_cast<const DistributedVector<T>&>(z_);
 
    if (first) {
       assert(x.first);
       assert(z.first);
-      first->axdzpy(alpha, *x.first, *z.first);
+      first->add_quotient(alpha, *x.first, *z.first);
    }
    else {
       assert(x.first == nullptr);
@@ -1254,7 +1254,7 @@ void DistributedVector<T>::axdzpy(T alpha, const Vector<T>& x_, const Vector<T>&
    if (last) {
       assert(x.last);
       assert(z.last);
-      last->axdzpy(alpha, *x.last, *z.last);
+      last->add_quotient(alpha, *x.last, *z.last);
    }
    else {
       assert(x.last == nullptr);
@@ -1265,20 +1265,20 @@ void DistributedVector<T>::axdzpy(T alpha, const Vector<T>& x_, const Vector<T>&
    assert(z.children.size() == children.size());
 
    for (size_t it = 0; it < children.size(); it++)
-      children[it]->axdzpy(alpha, *x.children[it], *z.children[it]);
+      children[it]->add_quotient(alpha, *x.children[it], *z.children[it]);
 }
 
 
 template<typename T>
-void DistributedVector<T>::addConstant(T c) {
+void DistributedVector<T>::add_constant(T c) {
    if (first)
-      first->addConstant(c);
+      first->add_constant(c);
 
    if (last)
-      last->addConstant(c);
+      last->add_constant(c);
 
    for (size_t it = 0; it < children.size(); it++)
-      children[it]->addConstant(c);
+      children[it]->add_constant(c);
 }
 
 
@@ -1685,7 +1685,7 @@ void DistributedVector<T>::add_constant(T c, const Vector<T>& select_) {
 }
 
 template<typename T>
-void DistributedVector<T>::axdzpy(T alpha, const Vector<T>& x_, const Vector<T>& z_, const Vector<T>& select_) {
+void DistributedVector<T>::add_quotient(T alpha, const Vector<T>& x_, const Vector<T>& z_, const Vector<T>& select_) {
    const auto& select = dynamic_cast<const DistributedVector<T>&>(select_);
    const auto& x = dynamic_cast<const DistributedVector<T>&>(x_);
    const auto& z = dynamic_cast<const DistributedVector<T>&>(z_);
@@ -1695,7 +1695,7 @@ void DistributedVector<T>::axdzpy(T alpha, const Vector<T>& x_, const Vector<T>&
       assert(x.first);
       assert(z.first);
       assert(select.first);
-      first->axdzpy(alpha, *x.first, *z.first, *select.first);
+      first->add_quotient(alpha, *x.first, *z.first, *select.first);
    }
    else {
       assert(x.first == nullptr);
@@ -1707,7 +1707,7 @@ void DistributedVector<T>::axdzpy(T alpha, const Vector<T>& x_, const Vector<T>&
       assert(x.last);
       assert(z.last);
       assert(select.last);
-      last->axdzpy(alpha, *x.last, *z.last, *select.last);
+      last->add_quotient(alpha, *x.last, *z.last, *select.last);
    }
    else {
       assert(x.last == nullptr);
@@ -1720,7 +1720,7 @@ void DistributedVector<T>::axdzpy(T alpha, const Vector<T>& x_, const Vector<T>&
    assert(children.size() == z.children.size());
 
    for (size_t it = 0; it < children.size(); it++)
-      children[it]->axdzpy(alpha, *x.children[it], *z.children[it], *select.children[it]);
+      children[it]->add_quotient(alpha, *x.children[it], *z.children[it], *select.children[it]);
 }
 
 template<typename T>

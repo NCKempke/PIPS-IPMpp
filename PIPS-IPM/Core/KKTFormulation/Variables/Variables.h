@@ -74,14 +74,14 @@ public:
 
    Variables(const Variables& vars);
 
-   [[nodiscard]] virtual std::unique_ptr<Variables> cloneFull() const;
+   [[nodiscard]] virtual std::unique_ptr<Variables> clone_full() const;
    /** computes mu = (t'lambda +u'pi + v'gamma + w'phi)/(mclow+mcupp+nxlow+nxupp) */
    [[nodiscard]] double mu() const;
 
    double mustep_pd(const Variables& step, double alpha_primal, double alpha_dual) const;
 
-   void saxpy(const Variables& step, double alpha);
-   void saxpy_pd(const Variables& step, double alpha_primal, double alpha_dual);
+   void add(const Variables& step, double alpha);
+   void add(const Variables& step, double alpha_primal, double alpha_dual);
 
    void negate();
 

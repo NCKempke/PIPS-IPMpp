@@ -73,7 +73,7 @@ public:
 
    Vector<double>& scale() { return *sc; };
 
-   [[nodiscard]] virtual std::unique_ptr<Problem> cloneFull() const = 0;
+   [[nodiscard]] virtual std::unique_ptr<Problem> clone_full() const = 0;
    virtual void write_to_streamDense(std::ostream& out) const = 0;
 
    /** y = beta * y + alpha * Q * x */

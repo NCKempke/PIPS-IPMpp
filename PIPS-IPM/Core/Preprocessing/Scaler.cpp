@@ -87,7 +87,7 @@ void Scaler::unscale_residuals(Residuals& residuals) const {
 
 Vector<double>* Scaler::get_primal_unscaled(const Vector<double>& primal_solution) const {
    assert(scaling_factors_columns);
-   Vector<double>* unscaledprimal = primal_solution.cloneFull();
+   Vector<double>* unscaledprimal = primal_solution.clone_full();
 
    // unscale primal
    if (scaling_applied)
@@ -98,7 +98,7 @@ Vector<double>* Scaler::get_primal_unscaled(const Vector<double>& primal_solutio
 
 Vector<double>* Scaler::get_dual_eq_unscaled(const Vector<double>& dual_solution) const {
    assert(scaling_factors_equalities);
-   Vector<double>* unscaleddual = dual_solution.cloneFull();
+   Vector<double>* unscaleddual = dual_solution.clone_full();
 
    // unscale dual
    if (scaling_applied)
@@ -109,7 +109,7 @@ Vector<double>* Scaler::get_dual_eq_unscaled(const Vector<double>& dual_solution
 
 Vector<double>* Scaler::get_dual_ineq_unscaled(const Vector<double>& dual_solution) const {
    assert(scaling_factors_inequalities);
-   Vector<double>* unscaleddual = dual_solution.cloneFull();
+   Vector<double>* unscaleddual = dual_solution.clone_full();
 
    // unscale dual
    if (scaling_applied)
@@ -120,7 +120,7 @@ Vector<double>* Scaler::get_dual_ineq_unscaled(const Vector<double>& dual_soluti
 
 Vector<double>* Scaler::get_dual_var_bounds_upp_unscaled(const Vector<double>& dual_solution) const {
    assert(scaling_factors_columns);
-   Vector<double>* unscaleddual = dual_solution.cloneFull();
+   Vector<double>* unscaleddual = dual_solution.clone_full();
 
    // unscale primal
    if (scaling_applied)
@@ -131,7 +131,7 @@ Vector<double>* Scaler::get_dual_var_bounds_upp_unscaled(const Vector<double>& d
 
 Vector<double>* Scaler::get_dual_var_bounds_low_unscaled(const Vector<double>& dual_solution) const {
    assert(scaling_factors_columns);
-   Vector<double>* unscaleddual = dual_solution.cloneFull();
+   Vector<double>* unscaleddual = dual_solution.clone_full();
 
    // unscale primal
    if (scaling_applied)

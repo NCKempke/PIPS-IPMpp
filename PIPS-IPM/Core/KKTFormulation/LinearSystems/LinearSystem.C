@@ -268,10 +268,10 @@ void LinearSystem::computeDiagonals(Vector<double>& t, Vector<double>& lambda, V
    }
    if (nxupp + nxlow > 0) {
       if (nxlow > 0) {
-         primal_diagonal->axdzpy(1.0, gamma, v, *ixlow);
+         primal_diagonal->add_quotient(1.0, gamma, v, *ixlow);
       }
       if (nxupp > 0)
-         primal_diagonal->axdzpy(1.0, phi, w, *ixupp);
+         primal_diagonal->add_quotient(1.0, phi, w, *ixupp);
    }
    assert(primal_diagonal->all_of([](const double& d) {
       return d >= 0;
@@ -280,9 +280,9 @@ void LinearSystem::computeDiagonals(Vector<double>& t, Vector<double>& lambda, V
    nomegaInv->setToZero();
    /*** omega = Lambda/T + Pi/U ***/
    if (mclow > 0)
-      nomegaInv->axdzpy(1.0, lambda, t, *iclow);
+      nomegaInv->add_quotient(1.0, lambda, t, *iclow);
    if (mcupp > 0)
-      nomegaInv->axdzpy(1.0, pi, u, *icupp);
+      nomegaInv->add_quotient(1.0, pi, u, *icupp);
 
    assert(nomegaInv->all_of([](const double& d) {
       return d >= 0;
@@ -337,9 +337,9 @@ void LinearSystem::solve(const Variables& variables, const Residuals& residuals,
       gamma_by_v.divideSome(*variables.primal_lower_bound_gap, *ixlow);
 
       /* rx = rQ + Gamma/V rv */
-      step.primals->axzpy(1.0, gamma_by_v, *residuals.rv);
+      step.primals->add_product(1.0, gamma_by_v, *residuals.rv);
       /* rx = rQ + Gamma/V rv + rGamma/V */
-      step.primals->axdzpy(1.0, *residuals.rgamma, *variables.primal_lower_bound_gap, *ixlow);
+      step.primals->add_quotient(1.0, *residuals.rgamma, *variables.primal_lower_bound_gap, *ixlow);
    }
 
    if (nxupp > 0) {
@@ -348,9 +348,9 @@ void LinearSystem::solve(const Variables& variables, const Residuals& residuals,
       phi_by_w.divideSome(*variables.primal_upper_bound_gap, *ixupp);
 
       /* rx = rQ + Gamma/V * rv + rGamma/V + Phi/W * rw */
-      step.primals->axzpy(1.0, phi_by_w, *residuals.rw);
+      step.primals->add_product(1.0, phi_by_w, *residuals.rw);
       /* rx = rQ + Gamma/V * rv + rGamma/V + Phi/W * rw - rphi/W */
-      step.primals->axdzpy(-1.0, *residuals.rphi, *variables.primal_upper_bound_gap, *ixupp);
+      step.primals->add_quotient(-1.0, *residuals.rphi, *variables.primal_upper_bound_gap, *ixupp);
    }
 
    // start by partially computing step.s
@@ -363,9 +363,9 @@ void LinearSystem::solve(const Variables& variables, const Residuals& residuals,
       lambda_by_t.divideSome(*variables.slack_lower_bound_gap, *iclow);
 
       /* step.s = rz + Lambda/T * rt */
-      step.slacks->axzpy(1.0, lambda_by_t, *residuals.rt);
+      step.slacks->add_product(1.0, lambda_by_t, *residuals.rt);
       /* step.s = rz + Lambda/T * rt + rlambda/T */
-      step.slacks->axdzpy(1.0, *residuals.rlambda, *variables.slack_lower_bound_gap, *iclow);
+      step.slacks->add_quotient(1.0, *residuals.rlambda, *variables.slack_lower_bound_gap, *iclow);
    }
 
    if (mcupp > 0) {
@@ -374,9 +374,9 @@ void LinearSystem::solve(const Variables& variables, const Residuals& residuals,
       pi_by_u.divideSome(*variables.slack_upper_bound_gap, *icupp);
 
       /* step.s = rz + Lambda/T * rt + rlambda/T + Pi/U *ru */
-      step.slacks->axzpy(1.0, pi_by_u, *residuals.ru);
+      step.slacks->add_product(1.0, pi_by_u, *residuals.ru);
       /* step.s = rz + Lambda/T * rt + rlambda/T + Pi/U *ru - rpi/U */
-      step.slacks->axdzpy(-1.0, *residuals.rpi, *variables.slack_upper_bound_gap, *icupp);
+      step.slacks->add_quotient(-1.0, *residuals.rpi, *variables.slack_upper_bound_gap, *icupp);
    }
 
    /*** ry = rA ***/
@@ -391,12 +391,12 @@ void LinearSystem::solve(const Variables& variables, const Residuals& residuals,
    if (mclow > 0) {
       /* Dt = Ds - rt */
       step.slack_lower_bound_gap->copyFrom(*step.slacks);
-      step.slack_lower_bound_gap->axpy(-1.0, *residuals.rt);
+      step.slack_lower_bound_gap->add(-1.0, *residuals.rt);
       step.slack_lower_bound_gap->selectNonZeros(*iclow);
 
       /* Dlambda = T^-1 (rlambda - Lambda * Dt ) */
       step.slack_lower_bound_gap_dual->copyFrom(*residuals.rlambda);
-      step.slack_lower_bound_gap_dual->axzpy(-1.0, *variables.slack_lower_bound_gap_dual, *step.slack_lower_bound_gap);
+      step.slack_lower_bound_gap_dual->add_product(-1.0, *variables.slack_lower_bound_gap_dual, *step.slack_lower_bound_gap);
       step.slack_lower_bound_gap_dual->divideSome(*variables.slack_lower_bound_gap, *iclow);
       //!
       step.slack_lower_bound_gap_dual->selectNonZeros(*iclow);
@@ -405,12 +405,12 @@ void LinearSystem::solve(const Variables& variables, const Residuals& residuals,
    if (mcupp > 0) {
       /* Du = ru - Ds */
       step.slack_upper_bound_gap->copyFrom(*residuals.ru);
-      step.slack_upper_bound_gap->axpy(-1.0, *step.slacks);
+      step.slack_upper_bound_gap->add(-1.0, *step.slacks);
       step.slack_upper_bound_gap->selectNonZeros(*icupp);
 
       /* Dpi = U^-1 ( rpi - Pi * Du ) */
       step.slack_upper_bound_gap_dual->copyFrom(*residuals.rpi);
-      step.slack_upper_bound_gap_dual->axzpy(-1.0, *variables.slack_upper_bound_gap_dual, *step.slack_upper_bound_gap);
+      step.slack_upper_bound_gap_dual->add_product(-1.0, *variables.slack_upper_bound_gap_dual, *step.slack_upper_bound_gap);
       step.slack_upper_bound_gap_dual->divideSome(*variables.slack_upper_bound_gap, *icupp);
       //!
       step.slack_upper_bound_gap_dual->selectNonZeros(*icupp);
@@ -419,12 +419,12 @@ void LinearSystem::solve(const Variables& variables, const Residuals& residuals,
    if (nxlow > 0) {
       /* Dv = Dx - rv */
       step.primal_lower_bound_gap->copyFrom(*step.primals);
-      step.primal_lower_bound_gap->axpy(-1.0, *residuals.rv);
+      step.primal_lower_bound_gap->add(-1.0, *residuals.rv);
       step.primal_lower_bound_gap->selectNonZeros(*ixlow);
 
       /* Dgamma = V^-1 ( rgamma - Gamma * Dv ) */
       step.primal_lower_bound_gap_dual->copyFrom(*residuals.rgamma);
-      step.primal_lower_bound_gap_dual->axzpy(-1.0, *variables.primal_lower_bound_gap_dual, *step.primal_lower_bound_gap);
+      step.primal_lower_bound_gap_dual->add_product(-1.0, *variables.primal_lower_bound_gap_dual, *step.primal_lower_bound_gap);
       step.primal_lower_bound_gap_dual->divideSome(*variables.primal_lower_bound_gap, *ixlow);
       //!
       step.primal_lower_bound_gap_dual->selectNonZeros(*ixlow);
@@ -433,12 +433,12 @@ void LinearSystem::solve(const Variables& variables, const Residuals& residuals,
    if (nxupp > 0) {
       /* Dw = rw - Dx */
       step.primal_upper_bound_gap->copyFrom(*residuals.rw);
-      step.primal_upper_bound_gap->axpy(-1.0, *step.primals);
+      step.primal_upper_bound_gap->add(-1.0, *step.primals);
       step.primal_upper_bound_gap->selectNonZeros(*ixupp);
 
       /* Dphi = W^-1 ( rphi - Phi * Dw ) */
       step.primal_upper_bound_gap_dual->copyFrom(*residuals.rphi);
-      step.primal_upper_bound_gap_dual->axzpy(-1.0, *variables.primal_upper_bound_gap_dual, *step.primal_upper_bound_gap);
+      step.primal_upper_bound_gap_dual->add_product(-1.0, *variables.primal_upper_bound_gap_dual, *step.primal_upper_bound_gap);
       step.primal_upper_bound_gap_dual->divideSome(*variables.primal_upper_bound_gap, *ixupp);
       //!
       step.primal_upper_bound_gap_dual->selectNonZeros(*ixupp);
@@ -453,11 +453,11 @@ void LinearSystem::solveXYZS(Vector<double>& stepx, Vector<double>& stepy, Vecto
    /* rx = rQ + Gamma/V * rv + rGamma/V + Phi/W * rw - rphi/W */
    /* ry = rA */
    /* rz = rC + Omega^-1 ( rz + Lambda/T * rt + rlambda/T + Pi/U *ru - rpi/U ) */
-   stepz.axzpy(-1.0, *nomegaInv, steps);
+   stepz.add_product(-1.0, *nomegaInv, steps);
 
    std::unique_ptr<Vector<double>> residual;
    if (xyzs_solve_print_residuals) {
-      residual.reset(rhs->cloneFull());
+      residual.reset(rhs->clone_full());
       joinRHS(*residual, stepx, stepy, stepz);
 
       const double xinf = stepx.inf_norm();
@@ -542,7 +542,7 @@ void LinearSystem::solveXYZS(Vector<double>& stepx, Vector<double>& stepy, Vecto
    stepz.negate();
 
    /* Ds = Omega^-1 (rz + Lambda/T * rt + rlambda/T + Pi/U *ru - rpi/U - Dz ) */
-   steps.axpy(-1.0, stepz);
+   steps.add(-1.0, stepz);
    steps.componentMult(*nomegaInv);
    steps.negate();
 }
@@ -634,9 +634,9 @@ void LinearSystem::solveCompressedBiCGStab(const std::function<void(double, Vect
                break;
 
             //-------- p = r + beta*(p - omega*v) --------
-            p.axpy(-omega, v);
+            p.add(-omega, v);
             p.scale(beta);
-            p.axpy(1.0, r);
+            p.add(1.0, r);
          }
 
          //precond: ph = \tilde{K}^{-1} p
@@ -659,9 +659,9 @@ void LinearSystem::solveCompressedBiCGStab(const std::function<void(double, Vect
             nstags = 0;
 
          // x = x + alpha * dx ( x = x + alpha * ph)
-         x.axpy(alpha, dx);
+         x.add(alpha, dx);
          // r = r - alpha * v ( s = r - alpha * v)
-         r.axpy(-alpha, v);
+         r.add(-alpha, v);
 
          //check for convergence
          normr = r.two_norm();
@@ -703,9 +703,9 @@ void LinearSystem::solveCompressedBiCGStab(const std::function<void(double, Vect
             nstags = 0;
 
          // x=x+omega*dx  (x=x+omega*sh)
-         x.axpy(omega, dx);
+         x.add(omega, dx);
          // r = r-omega*t (r=s-omega*sh)
-         r.axpy(-omega, t);
+         r.add(-omega, t);
          //check for convergence
          normr = r.two_norm();
 
@@ -794,9 +794,9 @@ LinearSystem::system_mult(double beta, Vector<double>& res, double alpha, const 
 
    /* resx = beta resx + alpha Q solx + alpha dd solx + alpha primal_regularization_diagonal solx */
    problem.hessian_multiplication(beta, *resx, alpha, solx);
-   resx->axzpy(alpha, *primal_diagonal, solx);
+   resx->add_product(alpha, *primal_diagonal, solx);
    if (use_regularized_system && primal_regularization_diagonal)
-      resx->axzpy(alpha, *primal_regularization_diagonal, solx);
+      resx->add_product(alpha, *primal_regularization_diagonal, solx);
 
    /* resx = beta resx + alpha Q solx + alpha dd solx + alpha AT soly + alpha CT solz */
    problem.ATransmult(1.0, *resx, alpha, soly);
@@ -805,13 +805,13 @@ LinearSystem::system_mult(double beta, Vector<double>& res, double alpha, const 
    /* resy = beta resy + alpha A solx */
    problem.Amult(beta, *resy, alpha, solx);
    if (use_regularized_system && dual_equality_regularization_diagonal)
-      resy->axzpy(alpha, *dual_equality_regularization_diagonal, soly);
+      resy->add_product(alpha, *dual_equality_regularization_diagonal, soly);
 
    /* resz = beta resz + alpha C solx + alpha nomegaInv solz */
    problem.Cmult(beta, *resz, alpha, solx);
-   resz->axzpy(alpha, *nomegaInv, solz);
+   resz->add_product(alpha, *nomegaInv, solz);
    if (use_regularized_system && dual_inequality_regularization_diagonal)
-      resz->axzpy(alpha, *dual_inequality_regularization_diagonal, solz);
+      resz->add_product(alpha, *dual_inequality_regularization_diagonal, solz);
 
    LinearSystem::joinRHS(res, *resx, *resy, *resz);
 }
@@ -821,7 +821,7 @@ double
 LinearSystem::matXYZinfnorm(const Problem& problem, Vector<double>& solx, Vector<double>& soly, Vector<double>& solz, bool use_regularized_system) {
    solx.copyFromAbs(*primal_diagonal);
    if (use_regularized_system && primal_regularization_diagonal)
-      solx.axpy(1.0, *primal_regularization_diagonal);
+      solx.add(1.0, *primal_regularization_diagonal);
 
    problem.equality_jacobian->addColSums(solx);
    problem.inequality_jacobian->addColSums(solx);
@@ -829,7 +829,7 @@ LinearSystem::matXYZinfnorm(const Problem& problem, Vector<double>& solx, Vector
 
    soly.setToZero();
    if (use_regularized_system && dual_equality_regularization_diagonal)
-      soly.axpy(1.0, *dual_equality_regularization_diagonal);
+      soly.add(1.0, *dual_equality_regularization_diagonal);
    soly.negate();
 
    problem.equality_jacobian->addRowSums(soly);
@@ -837,7 +837,7 @@ LinearSystem::matXYZinfnorm(const Problem& problem, Vector<double>& solx, Vector
 
    solz.copyFromAbs(*nomegaInv);
    if (use_regularized_system && dual_inequality_regularization_diagonal) {
-      solz.axpy(1.0, *dual_inequality_regularization_diagonal);
+      solz.add(1.0, *dual_inequality_regularization_diagonal);
    }
    solz.negate();
 
@@ -885,7 +885,7 @@ void LinearSystem::solveCompressedIterRefin(const std::function<void(Vector<doub
       this->solveCompressed(residual);
 
       /* x = x + dx */
-      solution.axpy(1.0, residual);
+      solution.add(1.0, residual);
 
       residual.copyFrom(right_hand_side);
 

@@ -117,7 +117,7 @@ void PrimalInteriorPointMethod::compute_corrector_step(const Problem& problem, V
    std::tie(alpha_candidate, weight_candidate) = calculate_alpha_weight_candidate(current_iterate, step, *corrector_step, this->primal_step_length);
    assert(weight_candidate >= 0. && weight_candidate <= 1.);
 
-   step.saxpy(*corrector_step, weight_candidate);
+   step.add(*corrector_step, weight_candidate);
 
    // prepare for Gondzio corrector loop: zero out the corrector_residuals structure:
    corrector_residuals->clear_linear_residuals();
@@ -143,10 +143,9 @@ void PrimalInteriorPointMethod::compute_corrector_step(const Problem& problem, V
    const double step_slacks_norm = step.slacks->inf_norm();
    const double step_norm = step.inf_norm();
    if (PIPS_MPIgetRank() == 0) {
-      auto[primal_step_length, dual_step_length] = this->get_step_lengths();
       std::cout << "Direction has norm: " << step_norm << ", ";
       std::cout << "including primals (" << step_primals_norm << ") and slacks (" << step_slacks_norm << ")\n";
-      std::cout << "Step length: " << primal_step_length << "\n";
+      std::cout << "Step length: " << this->primal_step_length << "\n";
    }
 }
 
@@ -167,11 +166,11 @@ double PrimalDualInteriorPointMethod::compute_centering_parameter(const Variable
 }
 
 void PrimalInteriorPointMethod::take_step(Variables& iterate, const Variables& step, double step_length) {
-   iterate.saxpy(step, this->primal_step_length*step_length);
+   iterate.add(step, this->primal_step_length * step_length);
 }
 
 void PrimalDualInteriorPointMethod::take_step(Variables& iterate, const Variables& step, double step_length) {
-   iterate.saxpy_pd(step, this->primal_step_length, this->dual_step_length*step_length);
+   iterate.add(step, this->primal_step_length, this->dual_step_length * step_length);
 }
 
 void PrimalDualInteriorPointMethod::compute_corrector_step(const Problem& problem, Variables& current_iterate, Residuals& residuals, Variables& step,
@@ -198,7 +197,7 @@ void PrimalDualInteriorPointMethod::compute_corrector_step(const Problem& proble
    assert(weight_primal_candidate >= 0. && weight_primal_candidate <= 1.);
    assert(weight_dual_candidate >= 0. && weight_dual_candidate <= 1.);
 
-   step.saxpy_pd(*corrector_step, weight_primal_candidate, weight_dual_candidate);
+   step.add(*corrector_step, weight_primal_candidate, weight_dual_candidate);
 
    // prepare for Gondzio corrector loop: zero out the corrector_residuals structure:
    corrector_residuals->clear_linear_residuals();
@@ -256,7 +255,7 @@ void PrimalDualInteriorPointMethod::gondzio_correction_loop(Variables& iterate, 
                this->alpha_dual_candidate);
 
       // add a step of this length to corrector_step
-      corrector_step->saxpy_pd(step, alpha_p_target, alpha_dual_target);
+      corrector_step->add(step, alpha_p_target, alpha_dual_target);
       // corrector_step is now x_k + alpha_target * delta_p (a trial point)
 
       /* compute corrector step */
@@ -281,7 +280,7 @@ void PrimalDualInteriorPointMethod::gondzio_correction_loop(Variables& iterate, 
       if (PIPSisEQ(alpha_primal_enhanced, 1.) && PIPSisEQ(alpha_dual_enhanced, 1.)) {
          PIPSdebugMessage("both 1. \n");
 
-         step.saxpy_pd(*corrector_step, weight_primal_candidate, weight_dual_candidate);
+         step.add(*corrector_step, weight_primal_candidate, weight_dual_candidate);
 
          this->alpha_primal_candidate = alpha_primal_enhanced;
          this->alpha_dual_candidate = alpha_dual_enhanced;
@@ -301,7 +300,7 @@ void PrimalDualInteriorPointMethod::gondzio_correction_loop(Variables& iterate, 
          // if enhanced step length is significantly better than the
          // current alpha, make the enhanced step official, but maybe
          // keep correcting
-         step.saxpy_pd(*corrector_step, weight_primal_candidate, weight_dual_candidate);
+         step.add(*corrector_step, weight_primal_candidate, weight_dual_candidate);
 
          this->alpha_primal_candidate = alpha_primal_enhanced;
          this->alpha_dual_candidate = alpha_dual_enhanced;
@@ -314,7 +313,7 @@ void PrimalDualInteriorPointMethod::gondzio_correction_loop(Variables& iterate, 
       else if (alpha_primal_enhanced >= (1. + acceptance_tolerance) * this->alpha_primal_candidate) {
          PIPSdebugMessage("primal better \n");
 
-         step.saxpy_pd(*corrector_step, weight_primal_candidate, 0.);
+         step.add(*corrector_step, weight_primal_candidate, 0.);
 
          this->alpha_primal_candidate = alpha_primal_enhanced;
 
@@ -326,7 +325,7 @@ void PrimalDualInteriorPointMethod::gondzio_correction_loop(Variables& iterate, 
       else if (alpha_dual_enhanced >= (1. + acceptance_tolerance) * this->alpha_dual_candidate) {
          PIPSdebugMessage("dual better \n");
 
-         step.saxpy_pd(*corrector_step, 0., weight_dual_candidate);
+         step.add(*corrector_step, 0., weight_dual_candidate);
 
          this->alpha_dual_candidate = alpha_dual_enhanced;
 
@@ -375,7 +374,7 @@ void PrimalInteriorPointMethod::gondzio_correction_loop(Variables& iterate, Resi
       double alpha_target = std::min(step_factor1 * this->alpha_candidate + step_factor0, 1.);
 
       // add a step of this length to corrector_step
-      corrector_step->saxpy(step, alpha_target);
+      corrector_step->add(step, alpha_target);
       // corrector_step (a trial point) is now x_k + alpha_target * delta_p
 
       /* compute corrector step */
@@ -398,7 +397,7 @@ void PrimalInteriorPointMethod::gondzio_correction_loop(Variables& iterate, Resi
       // if the enhanced step length is actually 1, make it official
       // and stop correcting
       if (PIPSisEQ(alpha_enhanced, 1.)) {
-         step.saxpy(*corrector_step, weight_candidate);
+         step.add(*corrector_step, weight_candidate);
          this->alpha_candidate = alpha_enhanced;
 
          if (small_corr)
@@ -413,7 +412,7 @@ void PrimalInteriorPointMethod::gondzio_correction_loop(Variables& iterate, Resi
          // if enhanced step length is significantly better than the
          // current alpha, make the enhanced step official, but maybe
          // keep correcting
-         step.saxpy(*corrector_step, weight_candidate);
+         step.add(*corrector_step, weight_candidate);
          this->alpha_candidate = alpha_enhanced;
 
          if (small_corr)
@@ -472,7 +471,7 @@ InteriorPointMethod::calculate_alpha_weight_candidate(const Variables& iterate, 
       assert(weight_curr > 0. && weight_curr <= 1.);
 
       temp_step->copy(predictor_step);
-      temp_step->saxpy(corrector_step, weight_curr);
+      temp_step->add(corrector_step, weight_curr);
 
       const double alpha_curr = iterate.stepbound(*temp_step);
       assert(alpha_curr > 0. && alpha_curr <= 1.);
@@ -503,7 +502,7 @@ InteriorPointMethod::calculate_alpha_pd_weight_candidate(const Variables& iterat
       assert(weight_curr > 0. && weight_curr <= 1.);
 
       temp_step->copy(predictor_step);
-      temp_step->saxpy(corrector_step, weight_curr);
+      temp_step->add(corrector_step, weight_curr);
 
       auto[alpha_primal_curr, alpha_dual_curr] = iterate.stepbound_pd(*temp_step);
       assert(alpha_primal_curr > 0. && alpha_primal_curr <= 1.);
@@ -576,12 +575,12 @@ bool PrimalDualInteriorPointMethod::is_poor_step(bool& pure_centering_step, bool
 
 void PrimalInteriorPointMethod::compute_probing_step(Variables& probing_step, const Variables& iterate, const Variables& step) const {
    probing_step.copy(iterate);
-   probing_step.saxpy(step, this->primal_step_length);
+   probing_step.add(step, this->primal_step_length);
 }
 
 void PrimalDualInteriorPointMethod::compute_probing_step(Variables& probing_step, const Variables& iterate, const Variables& step) const {
    probing_step.copy(iterate);
-   probing_step.saxpy_pd(step, this->primal_step_length, this->dual_step_length);
+   probing_step.add(step, this->primal_step_length, this->dual_step_length);
 }
 
 /* when numerical troubles occurred we only allow controlled steps that worsen the residuals and mu by at most a factor of 10 */

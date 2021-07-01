@@ -41,8 +41,8 @@ public:
    SparseMatrix(int rows, int cols, int nnz, int krowM[], int jcolM[], double M[], int deleteElts = 0);
    explicit SparseMatrix(std::unique_ptr<SparseStorage> m_storage);
 
-   using GeneralMatrix::cloneFull;
-   std::unique_ptr<GeneralMatrix> cloneFull(bool switchToDynamicStorage) const override;
+   using GeneralMatrix::clone_full;
+   std::unique_ptr<GeneralMatrix> clone_full(bool switchToDynamicStorage) const override;
 
    using GeneralMatrix::cloneEmptyRows;
    std::unique_ptr<GeneralMatrix> cloneEmptyRows(bool switchToDynamicStorage) const override;

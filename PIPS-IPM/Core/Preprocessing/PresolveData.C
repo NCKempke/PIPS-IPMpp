@@ -72,7 +72,7 @@ PresolveData::PresolveData(const DistributedProblem& sorigprob, StochPostsolver*
    absmax_col->setToZero();
    objective_vec_chgs->setToZero();
 
-   presProb = sorigprob.cloneFull(true).release();
+   presProb = sorigprob.clone_full(true).release();
 
    const int n_linking_vars = (nnzs_col->first) ? nnzs_col->first->length() : 0;
 
@@ -531,10 +531,10 @@ void PresolveData::allreduceLinkingVarBounds() {
       SimpleVector<double>& ixupp_new_vec = getSimpleVecFromColStochVec(*presProb->primal_upper_bound_indicators, -1);
 
       /* copy old values for later compairson */
-      std::unique_ptr<SimpleVector<double>> xlow_old_vec{dynamic_cast<SimpleVector<double>*>(xlow_new_vec.cloneFull())};
-      std::unique_ptr<SimpleVector<double>> xupp_old_vec{dynamic_cast<SimpleVector<double>*>(xupp_new_vec.cloneFull())};
-      std::unique_ptr<SimpleVector<double>> ixlow_old_vec{dynamic_cast<SimpleVector<double>*>(ixlow_new_vec.cloneFull())};
-      std::unique_ptr<SimpleVector<double>> ixupp_old_vec{dynamic_cast<SimpleVector<double>*>(ixupp_new_vec.cloneFull())};
+      std::unique_ptr<SimpleVector<double>> xlow_old_vec{dynamic_cast<SimpleVector<double>*>(xlow_new_vec.clone_full())};
+      std::unique_ptr<SimpleVector<double>> xupp_old_vec{dynamic_cast<SimpleVector<double>*>(xupp_new_vec.clone_full())};
+      std::unique_ptr<SimpleVector<double>> ixlow_old_vec{dynamic_cast<SimpleVector<double>*>(ixlow_new_vec.clone_full())};
+      std::unique_ptr<SimpleVector<double>> ixupp_old_vec{dynamic_cast<SimpleVector<double>*>(ixupp_new_vec.clone_full())};
 
       PIPS_MPImaxArrayInPlace(xlow_new_vec.elements(), xlow_new_vec.length());
       PIPS_MPImaxArrayInPlace(ixlow_new_vec.elements(), ixlow_new_vec.length());
@@ -582,10 +582,10 @@ void PresolveData::allreduceAndApplyLinkingRowActivities() {
    if (distributed)
       PIPS_MPIsumArrayInPlace(array_act_unbounded_chgs);
 
-   dynamic_cast<SimpleVector<int>&>(*actmin_eq_ubndd->last).axpy(1.0, *actmin_eq_ubndd_chgs);
-   dynamic_cast<SimpleVector<int>&>(*actmax_eq_ubndd->last).axpy(1.0, *actmax_eq_ubndd_chgs);
-   dynamic_cast<SimpleVector<int>&>(*actmin_ineq_ubndd->last).axpy(1.0, *actmin_ineq_ubndd_chgs);
-   dynamic_cast<SimpleVector<int>&>(*actmax_ineq_ubndd->last).axpy(1.0, *actmax_ineq_ubndd_chgs);
+   dynamic_cast<SimpleVector<int>&>(*actmin_eq_ubndd->last).add(1.0, *actmin_eq_ubndd_chgs);
+   dynamic_cast<SimpleVector<int>&>(*actmax_eq_ubndd->last).add(1.0, *actmax_eq_ubndd_chgs);
+   dynamic_cast<SimpleVector<int>&>(*actmin_ineq_ubndd->last).add(1.0, *actmin_ineq_ubndd_chgs);
+   dynamic_cast<SimpleVector<int>&>(*actmax_ineq_ubndd->last).add(1.0, *actmax_ineq_ubndd_chgs);
 
    /* equality system */
    for (int row = 0; row < actmin_eq_ubndd->last->length(); ++row) {
@@ -620,10 +620,10 @@ void PresolveData::allreduceAndApplyLinkingRowActivities() {
    if (distributed)
       PIPS_MPIsumArrayInPlace(array_act_chgs);
 
-   dynamic_cast<SimpleVector<double>&>(*actmin_eq_part->last).axpy(1.0, *actmin_eq_chgs);
-   dynamic_cast<SimpleVector<double>&>(*actmax_eq_part->last).axpy(1.0, *actmax_eq_chgs);
-   dynamic_cast<SimpleVector<double>&>(*actmin_ineq_part->last).axpy(1.0, *actmin_ineq_chgs);
-   dynamic_cast<SimpleVector<double>&>(*actmax_ineq_part->last).axpy(1.0, *actmax_ineq_chgs);
+   dynamic_cast<SimpleVector<double>&>(*actmin_eq_part->last).add(1.0, *actmin_eq_chgs);
+   dynamic_cast<SimpleVector<double>&>(*actmax_eq_part->last).add(1.0, *actmax_eq_chgs);
+   dynamic_cast<SimpleVector<double>&>(*actmin_ineq_part->last).add(1.0, *actmin_ineq_chgs);
+   dynamic_cast<SimpleVector<double>&>(*actmax_ineq_part->last).add(1.0, *actmax_ineq_chgs);
 
    actmin_eq_chgs->setToZero();
    actmax_eq_chgs->setToZero();
@@ -668,9 +668,9 @@ void PresolveData::allreduceAndApplyNnzChanges() {
       PIPS_MPIsumArrayInPlace(array_nnz_chgs);
 
    /* update local nnzCounters */
-   nnzs_col->first->axpy(1, *nnzs_col_chgs);
-   nnzs_row_A->last->axpy(1, *nnzs_row_A_chgs);
-   nnzs_row_C->last->axpy(1, *nnzs_row_C_chgs);
+   nnzs_col->first->add(1, *nnzs_col_chgs);
+   nnzs_row_A->last->add(1, *nnzs_row_A_chgs);
+   nnzs_row_C->last->add(1, *nnzs_row_C_chgs);
 
    // todo : this can be done more efficiently, e.g. while substracting
    // todo : this has still flaws - new singleton rows in B0 and D0 are not communicated properly for some reason - might happen else where
@@ -716,9 +716,9 @@ void PresolveData::allreduceAndApplyBoundChanges() {
    if (distributed)
       PIPS_MPIsumArrayInPlace(array_bound_chgs);
 
-   dynamic_cast<SimpleVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*presProb->equality_rhs).last).axpy(1.0, *bound_chgs_A);
-   dynamic_cast<SimpleVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*presProb->inequality_lower_bounds).last).axpy(1.0, *bound_chgs_C);
-   dynamic_cast<SimpleVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*presProb->inequality_upper_bounds).last).axpy(1.0, *bound_chgs_C);
+   dynamic_cast<SimpleVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*presProb->equality_rhs).last).add(1.0, *bound_chgs_A);
+   dynamic_cast<SimpleVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*presProb->inequality_lower_bounds).last).add(1.0, *bound_chgs_C);
+   dynamic_cast<SimpleVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*presProb->inequality_upper_bounds).last).add(1.0, *bound_chgs_C);
 
    bound_chgs_A->setToZero();
    bound_chgs_C->setToZero();
@@ -735,7 +735,7 @@ void PresolveData::allreduceAndApplyObjVecChanges() {
    if (distributed)
       PIPS_MPIsumArrayInPlace(objective_vec_chgs->elements(), objective_vec_chgs->length());
 
-   dynamic_cast<SimpleVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*presProb->objective_gradient).first).axpy(1.0, *objective_vec_chgs);
+   dynamic_cast<SimpleVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*presProb->objective_gradient).first).add(1.0, *objective_vec_chgs);
 
    objective_vec_chgs->setToZero();
    outdated_obj_vector = false;
@@ -760,7 +760,7 @@ void PresolveData::initNnzCounter(DistributedVector<int>& nnzs_row_A, Distribute
    A.getNnzPerCol(nnzs_col);
    C.getNnzPerCol(*colClone);
 
-   nnzs_col.axpy(1, *colClone);
+   nnzs_col.add(1, *colClone);
 }
 
 // todo : for columns also find row - then later no lookup is required
@@ -2695,9 +2695,9 @@ bool PresolveData::verifyNnzcounters() const {
    assert(!outdated_nnzs);
 
    bool nnzCorrect = true;
-   std::unique_ptr<DistributedVector<int> > nnzs_col_new(dynamic_cast<DistributedVector<int>*>(nnzs_col->cloneFull()));
-   std::unique_ptr<DistributedVector<int> > nnzs_row_A_new(dynamic_cast<DistributedVector<int>*>(nnzs_row_A->cloneFull()));
-   std::unique_ptr<DistributedVector<int> > nnzs_row_C_new(dynamic_cast<DistributedVector<int>*>(nnzs_row_C->cloneFull()));
+   std::unique_ptr<DistributedVector<int> > nnzs_col_new(dynamic_cast<DistributedVector<int>*>(nnzs_col->clone_full()));
+   std::unique_ptr<DistributedVector<int> > nnzs_row_A_new(dynamic_cast<DistributedVector<int>*>(nnzs_row_A->clone_full()));
+   std::unique_ptr<DistributedVector<int> > nnzs_row_C_new(dynamic_cast<DistributedVector<int>*>(nnzs_row_C->clone_full()));
 
    nnzs_col_new->setToZero();
    nnzs_row_A_new->setToZero();
@@ -3701,8 +3701,8 @@ void PresolveData::printVarBoundStatistics(std::ostream& out) const {
    const auto& ixupp = dynamic_cast<const DistributedVector<double>&>(*presProb->primal_upper_bound_indicators);
    const auto& ixlow = dynamic_cast<const DistributedVector<double>&>(*presProb->primal_lower_bound_indicators);
 
-   std::unique_ptr<DistributedVector<double>> xlow_def (dynamic_cast<DistributedVector<double>*>(xlow.cloneFull()));
-   std::unique_ptr<DistributedVector<double>> xupp_def (dynamic_cast<DistributedVector<double>*>(xupp.cloneFull()));
+   std::unique_ptr<DistributedVector<double>> xlow_def (dynamic_cast<DistributedVector<double>*>(xlow.clone_full()));
+   std::unique_ptr<DistributedVector<double>> xupp_def (dynamic_cast<DistributedVector<double>*>(xupp.clone_full()));
 
    xlow_def->componentMult(ixlow);
    xupp_def->componentMult(ixupp);

@@ -46,11 +46,11 @@ void FilterLineSearch::compute_acceptable_iterate(Problem& problem, Variables& c
 //      this->number_iterations++;
 //      if (verbose) std::cout << "Line search current step length: " << step_length << "\n";
 //      // compute the trial iterate
-//      std::unique_ptr<Variables> trial_iterate = current_iterate.cloneFull();
+//      std::unique_ptr<Variables> trial_iterate = current_iterate.clone_full();
 //      this->interior_point_method->take_step(*trial_iterate, step, step_length);
 //
 //      // evaluate the residuals at the trial iterate
-//      std::unique_ptr<Residuals> trial_residuals = current_residuals.cloneFull();
+//      std::unique_ptr<Residuals> trial_residuals = current_residuals.clone_full();
 //      trial_residuals->evaluate(problem, *trial_iterate);
 //      trial_residuals->compute_residual_norm();
 //

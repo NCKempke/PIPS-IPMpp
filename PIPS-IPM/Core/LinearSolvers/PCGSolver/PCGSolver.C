@@ -134,8 +134,8 @@ void PCGSolver::solvefull(Vector<double>& rhs_) {
       alpha = rg / pHp;
 
       //update x=x+alpha*p and r=r+alpha*H*p
-      x.axpy(alpha, p);
-      rx.axpy(alpha, Hp);
+      x.add(alpha, p);
+      rx.add(alpha, Hp);
 
       normr = rx.two_norm();
       ///////////////////////////////////////
@@ -187,7 +187,7 @@ void PCGSolver::solvefull(Vector<double>& rhs_) {
 
       //p = -g+beta*p
       p.scale(beta);
-      p.axpy(-1.0, g);
+      p.add(-1.0, g);
 
       rg = rpgp;
 
