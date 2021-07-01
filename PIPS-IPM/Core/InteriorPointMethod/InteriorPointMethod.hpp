@@ -35,7 +35,7 @@ public:
    virtual void
    print_statistics(const Problem& problem, const Variables& iterate, const Residuals& residuals, int i, double mu,
       TerminationStatus stop_code, int level) = 0;
-   virtual void take_step(Variables& iterate, Variables& step, double step_length) = 0;
+   virtual void take_step(Variables& iterate, const Variables& step, double step_length) = 0;
    virtual void
    gondzio_correction_loop(Variables& iterate, Residuals& residuals, Variables& step, AbstractLinearSystem& linear_system,
          int iteration, double sigma, double mu, bool& small_corr, bool& numerical_troubles) = 0;
@@ -128,7 +128,7 @@ public:
    linear_system, int iteration, bool small_corr) override;
    void project_to_bounds(const Variables& iterate, const Variables& step) override;
    double compute_centering_parameter(const Variables& iterate, const Variables& step) override;
-   void take_step(Variables& iterate, Variables& step, double step_length) override;
+   void take_step(Variables& iterate, const Variables& step, double step_length) override;
    void gondzio_correction_loop(Variables& iterate, Residuals& residuals, Variables& step, AbstractLinearSystem& linear_system,
          int iteration, double sigma, double mu, bool& small_corr, bool& numerical_troubles) override;
    void mehrotra_step_length(Variables& iterate, Variables& step) override;
@@ -151,7 +151,7 @@ public:
    linear_system, int iteration, bool small_corr) override;
    void project_to_bounds(const Variables& iterate, const Variables& step) override;
    double compute_centering_parameter(const Variables& iterate, const Variables& step) override;
-   void take_step(Variables& iterate, Variables& step, double step_length) override;
+   void take_step(Variables& iterate, const Variables& step, double step_length) override;
    void gondzio_correction_loop(Variables& iterate, Residuals& residuals, Variables& step, AbstractLinearSystem& linear_system,
          int iteration, double sigma, double mu, bool& small_corr, bool& numerical_troubles) override;
    void mehrotra_step_length(Variables& iterate, Variables& step) override;

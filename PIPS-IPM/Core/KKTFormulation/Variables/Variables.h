@@ -80,8 +80,8 @@ public:
 
    double mustep_pd(const Variables& step, double alpha_primal, double alpha_dual) const;
 
-   void saxpy(const Variables& b, double alpha);
-   void saxpy_pd(const Variables& b, double alpha_primal, double alpha_dual);
+   void saxpy(const Variables& step, double alpha);
+   void saxpy_pd(const Variables& step, double alpha_primal, double alpha_dual);
 
    void negate();
 

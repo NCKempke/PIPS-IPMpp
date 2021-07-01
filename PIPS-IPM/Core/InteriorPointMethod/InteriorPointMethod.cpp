@@ -166,11 +166,11 @@ double PrimalDualInteriorPointMethod::compute_centering_parameter(const Variable
    return pow(mu_affine / mu, tsig);
 }
 
-void PrimalInteriorPointMethod::take_step(Variables& iterate, Variables& step, double step_length) {
+void PrimalInteriorPointMethod::take_step(Variables& iterate, const Variables& step, double step_length) {
    iterate.saxpy(step, this->primal_step_length*step_length);
 }
 
-void PrimalDualInteriorPointMethod::take_step(Variables& iterate, Variables& step, double step_length) {
+void PrimalDualInteriorPointMethod::take_step(Variables& iterate, const Variables& step, double step_length) {
    iterate.saxpy_pd(step, this->primal_step_length, this->dual_step_length*step_length);
 }
 

@@ -129,65 +129,65 @@ double Variables::mustep_pd(const Variables& iterate, double alpha_primal, doubl
    }
 }
 
-void Variables::saxpy(const Variables& iterate, double alpha) {
-   primals->axpy(alpha, *iterate.primals);
-   equality_duals->axpy(alpha, *iterate.equality_duals);
-   inequality_duals->axpy(alpha, *iterate.inequality_duals);
-   slacks->axpy(alpha, *iterate.slacks);
+void Variables::saxpy(const Variables& step, double alpha) {
+   primals->axpy(alpha, *step.primals);
+   equality_duals->axpy(alpha, *step.equality_duals);
+   inequality_duals->axpy(alpha, *step.inequality_duals);
+   slacks->axpy(alpha, *step.slacks);
    if (mclow > 0) {
-      assert(iterate.slack_lower_bound_gap->matchesNonZeroPattern(*iclow) && iterate.slack_lower_bound_gap_dual->matchesNonZeroPattern(*iclow));
+      assert(step.slack_lower_bound_gap->matchesNonZeroPattern(*iclow) && step.slack_lower_bound_gap_dual->matchesNonZeroPattern(*iclow));
 
-      slack_lower_bound_gap->axpy(alpha, *iterate.slack_lower_bound_gap);
-      slack_lower_bound_gap_dual->axpy(alpha, *iterate.slack_lower_bound_gap_dual);
+      slack_lower_bound_gap->axpy(alpha, *step.slack_lower_bound_gap);
+      slack_lower_bound_gap_dual->axpy(alpha, *step.slack_lower_bound_gap_dual);
    }
    if (mcupp > 0) {
-      assert(iterate.slack_upper_bound_gap->matchesNonZeroPattern(*icupp) && iterate.slack_upper_bound_gap_dual->matchesNonZeroPattern(*icupp));
+      assert(step.slack_upper_bound_gap->matchesNonZeroPattern(*icupp) && step.slack_upper_bound_gap_dual->matchesNonZeroPattern(*icupp));
 
-      slack_upper_bound_gap->axpy(alpha, *iterate.slack_upper_bound_gap);
-      slack_upper_bound_gap_dual->axpy(alpha, *iterate.slack_upper_bound_gap_dual);
+      slack_upper_bound_gap->axpy(alpha, *step.slack_upper_bound_gap);
+      slack_upper_bound_gap_dual->axpy(alpha, *step.slack_upper_bound_gap_dual);
    }
    if (nxlow > 0) {
-      assert(iterate.primal_lower_bound_gap->matchesNonZeroPattern(*ixlow) && iterate.primal_lower_bound_gap_dual->matchesNonZeroPattern(*ixlow));
+      assert(step.primal_lower_bound_gap->matchesNonZeroPattern(*ixlow) && step.primal_lower_bound_gap_dual->matchesNonZeroPattern(*ixlow));
 
-      primal_lower_bound_gap->axpy(alpha, *iterate.primal_lower_bound_gap);
-      primal_lower_bound_gap_dual->axpy(alpha, *iterate.primal_lower_bound_gap_dual);
+      primal_lower_bound_gap->axpy(alpha, *step.primal_lower_bound_gap);
+      primal_lower_bound_gap_dual->axpy(alpha, *step.primal_lower_bound_gap_dual);
    }
    if (nxupp > 0) {
-      assert(iterate.primal_upper_bound_gap->matchesNonZeroPattern(*ixupp) && iterate.primal_upper_bound_gap_dual->matchesNonZeroPattern(*ixupp));
+      assert(step.primal_upper_bound_gap->matchesNonZeroPattern(*ixupp) && step.primal_upper_bound_gap_dual->matchesNonZeroPattern(*ixupp));
 
-      primal_upper_bound_gap->axpy(alpha, *iterate.primal_upper_bound_gap);
-      primal_upper_bound_gap_dual->axpy(alpha, *iterate.primal_upper_bound_gap_dual);
+      primal_upper_bound_gap->axpy(alpha, *step.primal_upper_bound_gap);
+      primal_upper_bound_gap_dual->axpy(alpha, *step.primal_upper_bound_gap_dual);
    }
 }
 
-void Variables::saxpy_pd(const Variables& iterate, double alpha_primal, double alpha_dual) {
-   primals->axpy(alpha_primal, *iterate.primals);
-   equality_duals->axpy(alpha_dual, *iterate.equality_duals);
-   inequality_duals->axpy(alpha_dual, *iterate.inequality_duals);
-   slacks->axpy(alpha_primal, *iterate.slacks);
+void Variables::saxpy_pd(const Variables& step, double alpha_primal, double alpha_dual) {
+   primals->axpy(alpha_primal, *step.primals);
+   equality_duals->axpy(alpha_dual, *step.equality_duals);
+   inequality_duals->axpy(alpha_dual, *step.inequality_duals);
+   slacks->axpy(alpha_primal, *step.slacks);
    if (mclow > 0) {
-      assert(iterate.slack_lower_bound_gap->matchesNonZeroPattern(*iclow) && iterate.slack_lower_bound_gap_dual->matchesNonZeroPattern(*iclow));
+      assert(step.slack_lower_bound_gap->matchesNonZeroPattern(*iclow) && step.slack_lower_bound_gap_dual->matchesNonZeroPattern(*iclow));
 
-      slack_lower_bound_gap->axpy(alpha_primal, *iterate.slack_lower_bound_gap);
-      slack_lower_bound_gap_dual->axpy(alpha_dual, *iterate.slack_lower_bound_gap_dual);
+      slack_lower_bound_gap->axpy(alpha_primal, *step.slack_lower_bound_gap);
+      slack_lower_bound_gap_dual->axpy(alpha_dual, *step.slack_lower_bound_gap_dual);
    }
    if (mcupp > 0) {
-      assert(iterate.slack_upper_bound_gap->matchesNonZeroPattern(*icupp) && iterate.slack_upper_bound_gap_dual->matchesNonZeroPattern(*icupp));
+      assert(step.slack_upper_bound_gap->matchesNonZeroPattern(*icupp) && step.slack_upper_bound_gap_dual->matchesNonZeroPattern(*icupp));
 
-      slack_upper_bound_gap->axpy(alpha_primal, *iterate.slack_upper_bound_gap);
-      slack_upper_bound_gap_dual->axpy(alpha_dual, *iterate.slack_upper_bound_gap_dual);
+      slack_upper_bound_gap->axpy(alpha_primal, *step.slack_upper_bound_gap);
+      slack_upper_bound_gap_dual->axpy(alpha_dual, *step.slack_upper_bound_gap_dual);
    }
    if (nxlow > 0) {
-      assert(iterate.primal_lower_bound_gap->matchesNonZeroPattern(*ixlow) && iterate.primal_lower_bound_gap_dual->matchesNonZeroPattern(*ixlow));
+      assert(step.primal_lower_bound_gap->matchesNonZeroPattern(*ixlow) && step.primal_lower_bound_gap_dual->matchesNonZeroPattern(*ixlow));
 
-      primal_lower_bound_gap->axpy(alpha_primal, *iterate.primal_lower_bound_gap);
-      primal_lower_bound_gap_dual->axpy(alpha_dual, *iterate.primal_lower_bound_gap_dual);
+      primal_lower_bound_gap->axpy(alpha_primal, *step.primal_lower_bound_gap);
+      primal_lower_bound_gap_dual->axpy(alpha_dual, *step.primal_lower_bound_gap_dual);
    }
    if (nxupp > 0) {
-      assert(iterate.primal_upper_bound_gap->matchesNonZeroPattern(*ixupp) && iterate.primal_upper_bound_gap_dual->matchesNonZeroPattern(*ixupp));
+      assert(step.primal_upper_bound_gap->matchesNonZeroPattern(*ixupp) && step.primal_upper_bound_gap_dual->matchesNonZeroPattern(*ixupp));
 
-      primal_upper_bound_gap->axpy(alpha_primal, *iterate.primal_upper_bound_gap);
-      primal_upper_bound_gap_dual->axpy(alpha_dual, *iterate.primal_upper_bound_gap_dual);
+      primal_upper_bound_gap->axpy(alpha_primal, *step.primal_upper_bound_gap);
+      primal_upper_bound_gap_dual->axpy(alpha_dual, *step.primal_upper_bound_gap_dual);
    }
 }
 
