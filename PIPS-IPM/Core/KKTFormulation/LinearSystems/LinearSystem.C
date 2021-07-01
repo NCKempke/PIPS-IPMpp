@@ -547,6 +547,13 @@ void LinearSystem::solveXYZS(Vector<double>& stepx, Vector<double>& stepy, Vecto
    steps.negate();
 }
 
+void check_stagnation(int& n_stagnations, const double& step_length, const double& step_norm, const double& convergence_tolerance, const double& iterate_norm) {
+   if (std::fabs(step_length) * step_norm <= convergence_tolerance * iterate_norm)
+     ++n_stagnations;
+   else
+      n_stagnations = 0;
+}
+
 void LinearSystem::solveCompressedBiCGStab(const std::function<void(double, Vector<double>&, double, Vector<double>&)>& matMult,
       const std::function<double()>& matInfnorm) {
    //aliases
@@ -554,13 +561,13 @@ void LinearSystem::solveCompressedBiCGStab(const std::function<void(double, Vect
    Vector<double>& x = *sol, & r = *res, & b = *rhs;
 
    const double tol = options::get_double_parameter("OUTER_BICG_TOL");
-   const double n2b = b.two_norm();
-   const double tolb = std::max(n2b * tol, outer_bicg_eps);
+   const double right_hand_side_two_nord = b.two_norm();
+   const double convergence_tolerance_scaled_by_rhs_norm = std::max(right_hand_side_two_nord * tol, outer_bicg_eps);
 
    gOuterBiCGIter = 0;
    bicg_niterations = 0;
 
-   assert(n2b >= 0);
+   assert(right_hand_side_two_nord >= 0);
 
    const int myRank = PIPS_MPIgetRank(MPI_COMM_WORLD);
 
@@ -569,24 +576,25 @@ void LinearSystem::solveCompressedBiCGStab(const std::function<void(double, Vect
 
    //solution to the approx. system
    solveCompressed(x);
+
    //initial residual: res = b - Ax
    r.copyFrom(b);
    matMult(1.0, r, -1.0, x);
 
-   double normr = r.two_norm(), normr_min = normr;
+   double residual_two_norm = r.two_norm(), min_residual_two_norm = residual_two_norm;
    best_x.copyFrom(x);
 
-   bicg_resnorm = normr;
-   bicg_relresnorm = bicg_resnorm / n2b;
+   bicg_resnorm = residual_two_norm;
+   bicg_relresnorm = bicg_resnorm / right_hand_side_two_nord;
 
    //quick return if solve is accurate enough
-   if (normr <= tolb) {
+   if (residual_two_norm <= convergence_tolerance_scaled_by_rhs_norm) {
 
       bicg_conv_flag = IterativeSolverSolutionStatus::SKIPPED;
       biCGStabCommunicateStatus(static_cast<std::underlying_type<IterativeSolverSolutionStatus>::type>(bicg_conv_flag), bicg_niterations);
 
       if (myRank == 0)
-         std::cout << "BiCGStab (it=" << bicg_niterations << ", rel.res.norm=" << bicg_relresnorm << ", rel.r.norm=" << normr / n2b << ", avg.iter="
+         std::cout << "BiCGStab (it=" << bicg_niterations << ", rel.res.norm=" << bicg_relresnorm << ", rel.r.norm=" << residual_two_norm / right_hand_side_two_nord << ", avg.iter="
                    << gOuterBiCGIterAvg << ") " << bicg_conv_flag << "\n";
       return;
    }
@@ -597,9 +605,9 @@ void LinearSystem::solveCompressedBiCGStab(const std::function<void(double, Vect
       const double xonenorm = x.one_norm();
 
       if (myRank == 0) {
-         std::cout << "global system inf_norm=" << glbinfnorm << " x 1norm=" << xonenorm << " tolb/tolnew: " << tolb << " "
+         std::cout << "global system inf_norm=" << glbinfnorm << " x 1norm=" << xonenorm << " convergence_tolerance_scaled_by_rhs_norm/tolnew: " << convergence_tolerance_scaled_by_rhs_norm << " "
                    << (tol * xonenorm * glbinfnorm) << "\n";
-         std::cout << "outer BiCGStab starts: " << normr << " > " << tolb << " normb2=" << n2b << " normbinf=" << infb << " (tolerance=" << tol << ")"
+         std::cout << "outer BiCGStab starts: " << residual_two_norm << " > " << convergence_tolerance_scaled_by_rhs_norm << " normb2=" << right_hand_side_two_nord << " normbinf=" << infb << " (tolerance=" << tol << ")"
                    << "\n";
       }
    }
@@ -607,43 +615,44 @@ void LinearSystem::solveCompressedBiCGStab(const std::function<void(double, Vect
    r0.copyFrom(r);
 
    //normalize
-   r0.scale(1 / normr);
+   r0.scale(1 / residual_two_norm);
 
    bicg_conv_flag = IterativeSolverSolutionStatus::NOT_CONVERGED_MAX_ITERATIONS;
    int normrNDiv = 0;
-   int nstags = 0;
+   int n_half_iterate_stagnations = 0;
    double rho = 1., omega = 1., alpha = 1.;
 
    //main loop
    for (bicg_niterations = 0; bicg_niterations < outer_bicg_max_iter; bicg_niterations++) {
-      const double rho1 = rho;
-
-      rho = r0.dotProductWith(r);
-
-      if (isZero(rho, bicg_conv_flag))
-         break;
 
       //first half of the iterate
       {
+         const double rho_last_iter = rho;
+         rho = r0.dotProductWith(r);
+
+         if (isZero(rho, bicg_conv_flag))
+            break;
+
          if (bicg_niterations == 0)
             p.copyFrom(r);
          else {
-            const double beta = (rho / rho1) * (alpha / omega);
+            assert(rho_last_iter != 0.0 && omega != 0.0);
+            const double beta = (rho / rho_last_iter) * (alpha / omega);
 
             if (isZero(beta, bicg_conv_flag))
                break;
 
-            //-------- p = r + beta*(p - omega*v) --------
+            //-------- p = r_i-1 + beta * (p_i-1 - omega_i-1 * v_i-1) --------
             p.add(-omega, v);
             p.scale(beta);
             p.add(1.0, r);
          }
 
-         //precond: ph = \tilde{K}^{-1} p
+         //precond: dx = \tilde{K}^{-1} p
          dx.copyFrom(p);
          solveCompressed(dx);
 
-         //mat-first: v = K*ph
+         //mat-first: v_i = K * dx
          matMult(0.0, v, 1.0, dx);
 
          const double rtv = r0.dotProductWith(v);
@@ -651,39 +660,43 @@ void LinearSystem::solveCompressedBiCGStab(const std::function<void(double, Vect
          if (isZero(rtv, bicg_conv_flag))
             break;
 
+         /* alpha is half step for x */
          alpha = rho / rtv;
 
-         if ((std::fabs(alpha) * dx.two_norm()) <= outer_bicg_eps * x.two_norm())
-            nstags++;
-         else
-            nstags = 0;
+         check_stagnation(n_half_iterate_stagnations, alpha, dx.two_norm(), outer_bicg_eps, x.two_norm());
 
-         // x = x + alpha * dx ( x = x + alpha * ph)
-         x.add(alpha, dx);
-         // r = r - alpha * v ( s = r - alpha * v)
-         r.add(-alpha, v);
+         // x_i/2 = x + alpha * dx ( x = x + alpha * ph)
+         x.add(alpha, dx); // half way iterate
+         // r = r - alpha * v ( s = r - alpha * v = r - alpha * A * y)
+         r.add(-alpha, v); // half way (expected) residual
 
-         //check for convergence
-         normr = r.two_norm();
+         // check for convergence
+         residual_two_norm = r.two_norm();
 
-         if (normr <= tolb || nstags >= outer_bicg_max_stagnations) {
-            //compute the actual residual
-            Vector<double>& res = dx; //use dx
-            res.copyFrom(b);
-            matMult(1.0, res, -1.0, x);
+         if (residual_two_norm <= convergence_tolerance_scaled_by_rhs_norm) {
 
-            bicg_resnorm = res.two_norm();
-            if (bicg_resnorm <= tolb) {
-               //converged
+            //compute the actual residual using dx as buffer
+            dx.copyFrom(b);
+            matMult(1.0, dx, -1.0, x);
+
+            bicg_resnorm = dx.two_norm();
+            if (bicg_resnorm <= convergence_tolerance_scaled_by_rhs_norm) {
                bicg_conv_flag = IterativeSolverSolutionStatus::CONVERGED;
                break;
             }
-         } //~end of convergence test
+         }
+
+         /* for rollback to half-iterate */
+         if (residual_two_norm < min_residual_two_norm) {
+            // update best for rollback
+            min_residual_two_norm = residual_two_norm;
+            best_x.copyFrom(x);
+         }
       }
 
       //second half of the iterate now
       {
-         //preconditioner
+         // precondition half_step residual
          dx.copyFrom(r);
          solveCompressed(dx);
 
@@ -695,36 +708,32 @@ void LinearSystem::solveCompressedBiCGStab(const std::function<void(double, Vect
          if (isZero(tt, bicg_conv_flag))
             break;
 
+         // omega_i = <K_1^-1 t | K1^-1 r> / <K_1^-1 t, K_1^-1 t> (for us K_1 = 1 -> else this is 4 solves with the PIPS system..)
          omega = t.dotProductWith(r) / tt;
 
-         if ((std::fabs(omega) * dx.two_norm()) <= outer_bicg_eps * x.two_norm())
-            nstags++;
-         else
-            nstags = 0;
+         check_stagnation(n_half_iterate_stagnations, omega, dx.two_norm(), outer_bicg_eps, x.two_norm());
 
-         // x=x+omega*dx  (x=x+omega*sh)
+         // x=x+omega*dx  ( x =x+omega*sh)
          x.add(omega, dx);
          // r = r-omega*t (r=s-omega*sh)
          r.add(-omega, t);
          //check for convergence
-         normr = r.two_norm();
+         residual_two_norm = r.two_norm();
 
-         if (normr <= tolb || nstags >= outer_bicg_max_stagnations) {
+         if (residual_two_norm <= convergence_tolerance_scaled_by_rhs_norm || n_half_iterate_stagnations >= outer_bicg_max_stagnations) {
             //compute the actual residual
-            Vector<double>& res = dx; //use dx
-            res.copyFrom(b);
-            matMult(1.0, res, -1.0, x);
+            dx.copyFrom(b); // dx as buffer
+            matMult(1.0, dx, -1.0, x);
 
-            bicg_resnorm = res.two_norm();
+            bicg_resnorm = dx.two_norm();
 
-            if (bicg_resnorm <= tolb) {
+            if (bicg_resnorm <= convergence_tolerance_scaled_by_rhs_norm) {
                //converged
                bicg_conv_flag = IterativeSolverSolutionStatus::CONVERGED;
                break;
             }
-         }
-         else {
-            if (normr >= normr_min)
+         } else {
+            if (residual_two_norm >= min_residual_two_norm)
                normrNDiv++;
             else
                normrNDiv = 0;
@@ -732,26 +741,37 @@ void LinearSystem::solveCompressedBiCGStab(const std::function<void(double, Vect
             if (normrNDiv > outer_bicg_max_normr_divergences) {
                // rollback to best iterate
                x.copyFrom(best_x);
-               normr = normr_min;
+               residual_two_norm = min_residual_two_norm;
 
+               //compute the actual residual
+               dx.copyFrom(b); // dx as buffer
+               matMult(1.0, dx, -1.0, x);
+
+               bicg_resnorm = dx.two_norm();
                bicg_conv_flag = IterativeSolverSolutionStatus::DIVERGED;
                break;
             }
          } //~end of convergence test
 
-         if (normr < normr_min) {
+         if (residual_two_norm < min_residual_two_norm) {
             // update best for rollback
-            normr_min = normr;
+            min_residual_two_norm = residual_two_norm;
             best_x.copyFrom(x);
          }
       } //~end of scoping
 
-      if (nstags >= outer_bicg_max_stagnations) {
+      if (n_half_iterate_stagnations >= outer_bicg_max_stagnations) {
          // rollback to best iterate
-         if (normr_min < normr) {
-            normr = normr_min;
+         if (min_residual_two_norm < residual_two_norm) {
+            residual_two_norm = min_residual_two_norm;
             x.copyFrom(best_x);
          }
+
+         //compute the actual residual
+         dx.copyFrom(b); // dx as buffer
+         matMult(1.0, dx, -1.0, x);
+
+         bicg_resnorm = dx.two_norm();
 
          bicg_conv_flag = IterativeSolverSolutionStatus::STAGNATION;
          break;
@@ -762,12 +782,14 @@ void LinearSystem::solveCompressedBiCGStab(const std::function<void(double, Vect
 
    } //~ end of BiCGStab loop
 
-   bicg_relresnorm = bicg_resnorm / n2b;
+   bicg_relresnorm = bicg_resnorm / right_hand_side_two_nord;
 
    biCGStabCommunicateStatus(static_cast<std::underlying_type<IterativeSolverSolutionStatus>::type>(bicg_conv_flag), std::max(bicg_niterations, 1));
-   if (myRank == 0)
-      std::cout << "BiCGStab (it=" << std::max(1, bicg_niterations) << ", rel.res.norm=" << bicg_relresnorm << ", rel.r.norm=" << normr / n2b
-                << ", avg.iter=" << gOuterBiCGIterAvg << ") " << bicg_conv_flag << "\n";
+   if (myRank == 0) {
+      std::cout << "BiCGStab (it=" << std::max(1, bicg_niterations) << ", relative residual norm=" << bicg_relresnorm
+         << ", predicted relative residual norm=" << residual_two_norm / right_hand_side_two_nord
+         << ", avg.iter=" << gOuterBiCGIterAvg << ") " << bicg_conv_flag << "\n";
+   }
 }
 
 /**
