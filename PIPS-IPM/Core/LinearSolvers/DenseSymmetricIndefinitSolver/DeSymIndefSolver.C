@@ -29,11 +29,11 @@
 // TODO : move to ooqpblas ?
 // dsytrf_() factors a symmetric indefinite matrix A, see LAPACK
 // documentation for more details.
-extern "C" void FNAME(dsytrf)(const char* uplo, const int* n, double A[], const int* lda, int ipiv[], double work[], const int* lwork, int* info);
+extern "C" void FNAME(dsytrf)(const char* uplo, const int* n, double * A, const int* lda, int * ipiv, double * work, const int* lwork, int* info);
 
 // dsytrs_() solves the system Ax = b using the factor obtained by dsytrf_().
 extern "C" void
-FNAME(dsytrs)(const char* uplo, const int* n, const int* nrhs, double A[], const int* lda, int ipiv[], double b[], const int* ldb, int* info);
+FNAME(dsytrs)(const char* uplo, const int* n, const int* nrhs, double * A, const int* lda, int * ipiv, double * b, const int* ldb, int* info);
 
 #ifdef TIMING_FLOPS
 extern "C" {
@@ -97,7 +97,7 @@ void DeSymIndefSolver::matrixChanged() {
    HPM_Stop("DSYTRFFact");
 #endif
    if (info != 0)
-      printf("DeSymIndefSolver::matrixChanged : error - dsytrf returned info=%d\n", info);
+      printf("DeSymIndefSolver::matrixChanged : error - dsytrf_ returned info=%d\n", info);
 }
 
 void DeSymIndefSolver::solve(Vector<double>& v) {

@@ -239,7 +239,7 @@ void DenseStorage::atAddOuterProductOf(int row, int col, double alpha, double* x
 
    char fortranUplo = 'U';
 
-   dsyr(&fortranUplo, &nx, &alpha, x, &incx, &M[row][col], &n);
+   dsyr_(&fortranUplo, &nx, &alpha, x, &incx, &M[row][col], &n);
 }
 
 
@@ -254,7 +254,7 @@ void DenseStorage::addToDiagonalAt(double alpha, double x[], int incx, int idiag
       extent = m - idiag;
 
    int incy = n + 1;
-   daxpy(&extent, &alpha, x, &incx, &M[idiag][idiag], &incy);
+   daxpy_(&extent, &alpha, x, &incx, &M[idiag][idiag], &incy);
 
 }
 

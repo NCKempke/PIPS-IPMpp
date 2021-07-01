@@ -106,7 +106,7 @@ void DenseMatrix::mult(double beta, Vector<double>& y_in, double alpha, const Ve
    auto& y = dynamic_cast<SimpleVector<double>&>(y_in);
 
    if (n != 0 && m != 0) {
-      dgemv(&fortranTrans, &n, &m, &alpha, &M[0][0], &n, &x[0], &incx, &beta, &y[0], &incy);
+      dgemv_(&fortranTrans, &n, &m, &alpha, &M[0][0], &n, &x[0], &incx, &beta, &y[0], &incy);
    }
    else {
       if (m != 0)
@@ -140,7 +140,7 @@ void DenseMatrix::transpose_mult(double beta, Vector<double>& y_in, double alpha
    int incx = 1, incy = 1;
 
    if (m != 0 && n != 0) {
-      dgemv(&fortranTrans, &n, &m, &alpha, &M[0][0], &n, &x[0], &incx, &beta, &y[0], &incy);
+      dgemv_(&fortranTrans, &n, &m, &alpha, &M[0][0], &n, &x[0], &incx, &beta, &y[0], &incy);
    }
    else {
       if (n != 0) {
