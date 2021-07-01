@@ -210,7 +210,7 @@ public:
     *  @param select Each element of this Vector<double> must be positive
     *                if the corresponding element of select is non-zero.
     */
-   virtual bool somePositive(const Vector<T>& select) const = 0;
+   virtual bool are_positive(const Vector<T>& select) const = 0;
    /** Divide selected elements of this Vector<double> by the corresponding
     *  element in div.
     *  @param div If element i of this Vector<double> is selected, then it will
@@ -228,10 +228,10 @@ public:
    virtual bool isKindOf(int kind) const = 0;
 
    /** Return the largest value of alpha in the interval [0, maxStep] for
-    *  which: this + alpha * v >= 0. Set firstBlocking to be the
+    *  which: this + alpha * v >= (1 - fraction)*this). Set firstBlocking to be the
     *  "blocking" index i - the one that limits the step length to alpha.
     */
-   virtual T stepbound(const Vector<T>& v, T maxStep) const = 0;
+   virtual T fraction_to_boundary(const Vector<T>& step_in, T fraction = T{1}) const = 0;
 
    /** Return the largest value of alpha in the interval [0,1] for
     *  which: this + alpha * wstep_vec >= 0 and u_vec + alpha *

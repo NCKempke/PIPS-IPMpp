@@ -729,24 +729,19 @@ bool SimpleVector<T>::all_of(const std::function<bool(const T&)>& pred) const {
 }
 
 template<typename T>
-T SimpleVector<T>::stepbound(const Vector<T>& pvec, T maxStep) const {
-   assert(this->n == pvec.length());
+T SimpleVector<T>::fraction_to_boundary(const Vector<T>& step_in, T fraction) const {
+   assert(this->n == step_in.length());
+   const auto& step = dynamic_cast<const SimpleVector<T>&>(step_in);
 
-   const auto& spvec = dynamic_cast<const SimpleVector<T>&>(pvec);
-   T* p = spvec.v;
-   T* w = v;
-   T bound = maxStep;
-
+   T max_length{1};
    for (int i = 0; i < this->n; i++) {
-      T temp = p[i];
-      if (w[i] >= 0 && temp < 0) {
-         temp = -w[i] / temp;
-         if (temp < bound) {
-            bound = temp;
-         }
+      T step_i = step.v[i];
+      if (this->v[i] >= 0 && step_i < 0) {
+         T length = -fraction*this->v[i] / step_i;
+         max_length = std::min(max_length, length);
       }
    }
-   return bound;
+   return max_length;
 }
 
 template<typename T>
@@ -845,7 +840,7 @@ void SimpleVector<T>::add_constant(T c, const Vector<T>& select) {
 }
 
 template<typename T>
-bool SimpleVector<T>::somePositive(const Vector<T>& select) const {
+bool SimpleVector<T>::are_positive(const Vector<T>& select) const {
    const SimpleVector<T>& sselect = dynamic_cast<const SimpleVector<T>&>(select);
    T* map = sselect.v;
 

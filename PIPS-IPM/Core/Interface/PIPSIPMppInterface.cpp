@@ -497,16 +497,16 @@ void PIPSIPMppInterface::printComplementarityResiduals(const Variables& svars) {
    std::unique_ptr<Vector<double>> w_clone{svars.primal_upper_bound_gap->clone_full()};
 
    t_clone->componentMult(*svars.slack_lower_bound_gap_dual);
-   t_clone->selectNonZeros(*svars.iclow);
+   t_clone->selectNonZeros(*svars.inequality_lower_bound_indicators);
 
    u_clone->componentMult(*svars.slack_upper_bound_gap_dual);
-   u_clone->selectNonZeros(*svars.icupp);
+   u_clone->selectNonZeros(*svars.inequality_upper_bound_indicators);
 
    v_clone->componentMult(*svars.primal_lower_bound_gap_dual);
-   v_clone->selectNonZeros(*svars.ixlow);
+   v_clone->selectNonZeros(*svars.primal_lower_bound_indicators);
 
    w_clone->componentMult(*svars.primal_upper_bound_gap_dual);
-   w_clone->selectNonZeros(*svars.ixupp);
+   w_clone->selectNonZeros(*svars.primal_upper_bound_indicators);
 
    const double rlambda_infnorm = t_clone->inf_norm();
    const double rpi_infnorm = u_clone->inf_norm();

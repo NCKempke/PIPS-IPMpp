@@ -44,10 +44,10 @@ public:
    long long my;
    long long mz, mcupp, mclow;
 
-   std::shared_ptr<Vector<double>> ixlow;
-   std::shared_ptr<Vector<double>> ixupp;
-   std::shared_ptr<Vector<double>> iclow;
-   std::shared_ptr<Vector<double>> icupp;
+   std::shared_ptr<Vector<double>> primal_lower_bound_indicators;
+   std::shared_ptr<Vector<double>> primal_upper_bound_indicators;
+   std::shared_ptr<Vector<double>> inequality_lower_bound_indicators;
+   std::shared_ptr<Vector<double>> inequality_upper_bound_indicators;
 
    std::unique_ptr<Vector<double>> primals;
    std::unique_ptr<Vector<double>> slacks;
@@ -92,18 +92,18 @@ public:
     * (b->t,b->u,b->v,b->w,b->lambda,b->pi,b->phi,b->gamma) >= 0.
     *
     * @see find_blocking */
-   double stepbound(const Variables& iterate) const;
+   double fraction_to_boundary(const Variables& iterate) const;
 
    /** calculate the largest alpha_primal and alpha_dual in (0,1] such that the nonnegative
     * variables stay nonnegative in the given search direction b. In the
     * abstract problem formulation, this is the largest value of alphas
     * such that (s,z) + alpha_primal * (b->s,0) + alpha_dual * (0,b->z) >= 0.
     *
-    * @see stepbound
+    * @see fraction_to_boundary
     */
    std::pair<double, double> stepbound_pd(const Variables& iterate) const;
 
-   /** Performs the same function as stepbound, and supplies additional
+   /** Performs the same function as fraction_to_boundary, and supplies additional
     * information about which component of the nonnegative variables is
     * responsible for restricting alpha. In terms of the abstract
     * formulation, the components have the following meanings.
@@ -123,7 +123,7 @@ public:
     * @param firstOrSecond  1 if the primal step is blocking, 2 if the dual
     * step is block, 0 if no step is blocking.
     *
-    * @see stepbound
+    * @see fraction_to_boundary
     * */
    double find_blocking(const Variables& step_in, double& primalValue, double& primalStep, double& dualValue, double& dualStep, int& firstOrSecond) const;
 

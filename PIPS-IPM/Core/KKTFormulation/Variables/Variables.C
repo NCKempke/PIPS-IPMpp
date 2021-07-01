@@ -10,7 +10,7 @@ Variables::Variables(std::unique_ptr<Vector<double>> x_in, std::unique_ptr<Vecto
    std::unique_ptr<Vector<double>> gamma_in, std::unique_ptr<Vector<double>> w_in, std::unique_ptr<Vector<double>> phi_in, std::unique_ptr<Vector<double>> t_in, std::unique_ptr<Vector<double>> lambda_in, std::unique_ptr<Vector<double>> u_in,
    std::unique_ptr<Vector<double>> pi_in, std::shared_ptr<Vector<double>> ixlow_in, std::shared_ptr<Vector<double>> ixupp_in, std::shared_ptr<Vector<double>> iclow_in,
    std::shared_ptr<Vector<double>> icupp_in) :
-      ixlow{std::move(ixlow_in)}, ixupp{std::move(ixupp_in)}, iclow{std::move(iclow_in)}, icupp{std::move(icupp_in)}, primals{std::move(x_in)}, slacks{std::move(s_in)},
+      primal_lower_bound_indicators{std::move(ixlow_in)}, primal_upper_bound_indicators{std::move(ixupp_in)}, inequality_lower_bound_indicators{std::move(iclow_in)}, inequality_upper_bound_indicators{std::move(icupp_in)}, primals{std::move(x_in)}, slacks{std::move(s_in)},
       equality_duals{std::move(y_in)}, inequality_duals{std::move(z_in)}, primal_lower_bound_gap{std::move(v_in)}, primal_lower_bound_gap_dual{std::move(gamma_in)},
       primal_upper_bound_gap{std::move(w_in)}, primal_upper_bound_gap_dual{std::move(phi_in)}, slack_lower_bound_gap{std::move(t_in)},
       slack_lower_bound_gap_dual{std::move(lambda_in)}, slack_upper_bound_gap{std::move(u_in)}, slack_upper_bound_gap_dual{std::move(pi_in)}{
@@ -19,15 +19,15 @@ Variables::Variables(std::unique_ptr<Vector<double>> x_in, std::unique_ptr<Vecto
    my = equality_duals->length();
    mz = inequality_duals->length();
 
-   assert(nx == ixlow->length() || 0 == ixlow->length());
-   assert(nx == ixlow->length() || 0 == ixlow->length());
-   assert(mz == iclow->length() || 0 == iclow->length());
-   assert(mz == icupp->length() || 0 == icupp->length());
+   assert(nx == primal_lower_bound_indicators->length() || 0 == primal_lower_bound_indicators->length());
+   assert(nx == primal_lower_bound_indicators->length() || 0 == primal_lower_bound_indicators->length());
+   assert(mz == inequality_lower_bound_indicators->length() || 0 == inequality_lower_bound_indicators->length());
+   assert(mz == inequality_upper_bound_indicators->length() || 0 == inequality_upper_bound_indicators->length());
 
-   nxlow = ixlow->number_nonzeros();
-   nxupp = ixupp->number_nonzeros();
-   mclow = iclow->number_nonzeros();
-   mcupp = icupp->number_nonzeros();
+   nxlow = primal_lower_bound_indicators->number_nonzeros();
+   nxupp = primal_upper_bound_indicators->number_nonzeros();
+   mclow = inequality_lower_bound_indicators->number_nonzeros();
+   mcupp = inequality_upper_bound_indicators->number_nonzeros();
    number_complementarity_pairs = mclow + mcupp + nxlow + nxupp;
 
    assert(mz == slacks->length());
@@ -46,7 +46,7 @@ Variables::Variables(std::unique_ptr<Vector<double>> x_in, std::unique_ptr<Vecto
 
 Variables::Variables(const Variables& other)  :
    number_complementarity_pairs{other.number_complementarity_pairs}, nx{other.nx}, nxupp{other.nxupp}, nxlow{other.nxlow}, my{other.my}, mz{other.mz}, mcupp{other.mcupp}, mclow{other.mclow},
-   ixlow{other.ixlow}, ixupp{other.ixupp}, iclow{other.iclow}, icupp{other.icupp},
+   primal_lower_bound_indicators{other.primal_lower_bound_indicators}, primal_upper_bound_indicators{other.primal_upper_bound_indicators}, inequality_lower_bound_indicators{other.inequality_lower_bound_indicators}, inequality_upper_bound_indicators{other.inequality_upper_bound_indicators},
    primals{other.primals->clone_full()}, slacks{other.slacks->clone_full()}, equality_duals{other.equality_duals->clone_full()}, inequality_duals{other.inequality_duals->clone_full()},
    primal_lower_bound_gap{other.primal_lower_bound_gap->clone_full()}, primal_lower_bound_gap_dual{other.primal_lower_bound_gap_dual->clone_full()},
    primal_upper_bound_gap{other.primal_upper_bound_gap->clone_full()}, primal_upper_bound_gap_dual{other.primal_upper_bound_gap_dual->clone_full()},
@@ -63,10 +63,10 @@ double Variables::get_average_distance_to_bound_for_converged_vars(const Problem
 
    double sum_small_distance = 0.0;
    int n_close = 0;
-   primal_lower_bound_gap->getSumCountIfSmall(tol, sum_small_distance, n_close, &*ixlow);
-   primal_upper_bound_gap->getSumCountIfSmall(tol, sum_small_distance, n_close, &*ixupp);
-   slack_upper_bound_gap->getSumCountIfSmall(tol, sum_small_distance, n_close, &*icupp);
-   slack_lower_bound_gap->getSumCountIfSmall(tol, sum_small_distance, n_close, &*iclow);
+   primal_lower_bound_gap->getSumCountIfSmall(tol, sum_small_distance, n_close, &*primal_lower_bound_indicators);
+   primal_upper_bound_gap->getSumCountIfSmall(tol, sum_small_distance, n_close, &*primal_upper_bound_indicators);
+   slack_upper_bound_gap->getSumCountIfSmall(tol, sum_small_distance, n_close, &*inequality_upper_bound_indicators);
+   slack_lower_bound_gap->getSumCountIfSmall(tol, sum_small_distance, n_close, &*inequality_lower_bound_indicators);
 
    if (n_close == 0)
       return std::numeric_limits<double>::infinity();
@@ -76,13 +76,13 @@ double Variables::get_average_distance_to_bound_for_converged_vars(const Problem
 
 void Variables::push_slacks_from_bound(double tol, double amount) {
    if (nxlow > 0)
-      primal_lower_bound_gap->pushAwayFromZero(tol, amount, &*ixlow);
+      primal_lower_bound_gap->pushAwayFromZero(tol, amount, &*primal_lower_bound_indicators);
    if (nxupp > 0)
-      primal_upper_bound_gap->pushAwayFromZero(tol, amount, &*ixupp);
+      primal_upper_bound_gap->pushAwayFromZero(tol, amount, &*primal_upper_bound_indicators);
    if (mclow > 0)
-      slack_lower_bound_gap->pushAwayFromZero(tol, amount, &*iclow);
+      slack_lower_bound_gap->pushAwayFromZero(tol, amount, &*inequality_lower_bound_indicators);
    if (mcupp > 0)
-      slack_upper_bound_gap->pushAwayFromZero(tol, amount, &*icupp);
+      slack_upper_bound_gap->pushAwayFromZero(tol, amount, &*inequality_upper_bound_indicators);
 }
 
 double Variables::mu() const {
@@ -135,25 +135,25 @@ void Variables::add(const Variables& step, double alpha_primal, double alpha_dua
    inequality_duals->add(alpha_dual, *step.inequality_duals);
    slacks->add(alpha_primal, *step.slacks);
    if (mclow > 0) {
-      assert(step.slack_lower_bound_gap->matchesNonZeroPattern(*iclow) && step.slack_lower_bound_gap_dual->matchesNonZeroPattern(*iclow));
+      assert(step.slack_lower_bound_gap->matchesNonZeroPattern(*inequality_lower_bound_indicators) && step.slack_lower_bound_gap_dual->matchesNonZeroPattern(*inequality_lower_bound_indicators));
 
       slack_lower_bound_gap->add(alpha_primal, *step.slack_lower_bound_gap);
       slack_lower_bound_gap_dual->add(alpha_dual, *step.slack_lower_bound_gap_dual);
    }
    if (mcupp > 0) {
-      assert(step.slack_upper_bound_gap->matchesNonZeroPattern(*icupp) && step.slack_upper_bound_gap_dual->matchesNonZeroPattern(*icupp));
+      assert(step.slack_upper_bound_gap->matchesNonZeroPattern(*inequality_upper_bound_indicators) && step.slack_upper_bound_gap_dual->matchesNonZeroPattern(*inequality_upper_bound_indicators));
 
       slack_upper_bound_gap->add(alpha_primal, *step.slack_upper_bound_gap);
       slack_upper_bound_gap_dual->add(alpha_dual, *step.slack_upper_bound_gap_dual);
    }
    if (nxlow > 0) {
-      assert(step.primal_lower_bound_gap->matchesNonZeroPattern(*ixlow) && step.primal_lower_bound_gap_dual->matchesNonZeroPattern(*ixlow));
+      assert(step.primal_lower_bound_gap->matchesNonZeroPattern(*primal_lower_bound_indicators) && step.primal_lower_bound_gap_dual->matchesNonZeroPattern(*primal_lower_bound_indicators));
 
       primal_lower_bound_gap->add(alpha_primal, *step.primal_lower_bound_gap);
       primal_lower_bound_gap_dual->add(alpha_dual, *step.primal_lower_bound_gap_dual);
    }
    if (nxupp > 0) {
-      assert(step.primal_upper_bound_gap->matchesNonZeroPattern(*ixupp) && step.primal_upper_bound_gap_dual->matchesNonZeroPattern(*ixupp));
+      assert(step.primal_upper_bound_gap->matchesNonZeroPattern(*primal_upper_bound_indicators) && step.primal_upper_bound_gap_dual->matchesNonZeroPattern(*primal_upper_bound_indicators));
 
       primal_upper_bound_gap->add(alpha_primal, *step.primal_upper_bound_gap);
       primal_upper_bound_gap_dual->add(alpha_dual, *step.primal_upper_bound_gap_dual);
@@ -188,83 +188,75 @@ void Variables::negate() {
    }
 }
 
-double Variables::stepbound(const Variables& iterate) const {
-   double max_step = 1.0;
+double Variables::fraction_to_boundary(const Variables& iterate) const {
+   double length = 1.0;
    if (mclow > 0) {
-      assert(slack_lower_bound_gap->somePositive(*iclow));
-      assert(slack_lower_bound_gap_dual->somePositive(*iclow));
+      assert(slack_lower_bound_gap->are_positive(*inequality_lower_bound_indicators));
+      assert(slack_lower_bound_gap_dual->are_positive(*inequality_lower_bound_indicators));
 
-      max_step = slack_lower_bound_gap->stepbound(*iterate.slack_lower_bound_gap, max_step);
-      max_step = slack_lower_bound_gap_dual->stepbound(*iterate.slack_lower_bound_gap_dual, max_step);
+      length = std::min(length, slack_lower_bound_gap->fraction_to_boundary(*iterate.slack_lower_bound_gap));
+      length = std::min(length, slack_lower_bound_gap_dual->fraction_to_boundary(*iterate.slack_lower_bound_gap_dual));
    }
-
    if (mcupp > 0) {
-      assert(slack_upper_bound_gap->somePositive(*icupp));
-      assert(slack_upper_bound_gap_dual->somePositive(*icupp));
+      assert(slack_upper_bound_gap->are_positive(*inequality_upper_bound_indicators));
+      assert(slack_upper_bound_gap_dual->are_positive(*inequality_upper_bound_indicators));
 
-      max_step = slack_upper_bound_gap->stepbound(*iterate.slack_upper_bound_gap, max_step);
-      max_step = slack_upper_bound_gap_dual->stepbound(*iterate.slack_upper_bound_gap_dual, max_step);
+      length = std::min(length, slack_upper_bound_gap->fraction_to_boundary(*iterate.slack_upper_bound_gap));
+      length = std::min(length, slack_upper_bound_gap_dual->fraction_to_boundary(*iterate.slack_upper_bound_gap_dual));
    }
-
    if (nxlow > 0) {
-      assert(primal_lower_bound_gap->somePositive(*ixlow));
-      assert(primal_lower_bound_gap_dual->somePositive(*ixlow));
+      assert(primal_lower_bound_gap->are_positive(*primal_lower_bound_indicators));
+      assert(primal_lower_bound_gap_dual->are_positive(*primal_lower_bound_indicators));
 
-      max_step = primal_lower_bound_gap->stepbound(*iterate.primal_lower_bound_gap, max_step);
-      max_step = primal_lower_bound_gap_dual->stepbound(*iterate.primal_lower_bound_gap_dual, max_step);
+      length = std::min(length, primal_lower_bound_gap->fraction_to_boundary(*iterate.primal_lower_bound_gap));
+      length = std::min(length, primal_lower_bound_gap_dual->fraction_to_boundary(*iterate.primal_lower_bound_gap_dual));
    }
-
    if (nxupp > 0) {
-      assert(primal_upper_bound_gap->somePositive(*ixupp));
-      assert(primal_upper_bound_gap_dual->somePositive(*ixupp));
+      assert(primal_upper_bound_gap->are_positive(*primal_upper_bound_indicators));
+      assert(primal_upper_bound_gap_dual->are_positive(*primal_upper_bound_indicators));
 
-      max_step = primal_upper_bound_gap->stepbound(*iterate.primal_upper_bound_gap, max_step);
-      max_step = primal_upper_bound_gap_dual->stepbound(*iterate.primal_upper_bound_gap_dual, max_step);
+      length = std::min(length, primal_upper_bound_gap->fraction_to_boundary(*iterate.primal_upper_bound_gap));
+      length = std::min(length, primal_upper_bound_gap_dual->fraction_to_boundary(*iterate.primal_upper_bound_gap_dual));
    }
-
-   assert(max_step <= 1.0);
-   return max_step;
+   assert(length <= 1.0);
+   return length;
 }
 
 std::pair<double, double> Variables::stepbound_pd(const Variables& iterate) const {
-   double maxStep_primal = 1.0;
-   double maxStep_dual = 1.0;
+   double primal_length = 1.0;
+   double dual_length = 1.0;
 
    if (mclow > 0) {
-      assert(slack_lower_bound_gap->somePositive(*iclow));
-      assert(slack_lower_bound_gap_dual->somePositive(*iclow));
+      assert(slack_lower_bound_gap->are_positive(*inequality_lower_bound_indicators));
+      assert(slack_lower_bound_gap_dual->are_positive(*inequality_lower_bound_indicators));
 
-      maxStep_primal = slack_lower_bound_gap->stepbound(*iterate.slack_lower_bound_gap, maxStep_primal);
-      maxStep_dual = slack_lower_bound_gap_dual->stepbound(*iterate.slack_lower_bound_gap_dual, maxStep_dual);
+      primal_length = std::min(primal_length, slack_lower_bound_gap->fraction_to_boundary(*iterate.slack_lower_bound_gap));
+      dual_length = std::min(dual_length, slack_lower_bound_gap_dual->fraction_to_boundary(*iterate.slack_lower_bound_gap_dual));
    }
-
    if (mcupp > 0) {
-      assert(slack_upper_bound_gap->somePositive(*icupp));
-      assert(slack_upper_bound_gap_dual->somePositive(*icupp));
+      assert(slack_upper_bound_gap->are_positive(*inequality_upper_bound_indicators));
+      assert(slack_upper_bound_gap_dual->are_positive(*inequality_upper_bound_indicators));
 
-      maxStep_primal = slack_upper_bound_gap->stepbound(*iterate.slack_upper_bound_gap, maxStep_primal);
-      maxStep_dual = slack_upper_bound_gap_dual->stepbound(*iterate.slack_upper_bound_gap_dual, maxStep_dual);
+      primal_length = std::min(primal_length, slack_upper_bound_gap->fraction_to_boundary(*iterate.slack_upper_bound_gap));
+      dual_length = std::min(dual_length, slack_upper_bound_gap_dual->fraction_to_boundary(*iterate.slack_upper_bound_gap_dual));
    }
-
    if (nxlow > 0) {
-      assert(primal_lower_bound_gap->somePositive(*ixlow));
-      assert(primal_lower_bound_gap_dual->somePositive(*ixlow));
+      assert(primal_lower_bound_gap->are_positive(*primal_lower_bound_indicators));
+      assert(primal_lower_bound_gap_dual->are_positive(*primal_lower_bound_indicators));
 
-      maxStep_primal = primal_lower_bound_gap->stepbound(*iterate.primal_lower_bound_gap, maxStep_primal);
-      maxStep_dual = primal_lower_bound_gap_dual->stepbound(*iterate.primal_lower_bound_gap_dual, maxStep_dual);
+      primal_length = std::min(primal_length, primal_lower_bound_gap->fraction_to_boundary(*iterate.primal_lower_bound_gap));
+      dual_length = std::min(dual_length, primal_lower_bound_gap_dual->fraction_to_boundary(*iterate.primal_lower_bound_gap_dual));
    }
-
    if (nxupp > 0) {
-      assert(primal_upper_bound_gap->somePositive(*ixupp));
-      assert(primal_upper_bound_gap_dual->somePositive(*ixupp));
+      assert(primal_upper_bound_gap->are_positive(*primal_upper_bound_indicators));
+      assert(primal_upper_bound_gap_dual->are_positive(*primal_upper_bound_indicators));
 
-      maxStep_primal = primal_upper_bound_gap->stepbound(*iterate.primal_upper_bound_gap, maxStep_primal);
-      maxStep_dual = primal_upper_bound_gap_dual->stepbound(*iterate.primal_upper_bound_gap_dual, maxStep_dual);
+      primal_length = std::min(primal_length, primal_upper_bound_gap->fraction_to_boundary(*iterate.primal_upper_bound_gap));
+      dual_length = std::min(dual_length, primal_upper_bound_gap_dual->fraction_to_boundary(*iterate.primal_upper_bound_gap_dual));
    }
-
-   assert(maxStep_primal <= 1.0);
-   assert(maxStep_dual <= 1.0);
-   return std::make_pair(maxStep_primal, maxStep_dual);
+   assert(primal_length <= 1.0);
+   assert(dual_length <= 1.0);
+   return std::make_pair(primal_length, dual_length);
 }
 
 double
@@ -323,28 +315,28 @@ void Variables::push_to_interior(double alpha, double beta) {
 
    if (nxlow > 0) {
       primal_lower_bound_gap->setToConstant(alpha);
-      primal_lower_bound_gap->selectNonZeros(*ixlow);
+      primal_lower_bound_gap->selectNonZeros(*primal_lower_bound_indicators);
       primal_lower_bound_gap_dual->setToConstant(beta);
-      primal_lower_bound_gap_dual->selectNonZeros(*ixlow);
+      primal_lower_bound_gap_dual->selectNonZeros(*primal_lower_bound_indicators);
    }
    if (nxupp > 0) {
       primal_upper_bound_gap->setToConstant(alpha);
-      primal_upper_bound_gap->selectNonZeros(*ixupp);
+      primal_upper_bound_gap->selectNonZeros(*primal_upper_bound_indicators);
       primal_upper_bound_gap_dual->setToConstant(beta);
-      primal_upper_bound_gap_dual->selectNonZeros(*ixupp);
+      primal_upper_bound_gap_dual->selectNonZeros(*primal_upper_bound_indicators);
    }
 
    if (mclow > 0) {
       slack_lower_bound_gap->setToConstant(alpha);
-      slack_lower_bound_gap->selectNonZeros(*iclow);
+      slack_lower_bound_gap->selectNonZeros(*inequality_lower_bound_indicators);
       slack_lower_bound_gap_dual->setToConstant(beta);
-      slack_lower_bound_gap_dual->selectNonZeros(*iclow);
+      slack_lower_bound_gap_dual->selectNonZeros(*inequality_lower_bound_indicators);
    }
    if (mcupp > 0) {
       slack_upper_bound_gap->setToConstant(alpha);
-      slack_upper_bound_gap->selectNonZeros(*icupp);
+      slack_upper_bound_gap->selectNonZeros(*inequality_upper_bound_indicators);
       slack_upper_bound_gap_dual->setToConstant(beta);
-      slack_upper_bound_gap_dual->selectNonZeros(*icupp);
+      slack_upper_bound_gap_dual->selectNonZeros(*inequality_upper_bound_indicators);
    }
 }
 
@@ -393,20 +385,20 @@ double Variables::violation() const {
 
 void Variables::shift_bound_variables(double alpha, double beta) {
    if (nxlow > 0) {
-      primal_lower_bound_gap->add_constant(alpha, *ixlow);
-      primal_lower_bound_gap_dual->add_constant(beta, *ixlow);
+      primal_lower_bound_gap->add_constant(alpha, *primal_lower_bound_indicators);
+      primal_lower_bound_gap_dual->add_constant(beta, *primal_lower_bound_indicators);
    }
    if (nxupp > 0) {
-      primal_upper_bound_gap->add_constant(alpha, *ixupp);
-      primal_upper_bound_gap_dual->add_constant(beta, *ixupp);
+      primal_upper_bound_gap->add_constant(alpha, *primal_upper_bound_indicators);
+      primal_upper_bound_gap_dual->add_constant(beta, *primal_upper_bound_indicators);
    }
    if (mclow > 0) {
-      slack_lower_bound_gap->add_constant(alpha, *iclow);
-      slack_lower_bound_gap_dual->add_constant(beta, *iclow);
+      slack_lower_bound_gap->add_constant(alpha, *inequality_lower_bound_indicators);
+      slack_lower_bound_gap_dual->add_constant(beta, *inequality_lower_bound_indicators);
    }
    if (mcupp > 0) {
-      slack_upper_bound_gap->add_constant(alpha, *icupp);
-      slack_upper_bound_gap_dual->add_constant(beta, *icupp);
+      slack_upper_bound_gap->add_constant(alpha, *inequality_upper_bound_indicators);
+      slack_upper_bound_gap_dual->add_constant(beta, *inequality_upper_bound_indicators);
    }
 }
 
@@ -519,34 +511,34 @@ void Variables::set_to_zero() {
 }
 
 int Variables::valid_non_zero_pattern() const {
-   if (nxlow > 0 && (!primal_lower_bound_gap->matchesNonZeroPattern(*ixlow) || !primal_lower_bound_gap_dual->matchesNonZeroPattern(*ixlow))) {
+   if (nxlow > 0 && (!primal_lower_bound_gap->matchesNonZeroPattern(*primal_lower_bound_indicators) || !primal_lower_bound_gap_dual->matchesNonZeroPattern(*primal_lower_bound_indicators))) {
 
-      if (!primal_lower_bound_gap->matchesNonZeroPattern(*ixlow))
+      if (!primal_lower_bound_gap->matchesNonZeroPattern(*primal_lower_bound_indicators))
          printf("invalidNonZeroPattern v\n");
-      if (!primal_lower_bound_gap_dual->matchesNonZeroPattern(*ixlow))
+      if (!primal_lower_bound_gap_dual->matchesNonZeroPattern(*primal_lower_bound_indicators))
          printf("invalidNonZeroPattern gamma\n");
       return 0;
    }
 
-   if (nxupp > 0 && (!primal_upper_bound_gap->matchesNonZeroPattern(*ixupp) || !primal_upper_bound_gap_dual->matchesNonZeroPattern(*ixupp))) {
-      if (!primal_upper_bound_gap->matchesNonZeroPattern(*ixupp))
+   if (nxupp > 0 && (!primal_upper_bound_gap->matchesNonZeroPattern(*primal_upper_bound_indicators) || !primal_upper_bound_gap_dual->matchesNonZeroPattern(*primal_upper_bound_indicators))) {
+      if (!primal_upper_bound_gap->matchesNonZeroPattern(*primal_upper_bound_indicators))
          printf("invalidNonZeroPattern w\n");
-      if (!primal_upper_bound_gap_dual->matchesNonZeroPattern(*ixupp))
+      if (!primal_upper_bound_gap_dual->matchesNonZeroPattern(*primal_upper_bound_indicators))
          printf("invalidNonZeroPattern phi\n");
       return 0;
    }
-   if (mclow > 0 && (!slack_lower_bound_gap->matchesNonZeroPattern(*iclow) || !slack_lower_bound_gap_dual->matchesNonZeroPattern(*iclow))) {
-      if (!slack_lower_bound_gap->matchesNonZeroPattern(*iclow))
+   if (mclow > 0 && (!slack_lower_bound_gap->matchesNonZeroPattern(*inequality_lower_bound_indicators) || !slack_lower_bound_gap_dual->matchesNonZeroPattern(*inequality_lower_bound_indicators))) {
+      if (!slack_lower_bound_gap->matchesNonZeroPattern(*inequality_lower_bound_indicators))
          printf("invalidNonZeroPattern t\n");
-      if (!slack_lower_bound_gap_dual->matchesNonZeroPattern(*iclow))
+      if (!slack_lower_bound_gap_dual->matchesNonZeroPattern(*inequality_lower_bound_indicators))
          printf("invalidNonZeroPattern lambda\n");
       return 0;
    }
 
-   if (mcupp > 0 && (!slack_upper_bound_gap->matchesNonZeroPattern(*icupp) || !slack_upper_bound_gap_dual->matchesNonZeroPattern(*icupp))) {
-      if (!slack_upper_bound_gap->matchesNonZeroPattern(*icupp))
+   if (mcupp > 0 && (!slack_upper_bound_gap->matchesNonZeroPattern(*inequality_upper_bound_indicators) || !slack_upper_bound_gap_dual->matchesNonZeroPattern(*inequality_upper_bound_indicators))) {
+      if (!slack_upper_bound_gap->matchesNonZeroPattern(*inequality_upper_bound_indicators))
          printf("invalidNonZeroPattern u\n");
-      if (!primal_upper_bound_gap_dual->matchesNonZeroPattern(*icupp))
+      if (!primal_upper_bound_gap_dual->matchesNonZeroPattern(*inequality_upper_bound_indicators))
          printf("invalidNonZeroPattern phi\n");
       return 0;
    }
