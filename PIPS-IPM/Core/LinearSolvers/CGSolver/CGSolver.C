@@ -94,7 +94,7 @@ void CGSolver::solve(Vector<double>& rhs_) {
             break;
          }
          p.scale(beta);
-         p.axpy(1.0, z); // p=z + beta*p
+         p.add(1.0, z); // p=z + beta*p
       }
 
       SimpleVector<double>& q = y;
@@ -113,8 +113,8 @@ void CGSolver::solve(Vector<double>& rhs_) {
          stag = 0;
 
       //---- updates ----
-      x.axpy(alpha, p);
-      r.axpy(-alpha, q);
+      x.add(alpha, p);
+      r.add(-alpha, q);
       normr = r.two_norm();
       normr_act = normr;
 

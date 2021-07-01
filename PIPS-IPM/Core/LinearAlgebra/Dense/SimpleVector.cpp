@@ -189,7 +189,7 @@ SimpleVector<T>::~SimpleVector() {
 }
 
 template<typename T>
-Vector<T>* SimpleVector<T>::cloneFull() const {
+Vector<T>* SimpleVector<T>::clone_full() const {
    SimpleVector<T>* clone = new SimpleVector<T>(this->n);
    clone->copyFromArray(v);
 
@@ -426,7 +426,7 @@ void SimpleVector<T>::scale(T) {
 }
 
 template<>
-void SimpleVector<double>::axpy(double alpha, const Vector<double>& vec) {
+void SimpleVector<double>::add(double alpha, const Vector<double>& vec) {
    assert(this->n == vec.length());
    if (this->n == 0)
       return;
@@ -437,7 +437,7 @@ void SimpleVector<double>::axpy(double alpha, const Vector<double>& vec) {
 }
 
 template<typename T>
-void SimpleVector<T>::axpy(T alpha, const Vector<T>& vec) {
+void SimpleVector<T>::add(T alpha, const Vector<T>& vec) {
    assert(this->n == vec.length());
    const auto& sv = dynamic_cast<const SimpleVector<T>&>(vec);
 
@@ -450,7 +450,7 @@ void SimpleVector<T>::axpy(T alpha, const Vector<T>& vec) {
 }
 
 template<typename T>
-void SimpleVector<T>::addConstant(T c) {
+void SimpleVector<T>::add_constant(T c) {
    for (int i = 0; i < this->n; i++)
       v[i] += c;
 }
@@ -474,7 +474,7 @@ void SimpleVector<T>::gondzioProjection(T rmin, T rmax) {
 }
 
 template<typename T>
-void SimpleVector<T>::axzpy(T alpha, const Vector<T>& xvec, const Vector<T>& zvec) {
+void SimpleVector<T>::add_product(T alpha, const Vector<T>& xvec, const Vector<T>& zvec) {
    assert(this->n == xvec.length() && this->n == zvec.length());
 
    const auto& sxvec = dynamic_cast<const SimpleVector<T>&>(xvec);
@@ -512,7 +512,7 @@ void SimpleVector<T>::axzpy(T alpha, const Vector<T>& xvec, const Vector<T>& zve
 }
 
 template<typename T>
-void SimpleVector<T>::axdzpy(T alpha, const Vector<T>& xvec, const Vector<T>& zvec) {
+void SimpleVector<T>::add_quotient(T alpha, const Vector<T>& xvec, const Vector<T>& zvec) {
    const auto& sxvec = dynamic_cast<const SimpleVector<T>&>(xvec);
    T* x = sxvec.v;
    const auto& szvec = dynamic_cast<const SimpleVector<T>&>(zvec);
@@ -528,7 +528,7 @@ void SimpleVector<T>::axdzpy(T alpha, const Vector<T>& xvec, const Vector<T>& zv
 }
 
 template<typename T>
-void SimpleVector<T>::axdzpy(T alpha, const Vector<T>& xvec, const Vector<T>& zvec, const Vector<T>& select) {
+void SimpleVector<T>::add_quotient(T alpha, const Vector<T>& xvec, const Vector<T>& zvec, const Vector<T>& select) {
    assert(this->n == xvec.length() && this->n == zvec.length());
 
    const auto& sxvec = dynamic_cast<const SimpleVector<T>&>(xvec);

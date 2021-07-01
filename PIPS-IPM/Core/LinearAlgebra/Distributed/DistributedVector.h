@@ -48,7 +48,7 @@ public:
 
    [[nodiscard]] Vector<T>* clone() const override;
    /* copy vector entries as well */
-   [[nodiscard]] Vector<T>* cloneFull() const override;
+   [[nodiscard]] Vector<T>* clone_full() const override;
 
    void jointCopyFrom(const Vector<T>& vx, const Vector<T>& vy, const Vector<T>& vz) override;
    void jointCopyTo(Vector<T>& vx, Vector<T>& vy, Vector<T>& vz) const override;
@@ -90,13 +90,13 @@ public:
    void scale(T alpha) override;
 
    /** this += alpha * x */
-   void axpy(T alpha, const Vector<T>& x) override;
+   void add(T alpha, const Vector<T>& x) override;
    /** this += alpha * x * z */
-   void axzpy(T alpha, const Vector<T>& x, const Vector<T>& z) override;
+   void add_product(T alpha, const Vector<T>& x, const Vector<T>& z) override;
    /** this += alpha * x / z */
-   void axdzpy(T alpha, const Vector<T>& x, const Vector<T>& z) override;
+   void add_quotient(T alpha, const Vector<T>& x, const Vector<T>& z) override;
 
-   void addConstant(T c) override;
+   void add_constant(T c) override;
    void gondzioProjection(T rmin, T rmax) override;
    [[nodiscard]] T dotProductWith(const Vector<T>& v) const override;
    [[nodiscard]] T dotProductSelf(T scaleFactor) const override;
@@ -124,7 +124,7 @@ public:
    [[nodiscard]] long long number_nonzeros() const override;
    void add_constant(T c, const Vector<T>& select) override;
    void writefSomeToStream(std::ostream&, const char[], const Vector<T>&) const override { assert(false && "Not yet implemented"); };
-   void axdzpy(T alpha, const Vector<T>& x, const Vector<T>& z, const Vector<T>& select) override;
+   void add_quotient(T alpha, const Vector<T>& x, const Vector<T>& z, const Vector<T>& select) override;
 
    [[nodiscard]] bool somePositive(const Vector<T>& select) const override;
    void divideSome(const Vector<T>& div, const Vector<T>& select) override;
@@ -185,7 +185,7 @@ public:
    void AddChild(std::shared_ptr<DistributedVector<T>>) override {};
 
    [[nodiscard]] DistributedVector<T>* clone() const override { return new DistributedDummyVector<T>(); }
-   [[nodiscard]] DistributedVector<T>* cloneFull() const override { return new DistributedDummyVector<T>(); }
+   [[nodiscard]] DistributedVector<T>* clone_full() const override { return new DistributedDummyVector<T>(); }
 
    void jointCopyFrom(const Vector<T>&, const Vector<T>&, const Vector<T>&) override {};
    void jointCopyTo(Vector<T>&, Vector<T>&, Vector<T>&) const override {};
@@ -226,13 +226,13 @@ public:
    void scale(T) override {};
 
    /** this += alpha * x */
-   void axpy(T, const Vector<T>&) override {};
+   void add(T, const Vector<T>&) override {};
    /** this += alpha * x * z */
-   void axzpy(T, const Vector<T>&, const Vector<T>&) override {};
+   void add_product(T, const Vector<T>&, const Vector<T>&) override {};
    /** this += alpha * x / z */
-   void axdzpy(T, const Vector<T>&, const Vector<T>&) override {};
+   void add_quotient(T, const Vector<T>&, const Vector<T>&) override {};
 
-   void addConstant(T) override {};
+   void add_constant(T) override {};
    void gondzioProjection(T, T) override {};
    T dotProductWith(const Vector<T>&) const override { return 0.0; }
    T dotProductSelf(T) const override { return 0.0; };
@@ -258,7 +258,7 @@ public:
    [[nodiscard]] long long number_nonzeros() const override { return 0; }
    void add_constant(T, const Vector<T>&) override {};
    void writefSomeToStream(std::ostream&, const char[], const Vector<T>&) const override {};
-   void axdzpy(T, const Vector<T>&, const Vector<T>&, const Vector<T>&) override {};
+   void add_quotient(T, const Vector<T>&, const Vector<T>&, const Vector<T>&) override {};
 
    [[nodiscard]] bool somePositive(const Vector<T>&) const override { return 1; }
    void divideSome(const Vector<T>&, const Vector<T>&) override {};

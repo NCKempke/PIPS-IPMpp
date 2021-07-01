@@ -15,7 +15,7 @@ DistributedResiduals::DistributedResiduals(std::unique_ptr<Vector<double>> rQ_, 
    std::move(rpi_), std::move(rv_), std::move(rgamma_), std::move(rw_), std::move(rphi_), std::move(ixlow_), std::move(ixupp_), std::move(iclow_),
    std::move(icupp_)) {}
 
-std::unique_ptr<Residuals> DistributedResiduals::cloneFull() const{
+std::unique_ptr<Residuals> DistributedResiduals::clone_full() const{
    return std::make_unique<DistributedResiduals>(*this);
 };
 

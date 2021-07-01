@@ -317,11 +317,11 @@ public:
    };
 
    /** full clone of matrix - possibly with underlying dynamic sparse storage */
-   [[nodiscard]] virtual std::unique_ptr<GeneralMatrix> cloneFull() const {
-      return cloneFull(false);
+   [[nodiscard]] virtual std::unique_ptr<GeneralMatrix> clone_full() const {
+      return clone_full(false);
    }
 
-   [[nodiscard]] virtual std::unique_ptr<GeneralMatrix> cloneFull(bool /* switchToDynamicStorage */) const {
+   [[nodiscard]] virtual std::unique_ptr<GeneralMatrix> clone_full(bool /* switchToDynamicStorage */) const {
       assert(false && "not implemented");
       return nullptr;
    };

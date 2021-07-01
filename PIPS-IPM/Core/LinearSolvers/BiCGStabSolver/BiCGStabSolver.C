@@ -95,9 +95,9 @@ void BiCGStabSolver::solve(Vector<double>& rhs_) {
          }
 
          //-------- p = r + beta*(p - omega*v) --------
-         p.axpy(-omega, v);
+         p.add(-omega, v);
          p.scale(beta);
-         p.axpy(1.0, r);
+         p.add(1.0, r);
       }
 
       //------ v = A*(M2inv*(M1inv*p)) and ph=M2inv*(M1inv*p)
@@ -121,9 +121,9 @@ void BiCGStabSolver::solve(Vector<double>& rhs_) {
 
       // xhalf = x + alpha*ph and the associated residual
       xhalf.copyFrom(x);
-      xhalf.axpy(alpha, ph);
+      xhalf.add(alpha, ph);
       s.copyFrom(r);
-      s.axpy(-alpha, v);
+      s.add(-alpha, v);
       normr = s.two_norm();
       normr_act = normr;
       resvec[2 * ii] = normr;
@@ -192,9 +192,9 @@ void BiCGStabSolver::solve(Vector<double>& rhs_) {
          stag = 0;
 
       x.copyFrom(xhalf);
-      x.axpy(omega, sh); // x=xhalf+omega*sh
+      x.add(omega, sh); // x=xhalf+omega*sh
       r.copyFrom(s);
-      r.axpy(-omega, t); // r=s-omega*t
+      r.add(-omega, t); // r=s-omega*t
 
       normr = r.two_norm();
       normr_act = normr;

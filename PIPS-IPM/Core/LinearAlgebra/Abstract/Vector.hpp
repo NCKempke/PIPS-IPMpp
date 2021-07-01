@@ -91,14 +91,14 @@ public:
    virtual void scale(T alpha) = 0;
 
    /** this += alpha * x */
-   virtual void axpy(T alpha, const Vector<T>& x) = 0;
+   virtual void add(T alpha, const Vector<T>& x) = 0;
    /** this += alpha * x * z */
-   virtual void axzpy(T alpha, const Vector<T>& x, const Vector<T>& z) = 0;
+   virtual void add_product(T alpha, const Vector<T>& x, const Vector<T>& z) = 0;
    /** this += alpha * x / z */
-   virtual void axdzpy(T alpha, const Vector<T>& x, const Vector<T>& z) = 0;
+   virtual void add_quotient(T alpha, const Vector<T>& x, const Vector<T>& z) = 0;
 
    /** Add c to the elements of this Vector<double> object */
-   virtual void addConstant(T c) = 0;
+   virtual void add_constant(T c) = 0;
 
    /** Perform the projection needed by Gondzio's multiple corrector method.
     *
@@ -204,7 +204,7 @@ public:
     *         division by zero. The Vector<double> select may be x, z or a third
     *         Vector<double>.
     */
-   virtual void axdzpy(T alpha, const Vector<T>& x, const Vector<T>& z, const Vector<T>& select) = 0;
+   virtual void add_quotient(T alpha, const Vector<T>& x, const Vector<T>& z, const Vector<T>& select) = 0;
 
    /** True if selected elements of this Vector<double> are positive
     *  @param select Each element of this Vector<double> must be positive
@@ -272,7 +272,7 @@ public:
 
    virtual Vector<T>* clone() const = 0;
 
-   virtual Vector<T>* cloneFull() const = 0;
+   virtual Vector<T>* clone_full() const = 0;
 
    /** copy [this] = [vx, vy, vz] */
    virtual void jointCopyFrom(const Vector<T>& vx, const Vector<T>& vy, const Vector<T>& vz) = 0;

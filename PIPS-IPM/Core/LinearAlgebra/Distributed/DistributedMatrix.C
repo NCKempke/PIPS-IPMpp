@@ -61,19 +61,19 @@ bool DistributedMatrix::hasSparseMatrices() const {
    return Amat->is_a(kSparseGenMatrix) && Bmat->is_a(kSparseGenMatrix) && Blmat->is_a(kSparseGenMatrix);
 }
 
-std::unique_ptr<GeneralMatrix> DistributedMatrix::cloneFull(bool switchToDynamicStorage) const {
+std::unique_ptr<GeneralMatrix> DistributedMatrix::clone_full(bool switchToDynamicStorage) const {
 //   auto clone = std::make_unique<DistributedMatrix>(m, n, mpiComm);
    assert(hasSparseMatrices());
 
    // clone submatrices
-   auto Amat_clone = Amat->cloneFull(switchToDynamicStorage);
-   auto Bmat_clone = Bmat->cloneFull(switchToDynamicStorage);
-   auto Blmat_clone = Blmat->cloneFull(switchToDynamicStorage);
+   auto Amat_clone = Amat->clone_full(switchToDynamicStorage);
+   auto Bmat_clone = Bmat->clone_full(switchToDynamicStorage);
+   auto Blmat_clone = Blmat->clone_full(switchToDynamicStorage);
 
    auto clone = std::make_unique<DistributedMatrix>(std::move(Amat_clone), std::move(Bmat_clone), std::move(Blmat_clone), mpiComm);
    for (const auto& it : children)
    {
-      std::shared_ptr<DistributedMatrix> child_clone{dynamic_cast<DistributedMatrix*>(it->cloneFull(switchToDynamicStorage).release())};
+      std::shared_ptr<DistributedMatrix> child_clone{dynamic_cast<DistributedMatrix*>(it->clone_full(switchToDynamicStorage).release())};
       clone->children.push_back(std::move(child_clone));
    }
    return clone;

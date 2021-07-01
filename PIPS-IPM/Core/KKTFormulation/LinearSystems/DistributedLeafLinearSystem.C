@@ -111,7 +111,7 @@ void DistributedLeafLinearSystem::add_regularization_diagonal(int offset, double
 
    auto& regularization_vector = *dynamic_cast<DistributedVector<double>&>(regularization_vector_).first;
 
-   regularization_vector.addConstant(regularization);
+   regularization_vector.add_constant(regularization);
    kkt->diagonal_add_constant_from(offset, regularization_vector.length(), regularization);
 }
 

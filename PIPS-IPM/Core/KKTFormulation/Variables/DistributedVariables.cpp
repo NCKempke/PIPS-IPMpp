@@ -31,7 +31,7 @@ DistributedVariables::DistributedVariables(const DistributedVariables& vars) : V
    stochNode = vars.stochNode;
 }
 
-std::unique_ptr<Variables> DistributedVariables::cloneFull() const {
+std::unique_ptr<Variables> DistributedVariables::clone_full() const {
    return std::make_unique<DistributedVariables>(*this);
 }
 

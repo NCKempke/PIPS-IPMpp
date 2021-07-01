@@ -261,12 +261,12 @@ void StochPresolverParallelRows::setNormalizedPointersMatrixBounds(int node) {
    assert(-1 <= node && node < nChildren);
    assert(!presolve_data.nodeIsDummy(node));
 
-   norm_b.reset(dynamic_cast<SimpleVector<double>*>(getSimpleVecFromRowStochVec(*presolve_data.getPresProb().equality_rhs, node, false).cloneFull()));
+   norm_b.reset(dynamic_cast<SimpleVector<double>*>(getSimpleVecFromRowStochVec(*presolve_data.getPresProb().equality_rhs, node, false).clone_full()));
 
-   norm_cupp.reset(dynamic_cast<SimpleVector<double>*>(getSimpleVecFromRowStochVec(*presolve_data.getPresProb().inequality_upper_bounds, node, false).cloneFull()));
-   norm_icupp.reset(dynamic_cast<SimpleVector<double>*>(getSimpleVecFromRowStochVec(*presolve_data.getPresProb().inequality_upper_bound_indicators, node, false).cloneFull()));
-   norm_clow.reset(dynamic_cast<SimpleVector<double>*>(getSimpleVecFromRowStochVec(*presolve_data.getPresProb().inequality_lower_bounds, node, false).cloneFull()));
-   norm_iclow.reset(dynamic_cast<SimpleVector<double>*>(getSimpleVecFromRowStochVec(*presolve_data.getPresProb().inequality_lower_bound_indicators, node, false).cloneFull()));
+   norm_cupp.reset(dynamic_cast<SimpleVector<double>*>(getSimpleVecFromRowStochVec(*presolve_data.getPresProb().inequality_upper_bounds, node, false).clone_full()));
+   norm_icupp.reset(dynamic_cast<SimpleVector<double>*>(getSimpleVecFromRowStochVec(*presolve_data.getPresProb().inequality_upper_bound_indicators, node, false).clone_full()));
+   norm_clow.reset(dynamic_cast<SimpleVector<double>*>(getSimpleVecFromRowStochVec(*presolve_data.getPresProb().inequality_lower_bounds, node, false).clone_full()));
+   norm_iclow.reset(dynamic_cast<SimpleVector<double>*>(getSimpleVecFromRowStochVec(*presolve_data.getPresProb().inequality_lower_bound_indicators, node, false).clone_full()));
 }
 
 // TODO : does not yet set any pointers for linking constraints of the other system - necessary when trying to process parallel linking constraints
@@ -344,12 +344,12 @@ void StochPresolverParallelRows::setNormalizedSingletonFlags(int node) {
 void StochPresolverParallelRows::setNormalizedReductionPointers(int node) {
    assert(-1 <= node && node < nChildren);
 
-   normNnzColParent.reset(dynamic_cast<SimpleVector<int>*>(getSimpleVecFromColStochVec(presolve_data.getNnzsCol(), -1).cloneFull()));
+   normNnzColParent.reset(dynamic_cast<SimpleVector<int>*>(getSimpleVecFromColStochVec(presolve_data.getNnzsCol(), -1).clone_full()));
    (node == -1) ? normNnzColChild.reset() : normNnzColChild.reset(
-         dynamic_cast<SimpleVector<int>*>(getSimpleVecFromColStochVec(presolve_data.getNnzsCol(), node).cloneFull()));
+         dynamic_cast<SimpleVector<int>*>(getSimpleVecFromColStochVec(presolve_data.getNnzsCol(), node).clone_full()));
 
-   normNnzRowA.reset(dynamic_cast<SimpleVector<int>*>(getSimpleVecFromRowStochVec(presolve_data.getNnzsRowA(), node, false).cloneFull()));
-   normNnzRowC.reset(dynamic_cast<SimpleVector<int>*>(getSimpleVecFromRowStochVec(presolve_data.getNnzsRowC(), node, false).cloneFull()));
+   normNnzRowA.reset(dynamic_cast<SimpleVector<int>*>(getSimpleVecFromRowStochVec(presolve_data.getNnzsRowA(), node, false).clone_full()));
+   normNnzRowC.reset(dynamic_cast<SimpleVector<int>*>(getSimpleVecFromRowStochVec(presolve_data.getNnzsRowC(), node, false).clone_full()));
 }
 
 void StochPresolverParallelRows::setNormalizedPointers(int node) {

@@ -145,10 +145,10 @@ public:
 
    void write_to_streamDense(std::ostream& out) const override;
 
-   std::unique_ptr<Problem> cloneFull() const override {
-      return cloneFull(false);
+   std::unique_ptr<Problem> clone_full() const override {
+      return clone_full(false);
    }
-   std::unique_ptr<DistributedProblem> cloneFull(bool switchToDynamicStorage = false) const;
+   std::unique_ptr<DistributedProblem> clone_full(bool switchToDynamicStorage = false) const;
 
    double evaluate_objective(const Variables& variables) const override;
 

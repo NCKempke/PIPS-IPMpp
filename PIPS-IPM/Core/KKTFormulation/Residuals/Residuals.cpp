@@ -31,14 +31,14 @@ Residuals::Residuals(const Residuals& residuals) : residual_norm{residuals.resid
    my{residuals.my}, mz{residuals.mz},
    ixupp{residuals.ixupp}, nxupp{residuals.nxupp}, ixlow{residuals.ixlow}, nxlow{residuals.nxlow},
    icupp{residuals.icupp}, mcupp{residuals.mcupp}, iclow{residuals.iclow}, mclow{residuals.mclow},
-   lagrangian_gradient{residuals.lagrangian_gradient->cloneFull()}, equality_residuals{residuals.equality_residuals->cloneFull()},
-   inequality_residuals{residuals.inequality_residuals->cloneFull()}, inequality_dual_residuals{residuals.inequality_dual_residuals->cloneFull()}, rv{residuals.rv->cloneFull()},
-   rw{residuals.rw->cloneFull()},
-   rt{residuals.rt->cloneFull()}, ru{residuals.ru->cloneFull()}, rgamma{residuals.rgamma->cloneFull()},
-   rphi{residuals.rphi->cloneFull()},
-   rlambda{residuals.rlambda->cloneFull()}, rpi{residuals.rpi->cloneFull()} {}
+   lagrangian_gradient{residuals.lagrangian_gradient->clone_full()}, equality_residuals{residuals.equality_residuals->clone_full()},
+   inequality_residuals{residuals.inequality_residuals->clone_full()}, inequality_dual_residuals{residuals.inequality_dual_residuals->clone_full()}, rv{residuals.rv->clone_full()},
+   rw{residuals.rw->clone_full()},
+   rt{residuals.rt->clone_full()}, ru{residuals.ru->clone_full()}, rgamma{residuals.rgamma->clone_full()},
+   rphi{residuals.rphi->clone_full()},
+   rlambda{residuals.rlambda->clone_full()}, rpi{residuals.rpi->clone_full()} {}
 
-std::unique_ptr<Residuals> Residuals::cloneFull() const {
+std::unique_ptr<Residuals> Residuals::clone_full() const {
    return std::make_unique<Residuals>(*this);
 }
 
@@ -73,11 +73,11 @@ void Residuals::evaluate(const Problem& problem, const Variables& iterate, bool 
    problem.CTransmult(1.0, *this->lagrangian_gradient, -1.0, *iterate.inequality_duals);
 
    if (nxlow > 0) {
-      this->lagrangian_gradient->axpy(-1.0, *iterate.primal_lower_bound_gap_dual);
+      this->lagrangian_gradient->add(-1.0, *iterate.primal_lower_bound_gap_dual);
    }
 
    if (nxupp > 0) {
-      this->lagrangian_gradient->axpy(1.0, *iterate.primal_upper_bound_gap_dual);
+      this->lagrangian_gradient->add(1.0, *iterate.primal_upper_bound_gap_dual);
    }
 
    this->residual_norm = std::max(this->residual_norm, compute_inf_norm(*this->lagrangian_gradient, print_residuals, "rQ"));
@@ -102,18 +102,18 @@ void Residuals::evaluate(const Problem& problem, const Variables& iterate, bool 
    this->inequality_dual_residuals->copyFrom(*iterate.inequality_duals);
 
    if (mclow > 0)
-      this->inequality_dual_residuals->axpy(-1.0, *iterate.slack_lower_bound_gap_dual);
+      this->inequality_dual_residuals->add(-1.0, *iterate.slack_lower_bound_gap_dual);
    if (mcupp > 0)
-      this->inequality_dual_residuals->axpy(1.0, *iterate.slack_upper_bound_gap_dual);
+      this->inequality_dual_residuals->add(1.0, *iterate.slack_upper_bound_gap_dual);
 
    this->residual_norm = std::max(this->residual_norm, compute_inf_norm(*this->inequality_dual_residuals, print_residuals, "rz"));
 
    if (mclow > 0) {
       /*** rt = s - d - t ***/
       this->rt->copyFrom(*iterate.slacks);
-      this->rt->axpy(-1.0, problem.s_lower_bound());
+      this->rt->add(-1.0, problem.s_lower_bound());
       this->rt->selectNonZeros(*iclow);
-      this->rt->axpy(-1.0, *iterate.slack_lower_bound_gap);
+      this->rt->add(-1.0, *iterate.slack_lower_bound_gap);
 
       // contribution - d^T lambda to duality gap
       const double bl_lambda = problem.inequality_lower_bounds->dotProductWith(*iterate.slack_lower_bound_gap_dual);
@@ -125,9 +125,9 @@ void Residuals::evaluate(const Problem& problem, const Variables& iterate, bool 
    if (mcupp > 0) {
       /*** ru = s - f + u ***/
       this->ru->copyFrom(*iterate.slacks);
-      this->ru->axpy(-1.0, problem.s_upper_bound());
+      this->ru->add(-1.0, problem.s_upper_bound());
       this->ru->selectNonZeros(*icupp);
-      this->ru->axpy(1.0, *iterate.slack_upper_bound_gap);
+      this->ru->add(1.0, *iterate.slack_upper_bound_gap);
 
       // contribution - f^T pi to duality gap
       const double bu_pi = problem.inequality_upper_bounds->dotProductWith(*iterate.slack_upper_bound_gap_dual);
@@ -139,9 +139,9 @@ void Residuals::evaluate(const Problem& problem, const Variables& iterate, bool 
    if (nxlow > 0) {
       /*** rv = x - lx - v ***/
       this->rv->copyFrom(*iterate.primals);
-      this->rv->axpy(-1.0, problem.x_lower_bound());
+      this->rv->add(-1.0, problem.x_lower_bound());
       this->rv->selectNonZeros(*ixlow);
-      this->rv->axpy(-1.0, *iterate.primal_lower_bound_gap);
+      this->rv->add(-1.0, *iterate.primal_lower_bound_gap);
 
       this->residual_norm = std::max(this->residual_norm, compute_inf_norm(*this->rv, print_residuals, "rv"));
       // contribution - lx^T gamma to duality gap
@@ -153,9 +153,9 @@ void Residuals::evaluate(const Problem& problem, const Variables& iterate, bool 
    if (nxupp > 0) {
       /*** rw = x - ux + w ***/
       this->rw->copyFrom(*iterate.primals);
-      this->rw->axpy(-1.0, problem.x_upper_bound());
+      this->rw->add(-1.0, problem.x_upper_bound());
       this->rw->selectNonZeros(*ixupp);
-      this->rw->axpy(1.0, *iterate.primal_upper_bound_gap);
+      this->rw->add(1.0, *iterate.primal_upper_bound_gap);
 
       this->residual_norm = std::max(this->residual_norm, compute_inf_norm(*this->rw, print_residuals, "rw"));
 
@@ -219,13 +219,13 @@ double Residuals::compute_residual_norm() {
 
 void Residuals::add_to_complementarity_residual(const Variables& variables, double alpha) {
    if (mclow > 0)
-      rlambda->axzpy(1.0, *variables.slack_lower_bound_gap, *variables.slack_lower_bound_gap_dual);
+      rlambda->add_product(1.0, *variables.slack_lower_bound_gap, *variables.slack_lower_bound_gap_dual);
    if (mcupp > 0)
-      rpi->axzpy(1.0, *variables.slack_upper_bound_gap, *variables.slack_upper_bound_gap_dual);
+      rpi->add_product(1.0, *variables.slack_upper_bound_gap, *variables.slack_upper_bound_gap_dual);
    if (nxlow > 0)
-      rgamma->axzpy(1.0, *variables.primal_lower_bound_gap, *variables.primal_lower_bound_gap_dual);
+      rgamma->add_product(1.0, *variables.primal_lower_bound_gap, *variables.primal_lower_bound_gap_dual);
    if (nxupp > 0)
-      rphi->axzpy(1.0, *variables.primal_upper_bound_gap, *variables.primal_upper_bound_gap_dual);
+      rphi->add_product(1.0, *variables.primal_upper_bound_gap, *variables.primal_upper_bound_gap_dual);
 
    if (alpha != 0.0) {
       if (mclow > 0)
@@ -379,25 +379,25 @@ double Residuals::feasibility_measure() const {
 //double complementarity = 0.;
 // compute componentwise products of complementary variables
 //   if (mclow > 0) {
-//      SmartPointer<Vector<double> > rt_copy = SmartPointer<Vector<double> >(rt->cloneFull());
+//      SmartPointer<Vector<double> > rt_copy = SmartPointer<Vector<double> >(rt->clone_full());
 //      rt_copy->componentMult(*rlambda);
 //      rt_copy->addConstant(-mu);
 //      complementarity += rt_copy->onenorm();
 //   }
 //   if (mcupp > 0) {
-//      SmartPointer<Vector<double> > ru_copy = SmartPointer<Vector<double> >(ru->cloneFull());
+//      SmartPointer<Vector<double> > ru_copy = SmartPointer<Vector<double> >(ru->clone_full());
 //      ru_copy->componentMult(*rphi);
 //      ru_copy->addConstant(-mu);
 //      complementarity += ru_copy->onenorm();
 //   }
 //   if (nxlow > 0) {
-//      SmartPointer<Vector<double> > rv_copy = SmartPointer<Vector<double> >(rv->cloneFull());
+//      SmartPointer<Vector<double> > rv_copy = SmartPointer<Vector<double> >(rv->clone_full());
 //      rv_copy->componentMult(*rgamma);
 //      rv_copy->addConstant(-mu);
 //      complementarity += rv_copy->onenorm();
 //   }
 //   if (nxupp > 0) {
-//      SmartPointer<Vector<double> > rw_copy = SmartPointer<Vector<double> >(rw->cloneFull());
+//      SmartPointer<Vector<double> > rw_copy = SmartPointer<Vector<double> >(rw->clone_full());
 //      rw_copy->componentMult(*rphi);
 //      rw_copy->addConstant(-mu);
 //      complementarity += rw_copy->onenorm();

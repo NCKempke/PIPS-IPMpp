@@ -21,7 +21,7 @@ sLinsysRootBordered::sLinsysRootBordered(const DistributedFactory& factory_, Dis
 
 void sLinsysRootBordered::computeSchurCompRightHandSide(const DistributedVector<double>& rhs_inner, SimpleVector<double>& b0) {
    if (!sol_inner)
-      sol_inner.reset(dynamic_cast<DistributedVector<double>*>(rhs_inner.cloneFull()));
+      sol_inner.reset(dynamic_cast<DistributedVector<double>*>(rhs_inner.clone_full()));
    else
       sol_inner->copyFrom(rhs_inner);
 

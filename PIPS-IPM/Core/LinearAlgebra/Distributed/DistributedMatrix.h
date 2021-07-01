@@ -34,10 +34,10 @@ public:
    // constructor for combining scenarios
    ~DistributedMatrix() override = default;
 
-   using GeneralMatrix::cloneFull;
+   using GeneralMatrix::clone_full;
    using GeneralMatrix::cloneEmptyRows;
    [[nodiscard]] std::unique_ptr<GeneralMatrix> cloneEmptyRows(bool switchToDynamicStorage) const override;
-   [[nodiscard]] std::unique_ptr<GeneralMatrix> cloneFull(bool switchToDynamicStorage) const override;
+   [[nodiscard]] std::unique_ptr<GeneralMatrix> clone_full(bool switchToDynamicStorage) const override;
 
    virtual void AddChild(const std::shared_ptr<DistributedMatrix>& child);
 
@@ -254,10 +254,10 @@ public:
    [[nodiscard]] long long n_rows() const override { return 0; };
    [[nodiscard]] long long n_columns() const override { return 0; };
 
-   using GeneralMatrix::cloneFull;
+   using GeneralMatrix::clone_full;
    using GeneralMatrix::cloneEmptyRows;
    [[nodiscard]] std::unique_ptr<GeneralMatrix> cloneEmptyRows(bool) const override { return std::make_unique<StochGenDummyMatrix>(); };
-   [[nodiscard]] std::unique_ptr<GeneralMatrix> cloneFull(bool) const override { return std::make_unique<StochGenDummyMatrix>(); };
+   [[nodiscard]] std::unique_ptr<GeneralMatrix> clone_full(bool) const override { return std::make_unique<StochGenDummyMatrix>(); };
 
 
    /** The actual number of structural non-zero elements in this sparse

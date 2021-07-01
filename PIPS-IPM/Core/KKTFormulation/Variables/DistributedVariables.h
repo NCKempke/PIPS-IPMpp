@@ -24,7 +24,7 @@ public:
 
    DistributedVariables(const DistributedVariables& vars);
 
-   [[nodiscard]] std::unique_ptr<Variables> cloneFull() const override;
+   [[nodiscard]] std::unique_ptr<Variables> clone_full() const override;
 
    ~DistributedVariables() override = default;
 

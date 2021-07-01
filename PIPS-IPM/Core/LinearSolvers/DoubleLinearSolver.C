@@ -31,7 +31,7 @@ void DoubleIterativeLinearSolver::applyM2(double beta, Vector<double>& res, doub
 
       //beta not 0.0 and alpha not 1.0
       if (alpha != 0)
-         res.axpy(alpha, x);
+         res.add(alpha, x);
 
    }
    else
