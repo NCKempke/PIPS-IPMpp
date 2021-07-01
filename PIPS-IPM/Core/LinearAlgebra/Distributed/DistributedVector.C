@@ -1352,17 +1352,18 @@ T DistributedVector<T>::dotProductSelf(T scaleFactor) const {
 }
 
 template<typename T>
-T DistributedVector<T>::scaled_dot_product_self(const Vector<T>& scale) const {
-   T dot_product = 0.0;
+T DistributedVector<T>::scaled_dot_product_self(const Vector<T>& scale_) const {
+   T dot_product = T{};
+   const auto& scale = dynamic_cast<const DistributedVector<T>&>(scale_);
 
    for (size_t it = 0; it < children.size(); it++)
-      dot_product += children[it]->scaled_dot_product_self(scale);
+      dot_product += children[it]->scaled_dot_product_self(*scale.children[it]);
 
    if (first && (iAmSpecial || first->isKindOf(kStochVector)))
-      dot_product += first->scaled_dot_product_self(scale);
+      dot_product += first->scaled_dot_product_self(*scale.first);
 
-   if (iAmSpecial && last)
-      dot_product += last->scaled_dot_product_self(scale);
+   if (last && iAmSpecial)
+      dot_product += last->scaled_dot_product_self(*scale.last);
 
    if (iAmDistrib && !parent)
       PIPS_MPIgetSumInPlace(dot_product, mpiComm);
@@ -1499,6 +1500,40 @@ bool DistributedVector<T>::all_positive() const {
       PIPS_MPIgetLogicAndInPlace(all_pos, mpiComm);
 
    return all_pos;
+}
+
+template<typename T>
+void DistributedVector<T>::transform(const std::function<T(const T&)>& transformation) {
+   if (this->first) {
+      this->first->transform(transformation);
+   }
+
+   if (this->last) {
+      this->last->transform(transformation);
+   }
+
+   for (auto& child : children) {
+      child->transform(transformation);
+   }
+}
+
+template<typename T>
+T DistributedVector<T>::sum_reduce(const std::function<T(const T&, const T&)>& reduce) const {
+   T sum_reduce{};
+
+   for (size_t it = 0; it < children.size(); it++)
+      sum_reduce += children[it]->sum_reduce(reduce);
+
+   if (first && (iAmSpecial || first->isKindOf(kStochVector)))
+      sum_reduce += first->sum_reduce(reduce);
+
+   if (iAmSpecial && last)
+      sum_reduce += last->sum_reduce(reduce);
+
+   if (iAmDistrib && !parent)
+      PIPS_MPIgetSumInPlace(sum_reduce, mpiComm);
+
+   return sum_reduce;
 }
 
 template<typename T>

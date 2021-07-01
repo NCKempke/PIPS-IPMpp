@@ -112,6 +112,9 @@ public:
    void roundToPow2() override;
 
    [[nodiscard]] bool all_positive() const override;
+
+   void transform(const std::function<T(const T&)>& transformation) override;
+   [[nodiscard]] T sum_reduce(const std::function<T(const T& a, const T& b)>& reduce) const override;
    [[nodiscard]] bool all_of(const std::function<bool(const T&)>& pred) const override;
 
    [[nodiscard]] bool matchesNonZeroPattern(const Vector<T>& select) const override;
@@ -242,6 +245,9 @@ public:
    void sqrt() override {};
    void roundToPow2() override {};
    [[nodiscard]] bool all_positive() const override { return true; };
+
+   void transform(const std::function<T(const T&)>& transformation) override {};
+   [[nodiscard]] T sum_reduce(const std::function<T(const T& a, const T& b)>& reduce) const override { return T{}; };
    [[nodiscard]] bool all_of(const std::function<bool(const T&)>&) const override { return true; };
 
    [[nodiscard]] bool matchesNonZeroPattern(const Vector<T>&) const override { return true; }
