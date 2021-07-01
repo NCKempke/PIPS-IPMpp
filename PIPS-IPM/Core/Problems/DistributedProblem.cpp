@@ -7,9 +7,9 @@
 #include "mpi.h"
 #include "PIPSIPMppOptions.h"
 #include "BorderedSymmetricMatrix.h"
+#include "BorderedMatrixLiftedA0wrapper.h"
 #include <iomanip>
 #include <iostream>
-#include <algorithm>
 #include <numeric>
 #include <functional>
 
@@ -631,7 +631,7 @@ std::vector<int> DistributedProblem::get2LinkLengthsVec(const std::vector<int>& 
    return linkStartBlockLengths;
 }
 
-SparseSymmetricMatrix* DistributedProblem::createSchurCompSymbSparseUpper() const {
+std::unique_ptr<SparseSymmetricMatrix> DistributedProblem::createSchurCompSymbSparseUpper() const {
    assert(!children.empty());
    const int nx0 = getLocalnx();
    const int my0 = getLocalmy();
@@ -641,7 +641,6 @@ SparseSymmetricMatrix* DistributedProblem::createSchurCompSymbSparseUpper() cons
    const int nnz = getSchurCompMaxNnz();
 
    assert(nnz > 0);
-   assert(myl >= 0 && mzl >= 0);
 
    int* krowM = new int[sizeSC + 1];
    int* jcolM = new int[nnz];
@@ -650,15 +649,10 @@ SparseSymmetricMatrix* DistributedProblem::createSchurCompSymbSparseUpper() cons
 
    krowM[0] = 0;
 
-   // get B_0^T (resp. A_0^T)
-   const SparseMatrix& Btrans = getLocalB().getTranspose();
-   const int* startRowBtrans = Btrans.krowM();
-   const int* colidxBtrans = Btrans.jcolM();
-
 #ifndef NDEBUG
    if (!is_hierarchy_inner_leaf) {
-      const auto[bm, bn] = Btrans.n_rows_columns();
-      assert(bm == nx0 && bn == my0);
+      const auto[bm, bn] = getLocalB().getTranspose().n_rows_columns();
+      assert(bm == nx0 && (bn == my0 || my0 == 0));
    } else {
       assert(nx0 == 0);
       assert(my0 == 0);
@@ -670,9 +664,14 @@ SparseSymmetricMatrix* DistributedProblem::createSchurCompSymbSparseUpper() cons
 
    assert(nx0NonZero >= 0);
 
-   // dense square block, B_0^T, and dense border blocks todo: add space for CDCt
+   // dense square block, B_0^T, and dense border blocks
    for (int i = 0; i < nx0NonZero; ++i) {
-      const int blength = startRowBtrans[i + 1] - startRowBtrans[i];
+      // get B_0^T (resp. A_0^T)
+      const SparseMatrix& Btrans = getLocalB().getTranspose();
+      const int* startRowBtrans = Btrans.krowM();
+      const int* colidxBtrans = Btrans.jcolM();
+
+      const int blength = my0 > 0 ? startRowBtrans[i + 1] - startRowBtrans[i] : 0;
       assert(blength >= 0);
 
       krowM[i + 1] = krowM[i] + (nx0 - i) + blength + myl + mzl;
@@ -681,7 +680,9 @@ SparseSymmetricMatrix* DistributedProblem::createSchurCompSymbSparseUpper() cons
       appendRowDense(i, nx0, nnzcount, jcolM);
 
       /* B0^T */
-      appendRowSparse(startRowBtrans[i], startRowBtrans[i + 1], nx0, colidxBtrans, nnzcount, jcolM);
+      if (my0 > 0) {
+         appendRowSparse(startRowBtrans[i], startRowBtrans[i + 1], nx0, colidxBtrans, nnzcount, jcolM);
+      }
 
       /* dense sum X1^T Fi^T and X1^T Gi^T */
       appendRowDense(nx0 + my0, nx0 + my0 + myl + mzl, nnzcount, jcolM);
@@ -693,7 +694,14 @@ SparseSymmetricMatrix* DistributedProblem::createSchurCompSymbSparseUpper() cons
    for (int i = nx0NonZero; i < nx0; ++i) {
       appendRowDense(i, nx0, nnzcount, jcolM);
 
-      appendRowSparse(startRowBtrans[i], startRowBtrans[i + 1], nx0, colidxBtrans, nnzcount, jcolM);
+      if (my0 > 0) {
+         // get B_0^T (resp. A_0^T)
+         const SparseMatrix& Btrans = getLocalB().getTranspose();
+         const int* startRowBtrans = Btrans.krowM();
+         const int* colidxBtrans = Btrans.jcolM();
+
+         appendRowSparse(startRowBtrans[i], startRowBtrans[i + 1], nx0, colidxBtrans, nnzcount, jcolM);
+      }
 
       if (myl > 0) {
          const SparseMatrix& Ft = getLocalF().getTranspose();
@@ -763,11 +771,11 @@ SparseSymmetricMatrix* DistributedProblem::createSchurCompSymbSparseUpper() cons
 
    assert(nnzcount == nnz);
 
-   return (new SparseSymmetricMatrix(sizeSC, nnz, krowM, jcolM, M, 1, false));
+   return std::make_unique<SparseSymmetricMatrix>(sizeSC, nnz, krowM, jcolM, M, 1, false);
 }
 
 
-SparseSymmetricMatrix* DistributedProblem::createSchurCompSymbSparseUpperDist(int blocksStart, int blocksEnd) const {
+std::unique_ptr<SparseSymmetricMatrix> DistributedProblem::createSchurCompSymbSparseUpperDist(int blocksStart, int blocksEnd) const {
    assert(!children.empty());
 
    const int nx0 = getLocalnx();
@@ -912,7 +920,7 @@ SparseSymmetricMatrix* DistributedProblem::createSchurCompSymbSparseUpperDist(in
 
    initDistMarker(blocksStart, blocksEnd);
 
-   return (new SparseSymmetricMatrix(sizeSC, nnzcount, krowM, jcolM, M, 1, false));
+   return std::make_unique<SparseSymmetricMatrix>(sizeSC, nnzcount, krowM, jcolM, M, 1, false);
 }
 
 Permutation DistributedProblem::get0VarsLastGlobalsFirstPermutation(std::vector<int>& link_vars_n_blocks, int& n_globals) {
@@ -934,15 +942,18 @@ Permutation DistributedProblem::get0VarsLastGlobalsFirstPermutation(std::vector<
       if (link_vars_n_blocks[i] > threshold_global_vars) {
          ++n_globals;
          permvec[count++] = i;
-      } else if (link_vars_n_blocks[i] == 0)
+      } else if (link_vars_n_blocks[i] == 0) {
          permvec[back_count--] = i;
+      }
    }
 
-   for (size_t i = 0; i < n_link_vars; ++i) {
-      if (link_vars_n_blocks[i] == -1 ||
-         (link_vars_n_blocks[i] > 0 && link_vars_n_blocks[i] <= threshold_global_vars)) {
-         assert(count <= back_count);
-         permvec[count++] = i;
+   if (threshold_global_vars >= -1) {
+      for (size_t i = 0; i < n_link_vars; ++i) {
+         if (link_vars_n_blocks[i] == -1 ||
+            (link_vars_n_blocks[i] > 0 && link_vars_n_blocks[i] <= threshold_global_vars)) {
+            assert(count <= back_count);
+            permvec[count++] = i;
+         }
       }
    }
    assert(count == back_count + 1);
@@ -1040,9 +1051,15 @@ DistributedProblem::getAscending2LinkFirstGlobalsLastPermutation(std::vector<int
       assert(linkStartBlockId[permvec[front_pointer]] == -1);
       assert(linkStartBlockId[permvec[end_pointer]] == -1);
 
-      if (n_blocks_per_row[permvec[front_pointer]] <= threshold_global_cons)
+      /* blocks == -1 indicates a non-local 2 link */
+      auto is_local_link = [](int blocks) {
+         return (blocks <= threshold_global_cons && (blocks != -1 || !shave_nonlocal_2links));
+      };
+
+      /* keep link at front if it is not global and either not a 2 link or we don't shave the 2links */
+      if (is_local_link(n_blocks_per_row[permvec[front_pointer]]))
          ++front_pointer;
-      else if (n_blocks_per_row[permvec[end_pointer]] > threshold_global_cons)
+      else if (!is_local_link(n_blocks_per_row[permvec[end_pointer]]))
          --end_pointer;
       else {
          assert(front_pointer < end_pointer);
@@ -1217,11 +1234,15 @@ void DistributedProblem::destroyChildren() {
 }
 
 DistributedProblem* DistributedProblem::shaveBorderFromDataAndCreateNewTop(const DistributedTree& tree) {
-   std::shared_ptr<SymmetricMatrix> Q_hier(
+   assert(tree.nChildren() == 1);
+   std::unique_ptr<SymmetricMatrix> Q_hier(
       dynamic_cast<DistributedSymmetricMatrix&>(*hessian).raiseBorder(n_global_linking_vars));
 
-   std::shared_ptr<GeneralMatrix> A_hier(
+   std::unique_ptr<BorderedMatrix> A_hier(
       dynamic_cast<DistributedMatrix&>(*equality_jacobian).raiseBorder(n_global_eq_linking_conss, n_global_linking_vars));
+   if (pipsipmpp_options::get_bool_parameter("HIERARCHICAL_MOVE_A0_TO_DENSE_LAYER")) {
+      A_hier = std::make_unique<BorderedMatrixLiftedA0wrapper>(std::move(A_hier));
+   }
    std::shared_ptr<GeneralMatrix> C_hier(
       dynamic_cast<DistributedMatrix&>(*inequality_jacobian).raiseBorder(n_global_ineq_linking_conss, n_global_linking_vars));
 
@@ -1237,9 +1258,11 @@ DistributedProblem* DistributedProblem::shaveBorderFromDataAndCreateNewTop(const
    std::shared_ptr<DistributedVector<double>> ixlow_hier(
       dynamic_cast<DistributedVector<double>&>(*primal_lower_bound_indicators).raiseBorder(n_global_linking_vars, -1));
 
-   // TODO shave top
    std::shared_ptr<DistributedVector<double>> bA_hier(
       dynamic_cast<DistributedVector<double>&>(*equality_rhs).raiseBorder(-1, n_global_eq_linking_conss));
+   if (pipsipmpp_options::get_bool_parameter("HIERARCHICAL_MOVE_A0_TO_DENSE_LAYER")) {
+      bA_hier->children[0]->move_first_to_parent();
+   }
 
    std::shared_ptr<DistributedVector<double>> bu_hier(
       dynamic_cast<DistributedVector<double>&>(*inequality_upper_bounds).raiseBorder(-1, n_global_ineq_linking_conss));
@@ -1907,6 +1930,10 @@ void DistributedProblem::activateLinkStructureExploitation() {
       return (blocks == 0);
    });
 
+   if (threshold_global_vars <= 0) {
+      n0LinkVars = 0;
+   }
+
    n2LinksEq = std::count_if(linkStartBlockIdA.begin(), linkStartBlockIdA.end(), [](int blocks) {
       return (blocks >= 0);
    });
@@ -1920,7 +1947,9 @@ void DistributedProblem::activateLinkStructureExploitation() {
    for (int i : n_blocks_per_link_var)
       if (i == 0)
          n0LinkVars_cpy++;
-
+   if (threshold_global_vars <= 0) {
+      n0LinkVars_cpy = 0;
+   }
    int n2LinksEq_cpy = 0;
    for (int i : linkStartBlockIdA)
       if (i >= 0)
@@ -1985,6 +2014,7 @@ void DistributedProblem::activateLinkStructureExploitation() {
       permuteLinkingCons(linkConsPermutationA, linkConsPermutationC);
 
       assert(linkVarsPermutation.empty());
+      //n0LinkVars = 0;
       linkVarsPermutation = get0VarsLastGlobalsFirstPermutation(n_blocks_per_link_var, n_global_linking_vars);
       permuteLinkingVars(linkVarsPermutation);
    }
@@ -2164,122 +2194,34 @@ Permutation DistributedProblem::getLinkConsIneqPermInv() const {
 }
 
 int DistributedProblem::getLocalnx() const {
-   assert(!is_hierarchy_root);
-
-   long long nx{0};
-
-   const auto& Ast = dynamic_cast<const DistributedMatrix&>(*equality_jacobian);
-   if (is_hierarchy_inner_leaf)
-      assert(Ast.Bmat->is_a(kDistributedMatrix));
-   else
-      nx = Ast.Bmat->n_columns();
-
-   return nx;
+   return std::max(0, stochNode->nx());
 }
 
 int DistributedProblem::getLocalmy() const {
-   assert(!is_hierarchy_root);
-
-   long long my{0};
-   const auto& Ast = dynamic_cast<const DistributedMatrix&>(*equality_jacobian);
-
-   if (is_hierarchy_inner_leaf)
-      assert(Ast.Bmat->is_a(kDistributedMatrix));
-   else
-      my = Ast.Bmat->n_rows();
-
-   return my;
+   return std::max(0, stochNode->my());
 }
 
 int DistributedProblem::getLocalmyl() const {
-   long long myl{0};
-   const auto& Ast = dynamic_cast<const DistributedMatrix&>(*equality_jacobian);
-
-   if (is_hierarchy_root) {
-      assert(0 && "TODO : implement");
-//      const BorderedGenMatrix& Abd = dynamic_cast<const BorderedGenMatrix&>(*A);
-//      Abd.Blmat->getSize(myl, nxl);
-   } else if (is_hierarchy_inner_leaf && stochNode->getCommWorkers() != MPI_COMM_NULL) {
-      assert(Ast.Bmat->is_a(kDistributedMatrix));
-      myl = dynamic_cast<DistributedMatrix&>(*Ast.Bmat).Blmat->n_rows();
-   } else
-      myl = Ast.Blmat->n_rows();
-
-   return myl;
+   return std::max(0, stochNode->myl());
 }
 
 int DistributedProblem::getLocalmz() const {
-   long long mz{0};
-   const auto& Cst = dynamic_cast<const DistributedMatrix&>(*inequality_jacobian);
-
-   if (is_hierarchy_root)
-      assert(0 && "TODO : implement");
-   else if (is_hierarchy_inner_leaf && stochNode->getCommWorkers() != MPI_COMM_NULL)
-      assert(Cst.Bmat->is_a(kDistributedMatrix));
-   else
-      mz = Cst.Bmat->n_rows();
-
-   return mz;
+   return std::max(0, stochNode->mz());
 }
 
 int DistributedProblem::getLocalmzl() const {
-   const auto& Cst = dynamic_cast<const DistributedMatrix&>(*inequality_jacobian);
-   long long mzl{0};
-
-   if (is_hierarchy_root) {
-      assert(0 && "TODO : implement");
-   } else if (is_hierarchy_inner_leaf && stochNode->getCommWorkers() != MPI_COMM_NULL) {
-      assert(Cst.Bmat->is_a(kDistributedMatrix));
-      mzl = dynamic_cast<DistributedMatrix&>(*Cst.Bmat).Blmat->n_rows();
-   } else
-      mzl = Cst.Blmat->n_rows();
-
-   return mzl;
+   return std::max(0, stochNode->mzl());
 }
 
-int DistributedProblem::getLocalSizes(int& nx, int& my, int& mz, int& myl, int& mzl) const {
-   if (is_hierarchy_root) {
-      const auto& Abd = dynamic_cast<const BorderedMatrix&>(*equality_jacobian);
-      assert(Abd.border_left->first);
-      assert(Abd.border_left->last);
-
-      nx = Abd.border_left->first->n_columns();
-      my = Abd.border_left->first->n_rows();
-      myl = Abd.bottom_left_block->n_rows();
-
-      const auto& Cbd = dynamic_cast<const BorderedMatrix&>(*inequality_jacobian);
-      assert(Cbd.border_left->first);
-      assert(Cbd.border_left->last);
-      mz = Cbd.border_left->first->n_rows();
-      mzl = Cbd.bottom_left_block->n_rows();
-   } else if (is_hierarchy_inner_leaf && stochNode->getCommWorkers() != MPI_COMM_NULL) {
-      const auto& Ast = dynamic_cast<const DistributedMatrix&>(*equality_jacobian);
-      const auto& Cst = dynamic_cast<const DistributedMatrix&>(*inequality_jacobian);
-
-      assert(Ast.Bmat->is_a(kDistributedMatrix));
-      assert(Cst.Bmat->is_a(kDistributedMatrix));
-
-      nx = 0;
-      my = 0;
-      myl = dynamic_cast<const DistributedMatrix&>(*Ast.Bmat).Blmat->n_rows();
-
-      mz = 0;
-      mzl = dynamic_cast<const DistributedMatrix&>(*Cst.Bmat).Blmat->n_rows();
-   } else {
-      const auto& Ast = dynamic_cast<const DistributedMatrix&>(*equality_jacobian);
-
-      nx = Ast.Bmat->n_columns();
-      my = Ast.Bmat->n_rows();
-      myl = Ast.Blmat->n_rows();
-
-      const auto& Cst = dynamic_cast<const DistributedMatrix&>(*inequality_jacobian);
-      mz = Cst.Bmat->n_rows();
-      mzl = Cst.Blmat->n_rows();
-   }
-   return 0;
+void DistributedProblem::getLocalSizes(int& nx, int& my, int& mz, int& myl, int& mzl) const {
+   nx = std::max(stochNode->nx(), 0);
+   my = std::max(stochNode->my(), 0);
+   mz = std::max(stochNode->mz(), 0);
+   mzl = std::max(stochNode->mzl(), 0);
+   myl = std::max(stochNode->myl(), 0);
 }
 
-int DistributedProblem::getLocalNnz(int& nnzQ, int& nnzB, int& nnzD) {
+void DistributedProblem::getLocalNnz(int& nnzQ, int& nnzB, int& nnzD) const {
    if (is_hierarchy_root || is_hierarchy_inner_root || is_hierarchy_inner_leaf)
       assert(0 && "TODO : implement");
    const auto& Qst = dynamic_cast<const DistributedSymmetricMatrix&>(*hessian);
@@ -2289,7 +2231,6 @@ int DistributedProblem::getLocalNnz(int& nnzQ, int& nnzB, int& nnzD) {
    nnzQ = dynamic_cast<const SparseSymmetricMatrix&>(*Qst.diag).getStorage().len + dynamic_cast<const SparseMatrix&>(*Qst.border).getStorage().len;
    nnzB = dynamic_cast<const SparseMatrix&>(*Ast.Bmat).getStorage().len;
    nnzD = dynamic_cast<const SparseMatrix&>(*Cst.Bmat).getStorage().len;
-   return 0;
 }
 
 /*
@@ -2377,7 +2318,7 @@ int DistributedProblem::getSchurCompMaxNnz() const {
 #ifndef NDEBUG
    if (!is_hierarchy_inner_leaf) {
       const auto[mB, nB] = getLocalB().n_rows_columns();
-      assert(mB == my && nB == n0);
+      assert( (mB == my || my == 0) && nB == n0);
    } else {
       assert(my == 0);
       assert(n0 == 0);
@@ -2392,7 +2333,8 @@ int DistributedProblem::getSchurCompMaxNnz() const {
    nnz += nnzTriangular(n0);
 
    // add B_0 (or A_0, depending on notation)
-   nnz += getLocalB().numberOfNonZeros();
+   if (my > 0)
+      nnz += getLocalB().numberOfNonZeros();
 
    // add borders
    /* X1iT FiT */
@@ -2491,15 +2433,17 @@ int DistributedProblem::getSchurCompMaxNnzDist(int blocksStart, int blocksEnd) c
 }
 
 const SparseSymmetricMatrix& DistributedProblem::getLocalQ() const {
-   auto& Qst = dynamic_cast<const DistributedSymmetricMatrix&>(*hessian);
-   assert(!is_hierarchy_root);
-
-   if (is_hierarchy_inner_leaf && stochNode->getCommWorkers() != MPI_COMM_NULL) {
-      assert(Qst.diag->is_a(kStochSymMatrix));
-      return dynamic_cast<SparseSymmetricMatrix&>(*dynamic_cast<DistributedSymmetricMatrix&>(*Qst.diag).diag);
+   if(is_hierarchy_root) {
+      const auto& Q_bordered = dynamic_cast<const BorderedSymmetricMatrix&>(*hessian);
+      return dynamic_cast<const SparseSymmetricMatrix&>(*Q_bordered.top_left_block);
+   } else if (is_hierarchy_inner_leaf && stochNode->getCommWorkers() != MPI_COMM_NULL) {
+      const auto& Q_distributed = dynamic_cast<const DistributedSymmetricMatrix&>(*hessian);
+      assert(Q_distributed.diag->is_a(kStochSymMatrix));
+      return dynamic_cast<SparseSymmetricMatrix&>(*dynamic_cast<DistributedSymmetricMatrix&>(*Q_distributed.diag).diag);
    } else {
-      assert(Qst.diag->is_a(kSparseSymMatrix));
-      return dynamic_cast<SparseSymmetricMatrix&>(*Qst.diag);
+      const auto& Q_distributed = dynamic_cast<const DistributedSymmetricMatrix&>(*hessian);
+      assert(Q_distributed.diag->is_a(kSparseSymMatrix));
+      return dynamic_cast<SparseSymmetricMatrix&>(*Q_distributed.diag);
    }
 }
 
@@ -2515,42 +2459,47 @@ const SparseMatrix& DistributedProblem::getLocalCrossHessian() const {
 // This is T_i
 const SparseMatrix& DistributedProblem::getLocalA() const {
    assert(!is_hierarchy_root);
-   auto& Ast = dynamic_cast<const DistributedMatrix&>(*equality_jacobian);
 
    if (is_hierarchy_inner_leaf && stochNode->getCommWorkers() != MPI_COMM_NULL) {
-      assert(Ast.Amat->is_a(kDistributedMatrix));
-      return dynamic_cast<const SparseMatrix&>(*dynamic_cast<const DistributedMatrix&>(*Ast.Amat).Amat);
+      const auto& A_distributed = dynamic_cast<const DistributedMatrix&>(*equality_jacobian);
+      assert(A_distributed.Amat->is_a(kDistributedMatrix));
+      return dynamic_cast<const SparseMatrix&>(*dynamic_cast<const DistributedMatrix&>(*A_distributed.Amat).Amat);
    } else {
-      assert(Ast.Amat->is_a(kSparseGenMatrix));
-      return dynamic_cast<const SparseMatrix&>(*Ast.Amat);
+      const auto& A_distributed = dynamic_cast<const DistributedMatrix&>(*equality_jacobian);
+      assert(A_distributed.Amat->is_a(kSparseGenMatrix));
+      return dynamic_cast<const SparseMatrix&>(*A_distributed.Amat);
    }
 }
 
 // This is W_i:
 const SparseMatrix& DistributedProblem::getLocalB() const {
-   assert(!is_hierarchy_root);
-   auto& Ast = dynamic_cast<const DistributedMatrix&>(*equality_jacobian);
-
-   if (is_hierarchy_inner_leaf && stochNode->getCommWorkers() != MPI_COMM_NULL) {
-      assert(Ast.Bmat->is_a(kDistributedMatrix));
-      return dynamic_cast<const SparseMatrix&>(*dynamic_cast<const DistributedMatrix&>(*Ast.Bmat).Bmat);
+   if (is_hierarchy_root) {
+      const auto& A_bordered = dynamic_cast<const BorderedMatrix&>(*equality_jacobian);
+      return dynamic_cast<const SparseMatrix&>(*A_bordered.border_left->first);
+   } else if (is_hierarchy_inner_leaf && stochNode->getCommWorkers() != MPI_COMM_NULL) {
+      auto& A_distributed = dynamic_cast<const DistributedMatrix&>(*equality_jacobian);
+      assert(A_distributed.Bmat->is_a(kDistributedMatrix));
+      return dynamic_cast<const SparseMatrix&>(*dynamic_cast<const DistributedMatrix&>(*A_distributed.Bmat).Bmat);
    } else {
-      assert(Ast.Bmat->is_a(kSparseGenMatrix));
-      return dynamic_cast<const SparseMatrix&>(*Ast.Bmat);
+      auto& A_distributed = dynamic_cast<const DistributedMatrix&>(*equality_jacobian);
+      assert(A_distributed.Bmat->is_a(kSparseGenMatrix));
+      return dynamic_cast<const SparseMatrix&>(*A_distributed.Bmat);
    }
 }
 
 // This is F_i (linking equality matrix):
 const SparseMatrix& DistributedProblem::getLocalF() const {
-   assert(!is_hierarchy_root);
-   auto& Ast = dynamic_cast<const DistributedMatrix&>(*equality_jacobian);
-
-   if (is_hierarchy_inner_leaf && stochNode->getCommWorkers() != MPI_COMM_NULL) {
-      assert(Ast.Bmat->is_a(kDistributedMatrix));
-      return dynamic_cast<const SparseMatrix&>(*dynamic_cast<const DistributedMatrix&>(*Ast.Bmat).Blmat);
+   if (is_hierarchy_root) {
+      const auto& A_bordered = dynamic_cast<const BorderedMatrix&>(*equality_jacobian);
+      return dynamic_cast<const SparseMatrix&>(*A_bordered.bottom_left_block);
+   } else if (is_hierarchy_inner_leaf && stochNode->getCommWorkers() != MPI_COMM_NULL) {
+      const auto& A_distributed = dynamic_cast<const DistributedMatrix&>(*equality_jacobian);
+      assert(A_distributed.Bmat->is_a(kDistributedMatrix));
+      return dynamic_cast<const SparseMatrix&>(*dynamic_cast<const DistributedMatrix&>(*A_distributed.Bmat).Blmat);
    } else {
-      assert(Ast.Blmat->is_a(kSparseGenMatrix));
-      return dynamic_cast<const SparseMatrix&>(*Ast.Blmat);
+      const auto& A_distributed = dynamic_cast<const DistributedMatrix&>(*equality_jacobian);
+      assert(A_distributed.Blmat->is_a(kSparseGenMatrix));
+      return dynamic_cast<const SparseMatrix&>(*A_distributed.Blmat);
    }
 }
 
@@ -2603,15 +2552,17 @@ const SparseMatrix& DistributedProblem::getLocalD() const {
 
 // This is G_i (linking inequality matrix):
 const SparseMatrix& DistributedProblem::getLocalG() const {
-   assert(!is_hierarchy_root);
-   auto& Cst = dynamic_cast<const DistributedMatrix&>(*inequality_jacobian);
-
-   if (is_hierarchy_inner_leaf && stochNode->getCommWorkers() != MPI_COMM_NULL) {
-      assert(Cst.Bmat->is_a(kDistributedMatrix));
-      return dynamic_cast<const SparseMatrix&>(*dynamic_cast<const DistributedMatrix&>(*Cst.Bmat).Blmat);
+   if (is_hierarchy_root) {
+      const auto& C_bordered = dynamic_cast<const BorderedMatrix&>(*inequality_jacobian);
+      return dynamic_cast<const SparseMatrix&>(*C_bordered.bottom_left_block);
+   } else if (is_hierarchy_inner_leaf && stochNode->getCommWorkers() != MPI_COMM_NULL) {
+      const auto& C_distributed = dynamic_cast<const DistributedMatrix&>(*inequality_jacobian);
+      assert(C_distributed.Bmat->is_a(kDistributedMatrix));
+      return dynamic_cast<const SparseMatrix&>(*dynamic_cast<const DistributedMatrix&>(*C_distributed.Bmat).Blmat);
    } else {
-      assert(Cst.Blmat->is_a(kSparseGenMatrix));
-      return dynamic_cast<const SparseMatrix&>(*Cst.Blmat);
+      const auto& C_distributed = dynamic_cast<const DistributedMatrix&>(*inequality_jacobian);
+      assert(C_distributed.Blmat->is_a(kSparseGenMatrix));
+      return dynamic_cast<const SparseMatrix&>(*C_distributed.Blmat);
    }
 }
 

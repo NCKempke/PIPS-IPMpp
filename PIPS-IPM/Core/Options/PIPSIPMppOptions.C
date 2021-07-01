@@ -240,6 +240,7 @@ namespace pipsipmpp_options {
       bool_options["HIERARCHICAL_APPLY_SPLIT"] = true;
       bool_options["HIERARCHICAL_TESTING"] = false;
       bool_options["HIERARCHICAL_PRINT_HIER_DATA"] = false;
+      bool_options["HIERARCHICAL_MOVE_A0_TO_DENSE_LAYER"] = false;
 
       /** should all columns be computed at once when computing the hierarchical schur complements ?
        * this will render SC_BLOCKSIZE_HIERARCHICAL obsolete but might consume big amounts of memory and

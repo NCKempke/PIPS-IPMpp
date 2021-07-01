@@ -28,7 +28,7 @@ class DistributedRootLinearSystem : public DistributedLinearSystem {
 protected:
    void createChildren();
 
-   void deleteChildren() override;
+   void print_solver_regularization_and_sc_info(const std::string&& name) const;
 
 private:
    void init();
@@ -41,7 +41,7 @@ public:
    DistributedRootLinearSystem(const DistributedFactory& factory, DistributedProblem* prob_, std::shared_ptr<Vector<double>> dd_,
       std::shared_ptr<Vector<double>> dq_, std::shared_ptr<Vector<double>> nomegaInv_,
       std::shared_ptr<Vector<double>> primal_reg_, std::shared_ptr<Vector<double>> dual_y_reg_,
-      std::shared_ptr<Vector<double>> dual_z_reg_, std::shared_ptr<Vector<double>> rhs_);
+      std::shared_ptr<Vector<double>> dual_z_reg_, std::shared_ptr<Vector<double>> rhs_, bool create_sub_root_solver);
 
    void factor2() override;
 
@@ -82,8 +82,7 @@ public:
 
    void
    LsolveHierarchyBorder(DenseMatrix& result, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border,
-      bool use_local_RAC, bool two_link_border,
-      int begin_cols, int end_cols) override;
+      bool use_local_RAC, int begin_cols, int end_cols) override;
 
    /* compute SUM_i Bli^T X_i = Bli^T Ki^-1 ( ( Bri - sum_j Bmodij Xij ) - Bi_{inner} X0) */
    using DistributedLinearSystem::LtsolveHierarchyBorder;
@@ -91,10 +90,6 @@ public:
    void LtsolveHierarchyBorder(AbstractMatrix& res, const DenseMatrix& X0, BorderLinsys& Bl, BorderLinsys& Br,
       std::vector<BorderMod>& br_mod_border,
       bool sym_res, bool sparse_res, bool use_local_RAC, int begin_cols, int end_cols) override;
-
-   void addBorderTimesRhsToB0(DistributedVector<double>& rhs, SimpleVector<double>& b0, BorderLinsys& border) override;
-
-   void addBorderX0ToRhs(DistributedVector<double>& rhs, const SimpleVector<double>& x0, BorderLinsys& border) override;
 
    void put_primal_diagonal() override;
 
@@ -117,24 +112,29 @@ public:
 
    // all_reduces specified submatrix (in chunks)
    static void
-   submatrixAllReduce(DenseSymmetricMatrix* A, int startRow, int startCol, int nRows, int nCols, MPI_Comm comm);
+   submatrixAllReduce(DenseSymmetricMatrix& A, int startRow, int startCol, int nRows, int nCols, MPI_Comm comm);
 
    void allreduceMatrix(AbstractMatrix& mat, bool is_sparse, bool is_sym, MPI_Comm comm);
 
    static void
-   submatrixAllReduceFull(DenseSymmetricMatrix* A, int startRow, int startCol, int nRows, int nCols, MPI_Comm comm);
+   submatrixAllReduceFull(DenseSymmetricMatrix& A, int startRow, int startCol, int nRows, int nCols, MPI_Comm comm);
 
-   static void submatrixAllReduceFull(DenseMatrix* A, int startRow, int startCol, int nRows, int nCols, MPI_Comm comm);
+   static void submatrixAllReduceFull(DenseMatrix& A, int startRow, int startCol, int nRows, int nCols, MPI_Comm comm);
 
    // all_reduces specified submatrix as a while
    static void submatrixAllReduceFull(double** A, int startRow, int startCol, int nRows, int nCols, MPI_Comm comm);
 
    // all_reducees lower half (including diagonal) of specified submatrix
-   static void submatrixAllReduceDiagLower(DenseSymmetricMatrix* A, int substart, int subsize, MPI_Comm comm);
+   static void submatrixAllReduceDiagLower(DenseSymmetricMatrix& A, int substart, int subsize, MPI_Comm comm);
 
    SCsparsifier precondSC;
 
 protected: //buffers
+
+   void createSolverAndSchurComplement(bool sub_root);
+   void createSparseSolver(bool sub_root);
+   void createDenseSolver();
+   [[nodiscard]] virtual std::unique_ptr<SymmetricMatrix> createKKT() const;
 
    SparseSymmetricMatrix* kktDist{};
 
@@ -177,13 +177,13 @@ private:
    [[nodiscard]] std::vector<MatrixEntryTriplet> packKKTdistOutOfRangeEntries(int childStart, int childEnd) const;
 
    static void finalizeInnerSchurComplementContributionDense(AbstractMatrix& SC_, const DenseMatrix& X0,
-      const SparseMatrix* A0_border, const SparseMatrix* C0_border,
+      const SparseMatrix* A0_border, const SparseMatrix* C0_border, const SparseMatrix* A00_border,
       const SparseMatrix* F0vec_border, const SparseMatrix* G0vec_border, const SparseMatrix* F0cons_border,
       const SparseMatrix* G0cons_border, bool is_sym,
       int begin_rows, int end_rows);
 
    static void finalizeInnerSchurComplementContributionSparse(AbstractMatrix& SC_, const DenseMatrix& X0,
-      const SparseMatrix* A0_border, const SparseMatrix* C0_border,
+      const SparseMatrix* A0_border, const SparseMatrix* C0_border, const SparseMatrix* A00_border,
       const SparseMatrix* F0vec_border, const SparseMatrix* G0vec_border, const SparseMatrix* F0cons_border,
       const SparseMatrix* G0cons_border, int begin_rows,
       int end_rows);

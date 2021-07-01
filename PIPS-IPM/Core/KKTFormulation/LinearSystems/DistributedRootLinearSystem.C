@@ -10,6 +10,31 @@
 #include "DistributedDummyLinearSystem.h"
 #include "DistributedLeafLinearSystem.h"
 #include "PIPSIPMppOptions.h"
+#include "DeSymIndefSolver.h"
+#include "DeSymIndefSolver2.h"
+#include "DeSymPSDSolver.h"
+
+
+#ifdef WITH_PARDISO
+#include "PardisoProjectIndefSolver.h"
+#endif
+
+#ifdef WITH_MKL_PARDISO
+#include "PardisoMKLIndefSolver.h"
+#endif
+
+#ifdef WITH_MA57
+#include "Ma57SolverRoot.h"
+#endif
+
+#ifdef WITH_MA27
+#include "Ma27SolverRoot.h"
+#endif
+
+#ifdef WITH_MUMPS
+#include "MumpsSolverRoot.h"
+#endif
+
 
 /*********************************************************************/
 /************************** ROOT *************************************/
@@ -24,15 +49,42 @@ DistributedRootLinearSystem::DistributedRootLinearSystem(const DistributedFactor
    if (pipsipmpp_options::get_bool_parameter("HIERARCHICAL"))
       assert(is_hierarchy_root);
    init();
+   createSolverAndSchurComplement(false);
+
+   if (apply_regularization) {
+      regularization_strategy = factory.make_regularization_strategy(locnx, locmy + locmyl + locmzl);
+   }
 }
 
 DistributedRootLinearSystem::DistributedRootLinearSystem(const DistributedFactory& factory_, DistributedProblem* prob_,
    std::shared_ptr<Vector<double>> dd_, std::shared_ptr<Vector<double>> dq_, std::shared_ptr<Vector<double>> nomegaInv_,
    std::shared_ptr<Vector<double>> primal_reg_, std::shared_ptr<Vector<double>> dual_y_reg_,
-   std::shared_ptr<Vector<double>> dual_z_reg_, std::shared_ptr<Vector<double>> rhs_) : DistributedLinearSystem(
+   std::shared_ptr<Vector<double>> dual_z_reg_, std::shared_ptr<Vector<double>> rhs_, bool create_sub_root_solver) : DistributedLinearSystem(
    factory_,
    prob_, std::move(dd_), std::move(dq_), std::move(nomegaInv_), std::move(primal_reg_), std::move(dual_y_reg_), std::move(dual_z_reg_), std::move(rhs_), true) {
    init();
+   createSolverAndSchurComplement(create_sub_root_solver);
+
+   if (apply_regularization) {
+      regularization_strategy = factory.make_regularization_strategy(locnx, locmy + locmyl + locmzl);
+   }
+
+}
+
+void DistributedRootLinearSystem::print_solver_regularization_and_sc_info(const std::string&& name) const {
+   if (hasSparseKkt) {
+      std::cout << name << ": sparse Schur complement (dim " <<  kkt->size() << "): max non-zeros: " << data->getSchurCompMaxNnz() << "\n";
+      std::cout << name << ": linear solver: " << sparse_solver_type << "\n";
+   } else {
+      std::cout << name << ": dense Schur complement (dim " <<  kkt->size() << "): max non-zeros: " << kkt->size() * kkt->size() << "\n";
+      std::cout << name << ": linear solver: " << pipsipmpp_options::get_solver_dense() << "\n";
+   }
+
+
+   if (regularization_strategy) {
+      std::cout << "setting up root regularization : " << locnx << " " << locmy << " " << locmz << " " << locmyl << " "
+                << locmzl << "\n";
+   }
 }
 
 void DistributedRootLinearSystem::init() {
@@ -52,6 +104,74 @@ void DistributedRootLinearSystem::init() {
 
    initProperChildrenRange();
 }
+
+void DistributedRootLinearSystem::createSolverAndSchurComplement(bool sub_root) {
+   kkt = createKKT();
+
+   if (hasSparseKkt)
+      createSparseSolver(sub_root);
+   else
+      createDenseSolver();
+}
+
+
+void DistributedRootLinearSystem::createSparseSolver(bool sub_root) {
+   sparse_solver_type = sub_root ? pipsipmpp_options::get_solver_sub_root() : pipsipmpp_options::get_solver_root();
+   auto& kkt_sp = dynamic_cast<SparseSymmetricMatrix&>(*kkt);
+
+   if (sparse_solver_type == SolverType::SOLVER_MUMPS) {
+#ifdef WITH_MUMPS
+      solver = std::make_unique<MumpsSolverRoot>(mpiComm, kkt_sp, allreduce_kkt);
+#endif
+   } else if (sparse_solver_type == SolverType::SOLVER_PARDISO) {
+#ifdef WITH_PARDISO
+      solver = std::make_unique<PardisoProjectIndefSolver>(kkt_sp, allreduce_kkt, mpiComm);
+#endif
+   } else if (sparse_solver_type == SolverType::SOLVER_MKL_PARDISO) {
+#ifdef WITH_MKL_PARDISO
+      solver = std::make_unique<PardisoMKLIndefSolver>(kkt_sp, allreduce_kkt, mpiComm);
+#endif
+   } else if (sparse_solver_type == SolverType::SOLVER_MA57) {
+#ifdef WITH_MA57
+      solver = std::make_unique<Ma57SolverRoot>(kkt_sp, allreduce_kkt, mpiComm, "sLinsysRootAug");
+#endif
+   } else {
+      assert(sparse_solver_type == SolverType::SOLVER_MA27);
+#ifdef WITH_MA27
+      solver = std::make_unique<Ma27SolverRoot>(kkt_sp, allreduce_kkt, mpiComm, "sLinsysRootAug");
+#endif
+   }
+}
+
+void DistributedRootLinearSystem::createDenseSolver() {
+   const SolverTypeDense solver_type = pipsipmpp_options::get_solver_dense();
+   const auto& kktmat = dynamic_cast<const DenseSymmetricMatrix&>(*kkt);
+
+   if (solver_type == SolverTypeDense::SOLVER_DENSE_SYM_INDEF)
+      solver = std::make_unique<DeSymIndefSolver>(kktmat);
+   else if (solver_type == SolverTypeDense::SOLVER_DENSE_SYM_INDEF_SADDLE_POINT)
+      solver = std::make_unique<DeSymIndefSolver2>(kktmat, locnx);
+   else {
+      assert(solver_type == SolverTypeDense::SOLVER_DENSE_SYM_PSD);
+      solver = std::make_unique<DeSymPSDSolver>(kktmat);
+   }
+}
+
+
+std::unique_ptr<SymmetricMatrix> DistributedRootLinearSystem::createKKT() const {
+   const int n = locnx + locmy + locmyl + locmzl;
+
+   if (hasSparseKkt) {
+      if (usePrecondDist) {
+         return data->createSchurCompSymbSparseUpperDist(childrenProperStart, childrenProperEnd);
+      } else {
+         return data->createSchurCompSymbSparseUpper();
+      }
+   } else {
+      return std::make_unique<DenseSymmetricMatrix>(n);
+   }
+}
+
 
 DistributedRootLinearSystem::~DistributedRootLinearSystem() {
    delete kktDist;
@@ -102,15 +222,7 @@ void DistributedRootLinearSystem::factor2() {
    /* build KKT from local children */
    assembleLocalKKT();
 
-#ifdef TIMING
-   MPI_Barrier(MPI_COMM_WORLD);
-   stochNode->resMon.recReduceTmLocal_start();
-#endif
-
    reduceKKT();
-#ifdef TIMING
-   stochNode->resMon.recReduceTmLocal_stop();
-#endif
 
    finalizeKKT();
 
@@ -128,54 +240,28 @@ void DistributedRootLinearSystem::factor2() {
          std::cout << "done\n\n";
    }
 
-#ifdef TIMING
-   afterFactor();
-#endif
 }
-
-#ifdef TIMING
-void sLinsysRoot::afterFactor()
-{
-  int mype; MPI_Comm_rank(mpiComm, &mype);
-
-  if( (mype/256)*256==mype) {
-    for (size_t c=0; c<children.size(); c++) {
-      if (children[c]->mpiComm == MPI_COMM_NULL) continue;
-      
-      printf("  rank %d NODE %4zu SPFACT %g BACKSOLVE %g SEC ITER %d\n", mype, c,
-        children[c]->stochNode->resMon.eFact.tmLocal,
-        children[c]->stochNode->resMon.eFact.tmChildren, (int)g_iterNumber);
-    }
-  }
-  if( (mype/1024)*1024==mype) {
-    for (size_t c=0; c<children.size(); c++) {
-      if (children[c]->mpiComm == MPI_COMM_NULL) continue;
-
-      double redall = stochNode->resMon.eReduce.tmLocal;
-      double redscat = stochNode->resMon.eReduceScatter.tmLocal;
-      printf("  rank %d REDUCE %g SEC ITER %d REDSCAT %g DIFF %g\n", mype, redall,
-        (int)g_iterNumber, redscat, redall-redscat);
-    }
-  }
-}
-#endif
 
 /* compute
  *             locnx locmy locmz locmyl locmzl
- *           [   0    A0T   C0T   F0VT   G0VT ] nx_border
+ *           [   0   [A0T]  C0T   F0VT   G0VT ] nx_border
+ *           [ [A00]   0     0     0      0   ]
  * buffer += [  F0C    0     0     0      0   ] myl_border
  *           [  G0C    0     0     0      0   ] mzl_border
  *
- * [  0 F0C^T  G0C^T ]^T
- * [ A0   0     0    ]
- * [ C0   0     0    ]
- * [ F0V  0     0    ]   + buffer
- * [ G0V  0     0    ]
+ * A00 can only be present when stochNode->was_A0_moved_to_border()
+ * A0 is only present when the same is false
+ *
+ * [  0  [A00]T F0CT  G0CT ]^T
+ * [ [A0]  0     0     0   ]
+ * [ C0    0     0     0   ]
+ * [ F0V   0     0     0   ]   + buffer
+ * [ G0V   0     0     0   ]
  */
 // TODO : move to aug..
-void
-DistributedRootLinearSystem::finalizeZ0Hierarchical(DenseMatrix& buffer, BorderLinsys& Br,
+void DistributedRootLinearSystem::finalizeZ0Hierarchical(DenseMatrix& buffer, BorderLinsys& Br,
    std::vector<BorderMod>& Br_mod_border, int begin_rows, int end_rows) {
+   assert(!distributed_tree->isHierarchicalRoot());
    assert(0 <= begin_rows && begin_rows <= end_rows);
    // TODO : parallelize over MPI procs?
    finalizeDenseBorderModBlocked(Br_mod_border, buffer, begin_rows, end_rows);
@@ -184,31 +270,37 @@ DistributedRootLinearSystem::finalizeZ0Hierarchical(DenseMatrix& buffer, BorderL
       assert(end_rows - begin_rows <= buffer.n_rows());
    else
       assert(end_rows <= buffer.n_rows());
-
-   if (!Br.has_RAC && !Br.use_local_RAC)
-      return;
+// TODO : why was this here?
+//   if (!Br.has_RAC && !Br.use_local_RAC) {
+//      std::cout << "early quitting" << std::endl;
+//      return;
+//   }
 
    bool has_RAC = Br.has_RAC;
 
-   SparseMatrix* F0cons_border = has_RAC ? dynamic_cast<SparseMatrix*>(Br.F.first.get()) : nullptr;
-   SparseMatrix* G0cons_border = has_RAC ? dynamic_cast<SparseMatrix*>(Br.G.first.get()) : nullptr;
+   const SparseMatrix* F0cons_border = has_RAC ? dynamic_cast<const SparseMatrix*>(Br.F.first.get()) : nullptr;
+   const SparseMatrix* G0cons_border = has_RAC ? dynamic_cast<const SparseMatrix*>(Br.G.first.get()) : nullptr;
 
-   SparseMatrix* A0_border = has_RAC ? dynamic_cast<SparseMatrix*>(Br.A.first.get()) : nullptr;
-   SparseMatrix* C0_border = has_RAC ? dynamic_cast<SparseMatrix*>(Br.C.first.get()) : nullptr;
+   const SparseMatrix* A0_border = (has_RAC && !distributed_tree->was_A0_moved_to_border()) ? dynamic_cast<SparseMatrix*>(Br.A.first.get()) : nullptr;
 
-   const SparseMatrix* F0vec_border = has_RAC ? dynamic_cast<SparseMatrix*>(Br.A.last.get()) : &data->getLocalF();
-   const SparseMatrix* G0vec_border = has_RAC ? dynamic_cast<SparseMatrix*>(Br.C.last.get()) : &data->getLocalG();
+   const SparseMatrix* A00_border = (has_RAC && distributed_tree->was_A0_moved_to_border()) ? &data->getLocalB() : nullptr; // B is correct here
+   const SparseMatrix* C0_border = has_RAC ? dynamic_cast<const SparseMatrix*>(Br.C.first.get()) : nullptr;
 
-   if (has_RAC)
-      assert(F0cons_border && G0cons_border && A0_border && C0_border);
+   const SparseMatrix* F0vec_border = has_RAC ? dynamic_cast<const SparseMatrix*>(Br.A.last.get()) : &data->getLocalF();
+   const SparseMatrix* G0vec_border = has_RAC ? dynamic_cast<const SparseMatrix*>(Br.C.last.get()) : &data->getLocalG();
+
+   if (has_RAC) {
+      assert(F0cons_border && G0cons_border && C0_border);
+      if (!distributed_tree->was_A0_moved_to_border())
+         assert(A0_border);
+   }
+   if (distributed_tree->was_A0_moved_to_border())
+      assert(A00_border);
    assert(F0vec_border);
    assert(G0vec_border);
 
-   int mA0{0};
-   int nA0{0};
-   if (A0_border)
-      std::tie(mA0, nA0) = A0_border->n_rows_columns();
-
+   int mA00 = A00_border ? A00_border->n_rows() : 0;
+   int mA0 = A0_border ? A0_border->n_rows() : 0;
    int mC0 = C0_border ? C0_border->n_rows() : 0;
 
    int mF0C{0};
@@ -224,20 +316,23 @@ DistributedRootLinearSystem::finalizeZ0Hierarchical(DenseMatrix& buffer, BorderL
    long long nC0 = C0_border ? C0_border->n_columns() : 0;
    long long nG0C = G0cons_border ? G0cons_border->n_columns() : 0;
    long long nG0V = G0vec_border->n_columns();
+   long long nA00 = A00_border ? A00_border->n_columns() : 0;
+   long long nA0 = A0_border ? A0_border->n_columns() : 0;
 
-   assert(nA0 == nC0);
+   if (A0_border)
+      assert(nA0 == nC0);
    assert(nF0V == nG0V);
-
-   if (has_RAC)
+   assert(nF0C == nG0C);
+   if (A00_border && F0cons_border)
+      assert(nA00 == nF0C);
+   if (has_RAC && A0_border)
       assert(nA0 == nF0V);
 
-   assert(nF0C == nG0C);
-   if (mA0 != 0)
-      assert(nF0C + mA0 + mC0 + mF0V + mG0V == buffer.n_columns());
+   assert(nF0C + mA0 + mC0 + mF0V + mG0V == buffer.n_columns());
 
    if (!sc_compute_blockwise_hierarchical) {
       if (has_RAC)
-         assert(buffer.n_rows() >= nF0V + mF0C + mG0C);
+         assert(buffer.n_rows() >= nF0V + mA00 + mF0C + mG0C);
       else
          assert(buffer.n_rows() >= nF0V);
    }
@@ -264,10 +359,23 @@ DistributedRootLinearSystem::finalizeZ0Hierarchical(DenseMatrix& buffer, BorderL
          buffer.addMatAt(G0vec_border->getTranspose(), begin_rows, end_f0vblock, 0, nF0C + mA0 + mC0 + mF0V);
    }
 
+   /* A00 */
+   {
+      const int start_A00_block = nF0V;
+      const int end_A00_block = nF0V + mA00;
+
+      if (mA00 > 0 && begin_rows < end_A00_block && start_A00_block <= end_rows) {
+         const int start_A00_mat = std::max(begin_rows, start_A00_block) - start_A00_block;
+         const int end_A00_mat = std::min(end_rows, end_A00_block) - start_A00_block;
+         assert(0 <= start_A00_mat && start_A00_mat <= end_A00_mat);
+         buffer.addMatAt(*A00_border, start_A00_mat, end_A00_mat, std::max(0, start_A00_block - begin_rows), 0);
+      }
+   }
+
    /* F0C */
    {
-      const int start_F0C_block = nA0;
-      const int end_F0C_block = nA0 + mF0C;
+      const int start_F0C_block = nF0V + mA00;
+      const int end_F0C_block = nF0V + mA00 + mF0C;
 
       if (mF0C > 0 && begin_rows < end_F0C_block && start_F0C_block <= end_rows) {
          const int start_F0C_mat = std::max(begin_rows, start_F0C_block) - start_F0C_block;
@@ -279,8 +387,8 @@ DistributedRootLinearSystem::finalizeZ0Hierarchical(DenseMatrix& buffer, BorderL
 
    /* G0C */
    {
-      const int start_G0C_block = nA0 + mF0C;
-      const int end_G0C_block = nA0 + mF0C + mG0C;
+      const int start_G0C_block = nF0V + mA00 + mF0C;
+      const int end_G0C_block = nF0V + mA00 + mF0C + mG0C;
 
       if (mG0C > 0 && begin_rows < end_G0C_block && start_G0C_block <= end_rows) {
          const int start_G0C_mat = std::max(begin_rows, start_G0C_block) - start_G0C_block;
@@ -293,20 +401,24 @@ DistributedRootLinearSystem::finalizeZ0Hierarchical(DenseMatrix& buffer, BorderL
 
 /* result -= [ Br0^T X0 ]^T = X0^T Br0
  *
+ * A00 can only be present when stochNode->was_A0_moved_to_border()
+ * A0 is only present when the same is false
+ *
  * compute result -= Br0^T X0
- *         [  0  A0T C0T F0VT G0VT ]
- * Br0^T = [ F0C  0   0   0    0   ]
- *         [ G0C  0   0   0    0   ]
+ *         [  0  [A0T] C0T F0VT G0VT ]
+ *         [[A00]  0    0   0    0   ]
+ * Br0^T = [ F0C   0    0   0    0   ]
+ *         [ G0C   0    0   0    0   ]
  *
  * result and X0 are stored in transposed form
  *
  * result -= X0 Br0 instead
  *
- * Br0 = [  0  F0CT G0CT ]
- *       [  A   0    0   ]
- *       [  C   0    0   ]
- *       [ F0V  0    0   ]
- *       [ G0V  0    0   ]
+ * Br0 = [  0  [A00T] F0CT G0CT ]
+ *       [[A0]   0     0    0   ]
+ *       [  C    0     0    0   ]
+ *       [ F0V   0     0    0   ]
+ *       [ G0V   0     0    0   ]
  *
  */
 void DistributedRootLinearSystem::finalizeInnerSchurComplementContribution(AbstractMatrix& result, DenseMatrix& X0,
@@ -317,14 +429,17 @@ void DistributedRootLinearSystem::finalizeInnerSchurComplementContribution(Abstr
       assert(is_sym);
 
    const bool has_RAC = Br.has_RAC;
-   if (!has_RAC && !Br.use_local_RAC)
-      return;
+// why was this here?
+//   if (!has_RAC && !Br.use_local_RAC)
+//      return;
 
-   SparseMatrix* F0cons_border = has_RAC ? dynamic_cast<SparseMatrix*>(Br.F.first.get()) : nullptr;
-   SparseMatrix* G0cons_border = has_RAC ? dynamic_cast<SparseMatrix*>(Br.G.first.get()) : nullptr;
+   const SparseMatrix* F0cons_border = has_RAC ? dynamic_cast<SparseMatrix*>(Br.F.first.get()) : nullptr;
+   const SparseMatrix* G0cons_border = has_RAC ? dynamic_cast<SparseMatrix*>(Br.G.first.get()) : nullptr;
 
-   SparseMatrix* A0_border = has_RAC ? dynamic_cast<SparseMatrix*>(Br.A.first.get()) : nullptr;
-   SparseMatrix* C0_border = has_RAC ? dynamic_cast<SparseMatrix*>(Br.C.first.get()) : nullptr;
+   const SparseMatrix* A0_border = (has_RAC && !distributed_tree->was_A0_moved_to_border()) ? dynamic_cast<SparseMatrix*>(Br.A.first.get()) : nullptr;
+   const SparseMatrix* A00_border = (has_RAC && distributed_tree->was_A0_moved_to_border()) ? &data->getLocalB() : nullptr; // B is correct here
+
+   const SparseMatrix* C0_border = has_RAC ? dynamic_cast<SparseMatrix*>(Br.C.first.get()) : nullptr;
    const SparseMatrix* F0vec_border = has_RAC ? dynamic_cast<SparseMatrix*>(Br.A.last.get()) : &data->getLocalF();
    const SparseMatrix* G0vec_border = has_RAC ? dynamic_cast<SparseMatrix*>(Br.C.last.get()) : &data->getLocalG();
 
@@ -364,6 +479,11 @@ void DistributedRootLinearSystem::finalizeInnerSchurComplementContribution(Abstr
       std::tie(mC0, nC0) = C0_border->n_rows_columns();
    }
 
+   int mA00{0};
+   int nA00{0};
+   if (A00_border) {
+      std::tie(mA00, nA00) = A00_border->n_rows_columns();
+   }
    const int n_rows = end_rows - begin_rows;
 
    assert(n_rows <= mX0);
@@ -372,37 +492,37 @@ void DistributedRootLinearSystem::finalizeInnerSchurComplementContribution(Abstr
    } else
       assert(end_rows <= m_result && begin_rows == 0);
 
-   assert(nA0 == nC0);
+   if (A00_border)
+      assert(nA00 == nF0C);
+   if (A0_border)
+      assert(nA0 == nC0);
    assert(nF0V == nG0V);
 
-   if (has_RAC)
+   if (has_RAC && A0_border)
       assert(nA0 == nF0V);
 
    assert(nF0C + mA0 + mC0 + mF0V + mG0V == nX0);
    assert(nF0C == nG0C);
 
    if (has_RAC)
-      assert(n_result == nF0V + mF0C + mG0C);
+      assert(n_result >= nF0V + mA00 + mF0C + mG0C);
    else
       assert(n_result >= nF0V);
 #endif
 
    if (is_sparse)
-      finalizeInnerSchurComplementContributionSparse(result, X0, A0_border, C0_border, F0vec_border, G0vec_border,
-         F0cons_border, G0cons_border,
-         begin_rows, end_rows);
+      finalizeInnerSchurComplementContributionSparse(result, X0, A0_border, C0_border, A00_border, F0vec_border,
+         G0vec_border, F0cons_border, G0cons_border, begin_rows, end_rows);
    else
-      finalizeInnerSchurComplementContributionDense(result, X0, A0_border, C0_border, F0vec_border, G0vec_border,
-         F0cons_border, G0cons_border,
-         is_sym, begin_rows, end_rows);
+      finalizeInnerSchurComplementContributionDense(result, X0, A0_border, C0_border, A00_border, F0vec_border,
+         G0vec_border, F0cons_border, G0cons_border, is_sym, begin_rows, end_rows);
 }
 
 /* SC and X0 stored in transposed form */
 void
 DistributedRootLinearSystem::finalizeInnerSchurComplementContributionSparse(AbstractMatrix& SC_, const DenseMatrix& X0,
-   const SparseMatrix* A0_border,
-   const SparseMatrix* C0_border, const SparseMatrix* F0vec_border, const SparseMatrix* G0vec_border,
-   const SparseMatrix* F0cons_border,
+   const SparseMatrix* A0_border, const SparseMatrix* C0_border, const SparseMatrix* A00_border,
+   const SparseMatrix* F0vec_border, const SparseMatrix* G0vec_border, const SparseMatrix* F0cons_border,
    const SparseMatrix* G0cons_border, int begin_rows, int end_rows) {
    assert(F0vec_border);
    assert(G0vec_border);
@@ -411,11 +531,8 @@ DistributedRootLinearSystem::finalizeInnerSchurComplementContributionSparse(Abst
 
    assert(0 <= begin_rows && begin_rows <= end_rows && end_rows - begin_rows <= X0.n_rows());
 
-   int mA0{0};
-   int nA0{0};
-   if (A0_border)
-      std::tie(mA0, nA0) = A0_border->n_rows_columns();
-
+   int mA0 = A0_border ? A0_border->n_rows() : 0;
+   int mA00 = A00_border ? A00_border->n_rows() : 0;
    int mC0 = C0_border ? C0_border->n_rows() : 0;
 
    int nF0C{0};
@@ -423,7 +540,7 @@ DistributedRootLinearSystem::finalizeInnerSchurComplementContributionSparse(Abst
    if (F0cons_border)
       std::tie(mF0C, nF0C) = F0cons_border->n_rows_columns();
 
-   const int mF0V = F0vec_border->n_rows();
+   const auto [mF0V, nF0V] = F0vec_border->n_rows_columns();
    const int mG0V = G0vec_border->n_rows();
 
    // multiply each column with B_{outer]}^T and add it to res
@@ -442,20 +559,22 @@ DistributedRootLinearSystem::finalizeInnerSchurComplementContributionSparse(Abst
       if (mG0V > 0)
          G0vec_border->transmultMatSymUpper(1.0, SC, -1.0, &col[nF0C + mA0 + mC0 + mF0V], i, 0);
 
+      if (A00_border)
+         A00_border->multMatSymUpper(1.0, SC, -1.0, &col[0], i, nF0V);
+
       if (F0cons_border)
-         F0cons_border->multMatSymUpper(1.0, SC, -1.0, &col[0], i, nA0);
+         F0cons_border->multMatSymUpper(1.0, SC, -1.0, &col[0], i, nF0V + mA00);
 
       if (G0cons_border)
-         G0cons_border->multMatSymUpper(1.0, SC, -1.0, &col[0], i, nA0 + mF0C);
+         G0cons_border->multMatSymUpper(1.0, SC, -1.0, &col[0], i, nF0V + mA00 + mF0C);
    }
 }
 
 /* SC and X0 stored in transposed form */
 void
 DistributedRootLinearSystem::finalizeInnerSchurComplementContributionDense(AbstractMatrix& SC_, const DenseMatrix& X0,
-   const SparseMatrix* A0_border,
-   const SparseMatrix* C0_border, const SparseMatrix* F0vec_border, const SparseMatrix* G0vec_border,
-   const SparseMatrix* F0cons_border,
+   const SparseMatrix* A0_border, const SparseMatrix* C0_border, const SparseMatrix* A00_border,
+   const SparseMatrix* F0vec_border, const SparseMatrix* G0vec_border, const SparseMatrix* F0cons_border,
    const SparseMatrix* G0cons_border, bool is_sym, int begin_rows, int end_rows) {
    assert(F0vec_border);
    assert(G0vec_border);
@@ -466,11 +585,8 @@ DistributedRootLinearSystem::finalizeInnerSchurComplementContributionDense(Abstr
    assert(0 <= begin_rows && begin_rows <= end_rows && n_rows <= X0.n_rows());
    assert(n_rows <= SC_.n_rows());
 
-   int mA0{0};
-   int nA0{0};
-   if (A0_border)
-      std::tie(mA0, nA0) = A0_border->n_rows_columns();
-
+   int mA0 = A0_border ? A0_border->n_rows() : 0;
+   int mA00 = A00_border ? A00_border->n_rows() : 0;
    int mC0 = C0_border ? C0_border->n_rows() : 0;
 
    int nF0C{0};
@@ -478,7 +594,7 @@ DistributedRootLinearSystem::finalizeInnerSchurComplementContributionDense(Abstr
    if (F0cons_border)
       std::tie(mF0C, nF0C) = F0cons_border->n_rows_columns();
 
-   int mF0V = F0vec_border->n_rows();
+   const auto [mF0V, nF0V] = F0vec_border->n_rows_columns();
 
    // multiply each column with B_{outer]}^T and add it to res
    // todo: #pragma omp parallel for schedule(dynamic, 10)
@@ -498,18 +614,20 @@ DistributedRootLinearSystem::finalizeInnerSchurComplementContributionDense(Abstr
 
       G0vec_border->getStorage().transMult(1.0, &SC[row][0], -1.0, &col[nF0C + mA0 + mC0 + mF0V]);
 
+      if (A00_border)
+         A00_border->getStorage().mult(1.0, &SC[row][nF0V], -1.0, &col[0]);
+
       if (F0cons_border)
-         F0cons_border->getStorage().mult(1.0, &SC[row][nA0], -1.0, &col[0]);
+         F0cons_border->getStorage().mult(1.0, &SC[row][nF0V + mA00], -1.0, &col[0]);
 
       if (G0cons_border)
-         G0cons_border->getStorage().mult(1.0, &SC[row][nA0 + mF0C], -1.0, &col[0]);
+         G0cons_border->getStorage().mult(1.0, &SC[row][nF0V + mA00 + mF0C], -1.0, &col[0]);
    }
 }
 
 /* compute result += [ SUM_i Bi_{inner}^T Ki^{-1} (Bri - SUM_j Bmodij Xij) ]^T += SUM_i (Bri - SUM_j Xij^T Bmodij^T) Ki^{-1} Bi_{inner}^T */
 void DistributedRootLinearSystem::LsolveHierarchyBorder(DenseMatrix& result, BorderLinsys& Br,
-   std::vector<BorderMod>& Br_mod_border, bool use_local_RAC,
-   bool two_link_border, int begin_cols, int end_cols) {
+   std::vector<BorderMod>& Br_mod_border, bool use_local_RAC, int begin_cols, int end_cols) {
    assert(children.size() == Br.F.children.size());
 
    /* get contribution to schur_complement from each child */
@@ -577,135 +695,6 @@ void DistributedRootLinearSystem::LtsolveHierarchyBorder(AbstractMatrix& res, co
    }
 }
 
-void DistributedRootLinearSystem::addBorderX0ToRhs(DistributedVector<double>& rhs, const SimpleVector<double>& x0,
-   BorderLinsys& border) {
-   assert(rhs.children.size() == children.size());
-   assert(border.A.children.size() == children.size());
-
-   for (size_t i = 0; i < children.size(); ++i) {
-      BorderLinsys child_border = getChild(border, i);
-      if (child_border.isEmpty())
-         continue;
-
-      children[i]->addBorderX0ToRhs(*rhs.children[i], x0, child_border);
-   }
-
-   /* add schur complement part */
-   assert(border.A.first);
-   assert(border.C.first);
-
-   auto& A0_border = dynamic_cast<SparseMatrix&>(*border.A.first);
-   const auto[mA0, nA0] = A0_border.n_rows_columns();
-
-   auto& C0_border = dynamic_cast<SparseMatrix&>(*border.C.first);
-   const auto mC0 = C0_border.n_rows();
-
-   assert(border.F.first);
-   assert(border.A.last);
-
-   auto& F0vec_border = dynamic_cast<SparseMatrix&>(*border.A.last);
-   auto& G0vec_border = dynamic_cast<SparseMatrix&>(*border.C.last);
-   const auto mF0V = F0vec_border.n_rows();
-
-   auto& F0cons_border = dynamic_cast<SparseMatrix&>(*border.F.first);
-   auto& G0cons_border = dynamic_cast<SparseMatrix&>(*border.G.first);
-   const auto[mF0C, nF0C] = F0cons_border.n_rows_columns();
-
-#ifndef NDEBUG
-   assert(border.C.last);
-   assert(border.G.first);
-
-
-   assert(rhs.first);
-   assert(rhs.first->length() == nF0C + mA0 + mC0 + mF0V + G0vec_border.n_rows());
-   assert(x0.length() == nA0 + mF0C + G0cons_border.n_rows());
-#endif
-
-   auto& rhs0 = dynamic_cast<SimpleVector<double>&>(*rhs.first);
-
-   double* rhs01 = &rhs0[0];
-   double* rhs02 = &rhs0[nF0C];
-   double* rhs03 = &rhs0[nF0C + mA0];
-   double* rhs04 = &rhs0[nF0C + mA0 + mC0];
-   double* rhs05 = &rhs0[nF0C + mA0 + mC0 + mF0V];
-
-   const double* x01 = &x0[0];
-   const double* x02 = &x0[nA0];
-   const double* x03 = &x0[nA0 + mF0C];
-
-   A0_border.getStorage().mult(1.0, rhs02, -1.0, x01);
-   C0_border.getStorage().mult(1.0, rhs03, -1.0, x01);
-   F0vec_border.getStorage().mult(1.0, rhs04, -1.0, x01);
-   G0vec_border.getStorage().mult(1.0, rhs05, -1.0, x01);
-
-   F0cons_border.getStorage().transMult(1.0, rhs01, -1.0, x02);
-   G0cons_border.getStorage().transMult(1.0, rhs01, -1.0, x03);
-}
-
-void DistributedRootLinearSystem::addBorderTimesRhsToB0(DistributedVector<double>& rhs, SimpleVector<double>& b0,
-   BorderLinsys& border) {
-   assert(rhs.children.size() == children.size());
-   assert(border.A.children.size() == children.size());
-
-   for (size_t i = 0; i < children.size(); ++i) {
-      BorderLinsys child_border = getChild(border, i);
-      if (child_border.isEmpty())
-         continue;
-
-      children[i]->addBorderTimesRhsToB0(*rhs.children[i], b0, child_border);
-   }
-
-   /* add schur complement part */
-   if (PIPS_MPIgetSize(mpiComm) == 0 || PIPS_MPIgetRank(mpiComm) == 0) {
-      assert(border.A.first);
-      assert(border.C.first);
-
-      auto& A0_border = dynamic_cast<SparseMatrix&>(*border.A.first);
-      const auto[mA0, nA0] = A0_border.n_rows_columns();
-
-      auto& C0_border = dynamic_cast<SparseMatrix&>(*border.C.first);
-      const auto mC0 = C0_border.n_rows();
-
-      assert(border.F.first);
-      assert(border.A.last);
-      auto& F0vec_border = dynamic_cast<SparseMatrix&>(*border.A.last);
-      const auto mF0V = F0vec_border.n_rows();
-      auto& F0cons_border = dynamic_cast<SparseMatrix&>(*border.F.first);
-      const auto[mF0C, nF0C]  = F0cons_border.n_rows_columns();
-
-      assert(border.C.last);
-      assert(border.G.first);
-      auto& G0vec_border = dynamic_cast<SparseMatrix&>(*border.C.last);
-      const auto mG0V = G0vec_border.n_rows();
-      auto& G0cons_border = dynamic_cast<SparseMatrix&>(*border.G.first);
-      const auto mG0C = G0cons_border.n_rows();
-
-      assert(rhs.first);
-      assert(rhs.first->length() == nF0C + mA0 + mC0 + mF0V + mG0V);
-      assert(b0.length() == nA0 + mF0C + mG0C);
-
-      auto& zi = dynamic_cast<SimpleVector<double>&>(*rhs.first);
-
-      SimpleVector<double> zi1(&zi[0], nF0C);
-      SimpleVector<double> zi2(&zi[nF0C], mA0);
-      SimpleVector<double> zi3(&zi[nF0C + mA0], mC0);
-      SimpleVector<double> zi4(&zi[nF0C + mA0 + mC0], mF0V);
-      SimpleVector<double> zi5(&zi[nF0C + mA0 + mC0 + mF0V], mG0V);
-
-      SimpleVector<double> b1(&b0[0], nA0);
-      SimpleVector<double> b2(&b0[nA0], mF0C);
-      SimpleVector<double> b3(&b0[nA0 + mF0C], mG0C);
-
-      A0_border.transpose_mult(1.0, b1, -1.0, zi2);
-      C0_border.transpose_mult(1.0, b1, -1.0, zi3);
-      F0vec_border.transpose_mult(1.0, b1, -1.0, zi4);
-      G0vec_border.transpose_mult(1.0, b1, -1.0, zi5);
-
-      F0cons_border.mult(1.0, b2, -1.0, zi1);
-      G0cons_border.mult(1.0, b3, -1.0, zi1);
-   }
-}
-
 void DistributedRootLinearSystem::Ltsolve2(DistributedVector<double>& x, SimpleVector<double>& x0, bool) {
    assert(false && "not in use");
    assert(pipsipmpp_options::get_bool_parameter("HIERARCHICAL"));
@@ -766,10 +755,6 @@ void DistributedRootLinearSystem::createChildren() {
       assert(child);
       AddChild(std::move(child));
    }
-}
-
-void DistributedRootLinearSystem::deleteChildren() {
-   children.clear();
 }
 
 void DistributedRootLinearSystem::initProperChildrenRange() {
@@ -873,23 +858,24 @@ void DistributedRootLinearSystem::reduceKKT() {
 
 /* collects (reduces) lower left part of dense global symmetric Schur complement */
 void DistributedRootLinearSystem::reduceKKTdense() {
-   auto* const kktd = dynamic_cast<DenseSymmetricMatrix*>(kkt.get());
+   auto& schur_complement = dynamic_cast<DenseSymmetricMatrix&>(*kkt);
+   assert(schur_complement.size() == locnx + locmy + locmyl + locmzl);
 
    // parallel communication
    if (iAmDistrib) {
-      if (locnx > 0)
-         submatrixAllReduceDiagLower(kktd, 0, locnx, mpiComm);
+      if (locnx > 0) {
+         submatrixAllReduceDiagLower(schur_complement, 0, locnx, mpiComm);
+      }
 
       if (locmyl > 0 || locmzl > 0) {
          const int locNxMy = locnx + locmy;
-         assert(kktd->size() == locnx + locmy + locmyl + locmzl);
 
          // reduce lower left part
          if (locnx > 0)
-            submatrixAllReduceFull(kktd, locNxMy, 0, locmyl + locmzl, locnx, mpiComm);
+            submatrixAllReduceFull(schur_complement, locNxMy, 0, locmyl + locmzl, locnx, mpiComm);
 
          // reduce lower diagonal linking part
-         submatrixAllReduceDiagLower(kktd, locNxMy, locmyl + locmzl, mpiComm);
+         submatrixAllReduceDiagLower(schur_complement, locNxMy, locmyl + locmzl, mpiComm);
       }
    }
 }
@@ -1519,10 +1505,10 @@ void DistributedRootLinearSystem::addTermToSchurCompl(size_t childindex, bool us
    }
 }
 
-void DistributedRootLinearSystem::submatrixAllReduce(DenseSymmetricMatrix* A, int startRow, int startCol, int nRows,
+void DistributedRootLinearSystem::submatrixAllReduce(DenseSymmetricMatrix& A, int startRow, int startCol, int nRows,
    int nCols, MPI_Comm comm) {
-   double** M = A->mStorage->M;
-   int n = A->mStorage->n;
+   double** M = A.mStorage->M;
+   int n = A.mStorage->n;
 
    assert(nRows > 0);
    assert(nCols > 0);
@@ -1602,27 +1588,27 @@ void DistributedRootLinearSystem::allreduceMatrix(AbstractMatrix& mat, bool is_s
    } else {
       // TODO : these seem to be not proper handling of the symmetric dense schur complement - need ot check maths first
       if (is_sym)
-         submatrixAllReduceFull(&dynamic_cast<DenseSymmetricMatrix&>(mat), 0, 0, m, n, comm);
+         submatrixAllReduceFull(dynamic_cast<DenseSymmetricMatrix&>(mat), 0, 0, m, n, comm);
       else
-         submatrixAllReduceFull(&dynamic_cast<DenseMatrix&>(mat), 0, 0, m, n, comm);
+         submatrixAllReduceFull(dynamic_cast<DenseMatrix&>(mat), 0, 0, m, n, comm);
    }
 }
 
-void DistributedRootLinearSystem::submatrixAllReduceFull(DenseSymmetricMatrix* A, int startRow, int startCol, int nRows,
+void DistributedRootLinearSystem::submatrixAllReduceFull(DenseSymmetricMatrix& A, int startRow, int startCol, int nRows,
    int nCols, MPI_Comm comm) {
-   assert(A->n_rows() >= startRow + nRows);
-   assert(A->n_columns() >= startCol + nCols);
+   assert(A.n_rows() >= startRow + nRows);
+   assert(A.n_columns() >= startCol + nCols);
 
-   submatrixAllReduceFull(A->mStorage->M, startRow, startCol, nRows, nCols, comm);
+   submatrixAllReduceFull(A.mStorage->M, startRow, startCol, nRows, nCols, comm);
 }
 
 void
-DistributedRootLinearSystem::submatrixAllReduceFull(DenseMatrix* A, int startRow, int startCol, int nRows, int nCols,
+DistributedRootLinearSystem::submatrixAllReduceFull(DenseMatrix& A, int startRow, int startCol, int nRows, int nCols,
    MPI_Comm comm) {
-   assert(A->n_rows() >= startRow + nRows);
-   assert(A->n_columns() >= startCol + nCols);
+   assert(A.n_rows() >= startRow + nRows);
+   assert(A.n_columns() >= startCol + nCols);
 
-   submatrixAllReduceFull(A->mStorage->M, startRow, startCol, nRows, nCols, comm);
+   submatrixAllReduceFull(A.mStorage->M, startRow, startCol, nRows, nCols, comm);
 }
 
 void DistributedRootLinearSystem::submatrixAllReduceFull(double** A, int startRow, int startCol, int nRows, int nCols,
@@ -1672,9 +1658,9 @@ void DistributedRootLinearSystem::submatrixAllReduceFull(double** A, int startRo
 }
 
 
-void DistributedRootLinearSystem::submatrixAllReduceDiagLower(DenseSymmetricMatrix* A, int substart, int subsize,
+void DistributedRootLinearSystem::submatrixAllReduceDiagLower(DenseSymmetricMatrix& A, int substart, int subsize,
    MPI_Comm comm) {
-   double** const M = A->mStorage->M;
+   double** const M = A.mStorage->M;
 
    assert(subsize >= 0);
    assert(substart >= 0);
@@ -1683,7 +1669,7 @@ void DistributedRootLinearSystem::submatrixAllReduceDiagLower(DenseSymmetricMatr
       return;
 
    const int subend = substart + subsize;
-   assert(A->mStorage->n >= subend);
+   assert(A.mStorage->n >= subend);
 
    // number of elements in lower matrix triangle (including diagonal)
    const int buffersize = (subsize * subsize + subsize) / 2;

@@ -933,8 +933,8 @@ void SparseStorage::multMatSymUpper(double beta, SparseStorage& y, double alpha,
 
    // assert that yrow is sorted
 #ifndef NDEBUG
-   for (int ci = krowM_y[yrow] + 1; ci < krowM_y[yrow + 1]; ci++)
-      assert(jcolM_y[ci - 1] < jcolM_y[ci]);
+   for (int i = krowM_y[yrow] + 1; i < krowM_y[yrow + 1]; ++i)
+      assert(jcolM_y[i - 1] < jcolM_y[i]);
 #endif
 
    // scale row yrow

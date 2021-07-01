@@ -261,7 +261,7 @@ double SimpleVector<double>::inf_norm() const {
       return -std::numeric_limits<double>::max();
 
    const int one = 1;
-   return std::fabs(v[idamax_(&this->n, v, &one) - 1]);
+   return std::fabs(v[idamax(&this->n, v, &one) - 1]);
 }
 
 template<typename T>
@@ -415,7 +415,7 @@ void SimpleVector<double>::scale(double alpha) {
       return;
 
    const int one = 1;
-   dscal_(&this->n, &alpha, v, &one);
+   dscal(&this->n, &alpha, v, &one);
 }
 
 // generic implementation without boost 
@@ -433,7 +433,7 @@ void SimpleVector<double>::axpy(double alpha, const Vector<double>& vec) {
 
    const auto& sv = dynamic_cast<const SimpleVector<double>&>(vec);
    const int one = 1;
-   daxpy_(&this->n, &alpha, sv.v, &one, v, &one);
+   daxpy(&this->n, &alpha, sv.v, &one, v, &one);
 }
 
 template<typename T>
@@ -566,7 +566,7 @@ double SimpleVector<double>::dotProductWith(const Vector<double>& vec) const {
    const auto& svec = dynamic_cast<const SimpleVector<double>&>(vec);
 
    const int incx = 1;
-   return ddot_(&this->n, v, &incx, svec.v, &incx);
+   return ddot(&this->n, v, &incx, svec.v, &incx);
 }
 
 template<typename T>

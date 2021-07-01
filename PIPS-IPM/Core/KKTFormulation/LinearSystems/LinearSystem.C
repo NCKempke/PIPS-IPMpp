@@ -19,13 +19,11 @@
 extern int gOuterBiCGIter;
 extern double gOuterBiCGIterAvg;
 extern double g_iterNumber;
-extern int gOuterBiCGFails;
 
 static std::vector<int> bicgIters;
 
 LinearSystem::LinearSystem(const ProblemFactory& factory_, const Problem& problem, bool create_iter_ref_vecs) : factory(factory_),
-      apply_regularization(options::get_bool_parameter("REGULARIZATION")), outerSolve(
-      options::get_int_parameter("OUTER_SOLVE")),
+      apply_regularization(options::get_bool_parameter("REGULARIZATION")), outerSolve(options::get_int_parameter("OUTER_SOLVE")),
       innerSCSolve(options::get_int_parameter("INNER_SC_SOLVE")),
       outer_solve_refine_original_system{options::get_bool_parameter("OUTER_SOLVE_REFINE_ORIGINAL_SYSTEM")},
       outer_bicg_print_statistics(options::get_bool_parameter("OUTER_BICG_PRINT_STATISTICS")),
@@ -34,9 +32,7 @@ LinearSystem::LinearSystem(const ProblemFactory& factory_, const Problem& proble
       outer_bicg_max_normr_divergences(options::get_int_parameter("OUTER_BICG_MAX_NORMR_DIVERGENCES")),
       outer_bicg_max_stagnations(options::get_int_parameter("OUTER_BICG_MAX_STAGNATIONS")),
       xyzs_solve_print_residuals(options::get_bool_parameter("XYZS_SOLVE_PRINT_RESISDUAL")), problem(problem) {
-   nx = problem.nx;
-   my = problem.my;
-   mz = problem.mz;
+
    ixlow = problem.primal_lower_bound_indicators;
    ixupp = problem.primal_upper_bound_indicators;
    iclow = problem.inequality_lower_bound_indicators;
@@ -161,9 +157,6 @@ static void biCGStabCommunicateStatus(int flag, int it) {
 
    gOuterBiCGIterAvg = iterAvg;
    gOuterBiCGIter = it;
-
-   if (flag != 0 && flag != 1)
-      gOuterBiCGFails++;
 }
 
 static bool isZero(double val, LinearSystem::IterativeSolverSolutionStatus& status) {
@@ -189,7 +182,7 @@ void LinearSystem::factorize(const Variables& iterate) {
    if (pipsipmpp_options::get_bool_parameter("HIERARCHICAL_TESTING")) {
       std::cout << "Setting diags to 1.0 for Hierarchical debugging\n";
       primal_diagonal->setToConstant(1.0);
-      nomegaInv->setToConstant(1.0);
+      nomegaInv->setToConstant(-1.0);
    }
 
    reset_regularization();

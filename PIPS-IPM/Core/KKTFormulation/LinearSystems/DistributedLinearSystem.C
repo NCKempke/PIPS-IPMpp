@@ -19,7 +19,7 @@ DistributedLinearSystem::DistributedLinearSystem(const DistributedFactory& facto
    is_hierarchy_root(is_hierarchy_root),
    blocksize_hierarchical(pipsipmpp_options::get_int_parameter("SC_BLOCKSIZE_HIERARCHICAL")),
    sc_compute_blockwise_hierarchical{pipsipmpp_options::get_bool_parameter("SC_HIERARCHICAL_COMPUTE_BLOCKWISE")},
-   stochNode{factory_.tree.get()} {
+   distributed_tree{factory_.tree.get()}, resource_monitor{&factory_.tree->resMon} {
    if (sc_compute_blockwise_hierarchical && PIPS_MPIgetRank() == 0)
       std::cout << "Computing hierarchical Schur complements blockwise with buffersize " << blocksize_hierarchical
                 << " (times # of available OMP threads)\n";
@@ -46,7 +46,7 @@ DistributedLinearSystem::DistributedLinearSystem(const DistributedFactory& facto
    blocksizemax(pipsipmpp_options::get_int_parameter("SC_BLOCKWISE_BLOCKSIZE_MAX")),
    blocksize_hierarchical(pipsipmpp_options::get_int_parameter("SC_BLOCKSIZE_HIERARCHICAL")),
    sc_compute_blockwise_hierarchical{pipsipmpp_options::get_bool_parameter("SC_HIERARCHICAL_COMPUTE_BLOCKWISE")},
-   stochNode{factory_.tree.get()} {
+   distributed_tree{factory_.tree.get()}, resource_monitor{&factory_.tree->resMon}{
    problem->getLocalSizes(locnx, locmy, locmz, locmyl, locmzl);
 
    if (primal_diagonal) {
@@ -1077,7 +1077,7 @@ DistributedLinearSystem::addLeftBorderTimesDenseColsToResTranspSparse(const Bord
 
       assert(nF == nG && nF == nR);
       assert(length_col == nR + nA + nC);
-      assert(nRes >= mR + mF + mG);
+      assert(nRes == mR + Bl.n_empty_rows + mF + mG);
       assert(mR == mA && mA == mC);
    } else {
       /* >= since there could be 0linkvars */

@@ -16,45 +16,27 @@ sLinsysRootAugHierInner::sLinsysRootAugHierInner(const DistributedFactory& facto
    dynamic_cast<DistributedVector<double>&>(*dq_).first,
    dynamic_cast<DistributedVector<double>&>(*nomegaInv_).first, dynamic_cast<DistributedVector<double>&>(*regP_).first,
    dynamic_cast<DistributedVector<double>&>(*regDy_).first, dynamic_cast<DistributedVector<double>&>(*regDz_).first,
-   rhs_, false) {
-   assert(locnx == 0);
-   assert(locmy == 0);
-   assert(locmz == 0);
-
-   createSolversAndKKts();
-}
-
-void sLinsysRootAugHierInner::createSolversAndKKts() {
+   rhs_, true) {
+   assert(locnx == 0 && locmy == 0 && locmz == 0);
    assert(hasSparseKkt);
 
-   const SolverType solver_sub_root = pipsipmpp_options::get_solver_sub_root();
-
    static bool printed = false;
-   if (!printed && PIPS_MPIgetRank() == 0)
-      std::cout << "sLinsysRootAugHierInner: using " << solver_sub_root << "\n";
-
-   kkt.reset(createKKT());
-
-   if (!printed && PIPS_MPIgetRank() == 0)
-      std::cout << "sLinsysRootAugHierInner: getSchurCompMaxNnz " << data->getSchurCompMaxNnz() << "\n";
-   printed = true;
-
-   createSolversSparse(solver_sub_root);
+   if (!printed && PIPS_MPIgetRank() == 0) {
+      print_solver_regularization_and_sc_info("sLinsysRootAugHierInner");
+      printed = true;
+   }
 }
 
 void sLinsysRootAugHierInner::assembleLocalKKT() {
    for (size_t c = 0; c < children.size(); ++c) {
-#ifdef STOCH_TESTING
-      g_scenNum = c;
-#endif
       if (children[c]->mpiComm == MPI_COMM_NULL)
          continue;
 
-      children[c]->stochNode->resMon.recFactTmChildren_start();
+      children[c]->resource_monitor->recFactTmChildren_start();
       //---------------------------------------------
       addTermToSchurCompl(c, false);
       //---------------------------------------------
-      children[c]->stochNode->resMon.recFactTmChildren_stop();
+      children[c]->resource_monitor->recFactTmChildren_stop();
    }
 }
 
@@ -80,9 +62,8 @@ void sLinsysRootAugHierInner::Ltsolve2(DistributedVector<double>& x, SimpleVecto
 
 void
 sLinsysRootAugHierInner::LsolveHierarchyBorder(DenseMatrix& result, BorderLinsys& Br,
-   std::vector<BorderMod>& Br_mod_border, bool two_link_border,
-   int begin_cols, int end_cols) {
-   LsolveHierarchyBorder(result, Br, Br_mod_border, false, two_link_border, begin_cols, end_cols);
+   std::vector<BorderMod>& Br_mod_border, int begin_cols, int end_cols) {
+   LsolveHierarchyBorder(result, Br, Br_mod_border, false, begin_cols, end_cols);
 }
 
 void sLinsysRootAugHierInner::LtsolveHierarchyBorder(AbstractMatrix& res, const DenseMatrix& X0, BorderLinsys& Bl,
@@ -263,6 +244,7 @@ void sLinsysRootAugHierInner::addTermToSchurComplBlocked(bool sparseSC, Symmetri
    assert(data->getLocalFBorder().n_columns() == data->getLocalGBorder().n_columns());
    assert(dynamic_cast<const DistributedMatrix&>(*data->equality_jacobian).Blmat->is_a(kStripMatrix));
    assert(dynamic_cast<const DistributedMatrix&>(*data->inequality_jacobian).Blmat->is_a(kStripMatrix));
+   assert(n_empty_rows_inner_border + data->getLocalFBorder().n_rows() + data->getLocalGBorder().n_rows() == SC.size());
 
    BorderLinsys Bl(n_empty_rows_inner_border, data->getLocalFBorder(), data->getLocalGBorder(), use_local_RAC);
    BorderLinsys Br(n_empty_rows_inner_border, data->getLocalFBorder(), data->getLocalGBorder(), use_local_RAC);

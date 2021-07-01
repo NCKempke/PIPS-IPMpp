@@ -15,6 +15,7 @@ target_sources(pips-ipmpp
         PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/Dense/SimpleVector.cpp
 
         PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/Distributed/BorderedMatrix.C
+        PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/Distributed/BorderedMatrixLiftedA0wrapper.cpp
         PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/Distributed/BorderedSymmetricMatrix.C
         PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/Distributed/DistributedMatrix.C
         PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/Distributed/DistributedMatrixUtilities.cpp

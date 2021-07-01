@@ -19,19 +19,13 @@ int DistributedTree::numProcs = -1;
 DistributedTree::DistributedTree(const DistributedTree& other) : commWrkrs{other.commWrkrs}, myProcs(other.myProcs.begin(), other.myProcs.end()),
       myOldProcs(other.myOldProcs.begin(), other.myOldProcs.end()), commP2ZeroW{other.commP2ZeroW}, N{other.N}, MY{other.MY}, MZ{other.MZ},
       MYL{other.MYL}, MZL{other.MZL}, np{other.np}, IPMIterExecTIME{other.IPMIterExecTIME}, is_hierarchical_root{other.is_hierarchical_root},
-      is_hierarchical_inner_root{other.is_hierarchical_inner_root}, is_hierarchical_inner_leaf{other.is_hierarchical_inner_leaf} {
+      is_hierarchical_inner_root{other.is_hierarchical_inner_root}, is_hierarchical_inner_leaf{other.is_hierarchical_inner_leaf},
+      was_a0_moved_to_border{other.was_a0_moved_to_border}
+      {
    if (other.sub_root)
       sub_root = other.sub_root->clone();
    for (auto& child : other.children)
       children.push_back(child->clone());
-}
-
-int DistributedTree::myl() const {
-   return -1;
-}
-
-int DistributedTree::mzl() const {
-   return -1;
 }
 
 bool DistributedTree::distributedPreconditionerActive() const {

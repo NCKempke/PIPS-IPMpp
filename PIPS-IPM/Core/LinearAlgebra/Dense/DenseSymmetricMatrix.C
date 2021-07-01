@@ -92,7 +92,7 @@ void DenseSymmetricMatrix::mult(double beta, double y[], int incy, double alpha,
    char fortranUplo = 'U';
    int n = mStorage->n;
 
-   dsymv_(&fortranUplo, &n, &alpha, &mStorage->M[0][0], &n, x, &incx, &beta, y, &incy);
+   dsymv(&fortranUplo, &n, &alpha, &mStorage->M[0][0], &n, x, &incx, &beta, y, &incy);
 }
 
 void DenseSymmetricMatrix::mult(double beta, Vector<double>& y_in, double alpha, const Vector<double>& x_in) const {
@@ -103,7 +103,7 @@ void DenseSymmetricMatrix::mult(double beta, Vector<double>& y_in, double alpha,
    int incx = 1, incy = 1;
 
    if (n != 0) {
-      dsymv_(&fortranUplo, &n, &alpha, &mStorage->M[0][0], &n, &x[0], &incx, &beta, &y[0], &incy);
+      dsymv(&fortranUplo, &n, &alpha, &mStorage->M[0][0], &n, &x[0], &incx, &beta, &y[0], &incy);
    }
 }
 
@@ -248,7 +248,7 @@ void DenseSymmetricMatrix::matMult(double alpha, GeneralMatrix& A_, int transA, 
    double** BB = B.mStorage->M;
    double** CC = C.mStorage->M;
 
-   dgemm_(&forTransA, &forTransB, &m, &n, &k, &alpha, &AA[0][0], &m, &BB[0][0], &n, &beta, &CC[0][0], &ldc);
+   dgemm(&forTransA, &forTransB, &m, &n, &k, &alpha, &AA[0][0], &m, &BB[0][0], &n, &beta, &CC[0][0], &ldc);
 }
 
 void DenseSymmetricMatrix::symAtPutSubmatrix(int destRow, int destCol, const AbstractMatrix& Mat, int srcRow, int srcCol, int rowExtent, int colExtent,
@@ -358,10 +358,28 @@ void DenseSymmetricMatrix::add_matrix_at(const DenseMatrix& matrix, int row_0, i
    }
 }
 
+void DenseSymmetricMatrix::add_matrix_at_without_diag(const SparseSymmetricMatrix& matrix, int row_0, int col_0) {
+   const int* krowQ = matrix.krowM();
+   const int* jcolQ = matrix.jcolM();
+   const double* dQ = matrix.M();
+   for (int i = 0; i < matrix.n_rows(); i++) {
+      const int pend = krowQ[i + 1];
+      for (int p = krowQ[i]; p < pend; p++) {
+         const int j = jcolQ[p];
+         if (i == j)
+            continue;
+         double val = dQ[p];
+         (*this)[i][j] += val;
+         (*this)[j][i] += val;
+      }
+   }
+}
+
 void DenseSymmetricMatrix::add_matrix_at(const SparseMatrix& matrix, int row_0, int col_0)
 {
-   const auto m_matrix = matrix.n_rows();
-
+   const auto [m_matrix, n_matrix] = matrix.n_rows_columns();
+   if (m_matrix == 0 || n_matrix == 0)
+      return;
 #ifndef NDEBUG
    assert(row_0 != col_0);
    const int row_n = row_0 + m_matrix;

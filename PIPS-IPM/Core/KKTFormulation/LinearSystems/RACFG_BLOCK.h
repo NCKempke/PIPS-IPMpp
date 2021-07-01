@@ -18,6 +18,8 @@ private:
 public:
    const bool use_local_RAC{};
    const bool has_RAC{};
+   const bool is_twolink_border{};
+
    /* represents a block like
     * [ R_i 0 F_i^T G_i^T ]             [ R_i^T A_i^T C_i^T ]
     * [ A_i 0   0     0   ] or possibly [   0     0     0   ]
@@ -39,11 +41,11 @@ public:
       assert(n_empty_rows >= 0);
    };
 
-   RACFG_BLOCK(int n_empty_rows, const T& F, const T& G, bool use_local_RAC) : use_local_RAC{use_local_RAC}, has_RAC{false},
+   RACFG_BLOCK(int n_empty_rows, const T& F, const T& G, bool use_local_RAC) : use_local_RAC{use_local_RAC}, has_RAC{false}, is_twolink_border{!use_local_RAC},
    R{*RACFG_BLOCK<T>::dummy}, A{*RACFG_BLOCK<T>::dummy}, C{*RACFG_BLOCK<T>::dummy},
       F{F}, G{G}, n_empty_rows{n_empty_rows} { assert(n_empty_rows >= 0); };
 
-   RACFG_BLOCK(const RACFG_BLOCK<T>& block) : use_local_RAC{block.use_local_RAC}, has_RAC{block.has_RAC}, R{block.R}, A{block.A}, C{block.C},
+   RACFG_BLOCK(const RACFG_BLOCK<T>& block) : use_local_RAC{block.use_local_RAC}, has_RAC{block.has_RAC}, is_twolink_border{block.is_twolink_border}, R{block.R}, A{block.A}, C{block.C},
       F{block.F}, G{block.G}, n_empty_rows{block.n_empty_rows} { assert(n_empty_rows >= 0); };
 };
 

@@ -5,32 +5,6 @@
 #ifndef SAUGLINSYS
 #define SAUGLINSYS
 
-#ifdef WITH_PARDISO
-
-#include "PardisoProjectIndefSolver.h"
-
-#endif
-
-#ifdef WITH_MKL_PARDISO
-#include "PardisoMKLIndefSolver.h"
-#endif
-
-#ifdef WITH_MA57
-
-#include "Ma57SolverRoot.h"
-
-#endif
-
-#ifdef WITH_MA27
-
-#include "Ma27SolverRoot.h"
-
-#endif
-
-#ifdef WITH_MUMPS
-#include "MumpsSolverRoot.h"
-#endif
-
 #include "DistributedRootLinearSystem.h"
 #include <memory>
 
@@ -42,7 +16,7 @@ class DistributedProblem;
 class sLinsysRootAug : public DistributedRootLinearSystem {
 
 public:
-   sLinsysRootAug(const DistributedFactory& factory_, DistributedProblem* prob_);
+   sLinsysRootAug(const DistributedFactory& factory_, DistributedProblem* prob_, bool is_hierarchy_root = false);
    sLinsysRootAug(const DistributedFactory& factory, DistributedProblem* prob_, std::shared_ptr<Vector<double>> dd_, std::shared_ptr<Vector<double>> dq_, std::shared_ptr<Vector<double>> nomegaInv_,
          std::shared_ptr<Vector<double>> regP, std::shared_ptr<Vector<double>> regDy, std::shared_ptr<Vector<double>> regDz, std::shared_ptr<Vector<double>> rhs_, bool creat_solvers);
    ~sLinsysRootAug() override = default;
@@ -55,7 +29,7 @@ public:
    void Ltsolve(Vector<double>& x) override;
 
    using DistributedLinearSystem::LsolveHierarchyBorder;
-   void LsolveHierarchyBorder(DenseMatrix& result, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border, bool two_link_border, int begin_cols,
+   void LsolveHierarchyBorder(DenseMatrix& result, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border, int begin_cols,
          int end_cols) override;
 
    using DistributedLinearSystem::LtsolveHierarchyBorder;
@@ -67,10 +41,6 @@ public:
    void put_dual_inequalites_diagonal() override;
 
 protected:
-   [[nodiscard]] SymmetricMatrix* createKKT() const;
-   void createSolversSparse(SolverType solver);
-   void createSolversDense();
-
    void assembleLocalKKT() override;
    void solveReducedLinkCons(SimpleVector<double>& b);
    void solveReducedLinkConsBlocked(DenseMatrix& rhs_mat_transp, int rhs_start, int n_rhs);
@@ -80,7 +50,6 @@ protected:
          bool sparse_res, DenseMatrix& buffer_b0, int begin_cols, int end_cols);
 
 private:
-   void createSolversAndKKts();
    void finalizeKKTdense();
    void finalizeKKTsparse();
    void solveWithIterRef(SimpleVector<double>& b);
@@ -102,6 +71,10 @@ private:
 
    // add specified columns of given matrix Ht (either Ft or Gt) to Schur complement
    void addLinkConsBlock0Matrix(const SparseMatrix& Ht, int nHtOffsetCols, int nKktOffsetCols, int startCol, int endCol);
+
+   void addBorderX0ToRhs(DistributedVector<double>& rhs, const SimpleVector<double>& x0, BorderLinsys& border) override;
+
+   void addBorderTimesRhsToB0(DistributedVector<double>& rhs, SimpleVector<double>& b0, BorderLinsys& border) override;
 
    /** y = beta*y - alpha* SC * x */
    void SCmult(double beta, SimpleVector<double>& y, double alpha, SimpleVector<double>& x);
