@@ -50,6 +50,7 @@ slurm*
 build
 SharedLibraries
 build_pips
+
 # no additional .gitignore file for that
 ThirdPartyLibs/PARDISO
 ThirdPartyLibs/MUMPS
@@ -64,6 +65,7 @@ PIPS-IPM/Drivers/simple/simple_data_12.gdx
 
 # Jetbrains .idea...
 .idea
+.clion
 
 # Ignore Eclipse files
 .metadata*
