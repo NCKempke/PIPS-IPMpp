@@ -113,7 +113,7 @@ void sLinsysRootAugHierInner::addLniziLinkCons(Vector<double>& z0_, Vector<doubl
    auto& z0 = dynamic_cast<SimpleVector<double>&>(z0_);
 
    if (!sol_inner)
-      sol_inner.reset(dynamic_cast<DistributedVector<double>*>(zi.cloneFull()));
+      sol_inner.reset(dynamic_cast<DistributedVector<double>*>(zi.clone_full()));
    else
       sol_inner->copyFrom(zi);
 

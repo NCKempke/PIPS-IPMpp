@@ -47,7 +47,7 @@ public:
 
    Vector<T>* clone() const override;
    /* copy vector entries as well */
-   Vector<T>* cloneFull() const override;
+   Vector<T>* clone_full() const override;
 
    // this virtual AND override need to stay - Intel's icpc has a bug in its compiler triggering warnings if either is deleted...
    virtual ~SimpleVector() override;
@@ -84,11 +84,11 @@ public:
 
    void scale(T alpha) override;
 
-   void axpy(T alpha, const Vector<T>& x) override;
-   void axzpy(T alpha, const Vector<T>& x, const Vector<T>& z) override;
-   void axdzpy(T alpha, const Vector<T>& x, const Vector<T>& z) override;
+   void add(T alpha, const Vector<T>& x) override;
+   void add_product(T alpha, const Vector<T>& x, const Vector<T>& z) override;
+   void add_quotient(T alpha, const Vector<T>& x, const Vector<T>& z) override;
 
-   void addConstant(T c) override;
+   void add_constant(T c) override;
 
 /** perform the projection operation required by Gondzio algorithm:
    * replace each component of the vector v by vp_i - v_i, where vp_i
@@ -120,7 +120,7 @@ public:
    void selectNegative() override;
    void add_constant(T c, const Vector<T>& select) override;
    void writefSomeToStream(std::ostream& out, const char format[], const Vector<T>& select) const override;
-   void axdzpy(T alpha, const Vector<T>& x, const Vector<T>& z, const Vector<T>& select) override;
+   void add_quotient(T alpha, const Vector<T>& x, const Vector<T>& z, const Vector<T>& select) override;
 
    bool isKindOf(int kind) const override;
 

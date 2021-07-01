@@ -140,7 +140,7 @@ void Ma27Solver::solve(Vector<double>& rhs_in) {
          break;
       }
 #endif
-//   SimpleVector<double>* rhs_cpy = dynamic_cast<SimpleVector<double>*>(rhs_in.cloneFull());
+//   SimpleVector<double>* rhs_cpy = dynamic_cast<SimpleVector<double>*>(rhs_in.clone_full());
 
 //   /* sparsify rhs */
 //   for( int i = 0; i < rhs.length(); ++i )

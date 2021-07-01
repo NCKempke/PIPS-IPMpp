@@ -26,7 +26,7 @@ alpha_dual, int i, double mu, TerminationStatus status_code, int level) const {
    double duality_gap;
 
    if (scaler) {
-      std::unique_ptr<Residuals> unscaled_residuals = residuals.cloneFull();
+      std::unique_ptr<Residuals> unscaled_residuals = residuals.clone_full();
       objective = scaler->get_unscaled_objective(objective);
       scaler->unscale_residuals(*unscaled_residuals);
 

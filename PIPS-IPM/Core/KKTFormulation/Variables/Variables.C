@@ -47,14 +47,14 @@ Variables::Variables(std::unique_ptr<Vector<double>> x_in, std::unique_ptr<Vecto
 Variables::Variables(const Variables& other)  :
    number_complementarity_pairs{other.number_complementarity_pairs}, nx{other.nx}, nxupp{other.nxupp}, nxlow{other.nxlow}, my{other.my}, mz{other.mz}, mcupp{other.mcupp}, mclow{other.mclow},
    ixlow{other.ixlow}, ixupp{other.ixupp}, iclow{other.iclow}, icupp{other.icupp},
-   primals{other.primals->cloneFull()}, slacks{other.slacks->cloneFull()}, equality_duals{other.equality_duals->cloneFull()}, inequality_duals{other.inequality_duals->cloneFull()},
-   primal_lower_bound_gap{other.primal_lower_bound_gap->cloneFull()}, primal_lower_bound_gap_dual{other.primal_lower_bound_gap_dual->cloneFull()},
-   primal_upper_bound_gap{other.primal_upper_bound_gap->cloneFull()}, primal_upper_bound_gap_dual{other.primal_upper_bound_gap_dual->cloneFull()},
-   slack_lower_bound_gap{other.slack_lower_bound_gap->cloneFull()}, slack_lower_bound_gap_dual{other.slack_lower_bound_gap_dual->cloneFull()},
-   slack_upper_bound_gap{other.slack_upper_bound_gap->cloneFull()}, slack_upper_bound_gap_dual{other.slack_upper_bound_gap_dual->cloneFull()}
+   primals{other.primals->clone_full()}, slacks{other.slacks->clone_full()}, equality_duals{other.equality_duals->clone_full()}, inequality_duals{other.inequality_duals->clone_full()},
+   primal_lower_bound_gap{other.primal_lower_bound_gap->clone_full()}, primal_lower_bound_gap_dual{other.primal_lower_bound_gap_dual->clone_full()},
+   primal_upper_bound_gap{other.primal_upper_bound_gap->clone_full()}, primal_upper_bound_gap_dual{other.primal_upper_bound_gap_dual->clone_full()},
+   slack_lower_bound_gap{other.slack_lower_bound_gap->clone_full()}, slack_lower_bound_gap_dual{other.slack_lower_bound_gap_dual->clone_full()},
+   slack_upper_bound_gap{other.slack_upper_bound_gap->clone_full()}, slack_upper_bound_gap_dual{other.slack_upper_bound_gap_dual->clone_full()}
    {}
 
-std::unique_ptr<Variables> Variables::cloneFull() const {
+std::unique_ptr<Variables> Variables::clone_full() const {
    return std::make_unique<Variables>(*this);
 }
 
@@ -129,66 +129,40 @@ double Variables::mustep_pd(const Variables& iterate, double alpha_primal, doubl
    }
 }
 
-void Variables::saxpy(const Variables& step, double alpha) {
-   primals->axpy(alpha, *step.primals);
-   equality_duals->axpy(alpha, *step.equality_duals);
-   inequality_duals->axpy(alpha, *step.inequality_duals);
-   slacks->axpy(alpha, *step.slacks);
+void Variables::add(const Variables& step, double alpha_primal, double alpha_dual) {
+   primals->add(alpha_primal, *step.primals);
+   equality_duals->add(alpha_dual, *step.equality_duals);
+   inequality_duals->add(alpha_dual, *step.inequality_duals);
+   slacks->add(alpha_primal, *step.slacks);
    if (mclow > 0) {
       assert(step.slack_lower_bound_gap->matchesNonZeroPattern(*iclow) && step.slack_lower_bound_gap_dual->matchesNonZeroPattern(*iclow));
 
-      slack_lower_bound_gap->axpy(alpha, *step.slack_lower_bound_gap);
-      slack_lower_bound_gap_dual->axpy(alpha, *step.slack_lower_bound_gap_dual);
+      slack_lower_bound_gap->add(alpha_primal, *step.slack_lower_bound_gap);
+      slack_lower_bound_gap_dual->add(alpha_dual, *step.slack_lower_bound_gap_dual);
    }
    if (mcupp > 0) {
       assert(step.slack_upper_bound_gap->matchesNonZeroPattern(*icupp) && step.slack_upper_bound_gap_dual->matchesNonZeroPattern(*icupp));
 
-      slack_upper_bound_gap->axpy(alpha, *step.slack_upper_bound_gap);
-      slack_upper_bound_gap_dual->axpy(alpha, *step.slack_upper_bound_gap_dual);
+      slack_upper_bound_gap->add(alpha_primal, *step.slack_upper_bound_gap);
+      slack_upper_bound_gap_dual->add(alpha_dual, *step.slack_upper_bound_gap_dual);
    }
    if (nxlow > 0) {
       assert(step.primal_lower_bound_gap->matchesNonZeroPattern(*ixlow) && step.primal_lower_bound_gap_dual->matchesNonZeroPattern(*ixlow));
 
-      primal_lower_bound_gap->axpy(alpha, *step.primal_lower_bound_gap);
-      primal_lower_bound_gap_dual->axpy(alpha, *step.primal_lower_bound_gap_dual);
+      primal_lower_bound_gap->add(alpha_primal, *step.primal_lower_bound_gap);
+      primal_lower_bound_gap_dual->add(alpha_dual, *step.primal_lower_bound_gap_dual);
    }
    if (nxupp > 0) {
       assert(step.primal_upper_bound_gap->matchesNonZeroPattern(*ixupp) && step.primal_upper_bound_gap_dual->matchesNonZeroPattern(*ixupp));
 
-      primal_upper_bound_gap->axpy(alpha, *step.primal_upper_bound_gap);
-      primal_upper_bound_gap_dual->axpy(alpha, *step.primal_upper_bound_gap_dual);
+      primal_upper_bound_gap->add(alpha_primal, *step.primal_upper_bound_gap);
+      primal_upper_bound_gap_dual->add(alpha_dual, *step.primal_upper_bound_gap_dual);
    }
 }
 
-void Variables::saxpy_pd(const Variables& step, double alpha_primal, double alpha_dual) {
-   primals->axpy(alpha_primal, *step.primals);
-   equality_duals->axpy(alpha_dual, *step.equality_duals);
-   inequality_duals->axpy(alpha_dual, *step.inequality_duals);
-   slacks->axpy(alpha_primal, *step.slacks);
-   if (mclow > 0) {
-      assert(step.slack_lower_bound_gap->matchesNonZeroPattern(*iclow) && step.slack_lower_bound_gap_dual->matchesNonZeroPattern(*iclow));
-
-      slack_lower_bound_gap->axpy(alpha_primal, *step.slack_lower_bound_gap);
-      slack_lower_bound_gap_dual->axpy(alpha_dual, *step.slack_lower_bound_gap_dual);
-   }
-   if (mcupp > 0) {
-      assert(step.slack_upper_bound_gap->matchesNonZeroPattern(*icupp) && step.slack_upper_bound_gap_dual->matchesNonZeroPattern(*icupp));
-
-      slack_upper_bound_gap->axpy(alpha_primal, *step.slack_upper_bound_gap);
-      slack_upper_bound_gap_dual->axpy(alpha_dual, *step.slack_upper_bound_gap_dual);
-   }
-   if (nxlow > 0) {
-      assert(step.primal_lower_bound_gap->matchesNonZeroPattern(*ixlow) && step.primal_lower_bound_gap_dual->matchesNonZeroPattern(*ixlow));
-
-      primal_lower_bound_gap->axpy(alpha_primal, *step.primal_lower_bound_gap);
-      primal_lower_bound_gap_dual->axpy(alpha_dual, *step.primal_lower_bound_gap_dual);
-   }
-   if (nxupp > 0) {
-      assert(step.primal_upper_bound_gap->matchesNonZeroPattern(*ixupp) && step.primal_upper_bound_gap_dual->matchesNonZeroPattern(*ixupp));
-
-      primal_upper_bound_gap->axpy(alpha_primal, *step.primal_upper_bound_gap);
-      primal_upper_bound_gap_dual->axpy(alpha_dual, *step.primal_upper_bound_gap_dual);
-   }
+void Variables::add(const Variables& step, double alpha) {
+   // equal primal and dual coefficients
+   this->add(step, alpha, alpha);
 }
 
 void Variables::negate() {

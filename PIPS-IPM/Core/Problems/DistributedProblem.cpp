@@ -1174,22 +1174,22 @@ void DistributedProblem::write_to_streamDense(std::ostream& out) const {
    (*inequality_lower_bound_indicators).write_to_stream(out);
 }
 
-std::unique_ptr<DistributedProblem> DistributedProblem::cloneFull(bool switchToDynamicStorage) const {
+std::unique_ptr<DistributedProblem> DistributedProblem::clone_full(bool switchToDynamicStorage) const {
    // todo Q is empty!
    std::shared_ptr<SymmetricMatrix> Q_clone(hessian->clone());
-   std::shared_ptr<GeneralMatrix> A_clone(dynamic_cast<const DistributedMatrix&>(*equality_jacobian).cloneFull(switchToDynamicStorage));
-   std::shared_ptr<GeneralMatrix> C_clone(dynamic_cast<const DistributedMatrix&>(*inequality_jacobian).cloneFull(switchToDynamicStorage));
+   std::shared_ptr<GeneralMatrix> A_clone(dynamic_cast<const DistributedMatrix&>(*equality_jacobian).clone_full(switchToDynamicStorage));
+   std::shared_ptr<GeneralMatrix> C_clone(dynamic_cast<const DistributedMatrix&>(*inequality_jacobian).clone_full(switchToDynamicStorage));
 
-   std::shared_ptr<DistributedVector<double>> c_clone(dynamic_cast<DistributedVector<double>*>(objective_gradient->cloneFull()));
-   std::shared_ptr<DistributedVector<double>> bA_clone(dynamic_cast<DistributedVector<double>*>(equality_rhs->cloneFull()));
-   std::shared_ptr<DistributedVector<double>> xupp_clone(dynamic_cast<DistributedVector<double>*>(primal_upper_bounds->cloneFull()));
-   std::shared_ptr<DistributedVector<double>> ixupp_clone(dynamic_cast<DistributedVector<double>*>(primal_upper_bound_indicators->cloneFull()));
-   std::shared_ptr<DistributedVector<double>> xlow_clone(dynamic_cast<DistributedVector<double>*>(primal_lower_bounds->cloneFull()));
-   std::shared_ptr<DistributedVector<double>> ixlow_clone(dynamic_cast<DistributedVector<double>*>(primal_lower_bound_indicators->cloneFull()));
-   std::shared_ptr<DistributedVector<double>> cupp_clone(dynamic_cast<DistributedVector<double>*>(inequality_upper_bounds->cloneFull()));
-   std::shared_ptr<DistributedVector<double>> icupp_clone(dynamic_cast<DistributedVector<double>*>(inequality_upper_bound_indicators->cloneFull()));
-   std::shared_ptr<DistributedVector<double>> clow_clone(dynamic_cast<DistributedVector<double>*>(inequality_lower_bounds->cloneFull()));
-   std::shared_ptr<DistributedVector<double>> iclow_clone(dynamic_cast<DistributedVector<double>*>(inequality_lower_bound_indicators->cloneFull()));
+   std::shared_ptr<DistributedVector<double>> c_clone(dynamic_cast<DistributedVector<double>*>(objective_gradient->clone_full()));
+   std::shared_ptr<DistributedVector<double>> bA_clone(dynamic_cast<DistributedVector<double>*>(equality_rhs->clone_full()));
+   std::shared_ptr<DistributedVector<double>> xupp_clone(dynamic_cast<DistributedVector<double>*>(primal_upper_bounds->clone_full()));
+   std::shared_ptr<DistributedVector<double>> ixupp_clone(dynamic_cast<DistributedVector<double>*>(primal_upper_bound_indicators->clone_full()));
+   std::shared_ptr<DistributedVector<double>> xlow_clone(dynamic_cast<DistributedVector<double>*>(primal_lower_bounds->clone_full()));
+   std::shared_ptr<DistributedVector<double>> ixlow_clone(dynamic_cast<DistributedVector<double>*>(primal_lower_bound_indicators->clone_full()));
+   std::shared_ptr<DistributedVector<double>> cupp_clone(dynamic_cast<DistributedVector<double>*>(inequality_upper_bounds->clone_full()));
+   std::shared_ptr<DistributedVector<double>> icupp_clone(dynamic_cast<DistributedVector<double>*>(inequality_upper_bound_indicators->clone_full()));
+   std::shared_ptr<DistributedVector<double>> clow_clone(dynamic_cast<DistributedVector<double>*>(inequality_lower_bounds->clone_full()));
+   std::shared_ptr<DistributedVector<double>> iclow_clone(dynamic_cast<DistributedVector<double>*>(inequality_lower_bound_indicators->clone_full()));
 
    // TODO : tree is not actually cloned..
    const DistributedTree* tree_clone = stochNode;

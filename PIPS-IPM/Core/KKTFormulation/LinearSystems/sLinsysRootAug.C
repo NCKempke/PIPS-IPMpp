@@ -805,7 +805,7 @@ void sLinsysRootAug::solveWithIterRef(SimpleVector<double>& r) {
       dx.copyFrom(rxy);
       solver->Dsolve(dx);
       //update x
-      x.axpy(1.0, dx);
+      x.add(1.0, dx);
 
 #ifdef TIMING
       troot_total += (MPI_Wtime()-taux);
@@ -1044,9 +1044,9 @@ void sLinsysRootAug::solveWithBiCGStab(SimpleVector<double>& b) {
          }
 
          //-------- p = r + beta*(p - omega*v) --------
-         p.axpy(-omega, v);
+         p.add(-omega, v);
          p.scale(beta);
-         p.axpy(1.0, r);
+         p.add(1.0, r);
       }
 
 #ifdef TIMING
@@ -1082,9 +1082,9 @@ void sLinsysRootAug::solveWithBiCGStab(SimpleVector<double>& b) {
 
       // xhalf = x + alpha*ph and the associated residual
       xhalf.copyFrom(x);
-      xhalf.axpy(alpha, ph);
+      xhalf.add(alpha, ph);
       s.copyFrom(r);
-      s.axpy(-alpha, v);
+      s.add(-alpha, v);
       normr = s.two_norm();
       normr_act = normr;
       resvec[2 * ii] = normr;
@@ -1164,9 +1164,9 @@ void sLinsysRootAug::solveWithBiCGStab(SimpleVector<double>& b) {
          stag = 0;
 
       x.copyFrom(xhalf);
-      x.axpy(omega, sh); // x=xhalf+omega*sh
+      x.add(omega, sh); // x=xhalf+omega*sh
       r.copyFrom(s);
-      r.axpy(-omega, t); // r=s-omega*t
+      r.add(-omega, t); // r=s-omega*t
 
       normr = r.two_norm();
       normr_act = normr;
@@ -1565,7 +1565,7 @@ void sLinsysRootAug::add_regularization_local_kkt(double primal_regularization, 
       const auto& primal_regularization_vec = dynamic_cast<DistributedVector<double>&>(*this->primal_regularization_diagonal).first;
       assert(primal_regularization_vec);
 
-      primal_regularization_vec->addConstant(primal_regularization);
+      primal_regularization_vec->add_constant(primal_regularization);
       kkt->diagonal_add_constant_from(0, locnx, primal_regularization);
    }
 
@@ -1573,7 +1573,7 @@ void sLinsysRootAug::add_regularization_local_kkt(double primal_regularization, 
    if (locmz > 0) {
       const auto& dual_inequality_regularization_vec = dynamic_cast<DistributedVector<double>&>(*this->dual_inequality_regularization_diagonal).first;
       assert(dual_inequality_regularization_vec);
-      dual_inequality_regularization_vec->addConstant(-dual_inequality_regularization);
+      dual_inequality_regularization_vec->add_constant(-dual_inequality_regularization);
 
       assert(zDiag);
       assert(CtDC);
@@ -1584,7 +1584,7 @@ void sLinsysRootAug::add_regularization_local_kkt(double primal_regularization, 
             return d <= 0;
          }));
 
-      dual_inequality_diagonal_regularized->addConstant(-dual_inequality_regularization);
+      dual_inequality_diagonal_regularized->add_constant(-dual_inequality_regularization);
 
       SymmetricMatrix* CTDC_ptr = CtDC.get();
       clear_CtDC_from_schur_complement(*CtDC);
@@ -1595,7 +1595,7 @@ void sLinsysRootAug::add_regularization_local_kkt(double primal_regularization, 
       const auto& dual_equality_regularization_vec = dynamic_cast<DistributedVector<double>&>(*this->dual_equality_regularization_diagonal).first;
       assert(dual_equality_regularization_vec);
 
-      dual_equality_regularization_vec->addConstant(-dual_equality_regularization);
+      dual_equality_regularization_vec->add_constant(-dual_equality_regularization);
       kkt->diagonal_add_constant_from(locnx, locmy, -dual_equality_regularization);
    }
 
@@ -1603,7 +1603,7 @@ void sLinsysRootAug::add_regularization_local_kkt(double primal_regularization, 
       const auto& dual_equality_regularization_link_cons = dynamic_cast<DistributedVector<double>&>(*this->dual_equality_regularization_diagonal).last;
       assert(dual_equality_regularization_link_cons);
 
-      dual_equality_regularization_link_cons->addConstant(-dual_equality_regularization);
+      dual_equality_regularization_link_cons->add_constant(-dual_equality_regularization);
       kkt->diagonal_add_constant_from(locnx + locmy, locmyl, -dual_equality_regularization);
    }
 
@@ -1611,7 +1611,7 @@ void sLinsysRootAug::add_regularization_local_kkt(double primal_regularization, 
       const auto& dual_inequality_regularization_link_cons = dynamic_cast<DistributedVector<double>&>(*this->dual_inequality_regularization_diagonal).last;
       assert(dual_inequality_regularization_link_cons);
 
-      dual_inequality_regularization_link_cons->addConstant(-dual_inequality_regularization);
+      dual_inequality_regularization_link_cons->add_constant(-dual_inequality_regularization);
       kkt->diagonal_add_constant_from(locnx + locmy + locmyl, locmzl, -dual_inequality_regularization);
    }
 }
@@ -1620,7 +1620,7 @@ void sLinsysRootAug::put_dual_inequalites_diagonal() {
    DistributedRootLinearSystem::put_dual_inequalites_diagonal();
 
    if (!dual_inequality_diagonal_regularized) {
-      dual_inequality_diagonal_regularized.reset(dynamic_cast<SimpleVector<double>*>(zDiag->cloneFull()));
+      dual_inequality_diagonal_regularized.reset(dynamic_cast<SimpleVector<double>*>(zDiag->clone_full()));
    } else {
       dual_inequality_diagonal_regularized->copyFrom(*zDiag);
    }

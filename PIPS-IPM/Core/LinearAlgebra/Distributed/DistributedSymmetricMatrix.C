@@ -44,7 +44,7 @@ void DistributedSymmetricMatrix::AddChild(std::shared_ptr<DistributedSymmetricMa
 
 std::unique_ptr<SymmetricMatrix> DistributedSymmetricMatrix::clone() const {
    std::unique_ptr<SymmetricMatrix> diag_clone{diag->clone()};
-   std::unique_ptr<GeneralMatrix> border_clone = border ? border->cloneFull() : nullptr;
+   std::unique_ptr<GeneralMatrix> border_clone = border ? border->clone_full() : nullptr;
 
    auto clone = std::make_unique<DistributedSymmetricMatrix>(std::move(diag_clone), std::move(border_clone), mpiComm);
 

@@ -61,7 +61,7 @@ std::unique_ptr<SparseMatrix> SparseMatrix::cloneEmptyRowsTransposed(bool switch
    return clone;
 }
 
-std::unique_ptr<GeneralMatrix> SparseMatrix::cloneFull(bool switchToDynamicStorage) const {
+std::unique_ptr<GeneralMatrix> SparseMatrix::clone_full(bool switchToDynamicStorage) const {
    std::unique_ptr<SparseMatrix> clone;
 
    if (switchToDynamicStorage) {
