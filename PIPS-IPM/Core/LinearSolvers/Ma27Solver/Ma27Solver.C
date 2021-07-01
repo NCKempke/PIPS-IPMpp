@@ -188,7 +188,7 @@ void Ma27Solver::solve(Vector<double>& rhs_in) {
       if (scaler)
          scaler->scaleVector(residual_loc);
 
-      iter_loc.axpy(1.0, residual_loc);
+      iter_loc.add(1.0, residual_loc);
 
       residual_loc.copyFrom(rhs);
       /* calculate residual and possibly new rhs */

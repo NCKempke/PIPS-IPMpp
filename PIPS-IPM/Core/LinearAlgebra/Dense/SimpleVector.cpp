@@ -441,6 +441,8 @@ void SimpleVector<T>::add(T alpha, const Vector<T>& vec) {
    assert(this->n == vec.length());
    const auto& sv = dynamic_cast<const SimpleVector<T>&>(vec);
 
+   if (alpha == 0.0)
+      return;
 #ifndef PRE_CPP11
    std::transform(this->v, this->v + this->n, sv.v, this->v, [alpha](T a, T b) -> T { return a + alpha * b; });
 #else
