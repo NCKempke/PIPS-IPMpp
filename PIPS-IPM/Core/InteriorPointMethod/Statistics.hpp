@@ -15,15 +15,14 @@ class Statistics {
 public:
    Statistics() = default;
    virtual ~Statistics() = default;
-   Statistics(Scaler* scaler = nullptr);
-   Statistics(const DistributedFactory& factory, const Scaler* scaler = nullptr);
+   explicit Statistics(Scaler* scaler = nullptr);
+   explicit Statistics(const DistributedFactory& factory, const Scaler* scaler = nullptr);
 
-   void
-   print(const Problem* problem, const Variables* variables, const Residuals* residuals, double dnorm, double alpha, double sigma, int i, double mu,
+   void print(const Problem& problem, const Variables& variables, const Residuals& residuals, double dnorm, double alpha, int i, double mu,
       TerminationStatus status_code, int level) const;
 
-   void print(const Problem* problem, const Variables* variables, const Residuals* residuals, double dnorm, double alpha_primal, double alpha_dual,
-         double sigma, int i, double mu, TerminationStatus status_code, int level) const;
+   void print(const Problem& problem, const Variables& variables, const Residuals& residuals, double dnorm, double alpha_primal, double alpha_dual,
+         int i, double mu, TerminationStatus status_code, int level) const;
 
 protected:
    const Scaler* scaler{};

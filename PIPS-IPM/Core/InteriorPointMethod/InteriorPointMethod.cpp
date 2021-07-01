@@ -11,7 +11,6 @@
 #include "DistributedFactory.hpp"
 #include "DistributedRootLinearSystem.h"
 
-extern int print_level;
 extern double g_iterNumber;
 
 const unsigned int max_linesearch_points = 50;
@@ -69,13 +68,7 @@ bool InteriorPointMethod::compute_predictor_step(Problem& problem, Variables& cu
       AbstractLinearSystem& linear_system, int iteration) {
    set_BiCGStab_tolerance(iteration);
 
-   if (print_level >= 10) {
-      double mu = current_iterate.mu();
-      this->print_statistics(&problem, &current_iterate, &residuals, dnorm, sigma, iteration, mu, TerminationStatus::NOT_FINISHED, 0);
-   }
-
    bool small_corr = false;
-
    // compute the affine predictor step
    if (!pure_centering_step) {
       residuals.set_complementarity_residual(current_iterate, 0.);
@@ -108,9 +101,6 @@ void PrimalInteriorPointMethod::compute_corrector_step(Problem& problem, Variabl
    sigma = this->compute_centering_parameter(current_iterate, step);
    double mu = current_iterate.mu();
 
-   if (print_level >= 10) {
-      this->print_statistics(&problem, &current_iterate, &residuals, dnorm, sigma, iteration, mu, TerminationStatus::NOT_FINISHED, 2);
-   }
    g_iterNumber += 1.;
 
    // form right hand side of linear system
@@ -148,10 +138,13 @@ void PrimalInteriorPointMethod::compute_corrector_step(Problem& problem, Variabl
    pure_centering_step = false;
    numerical_troubles = false;
 
-   const double step_inf_norm = step.inf_norm();
+   const double step_primals_norm = step.primals->inf_norm();
+   const double step_slacks_norm = step.slacks->inf_norm();
+   const double step_norm = step.inf_norm();
    if (PIPS_MPIgetRank() == 0) {
       auto[primal_step_length, dual_step_length] = this->get_step_lengths();
-      std::cout << "Direction has length: " << step_inf_norm << "\n";
+      std::cout << "Direction has norm: " << step_norm << ", ";
+      std::cout << "including primals (" << step_primals_norm << ") and slacks (" << step_slacks_norm << ")\n";
       std::cout << "Step length: " << primal_step_length << "\n";
    }
 }
@@ -185,10 +178,6 @@ void PrimalDualInteriorPointMethod::compute_corrector_step(Problem& problem, Var
    // calculate centering parameter
    sigma = this->compute_centering_parameter(current_iterate, step);
    double mu = current_iterate.mu();
-
-   if (print_level >= 10) {
-      this->print_statistics(&problem, &current_iterate, &residuals, dnorm, sigma, iteration, mu, TerminationStatus::NOT_FINISHED, 2);
-   }
 
    g_iterNumber += 1.;
 
@@ -229,10 +218,13 @@ void PrimalDualInteriorPointMethod::compute_corrector_step(Problem& problem, Var
          return;
    }
 
-   const double step_inf_norm = step.inf_norm();
+   const double step_primals_norm = step.primals->inf_norm();
+   const double step_slacks_norm = step.slacks->inf_norm();
+   const double step_norm = step.inf_norm();
    if (PIPS_MPIgetRank() == 0) {
       auto[initial_primal_step_length, initial_dual_step_length] = this->get_step_lengths();
-      std::cout << "Direction has length: " << step_inf_norm << "\n";
+      std::cout << "Direction has norm: " << step_norm << ", ";
+      std::cout << "including primals (" << step_primals_norm << ") and slacks (" << step_slacks_norm << ")\n";
       std::cout << "Step lengths: " << initial_primal_step_length << " (primal), " << initial_dual_step_length << " (dual)\n";
    }
 
@@ -687,15 +679,15 @@ void InteriorPointMethod::check_numerical_troubles(Residuals* residuals, bool& n
 }
 
 void
-PrimalInteriorPointMethod::print_statistics(const Problem* problem, const Variables* iterate, const Residuals* residuals, double dnorm, double sigma,
+PrimalInteriorPointMethod::print_statistics(const Problem& problem, const Variables& iterate, const Residuals& residuals,
       int i, double mu, TerminationStatus stop_code, int level) {
-   statistics.print(problem, iterate, residuals, dnorm, this->primal_step_length, sigma, i, mu, stop_code, level);
+   statistics.print(problem, iterate, residuals, dnorm, this->primal_step_length, i, mu, stop_code, level);
 }
 
 void
-PrimalDualInteriorPointMethod::print_statistics(const Problem* problem, const Variables* iterate, const Residuals* residuals, double dnorm, double sigma,
+PrimalDualInteriorPointMethod::print_statistics(const Problem& problem, const Variables& iterate, const Residuals& residuals,
       int i, double mu, TerminationStatus stop_code, int level) {
-   statistics.print(problem, iterate, residuals, dnorm, this->primal_step_length, this->dual_step_length, sigma, i, mu, stop_code, level);
+   statistics.print(problem, iterate, residuals, dnorm, this->primal_step_length, this->dual_step_length, i, mu, stop_code, level);
 }
 
 void PrimalInteriorPointMethod::mehrotra_step_length(Variables& iterate, Variables& step) {
