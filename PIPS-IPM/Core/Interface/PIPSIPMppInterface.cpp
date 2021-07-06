@@ -112,8 +112,10 @@ scaler_type, PresolverType presolver_type, const std::string& settings) : comm(c
 
       MPI_Barrier(comm);
       const double t_scaling = MPI_Wtime();
-      if (my_rank == 0)
+      if (my_rank == 0) {
          std::cout << "---scaling time (in sec.): " << t_scaling - t0_scaling << "\n";
+      }
+      presolved_problem->print_ranges();
    }
 
    solver = std::make_unique<PIPSIPMppSolver>(*factory, *presolved_problem, mehrotra_heuristic, scaler.get());

@@ -53,7 +53,7 @@ Problem* StochPresolver::presolve() {
    if (my_rank == 0)
       std::cout << "starting distributed presolving\n";
    presolve_data.printRowColStats();
-   original_problem.printRanges();
+   original_problem.print_ranges();
 
    assert(original_problem.isRootNodeInSync());
    assert(presolve_data.getPresProb().isRootNodeInSync());
@@ -111,7 +111,7 @@ Problem* StochPresolver::presolve() {
    if (my_rank == 0)
       std::cout << "finished distributed presolving\n";
    presolve_data.printRowColStats();
-   finalPreDistributedQP->printRanges();
+   finalPreDistributedQP->print_ranges();
 
    return finalPreDistributedQP;
 }

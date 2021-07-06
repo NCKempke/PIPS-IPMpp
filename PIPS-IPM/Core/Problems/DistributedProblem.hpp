@@ -296,9 +296,6 @@ private:
    void permuteLinkingVars(const Permutation& perm);
 
    void permuteLinkingCons(const Permutation& permA, const Permutation& permC);
-
-public:
-   void printRanges() const;
 };
 
 

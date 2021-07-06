@@ -61,15 +61,15 @@ public:
    /** print the problem data */
    virtual void print();
 
-   Vector<double>& x_lower_bound() const { return *primal_lower_bounds; };
-   Vector<double>& x_upper_bound() const { return *primal_upper_bounds; };
-   Vector<double>& s_lower_bound() const { return *inequality_lower_bounds; };
-   Vector<double>& s_upper_bound() const { return *inequality_upper_bounds; };
+   [[nodiscard]] Vector<double>& x_lower_bound() const { return *primal_lower_bounds; };
+   [[nodiscard]] Vector<double>& x_upper_bound() const { return *primal_upper_bounds; };
+   [[nodiscard]] Vector<double>& s_lower_bound() const { return *inequality_lower_bounds; };
+   [[nodiscard]] Vector<double>& s_upper_bound() const { return *inequality_upper_bounds; };
 
-   Vector<double>& has_x_lower_bound() const { return *primal_lower_bound_indicators; };
-   Vector<double>& has_x_upper_bound() const { return *primal_upper_bound_indicators; };
-   Vector<double>& has_s_lower_bound() const { return *inequality_lower_bound_indicators; };
-   Vector<double>& has_s_upper_bound() const { return *inequality_upper_bound_indicators; };
+   [[nodiscard]] Vector<double>& has_x_lower_bound() const { return *primal_lower_bound_indicators; };
+   [[nodiscard]] Vector<double>& has_x_upper_bound() const { return *primal_upper_bound_indicators; };
+   [[nodiscard]] Vector<double>& has_s_lower_bound() const { return *inequality_lower_bound_indicators; };
+   [[nodiscard]] Vector<double>& has_s_upper_bound() const { return *inequality_upper_bound_indicators; };
 
    Vector<double>& scale() { return *sc; };
 
@@ -81,22 +81,6 @@ public:
 
    /** extract the diagonal of the Hessian and put it in the Vector<double> hessian_diagonal */
    virtual void hessian_diagonal(Vector<double>& hessian_diagonal) const;
-
-   /** insert the constraint matrix A into the matrix M for the
-    fundamental linear system, where M is stored as a GenMatrix */
-   virtual void putAIntoAt(GeneralMatrix& M, int row, int col);
-
-   /** insert the constraint matrix C into the matrix M for the
-       fundamental linear system, where M is stored as a GenMatrix */
-   virtual void putCIntoAt(GeneralMatrix& M, int row, int col);
-
-   /** insert the constraint matrix A into the matrix M for the
-       fundamental linear system, where M is stored as a SymMatrix */
-   virtual void putAIntoAt(SymmetricMatrix& M, int row, int col);
-
-   /** insert the constraint matrix C into the matrix M for the
-       fundamental linear system, where M is stored as a SymMatrix */
-   virtual void putCIntoAt(SymmetricMatrix& M, int row, int col);
 
    /** y = beta * y + alpha * A * x */
    virtual void Amult(double beta, Vector<double>& y, double alpha, const Vector<double>& x) const;
@@ -114,34 +98,13 @@ public:
 
    void getbA(Vector<double>& bout) const;
 
-   void scaleA();
-
-   void scaleC();
-
-   void scaleg();
-
-   void scalexupp();
-
-   void scalexlow();
-
    void flip_objective_gradient();
-
-   /** insert the Hessian into the matrix M for the fundamental linear system, where M is stored as a SymMatrix */
-   virtual void put_hessian_into_At(SymmetricMatrix& M, int row, int col);
-
-   /** insert the Hessian into the matrix M for the fundamental linear system, where M is stored as a GenMatrix */
-   virtual void put_hessian_into_At(GeneralMatrix& M, int row, int col);
-
-   void create_scale_from_hessian();
-
-   void scale_hessian();
 
    void flip_hessian();
 
-
-   virtual void datainput() {};
-
    virtual void datainput(MpsReader* reader, int& iErr);
+
+   void print_ranges() const;
 };
 
 #endif

@@ -1,9 +1,10 @@
 #include "Problem.hpp"
-#include "SimpleVector.hpp"
 #include "Variables.h"
 #include "AbstractMatrix.h"
-#include <cmath>
 #include "MpsReader.h"
+
+#include <iomanip>
+#include <cmath>
 
 Problem::Problem(std::shared_ptr<Vector<double>> g_in, std::shared_ptr<SymmetricMatrix> Q_in,
       std::shared_ptr<Vector<double>> xlow_in,
@@ -47,57 +48,6 @@ void Problem::get_objective_gradient(Vector<double>& myG) const {
 
 void Problem::getbA(Vector<double>& bout) const {
    bout.copyFrom(*equality_rhs);
-}
-
-void Problem::putAIntoAt(GeneralMatrix& M, int row, int col) {
-   M.atPutSubmatrix(row, col, *equality_jacobian, 0, 0, my, nx);
-}
-
-void Problem::putAIntoAt(SymmetricMatrix& M, int row, int col) {
-   M.symAtPutSubmatrix(row, col, *equality_jacobian, 0, 0, my, nx);
-}
-
-void Problem::putCIntoAt(GeneralMatrix& M, int row, int col) {
-   M.atPutSubmatrix(row, col, *inequality_jacobian, 0, 0, mz, nx);
-}
-
-void Problem::putCIntoAt(SymmetricMatrix& M, int row, int col) {
-   M.symAtPutSubmatrix(row, col, *inequality_jacobian, 0, 0, mz, nx);
-}
-
-void Problem::scaleA() {
-   equality_jacobian->columnScale(*sc);
-}
-
-void Problem::scaleC() {
-   inequality_jacobian->columnScale(*sc);
-}
-
-void Problem::scaleg() {
-   auto& scVector = dynamic_cast<SimpleVector<double>&>(*sc);
-   assert (scVector.length() == objective_gradient->length());
-
-   // D * g
-   objective_gradient->componentMult(scVector);
-}
-
-void Problem::scalexupp() {
-   auto& scVector = dynamic_cast<SimpleVector<double>&>(*sc);
-
-   assert (scVector.length() == primal_upper_bounds->length());
-
-   // inverse(D) * bux
-   primal_upper_bounds->componentDiv(scVector);
-}
-
-
-void Problem::scalexlow() {
-   auto& scVector = dynamic_cast<SimpleVector<double>&>(*sc);
-
-   assert (scVector.length() == primal_lower_bounds->length());
-
-   // inverse(D) * blx
-   primal_lower_bounds->componentDiv(scVector);
 }
 
 void Problem::flip_objective_gradient() {
@@ -190,16 +140,7 @@ void Problem::datainput(MpsReader* reader, int& iErr) {
          *inequality_lower_bound_indicators, *inequality_upper_bounds, *inequality_upper_bound_indicators, iErr);
 
    if (reader->scalingOption == 1) {
-      // Create the scaling vector
-      this->create_scale_from_hessian();
-
-      //Scale the variables
-      this->scale_hessian();
-      this->scaleA();
-      this->scaleC();
-      this->scaleg();
-      this->scalexlow();
-      this->scalexupp();
+      // TODO ?
    }
 
    /* If objective sense is "MAX", flip the C and Q matrices */
@@ -207,14 +148,6 @@ void Problem::datainput(MpsReader* reader, int& iErr) {
       this->flip_objective_gradient();
       this->flip_hessian();
    }
-}
-
-void Problem::put_hessian_into_At(SymmetricMatrix& M, int row, int col) {
-   M.symAtPutSubmatrix(row, col, *hessian, 0, 0, nx, nx);
-}
-
-void Problem::put_hessian_into_At(GeneralMatrix& M, int row, int col) {
-   M.atPutSubmatrix(row, col, *hessian, 0, 0, nx, nx);
 }
 
 void Problem::hessian_diagonal(Vector<double>& hessian_diagonal) const {
@@ -233,25 +166,66 @@ double Problem::evaluate_objective(const Variables& variables) const {
    return gradient.dotProductWith(*variables.primals);
 }
 
-void Problem::create_scale_from_hessian() {
-   // Stuff the diagonal elements of Q into the vector "sc"
-   this->hessian_diagonal(*sc);
-
-   // Modifying scVector is equivalent to modifying sc
-   auto& scVector = dynamic_cast<SimpleVector<double>&>(*sc);
-   for (int i = 0; i < scVector.length(); i++) {
-      if (scVector[i] > 1)
-         scVector[i] = 1.0 / sqrt(scVector[i]);
-      else
-         scVector[i] = 1.0;
-   }
-}
-
-void Problem::scale_hessian() {
-   hessian->symmetricScale(*sc);
-}
-
 void Problem::flip_hessian() {
    // Multiply Q matrix by -1
    hessian->scalarMult(-1.0);
+}
+
+void Problem::print_ranges() const {
+   /* objective */
+   double absmin_objective;
+   objective_gradient->absminNonZero(absmin_objective, 0.0);
+   assert(absmin_objective >= 0);
+   const double absmax_objective = objective_gradient->inf_norm();
+   assert(absmax_objective >= 0);
+
+   /* matrix range */
+   const double absmax_A = equality_jacobian->inf_norm();
+   const double absmax_C = inequality_jacobian->inf_norm();
+
+   const double absmin_A = equality_jacobian->abminnormNonZero();
+   const double absmin_C = inequality_jacobian->abminnormNonZero();
+
+   const double mat_min = std::min(absmin_A, absmin_C);
+   const double mat_max = std::max(absmax_A, absmax_C);
+
+   /* rhs range */
+   double absmin_bA;
+   equality_rhs->absminNonZero(absmin_bA, 0.0);
+   double absmin_bl;
+   inequality_lower_bounds->absminNonZero(absmin_bl, 0.0);
+   double absmin_bu;
+   inequality_upper_bounds->absminNonZero(absmin_bu, 0.0);
+
+   const double absmax_bA = equality_rhs->inf_norm();
+   const double absmax_bl = inequality_lower_bounds->inf_norm();
+   const double absmax_bu = inequality_upper_bounds->inf_norm();
+
+   const double rhs_min = std::min(absmin_bA, std::min(absmin_bl, absmin_bu));
+   const double rhs_max = std::max(absmax_bA, std::max(absmax_bl, absmax_bu));
+
+   /* bounds range */
+   double absmin_blx;
+   primal_lower_bounds->absminNonZero(absmin_blx, 0.0);
+   double absmin_bux;
+   primal_upper_bounds->absminNonZero(absmin_bux, 0.0);
+
+   const double absmax_blx = primal_lower_bounds->inf_norm();
+   const double absmax_bux = primal_upper_bounds->inf_norm();
+
+   const double bounds_min = std::min(absmin_blx, absmin_bux);
+   const double bounds_max = std::max(absmax_blx, absmax_bux);
+
+   if (PIPS_MPIgetRank() == 0) {
+      const double inf = std::numeric_limits<double>::infinity();
+
+      const auto pre_old = std::cout.precision();
+      std::cout << std::setprecision(0) << std::scientific;
+      std::cout << "Matrix range    [" << mat_min << ", " << mat_max << "]\n";
+      std::cout << "Objective range [" << (absmin_objective == inf ? 0.0 : absmin_objective) << ", " << absmax_objective
+                << "]\n";
+      std::cout << "Bounds range    [" << (bounds_min == inf ? 0.0 : bounds_min) << ", " << bounds_max << "]\n";
+      std::cout << "RhsLhs range    [" << (rhs_min == inf ? 0.0 : rhs_min) << ", " << rhs_max << "]\n";
+      std::cout << std::setprecision(pre_old) << std::defaultfloat;
+   }
 }
