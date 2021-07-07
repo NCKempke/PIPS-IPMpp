@@ -276,7 +276,7 @@ protected:
       Vector<double>& gamma, Vector<double>& w, Vector<double>& phi) const;
 
    // TODO : move to LinearSystem level
-   void solveCompressedBiCGStab(const std::function<void(double, Vector<double>&, double, Vector<double>&)>& matMult,
+   void solveCompressedBiCGStab(const std::function<void(double, Vector<double>&, double, const Vector<double>&)>& matMult,
          const std::function<double()>& matInfnorm);
 
    void solveCompressedIterRefin(const std::function<void(Vector<double>& sol, Vector<double>& res)>& computeResidual);
