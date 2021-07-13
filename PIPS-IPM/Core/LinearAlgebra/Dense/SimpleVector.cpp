@@ -190,10 +190,7 @@ SimpleVector<T>::~SimpleVector() {
 
 template<typename T>
 Vector<T>* SimpleVector<T>::clone_full() const {
-   SimpleVector<T>* clone = new SimpleVector<T>(this->n);
-   clone->copyFromArray(v);
-
-   return clone;
+   return new SimpleVector<T>(*this);
 }
 
 template<typename T>
@@ -292,7 +289,7 @@ void SimpleVector<T>::componentMult(const Vector<T>& vec) {
 template<typename T>
 bool SimpleVector<T>::componentEqual(const Vector<T>& vec, T tol) const {
    assert(this->n == vec.length());
-   const SimpleVector<T>& sv = dynamic_cast<const SimpleVector<T>&>(vec);
+   const auto& sv = dynamic_cast<const SimpleVector<T>&>(vec);
 
    for (int i = 0; i < this->n; ++i) {
       /* two comparisons - a numerical one and one for stuff like infinity/nan/max/min */
@@ -317,7 +314,7 @@ bool SimpleVector<T>::componentNotEqual(const T val, const T tol) const {
 
 template<typename T>
 void SimpleVector<T>::setNotIndicatedEntriesToVal(const T val, const Vector<T>& ind) {
-   const SimpleVector<T>& ind_vec = dynamic_cast<const SimpleVector<T>&>(ind);
+   const auto& ind_vec = dynamic_cast<const SimpleVector<T>&>(ind);
    assert(ind_vec.length() == this->length());
 
    for (int i = 0; i < ind_vec.length(); ++i) {
@@ -331,16 +328,6 @@ template<typename T>
 void SimpleVector<T>::scalarMult(T num) {
    for (int i = 0; i < this->n; i++)
       v[i] *= num;
-}
-
-// Print first 10 entries of solution vector to stderr.
-// Useful for debugging purposes...
-template<typename T>
-void SimpleVector<T>::printSolutionToStdErr() const {
-   for (int i = 0; i < std::min(10, this->n); i++) {
-      std::cerr << v[i] << "\n";
-   }
-   std::cerr << "******" << "\n";
 }
 
 template<typename T>
@@ -363,49 +350,6 @@ void SimpleVector<T>::write_to_stream(std::ostream& out, int offset) const {
       for (int j = 0; j < offset; ++j)
          out << "\t";
       out << v[i] << "\n";
-   }
-}
-
-template<typename T>
-void SimpleVector<T>::writefToStream(std::ostream& out, const char format[]) const {
-   std::unique_ptr<SimpleVector<T> > empty = std::make_unique<SimpleVector<T>>(0);
-   this->writefSomeToStream(out, format, *empty);
-}
-
-template<typename T>
-void SimpleVector<T>::writefSomeToStream(std::ostream& out, const char format[], const Vector<T>& select) const {
-   const auto& sselect = dynamic_cast<const SimpleVector<T>&>(select);
-   T* s = 0;
-   if (select.length() > 0) {
-      s = sselect.v;
-   }
-   for (int i = 0; i < this->n; i++) {
-      if (!s || s[i] != 0.0) {
-         int j = 0;
-         char c;
-         while ((c = format[j]) != 0) {
-            if (c != '%') {
-               out << c;
-            }
-            else {
-               // Brain-dead variable substitution, but good enough for this
-               // simple case
-               if (0 == strncmp("{value}", &format[j + 1], 7)) {
-                  out << v[i];
-                  j += 7;
-               }
-               else if (0 == strncmp("{index}", &format[j + 1], 7)) {
-                  out << i;
-                  j += 7;
-               }
-               else {
-                  out << c;
-               }
-            }
-            j++;
-         }
-         out << "\n";
-      }
    }
 }
 

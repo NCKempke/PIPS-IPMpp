@@ -77,16 +77,6 @@ public:
     */
    virtual void write_to_stream(std::ostream& out, int offset = 0) const = 0;
 
-   /** Write the components of this Vector<double> to a stream, subject to
-    *  a format.
-    *  @param out a C++-style output stream
-    *  @param format a string used to format the output. The substring
-    *         %{index} will be substituted by the index of the current element
-    *         and the string %{value} will be substituted with the element's
-    *         value.
-    */
-   virtual void writefToStream(std::ostream& out, const char format[]) const = 0;
-
    /** Scale each element of this Vector<double> by the constant alpha */
    virtual void scale(T alpha) = 0;
 
@@ -186,17 +176,6 @@ public:
     */
    virtual void add_constant(T c, const Vector<T>& mask) = 0;
 
-   /** Write some elements of this Vector<double> to a stream, subject to a format.
-    *  @param out a C++-style output stream
-    *  @param format a string used to format the output. The substring
-    *         %{index} will be substituted by the index of the current element
-    *         and the string %{value} will be substituted with the element's
-    *         value.
-    *  @param select a mask Vector<double>. An element if this Vector<double> is
-    *         written only if the corresponding element of selec is non-zero.
-    */
-
-   virtual void writefSomeToStream(std::ostream& out, const char format[], const Vector<T>& select) const = 0;
    /** this += alpha * x / z
     *  @param select only perform the division on elements of x and z if the
     *         corresponding element of select is non-zero. Generally we avoid

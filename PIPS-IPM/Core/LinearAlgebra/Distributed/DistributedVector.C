@@ -1157,18 +1157,6 @@ void DistributedVector<T>::getSumCountIfSmall(double tol, double& sum_small, int
    }
 }
 
-template<typename T>
-void DistributedVector<T>::writefToStream(std::ostream& out, const char format[]) const {
-   if (first)
-      first->writefToStream(out, format);
-
-   if (last)
-      last->writefToStream(out, format);
-
-   for (size_t it = 0; it < children.size(); it++)
-      children[it]->writefToStream(out, format);
-}
-
 /** this += alpha * x */
 template<typename T>
 void DistributedVector<T>::add(T alpha, const Vector<T>& x_) {

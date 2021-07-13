@@ -85,7 +85,6 @@ public:
 
    void scalarMult(T num) override;
    void write_to_stream(std::ostream& out, int offset = 0) const override;
-   void writefToStream(std::ostream& out, const char format[]) const override;
 
    void scale(T alpha) override;
 
@@ -123,7 +122,6 @@ public:
    void selectNegative() override;
    [[nodiscard]] long long number_nonzeros() const override;
    void add_constant(T c, const Vector<T>& select) override;
-   void writefSomeToStream(std::ostream&, const char[], const Vector<T>&) const override { assert(false && "Not yet implemented"); };
    void add_quotient(T alpha, const Vector<T>& x, const Vector<T>& z, const Vector<T>& select) override;
 
    [[nodiscard]] bool are_positive(const Vector<T>& select) const override;
@@ -222,7 +220,6 @@ public:
 
    void scalarMult(T) override {};
    void write_to_stream(std::ostream&, int) const override {};
-   void writefToStream(std::ostream&, const char[]) const override {};
    void scale(T) override {};
 
    /** this += alpha * x */
@@ -257,7 +254,6 @@ public:
    void selectNegative() override {};
    [[nodiscard]] long long number_nonzeros() const override { return 0; }
    void add_constant(T, const Vector<T>&) override {};
-   void writefSomeToStream(std::ostream&, const char[], const Vector<T>&) const override {};
    void add_quotient(T, const Vector<T>&, const Vector<T>&, const Vector<T>&) override {};
 
    [[nodiscard]] bool are_positive(const Vector<T>&) const override { return 1; }
