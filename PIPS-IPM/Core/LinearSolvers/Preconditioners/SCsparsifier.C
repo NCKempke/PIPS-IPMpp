@@ -67,8 +67,7 @@ void SCsparsifier::decreaseDiagDomBound(bool& success) {
 
 void SCsparsifier::increaseDiagDomBound(bool& success) {
    if (diagDomBoundsPosition > 0) {
-      int myRank;
-      MPI_Comm_rank(MPI_COMM_WORLD, &myRank);
+      const int myRank = PIPS_MPIgetRank(mpiComm);
 
       diagDomBoundsPosition--;
       diagDomBound = diagDomBounds[diagDomBoundsPosition];
@@ -86,14 +85,10 @@ void SCsparsifier::increaseDiagDomBound(bool& success) {
 
 void SCsparsifier::updateStats() {
 #ifdef SCSPARSIFIER_SAVE_STATS
-   int myRank;
-   MPI_Comm_rank(mpiComm, &myRank);
+   const int myRank = PIPS_MPIgetRank(mpiComm);
 
-   int nEntriesAll;
-   int nDeletedAll;
-
-   MPI_Allreduce(&(nEntriesLocal), &nEntriesAll, 1, MPI_INT, MPI_SUM, mpiComm);
-   MPI_Allreduce(&(nDeletedLocal), &nDeletedAll, 1, MPI_INT, MPI_SUM, mpiComm);
+   const int nEntriesAll = PIPS_MPIgetSum(nEntriesLocal, mpiComm);
+   const int nDeletedAll = PIPS_MPIgetSum(nDeletedLocal, mpiComm);
 
    const double ratio = double(nDeletedAll) / double(nEntriesAll);
 
@@ -146,7 +141,6 @@ void SCsparsifier::unmarkDominatedSCdistLocals(const DistributedProblem& prob, S
             if ((absM < epsilonZero && col != r) || (absM < diag[r] && absM < diag[col])) {
                assert(col != r);
                jcolM[j] = -jcolM[j] - 1;
-
 #ifdef SCSPARSIFIER_SAVE_STATS
                if (isNonzero)
                   nDeletedLocal++;
@@ -336,12 +330,12 @@ std::vector<double> SCsparsifier::getDomDiagDist(const DistributedProblem& prob,
       diag[r] = M[krowM[r]];
    }
 
-   MPI_Allreduce(MPI_IN_PLACE, &diag[0], sizeSC, MPI_DOUBLE, MPI_SUM, mpiComm);
+   PIPS_MPIsumArrayInPlace(diag, mpiComm);
 
    const double diagDomBound = isLeaf ? getDiagDomBoundLeaf() : getDiagDomBound();
 
-   for (size_t i = 0; i < diag.size(); ++i)
-      diag[i] = fabs(diag[i]) * diagDomBound;
+   for (double & i : diag)
+      i = fabs(i) * diagDomBound;
 
    return diag;
 }

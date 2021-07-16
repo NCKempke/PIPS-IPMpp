@@ -27,13 +27,13 @@ public:
 
    constexpr static double epsilonZero = 1e-15;
 
-   SCsparsifier(MPI_Comm mpiComm = MPI_COMM_NULL);
+   explicit SCsparsifier(MPI_Comm mpiComm = MPI_COMM_NULL);
    ~SCsparsifier() = default;
 
    // returns sparsification bound
-   double getDiagDomBound() const;
+   [[nodiscard]] double getDiagDomBound() const;
 
-   double getDiagDomBoundLeaf() const;
+   [[nodiscard]] double getDiagDomBoundLeaf() const;
 
    // increases sparsification (more aggressive)
    void increaseDiagDomBound(bool& success);
