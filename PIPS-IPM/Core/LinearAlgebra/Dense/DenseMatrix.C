@@ -6,7 +6,7 @@
 #include <cassert>
 #include "DenseMatrix.h"
 #include "OoqpBlas.h"
-#include "SimpleVector.hpp"
+#include "DenseVector.hpp"
 #include "DoubleMatrixTypes.h"
 #include "SparseMatrix.h"
 
@@ -102,8 +102,8 @@ void DenseMatrix::mult(double beta, Vector<double>& y_in, double alpha, const Ve
    double** M = mStorage->M;
    int incx = 1, incy = 1;
 
-   const auto& x = dynamic_cast<const SimpleVector<double>&>(x_in);
-   auto& y = dynamic_cast<SimpleVector<double>&>(y_in);
+   const auto& x = dynamic_cast<const DenseVector<double>&>(x_in);
+   auto& y = dynamic_cast<DenseVector<double>&>(y_in);
 
    if (n != 0 && m != 0) {
       dgemv_(&fortranTrans, &n, &m, &alpha, &M[0][0], &n, &x[0], &incx, &beta, &y[0], &incy);
@@ -118,8 +118,8 @@ void DenseMatrix::mult_transform(double beta, Vector<double>& y_in, double alpha
    assert(this->n_rows() == y_in.length());
    assert(this->n_columns() == x_in.length());
 
-   const auto& x = dynamic_cast<const SimpleVector<double>&>(x_in);
-   auto& y = dynamic_cast<SimpleVector<double>&>(y_in);
+   const auto& x = dynamic_cast<const DenseVector<double>&>(x_in);
+   auto& y = dynamic_cast<DenseVector<double>&>(y_in);
 
    double** M = mStorage->M;
 
@@ -135,8 +135,8 @@ void DenseMatrix::transpose_mult(double beta, Vector<double>& y_in, double alpha
    char fortranTrans = 'N';
    int n = mStorage->n, m = mStorage->m;
    double** M = mStorage->M;
-   const auto& x = dynamic_cast<const SimpleVector<double>&>(x_in);
-   auto& y = dynamic_cast<SimpleVector<double>&>(y_in);
+   const auto& x = dynamic_cast<const DenseVector<double>&>(x_in);
+   auto& y = dynamic_cast<DenseVector<double>&>(y_in);
    int incx = 1, incy = 1;
 
    if (m != 0 && n != 0) {
@@ -153,8 +153,8 @@ void DenseMatrix::transpose_mult_transform(double beta, Vector<double>& y_in, do
    assert(this->n_columns() == y_in.length());
    assert(this->n_rows() == x_in.length());
 
-   const auto& x = dynamic_cast<const SimpleVector<double>&>(x_in);
-   auto& y = dynamic_cast<SimpleVector<double>&>(y_in);
+   const auto& x = dynamic_cast<const DenseVector<double>&>(x_in);
+   auto& y = dynamic_cast<DenseVector<double>&>(y_in);
 
    double** M = mStorage->M;
 
@@ -221,7 +221,7 @@ void DenseMatrix::fromGetDiagonal(int idiag, Vector<double>& v) const {
 
 void DenseMatrix::getRow(int rowIndex, Vector<double>& v_in) {
    assert (rowIndex >= 0 && rowIndex <= mStorage->m);
-   auto& v = dynamic_cast<SimpleVector<double>&>(v_in);
+   auto& v = dynamic_cast<DenseVector<double>&>(v_in);
 
    mStorage->fromGetDense(rowIndex, 0, &v[0], 1, 1, mStorage->n);
 }

@@ -24,7 +24,7 @@ public:
 
    void Ltsolve(Vector<double>& x) override;
 
-   void Ltsolve2(DistributedVector<double>& x, SimpleVector<double>& x0, bool use_local_RAC) override;
+   void Ltsolve2(DistributedVector<double>& x, DenseVector<double>& x0, bool use_local_RAC) override;
 
    using DistributedLinearSystem::LsolveHierarchyBorder;
 
@@ -37,14 +37,14 @@ public:
       std::vector<BorderMod>& br_mod_border,
       bool sym_res, bool sparse_res, int begin_cols, int end_cols) override;
 
-   void computeInnerSystemRightHandSide(DistributedVector<double>& rhs_inner, const SimpleVector<double>& b0,
+   void computeInnerSystemRightHandSide(DistributedVector<double>& rhs_inner, const DenseVector<double>& b0,
       bool use_local_RAC) override;
 
    void addLniziLinkCons(Vector<double>& z0, Vector<double>& zi, bool use_local_RAC) override;
 
-   void addBorderTimesRhsToB0(DistributedVector<double>& rhs, SimpleVector<double>& b0, BorderLinsys& border) override;
+   void addBorderTimesRhsToB0(DistributedVector<double>& rhs, DenseVector<double>& b0, BorderLinsys& border) override;
 
-   void addBorderX0ToRhs(DistributedVector<double>& rhs, const SimpleVector<double>& x0, BorderLinsys& border) override;
+   void addBorderX0ToRhs(DistributedVector<double>& rhs, const DenseVector<double>& x0, BorderLinsys& border) override;
 
    void addInnerBorderKiInvBrToRes(AbstractMatrix& result, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border,
       bool use_local_RAC, bool sparse_res,

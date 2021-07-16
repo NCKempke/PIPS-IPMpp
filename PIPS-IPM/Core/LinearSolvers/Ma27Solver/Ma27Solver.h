@@ -8,7 +8,7 @@
 #include "../DoubleLinearSolver.h"
 
 #include "../LinearAlgebra/Sparse/SparseSymmetricMatrix.h"
-#include "../LinearAlgebra/Dense/SimpleVector.hpp"
+#include "../LinearAlgebra/Dense/DenseVector.hpp"
 
 #include <vector>
 #include <string>

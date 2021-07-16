@@ -1,6 +1,6 @@
 #include <iostream>
 #include <utility>
-#include <SimpleVector.hpp>
+#include <DenseVector.hpp>
 #include "Variables.h"
 #include "Vector.hpp"
 #include "Problem.hpp"
@@ -548,15 +548,15 @@ int Variables::valid_non_zero_pattern() const {
 
 void Variables::unscale_solution(Problem* problem) {
 // Modifying sx is equivalent to modifying x
-   auto& sx = (SimpleVector<double>&) *this->primals;
+   auto& sx = (DenseVector<double>&) *this->primals;
 
 // x = D * x'
    sx.componentMult(problem->scale());
 }
 
 void Variables::unscale_bounds(Problem* problem) {
-   auto& sxlow = (SimpleVector<double>&) problem->x_lower_bound();
-   auto& sxupp = (SimpleVector<double>&) problem->x_upper_bound();
+   auto& sxlow = (DenseVector<double>&) problem->x_lower_bound();
+   auto& sxupp = (DenseVector<double>&) problem->x_upper_bound();
 
 // l = D * l'
    sxlow.componentMult(problem->scale());
@@ -566,29 +566,29 @@ void Variables::unscale_bounds(Problem* problem) {
 }
 
 void Variables::print_solution(MpsReader* reader, Problem* problem, int& iErr) {
-   assert(primals->isKindOf(kSimpleVector)); // Otherwise this routine
+   assert(primals->isKindOf(kDenseVector)); // Otherwise this routine
 
-   SimpleVector<double> g(nx);
+   DenseVector<double> g(nx);
    problem->get_objective_gradient(g);
    problem->hessian_multiplication(1.0, g, 0.5, *primals);
    double objective = g.dotProductWith(*primals);
 
-   auto& sx = dynamic_cast<SimpleVector<double>&>(*this->primals);
-   auto& sxlow = dynamic_cast<SimpleVector<double>&>(problem->x_lower_bound());
-   auto& sixlow = dynamic_cast<SimpleVector<double>&>(problem->has_x_lower_bound());
-   auto& sxupp = dynamic_cast<SimpleVector<double>&>(problem->x_upper_bound());
-   auto& sixupp = dynamic_cast<SimpleVector<double>&>(problem->has_x_upper_bound());
-   auto& sgamma = dynamic_cast<SimpleVector<double>&>(*this->primal_lower_bound_gap_dual);
-   auto& sphi = dynamic_cast<SimpleVector<double>&>(*this->primal_upper_bound_gap_dual);
-   auto& sy = dynamic_cast<SimpleVector<double>&>(*this->equality_duals);
-   auto& ss = dynamic_cast<SimpleVector<double>&>(*this->slacks);
-   auto& slambda = dynamic_cast<SimpleVector<double>&>(*this->slack_lower_bound_gap_dual);
-   auto& spi = dynamic_cast<SimpleVector<double>&>(*this->slack_upper_bound_gap_dual);
-   auto& sz = dynamic_cast<SimpleVector<double>&>(*this->inequality_duals);
-   auto& sclow = dynamic_cast<SimpleVector<double>&>(problem->s_lower_bound());
-   auto& siclow = dynamic_cast<SimpleVector<double>&>(problem->has_s_lower_bound());
-   auto& scupp = dynamic_cast<SimpleVector<double>&>(problem->s_upper_bound());
-   auto& sicupp = dynamic_cast<SimpleVector<double>&>(problem->has_s_upper_bound());
+   auto& sx = dynamic_cast<DenseVector<double>&>(*this->primals);
+   auto& sxlow = dynamic_cast<DenseVector<double>&>(problem->x_lower_bound());
+   auto& sixlow = dynamic_cast<DenseVector<double>&>(problem->has_x_lower_bound());
+   auto& sxupp = dynamic_cast<DenseVector<double>&>(problem->x_upper_bound());
+   auto& sixupp = dynamic_cast<DenseVector<double>&>(problem->has_x_upper_bound());
+   auto& sgamma = dynamic_cast<DenseVector<double>&>(*this->primal_lower_bound_gap_dual);
+   auto& sphi = dynamic_cast<DenseVector<double>&>(*this->primal_upper_bound_gap_dual);
+   auto& sy = dynamic_cast<DenseVector<double>&>(*this->equality_duals);
+   auto& ss = dynamic_cast<DenseVector<double>&>(*this->slacks);
+   auto& slambda = dynamic_cast<DenseVector<double>&>(*this->slack_lower_bound_gap_dual);
+   auto& spi = dynamic_cast<DenseVector<double>&>(*this->slack_upper_bound_gap_dual);
+   auto& sz = dynamic_cast<DenseVector<double>&>(*this->inequality_duals);
+   auto& sclow = dynamic_cast<DenseVector<double>&>(problem->s_lower_bound());
+   auto& siclow = dynamic_cast<DenseVector<double>&>(problem->has_s_lower_bound());
+   auto& scupp = dynamic_cast<DenseVector<double>&>(problem->s_upper_bound());
+   auto& sicupp = dynamic_cast<DenseVector<double>&>(problem->has_s_upper_bound());
 
    char* cxupp = new char[nx];
    char* cxlow = new char[nx];

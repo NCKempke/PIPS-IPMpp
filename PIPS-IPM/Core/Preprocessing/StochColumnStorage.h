@@ -23,8 +23,8 @@ public:
 
    /** y = beta * first + alpha * stored - either of the vectors can be nullptr and will then not be considered */
    /** there is the option of specifying a special vector to store the linking row results in - if no vector is given the corresponding link vector will be ignored */
-   void axpyAtCol(double beta, DistributedVector<double>* eq_vec, DistributedVector<double>* ineq_vec, SimpleVector<double>* eq_link,
-         SimpleVector<double>* ineq_link, double alpha, const INDEX& col) const;
+   void axpyAtCol(double beta, DistributedVector<double>* eq_vec, DistributedVector<double>* ineq_vec, DenseVector<double>* eq_link,
+         DenseVector<double>* ineq_link, double alpha, const INDEX& col) const;
 
    [[nodiscard]] double multColTimesVec(const INDEX& col, const DistributedVector<double>& vec_eq, const DistributedVector<double>& vec_ineq) const;
 
@@ -52,7 +52,7 @@ private:
    void createStorageMatrix(SystemType system_type, const DistributedMatrix& sys_matrix);
 
    /* calculate first + alpha * stored for system */
-   void axpyAtCol(DistributedVector<double>& vec, SimpleVector<double>* vec_link, double alpha, const INDEX& col, SystemType system_type) const;
+   void axpyAtCol(DistributedVector<double>& vec, DenseVector<double>* vec_link, double alpha, const INDEX& col, SystemType system_type) const;
 };
 
 

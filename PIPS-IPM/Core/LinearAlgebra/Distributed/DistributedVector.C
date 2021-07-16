@@ -24,7 +24,7 @@ DistributedVector<T>::DistributedVector(std::unique_ptr<Vector<T>> first_in, std
 template<typename T>
 DistributedVector<T>::DistributedVector(int n_, MPI_Comm mpiComm_)
       : Vector<T>(n_), mpiComm(mpiComm_), iAmDistrib(PIPS_MPIgetDistributed(mpiComm)), iAmSpecial(PIPS_MPIiAmSpecial(iAmDistrib, mpiComm)) {
-   first = std::make_unique<SimpleVector<T>>(n_);
+   first = std::make_unique<DenseVector<T>>(n_);
    last = nullptr;
 }
 
@@ -32,12 +32,12 @@ template<typename T>
 DistributedVector<T>::DistributedVector(int n_, int nl_, MPI_Comm mpiComm_)
       : mpiComm(mpiComm_), iAmDistrib(PIPS_MPIgetDistributed(mpiComm)), iAmSpecial(PIPS_MPIiAmSpecial(iAmDistrib, mpiComm)) {
    if (n_ >= 0) {
-      first = std::make_unique<SimpleVector<T>>(n_);
+      first = std::make_unique<DenseVector<T>>(n_);
       this->n += n_;
    }
 
    if (nl_ >= 0) {
-      last = std::make_unique<SimpleVector<T>>(nl_);
+      last = std::make_unique<DenseVector<T>>(nl_);
       this->n += nl_;
    }
 }
@@ -122,7 +122,7 @@ void DistributedVector<T>::jointCopyFrom(const Vector<T>& vx_, const Vector<T>& 
    }
    else {
       assert(first);
-      auto& sv = dynamic_cast<SimpleVector<T>&>(*this->first);
+      auto& sv = dynamic_cast<DenseVector<T>&>(*this->first);
 
       int n1 = 0;
       int n2 = 0;
@@ -132,7 +132,7 @@ void DistributedVector<T>::jointCopyFrom(const Vector<T>& vx_, const Vector<T>& 
       int n6 = 0;
 
       if (vx.first) {
-         const auto& svx = dynamic_cast<const SimpleVector<T>&>(*vx.first);
+         const auto& svx = dynamic_cast<const DenseVector<T>&>(*vx.first);
          n1 = svx.length();
          assert(n1 >= 0);
 
@@ -142,7 +142,7 @@ void DistributedVector<T>::jointCopyFrom(const Vector<T>& vx_, const Vector<T>& 
       }
 
       if (vy.first) {
-         const auto& svy = dynamic_cast<const SimpleVector<T>&>(*vy.first);
+         const auto& svy = dynamic_cast<const DenseVector<T>&>(*vy.first);
          n2 = svy.length();
          assert(n2 >= 0);
 
@@ -152,7 +152,7 @@ void DistributedVector<T>::jointCopyFrom(const Vector<T>& vx_, const Vector<T>& 
       }
 
       if (vz.first) {
-         const auto& svz = dynamic_cast<const SimpleVector<T>&>(*vz.first);
+         const auto& svz = dynamic_cast<const DenseVector<T>&>(*vz.first);
          n3 = svz.length();
          assert(n3 >= 0);
 
@@ -162,7 +162,7 @@ void DistributedVector<T>::jointCopyFrom(const Vector<T>& vx_, const Vector<T>& 
       }
 
       if (vx.last) {
-         const auto& svxl = dynamic_cast<const SimpleVector<T>&>(*vx.last);
+         const auto& svxl = dynamic_cast<const DenseVector<T>&>(*vx.last);
          n4 = svxl.length();
          assert(n4 >= 0);
 
@@ -172,7 +172,7 @@ void DistributedVector<T>::jointCopyFrom(const Vector<T>& vx_, const Vector<T>& 
       }
 
       if (vy.last) {
-         const auto& svyl = dynamic_cast<const SimpleVector<T>&>(*vy.last);
+         const auto& svyl = dynamic_cast<const DenseVector<T>&>(*vy.last);
          n5 = svyl.length();
          assert(n5 >= 0);
 
@@ -182,7 +182,7 @@ void DistributedVector<T>::jointCopyFrom(const Vector<T>& vx_, const Vector<T>& 
       }
 
       if (vz.last) {
-         const auto& svzl = dynamic_cast<const SimpleVector<T>&>(*vz.last);
+         const auto& svzl = dynamic_cast<const DenseVector<T>&>(*vz.last);
          n6 = svzl.length();
          assert(n6 >= 0);
 
@@ -217,7 +217,7 @@ void DistributedVector<T>::jointCopyTo(Vector<T>& vx_, Vector<T>& vy_, Vector<T>
    }
    else {
       assert(this->first);
-      const auto& sv = dynamic_cast<const SimpleVector<T>&>(*this->first);
+      const auto& sv = dynamic_cast<const DenseVector<T>&>(*this->first);
       int n1 = 0;
       int n2 = 0;
       int n3 = 0;
@@ -226,7 +226,7 @@ void DistributedVector<T>::jointCopyTo(Vector<T>& vx_, Vector<T>& vy_, Vector<T>
       int n6 = 0;
 
       if (vx.first) {
-         auto& svx = dynamic_cast<SimpleVector<T>&>(*vx.first);
+         auto& svx = dynamic_cast<DenseVector<T>&>(*vx.first);
          n1 = svx.length();
          assert(n1 >= 0);
 
@@ -236,7 +236,7 @@ void DistributedVector<T>::jointCopyTo(Vector<T>& vx_, Vector<T>& vy_, Vector<T>
       }
 
       if (vy.first) {
-         auto& svy = dynamic_cast<SimpleVector<T>&>(*vy.first);
+         auto& svy = dynamic_cast<DenseVector<T>&>(*vy.first);
          n2 = svy.length();
          assert(n2 >= 0);
 
@@ -246,7 +246,7 @@ void DistributedVector<T>::jointCopyTo(Vector<T>& vx_, Vector<T>& vy_, Vector<T>
       }
 
       if (vz.first) {
-         auto& svz = dynamic_cast<SimpleVector<T>&>(*vz.first);
+         auto& svz = dynamic_cast<DenseVector<T>&>(*vz.first);
          n3 = svz.length();
          assert(n3 >= 0);
 
@@ -256,7 +256,7 @@ void DistributedVector<T>::jointCopyTo(Vector<T>& vx_, Vector<T>& vy_, Vector<T>
       }
 
       if (vx.last) {
-         auto& svxl = dynamic_cast<SimpleVector<T>&>(*vx.last);
+         auto& svxl = dynamic_cast<DenseVector<T>&>(*vx.last);
          n4 = svxl.length();
          assert(n4 >= 0);
 
@@ -266,7 +266,7 @@ void DistributedVector<T>::jointCopyTo(Vector<T>& vx_, Vector<T>& vy_, Vector<T>
       }
 
       if (vy.last) {
-         auto& svyl = dynamic_cast<SimpleVector<T>&>(*vy.last);
+         auto& svyl = dynamic_cast<DenseVector<T>&>(*vy.last);
          n5 = svyl.length();
          assert(n5 >= 0);
 
@@ -276,7 +276,7 @@ void DistributedVector<T>::jointCopyTo(Vector<T>& vx_, Vector<T>& vy_, Vector<T>
       }
 
       if (vz.last) {
-         auto& svzl = dynamic_cast<SimpleVector<T>&>(*vz.last);
+         auto& svzl = dynamic_cast<DenseVector<T>&>(*vz.last);
          n6 = svzl.length();
          assert(n6 >= 0);
 
@@ -327,12 +327,12 @@ bool DistributedVector<T>::isZero() const {
    PIPS_MPIgetLogicAndInPlace(is_zero, mpiComm);
 
    if (first) {
-      const bool is_zero_tmp = dynamic_cast<SimpleVector<T>&>(*first).isZero();
+      const bool is_zero_tmp = dynamic_cast<DenseVector<T>&>(*first).isZero();
       is_zero = is_zero && is_zero_tmp;
    }
 
    if (last) {
-      const bool is_zero_tmp = dynamic_cast<SimpleVector<T>&>(*last).isZero();
+      const bool is_zero_tmp = dynamic_cast<DenseVector<T>&>(*last).isZero();
       is_zero = is_zero && is_zero_tmp;
    }
 
@@ -1844,13 +1844,13 @@ void DistributedVector<T>::recomputeSize() {
 template<typename T>
 void DistributedVector<T>::permuteVec0Entries(const std::vector<unsigned int>& permvec) {
    if (first)
-      dynamic_cast<SimpleVector<T>&>(*first).permuteEntries(permvec);
+      dynamic_cast<DenseVector<T>&>(*first).permuteEntries(permvec);
 }
 
 template<typename T>
 void DistributedVector<T>::permuteLinkingEntries(const std::vector<unsigned int>& permvec) {
    if (last)
-      dynamic_cast<SimpleVector<T>&>(*last).permuteEntries(permvec);
+      dynamic_cast<DenseVector<T>&>(*last).permuteEntries(permvec);
 }
 
 template<typename T>
@@ -1860,7 +1860,7 @@ std::vector<T> DistributedVector<T>::gatherStochVector() const {
       // assert( false && "TODO : implement" );
    }
 
-   const auto& firstvec = dynamic_cast<const SimpleVector<T>&>(*first);
+   const auto& firstvec = dynamic_cast<const DenseVector<T>&>(*first);
    const size_t nChildren = children.size();
 
    const int my_rank = PIPS_MPIgetRank(mpiComm);
@@ -1869,7 +1869,7 @@ std::vector<T> DistributedVector<T>::gatherStochVector() const {
    std::vector<T> gatheredVecLocal(0);
 
    for (size_t i = 0; i < nChildren; ++i) {
-      const auto& vec = dynamic_cast<const SimpleVector<T>&>(*children[i]->first);
+      const auto& vec = dynamic_cast<const DenseVector<T>&>(*children[i]->first);
 
       if (vec.length() > 0)
          gatheredVecLocal.insert(gatheredVecLocal.end(), &vec[0], &vec[0] + vec.length());
@@ -1917,7 +1917,7 @@ std::vector<T> DistributedVector<T>::gatherStochVector() const {
       std::copy(&firstvec[0], &firstvec[0] + firstvec.length(), &gatheredVec[0]);
 
       if (last && last->length() > 0) {
-         const auto& linkvec = dynamic_cast<const SimpleVector<T>&>(*last);
+         const auto& linkvec = dynamic_cast<const DenseVector<T>&>(*last);
          gatheredVec.insert(gatheredVec.end(), &linkvec[0], &linkvec[0] + linkvec.length());
       }
    }
@@ -1936,7 +1936,7 @@ bool DistributedVector<T>::isRootNodeInSync() const {
    assert(mpiComm);
 
    bool in_sync = true;
-   const auto& vec_simple = dynamic_cast<const SimpleVector<T>&>(*first);
+   const auto& vec_simple = dynamic_cast<const DenseVector<T>&>(*first);
 
    /* no need to check if not distributed or not at root node */
    if (!iAmDistrib || parent != nullptr)
@@ -1948,7 +1948,7 @@ bool DistributedVector<T>::isRootNodeInSync() const {
 
    /* if there is a linking part we have to chekc it as well */
    const int vec_length = vec_simple.length();
-   const int vecl_length = (last) ? dynamic_cast<const SimpleVector<T>&>(*last).length() : 0;
+   const int vecl_length = (last) ? dynamic_cast<const DenseVector<T>&>(*last).length() : 0;
 
    const long long count = vec_length + vecl_length;
 
@@ -1960,7 +1960,7 @@ bool DistributedVector<T>::isRootNodeInSync() const {
    std::copy(vec_simple.elements(), vec_simple.elements() + vec_simple.length(), sendbuf.begin());
 
    if (last) {
-      const auto& vecl_simple = dynamic_cast<const SimpleVector<T>&>(*last);
+      const auto& vecl_simple = dynamic_cast<const DenseVector<T>&>(*last);
       std::copy(vecl_simple.elements(), vecl_simple.elements() + vecl_simple.length(), sendbuf.begin() + vec_simple.length());
    }
    PIPS_MPImaxArray(&sendbuf[0], &recvbuf[0], count, mpiComm);
@@ -1999,7 +1999,7 @@ n_links_in_root
    const unsigned int n_new_children = getNDistinctValues(map_blocks_children);
    std::vector<std::shared_ptr<DistributedVector<T>>> new_children(n_new_children);
 
-   auto* vecl_leftover = dynamic_cast<SimpleVector<T>*>(last.get());
+   auto* vecl_leftover = dynamic_cast<DenseVector<T>*>(last.get());
 
    unsigned int begin_curr_child_blocks{0};
    unsigned int end_curr_child_blocks{0};
@@ -2013,14 +2013,14 @@ n_links_in_root
             twolinks_start_in_block.begin() + end_curr_child_blocks, 0) : -1;
       const unsigned int n_blocks_for_child = end_curr_child_blocks - begin_curr_child_blocks + 1;
 
-      std::unique_ptr<SimpleVector<T>> vecl_child{last ? vecl_leftover->shaveBorder(n_links_for_child, true) : nullptr};
+      std::unique_ptr<DenseVector<T>> vecl_child{last ? vecl_leftover->shaveBorder(n_links_for_child, true) : nullptr};
 
       if (child_comms[i] == MPI_COMM_NULL) {
          vecl_child = nullptr;
       }
 
       std::unique_ptr<DistributedVector<T>> vec{(child_comms[i] == MPI_COMM_NULL) ? nullptr :
-         new DistributedVector<T>(std::make_unique<SimpleVector<T>>(0), std::move(vecl_child), child_comms[i])};
+         new DistributedVector<T>(std::make_unique<DenseVector<T>>(0), std::move(vecl_child), child_comms[i])};
 
       for (unsigned int j = 0; j < n_blocks_for_child; ++j) {
          std::shared_ptr<DistributedVector<T>> child = children.front();
@@ -2084,9 +2084,9 @@ DistributedVector<T>* DistributedVector<T>::raiseBorder(int n_first_to_shave, in
       assert(this->first->length() >= n_first_to_shave);
    }
 
-   std::unique_ptr<SimpleVector<T>> new_first{};
+   std::unique_ptr<DenseVector<T>> new_first{};
    if (n_first_to_shave >= 0) {
-      new_first.reset(dynamic_cast<SimpleVector<T>&>(*this->first).shaveBorder(n_first_to_shave, true));
+      new_first.reset(dynamic_cast<DenseVector<T>&>(*this->first).shaveBorder(n_first_to_shave, true));
    }
 
    /* shave from last if there */
@@ -2095,9 +2095,9 @@ DistributedVector<T>* DistributedVector<T>::raiseBorder(int n_first_to_shave, in
       assert(this->last->length() >= n_last_to_shave);
    }
 
-   std::unique_ptr<SimpleVector<T>> new_last{};
+   std::unique_ptr<DenseVector<T>> new_last{};
    if (n_last_to_shave >= 0) {
-      new_last.reset(dynamic_cast<SimpleVector<T>&>(*this->last).shaveBorder(n_last_to_shave, false));
+      new_last.reset(dynamic_cast<DenseVector<T>&>(*this->last).shaveBorder(n_last_to_shave, false));
    }
 
    auto top_layer = new DistributedVector<T>(std::move(new_first), std::move(new_last), mpiComm);
@@ -2111,11 +2111,11 @@ DistributedVector<T>* DistributedVector<T>::raiseBorder(int n_first_to_shave, in
 
 template<typename T>
 void DistributedVector<T>::collapseFromHierarchical(const DistributedProblem& data_hier, const DistributedTree& tree_hier, VectorType type, bool empty_vec) {
-   auto* new_first = new SimpleVector<T>();
-   SimpleVector<T>* new_last{};
+   auto* new_first = new DenseVector<T>();
+   DenseVector<T>* new_last{};
 
    if ((tree_hier.getMYL() > 0 && type == VectorType::DUAL_Y) || (tree_hier.getMYL() > 0 && type == VectorType::DUAL_Z))
-      new_last = new SimpleVector<T>();
+      new_last = new DenseVector<T>();
 
    assert(tree_hier.nChildren() == 1);
    assert(children.size() == 1);
@@ -2127,9 +2127,9 @@ void DistributedVector<T>::collapseFromHierarchical(const DistributedProblem& da
    children.clear();
 
    if (first && !empty_vec)
-      new_first->appendToFront(dynamic_cast<SimpleVector<T>&>(*first));
+      new_first->appendToFront(dynamic_cast<DenseVector<T>&>(*first));
    if (last && !empty_vec)
-      new_last->appendToBack(dynamic_cast<SimpleVector<T>&>(*last));
+      new_last->appendToBack(dynamic_cast<DenseVector<T>&>(*last));
 
    this->n = new_first->length();
    if (new_last)
@@ -2143,15 +2143,15 @@ void DistributedVector<T>::collapseFromHierarchical(const DistributedProblem& da
    last.reset(new_last);
 
    if (first)
-      PIPS_MPImaxArrayInPlace(dynamic_cast<SimpleVector<double>&>(*first).elements(), first->length());
+      PIPS_MPImaxArrayInPlace(dynamic_cast<DenseVector<double>&>(*first).elements(), first->length());
 
    if (last)
-      PIPS_MPImaxArrayInPlace(dynamic_cast<SimpleVector<double>&>(*last).elements(), last->length());
+      PIPS_MPImaxArrayInPlace(dynamic_cast<DenseVector<double>&>(*last).elements(), last->length());
 }
 
 template<typename T>
 void
-DistributedVector<T>::appendHierarchicalToThis(SimpleVector<T>* new_vec, SimpleVector<T>* new_vecl, std::vector<std::shared_ptr<DistributedVector<T>>>& new_children,
+DistributedVector<T>::appendHierarchicalToThis(DenseVector<T>* new_vec, DenseVector<T>* new_vecl, std::vector<std::shared_ptr<DistributedVector<T>>>& new_children,
       const DistributedTree& tree_hier, const DistributedProblem& data_hier, VectorType type, bool empty_vec) {
    assert(children.size() == tree_hier.nChildren());
    assert(children.size() == data_hier.children.size());
@@ -2180,10 +2180,10 @@ DistributedVector<T>::appendHierarchicalToThis(SimpleVector<T>* new_vec, SimpleV
    }
 
    if (first && !empty_vec)
-      new_vec->appendToFront(dynamic_cast<SimpleVector<T>&>(*first));
+      new_vec->appendToFront(dynamic_cast<DenseVector<T>&>(*first));
 
    if (last && !empty_vec)
-      new_vecl->appendToBack(dynamic_cast<SimpleVector<T>&>(*last));
+      new_vecl->appendToBack(dynamic_cast<DenseVector<T>&>(*last));
 
    if (!empty_vec && !data_hier.isHierarchyInnerRoot() && data_hier.isHierarchyInnerLeaf() && type != VectorType::PRIMAL) {
       Permutation link_vec_perm;
@@ -2194,13 +2194,13 @@ DistributedVector<T>::appendHierarchicalToThis(SimpleVector<T>* new_vec, SimpleV
          link_vec_perm = data_hier.getLinkConsIneqPermInv();
 
       assert(static_cast<unsigned int>(new_vecl->length()) >= link_vec_perm.size());
-      SimpleVector<T> new_vecl_curr_part = SimpleVector<T>(new_vecl->elements() + new_vecl->length() - link_vec_perm.size(), link_vec_perm.size());
+      DenseVector<T> new_vecl_curr_part = DenseVector<T>(new_vecl->elements() + new_vecl->length() - link_vec_perm.size(), link_vec_perm.size());
       new_vecl_curr_part.permuteEntries(link_vec_perm);
    }
 }
 
 template<typename T>
-void DistributedDummyVector<T>::appendHierarchicalToThis(SimpleVector<T>*, SimpleVector<T>* new_vecl, std::vector<std::shared_ptr<DistributedVector<T>>>& new_children,
+void DistributedDummyVector<T>::appendHierarchicalToThis(DenseVector<T>*, DenseVector<T>* new_vecl, std::vector<std::shared_ptr<DistributedVector<T>>>& new_children,
       const DistributedTree& tree_hier, const DistributedProblem&, VectorType type, bool empty_vec) {
    assert(tree_hier.getCommWorkers() == MPI_COMM_NULL);
    const unsigned int n_dummies = tree_hier.nChildren();

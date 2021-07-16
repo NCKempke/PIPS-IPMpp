@@ -184,18 +184,18 @@ bool StochPresolverBoundStrengthening::strenghtenBoundsInBlock(SystemType system
 
    bool tightened = false;
 
-   const SimpleVector<double>& xlow = (node == -1 || block_type == A_MAT) ? *currxlowParent : *currxlowChild;
-   const SimpleVector<double>& ixlow = (node == -1 || block_type == A_MAT) ? *currIxlowParent : *currIxlowChild;
-   const SimpleVector<double>& xupp = (node == -1 || block_type == A_MAT) ? *currxuppParent : *currxuppChild;
-   const SimpleVector<double>& ixupp = (node == -1 || block_type == A_MAT) ? *currIxuppParent : *currIxuppChild;
+   const DenseVector<double>& xlow = (node == -1 || block_type == A_MAT) ? *currxlowParent : *currxlowChild;
+   const DenseVector<double>& ixlow = (node == -1 || block_type == A_MAT) ? *currIxlowParent : *currIxlowChild;
+   const DenseVector<double>& xupp = (node == -1 || block_type == A_MAT) ? *currxuppParent : *currxuppChild;
+   const DenseVector<double>& ixupp = (node == -1 || block_type == A_MAT) ? *currIxuppParent : *currIxuppChild;
 
-   const SimpleVector<double>& iclow = (block_type == BL_MAT) ? *currIclowLink : *currIclow;
-   const SimpleVector<double>& clow = (block_type == BL_MAT) ? *currIneqLhsLink : *currIneqLhs;
-   const SimpleVector<double>& icupp = (block_type == BL_MAT) ? *currIcuppLink : *currIcupp;
-   const SimpleVector<double>& cupp = (block_type == BL_MAT) ? *currIneqRhsLink : *currIneqRhs;
-   const SimpleVector<double>& rhs = (block_type == BL_MAT) ? *currEqRhsLink : *currEqRhs;
+   const DenseVector<double>& iclow = (block_type == BL_MAT) ? *currIclowLink : *currIclow;
+   const DenseVector<double>& clow = (block_type == BL_MAT) ? *currIneqLhsLink : *currIneqLhs;
+   const DenseVector<double>& icupp = (block_type == BL_MAT) ? *currIcuppLink : *currIcupp;
+   const DenseVector<double>& cupp = (block_type == BL_MAT) ? *currIneqRhsLink : *currIneqRhs;
+   const DenseVector<double>& rhs = (block_type == BL_MAT) ? *currEqRhsLink : *currEqRhs;
 
-   const SimpleVector<int>& nnzs_row = (block_type == BL_MAT) ? *currNnzRowLink : *currNnzRow;
+   const DenseVector<int>& nnzs_row = (block_type == BL_MAT) ? *currNnzRowLink : *currNnzRow;
 
    const SparseStorageDynamic* mat;
 

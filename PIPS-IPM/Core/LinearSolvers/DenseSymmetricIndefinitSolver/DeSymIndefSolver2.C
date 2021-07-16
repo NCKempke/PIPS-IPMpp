@@ -3,7 +3,7 @@
  * (C) 2001 University of Chicago. See Copyright Notification in OOQP */
 
 #include "DeSymIndefSolver2.h"
-#include "SimpleVector.hpp"
+#include "DenseVector.hpp"
 #include <cassert>
 
 #include "OoqpBlas.h"
@@ -79,7 +79,7 @@ void DeSymIndefSolver2::solve(Vector<double>& v) {
    int one = 1;
    double minus1 = -1;
 
-   SimpleVector<double>& sv = dynamic_cast<SimpleVector<double>&>(v);
+   DenseVector<double>& sv = dynamic_cast<DenseVector<double>&>(v);
    double* rhs = &sv[0];
 
    dtrsv_(&fortranUplo, &fortranT, &fortranN, &n, mat, &n, rhs, &one);

@@ -7,7 +7,7 @@
 #include "PardisoMKLIndefSolver.h"
 
 #include "pipschecks.h"
-#include "SimpleVector.hpp"
+#include "DenseVector.hpp"
 #include "pipsdef.h"
 #include "PIPSIPMppOptions.h"
 

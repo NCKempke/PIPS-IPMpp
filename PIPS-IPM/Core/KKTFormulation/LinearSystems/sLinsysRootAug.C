@@ -31,7 +31,7 @@ sLinsysRootAug::sLinsysRootAug(const DistributedFactory& factory_, DistributedPr
       }
    }
 
-   redRhs = std::make_unique<SimpleVector<double>>(locnx + locmy + locmz + locmyl + locmzl);
+   redRhs = std::make_unique<DenseVector<double>>(locnx + locmy + locmz + locmyl + locmzl);
 }
 
 sLinsysRootAug::sLinsysRootAug(const DistributedFactory& factory_, DistributedProblem* prob_, std::shared_ptr<Vector<double>> dd_,
@@ -47,7 +47,7 @@ sLinsysRootAug::sLinsysRootAug(const DistributedFactory& factory_, DistributedPr
    std::cout << "slinsysrootaug : " << locnx << " " << locmy << " " << locmz << " " << locmyl << " "
              << locmzl << std::endl;
 
-   redRhs = std::make_unique<SimpleVector<double>>(locnx + locmy + locmz + locmyl + locmzl);
+   redRhs = std::make_unique<DenseVector<double>>(locnx + locmy + locmz + locmyl + locmzl);
 }
 
 /* Add corner block
@@ -171,7 +171,7 @@ void sLinsysRootAug::finalizeKKTdist() {
       }
 
       assert(zDiagLinkCons);
-      const auto& szDiagLinkCons = dynamic_cast<const SimpleVector<double>&>(*zDiagLinkCons);
+      const auto& szDiagLinkCons = dynamic_cast<const DenseVector<double>&>(*zDiagLinkCons);
 
       assert(local2linksStartIneq >= locnx + locmy + locmyl);
       assert(local2linksEndIneq <= locnx + locmy + locmyl + locmzl);
@@ -326,7 +326,7 @@ void sLinsysRootAug::Lsolve(Vector<double>& x) {
    auto& b = dynamic_cast<DistributedVector<double>&>(x);
    assert(children.size() == b.children.size());
 
-   auto& b0 = dynamic_cast<SimpleVector<double>&>(*b.first);
+   auto& b0 = dynamic_cast<DenseVector<double>&>(*b.first);
    assert(!b.last);
 
    if (iAmDistrib && PIPS_MPIgetRank(mpiComm) > 0)
@@ -349,16 +349,16 @@ void sLinsysRootAug::Dsolve(Vector<double>& x) {
 
    /* children have already computed Li^T\Di\Li\bi in Lsolve() */
    auto& b = dynamic_cast<DistributedVector<double>&>(x);
-   auto& b0 = dynamic_cast<SimpleVector<double>&>(*b.first);
+   auto& b0 = dynamic_cast<DenseVector<double>&>(*b.first);
    solveReducedLinkCons(b0);
 }
 
 void sLinsysRootAug::Ltsolve(Vector<double>& x) {
    auto& b = dynamic_cast<DistributedVector<double>&>(x);
-   auto& b0 = dynamic_cast<SimpleVector<double>&>(*b.first);
+   auto& b0 = dynamic_cast<DenseVector<double>&>(*b.first);
 
    //dumpRhs(0, "sol",  b0);
-   SimpleVector<double>& z0 = b0; //just another name, for clarity
+   DenseVector<double>& z0 = b0; //just another name, for clarity
 
    for (size_t it = 0; it < children.size(); it++)
       children[it]->Ltsolve2(*b.children[it], z0, true);
@@ -381,7 +381,7 @@ sLinsysRootAug::LtsolveHierarchyBorder(AbstractMatrix& res, const DenseMatrix& X
 
 extern int gLackOfAccuracy;
 
-void sLinsysRootAug::solveReducedLinkCons(SimpleVector<double>& b_vec) {
+void sLinsysRootAug::solveReducedLinkCons(DenseVector<double>& b_vec) {
    assert(locmyl >= 0 && locmzl >= 0);
    assert(locnx + locmy + locmz + locmyl + locmzl == b_vec.length());
 
@@ -410,8 +410,8 @@ void sLinsysRootAug::solveReducedLinkCons(SimpleVector<double>& b_vec) {
    // rhs_reduced now : [ b1; b2; b4; b5; b3]
 
    // alias to r1 part (no mem allocations)
-   SimpleVector<double> rhs1(rhs_reduced, locnx);
-   SimpleVector<double> rhs_reduced_b3(rhs_reduced + locnx + locmy + locmyl + locmzl, locmz);
+   DenseVector<double> rhs1(rhs_reduced, locnx);
+   DenseVector<double> rhs_reduced_b3(rhs_reduced + locnx + locmy + locmyl + locmzl, locmz);
 
    ///////////////////////////////////////////////////////////////////////
    // compute r1 = b1 - C^T * (zDiag + regularization)^{-1} * rhs_reduced_b3
@@ -430,7 +430,7 @@ void sLinsysRootAug::solveReducedLinkCons(SimpleVector<double>& b_vec) {
    ///////////////////////////////////////////////////////////////////////
 
    // we do not need the last locmz elements of r since they were buffer only
-   SimpleVector<double> rhs_short(rhs_reduced, locnx + locmy + locmyl + locmzl);
+   DenseVector<double> rhs_short(rhs_reduced, locnx + locmy + locmyl + locmzl);
 
    if (innerSCSolve == 0) {
       // Option 1. - solve with the factors
@@ -455,7 +455,7 @@ void sLinsysRootAug::solveReducedLinkCons(SimpleVector<double>& b_vec) {
    std::copy(rhs_reduced, rhs_reduced + locnx + locmy, b);
    // compute x3
    if (locmz > 0) {
-      SimpleVector<double> b3(b + locnx + locmy, locmz);
+      DenseVector<double> b3(b + locnx + locmy, locmz);
       C.mult(1.0, b3, -1.0, rhs1);
 
       b3.componentDiv(*dual_inequality_diagonal_regularized);
@@ -486,7 +486,7 @@ void sLinsysRootAug::solveReducedLinkConsBlocked(DenseMatrix& rhs_mat_transp, in
 
       double* rhs_reduced = reduced_rhss_blocked.data() + (rhs_i - rhs_start) * length_reduced;
 
-      SimpleVector<double> b_vec(rhs_mat_transp[rhs_i], length_rhs);
+      DenseVector<double> b_vec(rhs_mat_transp[rhs_i], length_rhs);
 
       double* b = b_vec.elements();
 
@@ -506,8 +506,8 @@ void sLinsysRootAug::solveReducedLinkConsBlocked(DenseMatrix& rhs_mat_transp, in
       // rhs_reduced now : [ b1; b2; b4; b5 ]
 
       // alias to r1 part (no mem allocations)
-      SimpleVector<double> rhs1(rhs_reduced, locnx);
-      SimpleVector<double> b3(b + locnx + locmy, locmz);
+      DenseVector<double> rhs1(rhs_reduced, locnx);
+      DenseVector<double> b3(b + locnx + locmy, locmz);
 
       ///////////////////////////////////////////////////////////////////////
       // compute r1 = b1 - C^T * (zDiag + regularization)^{-1} * b3
@@ -543,14 +543,14 @@ void sLinsysRootAug::solveReducedLinkConsBlocked(DenseMatrix& rhs_mat_transp, in
    for (int rhs_i = rhs_start; rhs_i < rhs_start + n_rhs; ++rhs_i) {
       double* rhs_reduced = reduced_rhss_blocked.data() + (rhs_i - rhs_start) * length_reduced;
 
-      SimpleVector<double> b_vec(rhs_mat_transp[rhs_i], length_rhs);
+      DenseVector<double> b_vec(rhs_mat_transp[rhs_i], length_rhs);
       double* b = b_vec.elements();
 
       std::copy(rhs_reduced, rhs_reduced + locnx + locmy, b);
       // compute x3
       if (locmz > 0) {
-         SimpleVector<double> rhs1(rhs_reduced, locnx);
-         SimpleVector<double> b3(b + locnx + locmy, locmz);
+         DenseVector<double> rhs1(rhs_reduced, locnx);
+         DenseVector<double> b3(b + locnx + locmy, locmz);
          C.mult(1.0, b3, -1.0, rhs1);
          b3.componentDiv(*dual_inequality_diagonal_regularized);
       }
@@ -680,7 +680,7 @@ sLinsysRootAug::addLinkConsBlock0Matrix(const SparseMatrix& Ht, int nHtOffsetCol
 
 // TODO : should be const
 /** rxy = beta*rxy + alpha * SC * x */
-void sLinsysRootAug::SCmult(double beta, SimpleVector<double>& rxy, double alpha, SimpleVector<double>& x) {
+void sLinsysRootAug::SCmult(double beta, DenseVector<double>& rxy, double alpha, DenseVector<double>& x) {
    assert(false && "TODO: implement regularization");
    //if (iAmDistrib) {
    //only one process subtracts [ (Q+Dx0+C'*Dz0*C)*xx + A'*xy + F'*xxl + G'*xyl ] from r
@@ -708,7 +708,7 @@ void sLinsysRootAug::SCmult(double beta, SimpleVector<double>& rxy, double alpha
          CtDC_sp->getStorage().multSym(1.0, &rxy[0], -alpha, &x[0]);
       }
 
-      auto& xDiagv = dynamic_cast<SimpleVector<double>&>(*xDiag);
+      auto& xDiagv = dynamic_cast<DenseVector<double>&>(*xDiag);
       assert(xDiagv.length() == locnx);
       for (int i = 0; i < xDiagv.length(); i++)
          rxy[i] += alpha * xDiagv[i] * x[i];
@@ -730,7 +730,7 @@ void sLinsysRootAug::SCmult(double beta, SimpleVector<double>& rxy, double alpha
          G.getStorage().transMult(1.0, &rxy[0], alpha, &x[locnx + locmy + locmyl]);
          G.getStorage().mult(1.0, &rxy[locnx + locmy + locmyl], alpha, &x[0]);
 
-         auto& zDiagLinkConsv = dynamic_cast<SimpleVector<double>&>(*zDiagLinkCons);
+         auto& zDiagLinkConsv = dynamic_cast<DenseVector<double>&>(*zDiagLinkCons);
          assert(zDiagLinkConsv.length() == locmzl);
          const int shift = locnx + locmy + locmyl;
          for (int i = 0; i < zDiagLinkConsv.length(); i++)
@@ -745,7 +745,7 @@ void sLinsysRootAug::SCmult(double beta, SimpleVector<double>& rxy, double alpha
    taux=MPI_Wtime();
 #endif
    // now children add [0 A^T C^T ]*inv(KKT)*[0;A;C] x
-   SimpleVector<double> xx((locmyl || locmzl) ? (locnx + locmy + locmyl + locmzl) : locnx);
+   DenseVector<double> xx((locmyl || locmzl) ? (locnx + locmy + locmyl + locmzl) : locnx);
    xx.copyFromArray(x.elements());
    xx.scalarMult(-alpha);
 
@@ -772,12 +772,12 @@ void sLinsysRootAug::SCmult(double beta, SimpleVector<double>& rxy, double alpha
 }
 
 
-void sLinsysRootAug::solveWithIterRef(SimpleVector<double>& r) {
+void sLinsysRootAug::solveWithIterRef(DenseVector<double>& r) {
    assert(false && " TODO : not sure if working correctly...");
-   SimpleVector<double> r2(&r[locnx], locmy);
-   SimpleVector<double> r1(&r[0], locnx);
+   DenseVector<double> r2(&r[locnx], locmy);
+   DenseVector<double> r1(&r[0], locnx);
 
-   //SimpleVector<double> realRhs(&r[0], locnx+locmy);
+   //DenseVector<double> realRhs(&r[0], locnx+locmy);
 #ifdef TIMING
    taux=MPI_Wtime();
 #endif
@@ -786,12 +786,12 @@ void sLinsysRootAug::solveWithIterRef(SimpleVector<double>& r) {
 
    int myRank;
    MPI_Comm_rank(mpiComm, &myRank);
-   SimpleVector<double> rxy(locnx + locmy);
+   DenseVector<double> rxy(locnx + locmy);
    rxy.copyFrom(r);
-   SimpleVector<double> x(locnx + locmy);
+   DenseVector<double> x(locnx + locmy);
    x.setToZero(); //solution
-   SimpleVector<double> dx(locnx + locmy);                //update from iter refinement
-   SimpleVector<double> x_prev(locnx + locmy);
+   DenseVector<double> dx(locnx + locmy);                //update from iter refinement
+   DenseVector<double> x_prev(locnx + locmy);
    int refinSteps = 0;
    std::vector<double> histResid;
    int maxRefinSteps = (gLackOfAccuracy > 0 ? 9 : 8);
@@ -833,7 +833,7 @@ void sLinsysRootAug::solveWithIterRef(SimpleVector<double>& r) {
          const SparseSymmetricMatrix& Q = data->getLocalQ();
          Q.getStorage().mult(1.0, &rxy[0], -1.0, &x[0]);
 
-         auto& xDiagv = dynamic_cast<SimpleVector<double>&>(*xDiag);
+         auto& xDiagv = dynamic_cast<DenseVector<double>&>(*xDiag);
          assert(xDiagv.length() == locnx);
          for (int i = 0; i < xDiagv.length(); i++)
             rxy[i] -= xDiagv[i] * x[i];
@@ -850,7 +850,7 @@ void sLinsysRootAug::solveWithIterRef(SimpleVector<double>& r) {
       taux=MPI_Wtime();
 #endif
       // now children add [0 A^T C^T ]*inv(KKT)*[0;A;C] x
-      SimpleVector<double> xx(&x[0], locnx);
+      DenseVector<double> xx(&x[0], locnx);
       for (auto & it : children) {
          it->addTermToSchurResidual(rxy, xx);
       }
@@ -927,7 +927,7 @@ void sLinsysRootAug::solveWithIterRef(SimpleVector<double>& r) {
 #endif
 }
 
-void sLinsysRootAug::solveWithBiCGStab(SimpleVector<double>& b) {
+void sLinsysRootAug::solveWithBiCGStab(DenseVector<double>& b) {
    assert(false && "TODO: not sure if working correctly");
    int n = b.length();
 
@@ -937,14 +937,14 @@ void sLinsysRootAug::solveWithBiCGStab(SimpleVector<double>& b) {
    int myRank;
    MPI_Comm_rank(mpiComm, &myRank);
 
-   SimpleVector<double> r(n);           //residual
-   SimpleVector<double> s(n);           //residual associated with half iterate
-   SimpleVector<double> rt(n);          //shadow residual
-   SimpleVector<double> xmin(n);        //minimal residual iterate
-   SimpleVector<double> x(n);           //iterate
-   SimpleVector<double> xhalf(n);       // half iterate of BiCG
-   SimpleVector<double> p(n), paux(n);
-   SimpleVector<double> v(n), t(n);
+   DenseVector<double> r(n);           //residual
+   DenseVector<double> s(n);           //residual associated with half iterate
+   DenseVector<double> rt(n);          //shadow residual
+   DenseVector<double> xmin(n);        //minimal residual iterate
+   DenseVector<double> x(n);           //iterate
+   DenseVector<double> xhalf(n);       // half iterate of BiCG
+   DenseVector<double> p(n), paux(n);
+   DenseVector<double> v(n), t(n);
    int flag;
    double n2b;                  //norm of b
    double normr, normrmin;      //norm of the residual and norm of residual at min-resid iterate
@@ -1066,7 +1066,7 @@ void sLinsysRootAug::solveWithBiCGStab(SimpleVector<double>& b) {
 
       SCmult(0.0, v, 1.0, paux);
 
-      SimpleVector<double>& ph = paux;
+      DenseVector<double>& ph = paux;
 
       double rtv = rt.dotProductWith(v);
       if (rtv == 0.0) {
@@ -1148,7 +1148,7 @@ void sLinsysRootAug::solveWithBiCGStab(SimpleVector<double>& b) {
 
       SCmult(0.0, t, 1.0, paux);
 
-      SimpleVector<double>& sh = paux;
+      DenseVector<double>& sh = paux;
       double tt = t.dotProductWith(t);
       if (tt == 0.0) {
          flag = 4;
@@ -1400,7 +1400,7 @@ void sLinsysRootAug::clear_CtDC_from_schur_complement(const SymmetricMatrix& CtD
 //   *       [  C    0   0    0   ]
 //   *       [ F0V   0   0    0   ]
 //   *       [ G0V   0   0    0   ]
-void sLinsysRootAug::addBorderX0ToRhs(DistributedVector<double>& rhs, const SimpleVector<double>& x0,
+void sLinsysRootAug::addBorderX0ToRhs(DistributedVector<double>& rhs, const DenseVector<double>& x0,
    BorderLinsys& border) {
    assert(rhs.children.size() == children.size());
    assert(border.A.children.size() == children.size());
@@ -1446,7 +1446,7 @@ void sLinsysRootAug::addBorderX0ToRhs(DistributedVector<double>& rhs, const Simp
    assert(x0.length() == nF0V + mA00 + mF0C + G0cons_border.n_rows());
 #endif
 
-   auto& rhs0 = dynamic_cast<SimpleVector<double>&>(*rhs.first);
+   auto& rhs0 = dynamic_cast<DenseVector<double>&>(*rhs.first);
 
    double* rhs01 = &rhs0[0];
    double* rhs02 = &rhs0[nF0C];
@@ -1471,7 +1471,7 @@ void sLinsysRootAug::addBorderX0ToRhs(DistributedVector<double>& rhs, const Simp
    G0cons_border.getStorage().transMult(1.0, rhs01, -1.0, x04);
 }
 
-void sLinsysRootAug::addBorderTimesRhsToB0(DistributedVector<double>& rhs, SimpleVector<double>& b0,
+void sLinsysRootAug::addBorderTimesRhsToB0(DistributedVector<double>& rhs, DenseVector<double>& b0,
    BorderLinsys& border) {
    assert(rhs.children.size() == children.size());
    assert(border.A.children.size() == children.size());
@@ -1516,18 +1516,18 @@ void sLinsysRootAug::addBorderTimesRhsToB0(DistributedVector<double>& rhs, Simpl
       assert(rhs.first->length() == nF0C + mA0 + mC0 + mF0V + mG0V);
       assert(b0.length() == nF0V + mA00 + mF0C + mG0C);
 
-      auto& zi = dynamic_cast<SimpleVector<double>&>(*rhs.first);
+      auto& zi = dynamic_cast<DenseVector<double>&>(*rhs.first);
 
-      SimpleVector<double> zi1(&zi[0], nF0C);
-      SimpleVector<double> zi2(&zi[nF0C], mA0);
-      SimpleVector<double> zi3(&zi[nF0C + mA0], mC0);
-      SimpleVector<double> zi4(&zi[nF0C + mA0 + mC0], mF0V);
-      SimpleVector<double> zi5(&zi[nF0C + mA0 + mC0 + mF0V], mG0V);
+      DenseVector<double> zi1(&zi[0], nF0C);
+      DenseVector<double> zi2(&zi[nF0C], mA0);
+      DenseVector<double> zi3(&zi[nF0C + mA0], mC0);
+      DenseVector<double> zi4(&zi[nF0C + mA0 + mC0], mF0V);
+      DenseVector<double> zi5(&zi[nF0C + mA0 + mC0 + mF0V], mG0V);
 
-      SimpleVector<double> b1(&b0[0], nF0V);
-      SimpleVector<double> b2(&b0[nF0V], mA00);
-      SimpleVector<double> b3(&b0[nF0V + mA00], mF0C);
-      SimpleVector<double> b4(&b0[nF0V + mA00 + mF0C], mG0C);
+      DenseVector<double> b1(&b0[0], nF0V);
+      DenseVector<double> b2(&b0[nF0V], mA00);
+      DenseVector<double> b3(&b0[nF0V + mA00], mF0C);
+      DenseVector<double> b4(&b0[nF0V + mA00 + mF0C], mG0C);
 
       if (A0_border)
          A0_border->transpose_mult(1.0, b1, -1.0, zi2);
@@ -1579,8 +1579,8 @@ void sLinsysRootAug::add_regularization_local_kkt(double primal_regularization, 
       assert(CtDC);
       assert(dual_inequality_diagonal_regularized);
 
-      assert(std::all_of(dynamic_cast<const SimpleVector<double>&>(*zDiag).elements(),
-         dynamic_cast<const SimpleVector<double>&>(*zDiag).elements(), [](const double& d) {
+      assert(std::all_of(dynamic_cast<const DenseVector<double>&>(*zDiag).elements(),
+         dynamic_cast<const DenseVector<double>&>(*zDiag).elements(), [](const double& d) {
             return d <= 0;
          }));
 
@@ -1620,7 +1620,7 @@ void sLinsysRootAug::put_dual_inequalites_diagonal() {
    DistributedRootLinearSystem::put_dual_inequalites_diagonal();
 
    if (!dual_inequality_diagonal_regularized) {
-      dual_inequality_diagonal_regularized.reset(dynamic_cast<SimpleVector<double>*>(zDiag->clone_full()));
+      dual_inequality_diagonal_regularized.reset(dynamic_cast<DenseVector<double>*>(zDiag->clone_full()));
    } else {
       dual_inequality_diagonal_regularized->copyFrom(*zDiag);
    }
@@ -1734,7 +1734,7 @@ void sLinsysRootAug::finalizeKKTsparse() {
          }
       }
 
-      const auto& szDiagLinkCons = dynamic_cast<const SimpleVector<double>&>(*zDiagLinkCons);
+      const auto& szDiagLinkCons = dynamic_cast<const DenseVector<double>&>(*zDiagLinkCons);
       kkt->atAddDiagonal(locnx + locmy + locmyl, szDiagLinkCons);
    }
 
@@ -1845,7 +1845,7 @@ void sLinsysRootAug::DsolveHierarchyBorder(DenseMatrix& rhs_mat_transp, int n_co
    for (int rhs_i = 0; rhs_i < n_cols; ++rhs_i) {
       if (rhs_start <= rhs_i && rhs_i < rhs_start + n_rhs)
          continue;
-      SimpleVector<double> b(rhs_mat_transp[rhs_i], n);
+      DenseVector<double> b(rhs_mat_transp[rhs_i], n);
       b.setToZero();
    }
 

@@ -2,8 +2,8 @@
  * Authors: E. Michael Gertz, Stephen J. Wright                       *
  * (C) 2001 University of Chicago. See Copyright Notification in OOQP */
 
-#ifndef SIMPLEVECTOR
-#define SIMPLEVECTOR
+#ifndef DENSEVECTOR
+#define DENSEVECTOR
 
 #include "../Abstract/Vector.hpp"
 
@@ -17,16 +17,16 @@
  * @ingroup DenseLinearAlgebra
  */
 template<typename T>
-class SimpleVector : public Vector<T> {
+class DenseVector : public Vector<T> {
 protected:
    int preserveVec;
    T* v;
    std::vector<T> test;
 
 public:
-   explicit SimpleVector(int nx = 0);
-   SimpleVector(T* v, int nx);
-   SimpleVector(const SimpleVector<T>& other);
+   explicit DenseVector(int nx = 0);
+   DenseVector(T* v, int nx);
+   DenseVector(const DenseVector<T>& other);
    //@{
    /**
     * Access the individual elements of this vector.
@@ -50,7 +50,7 @@ public:
    Vector<T>* clone_full() const override;
 
    // this virtual AND override need to stay - Intel's icpc has a bug in its compiler triggering warnings if either is deleted...
-   virtual ~SimpleVector() override;
+   virtual ~DenseVector() override;
 
    void copyIntoArray(T v[]) const override;
    void copyFromArray(const T v[]) override;
@@ -146,15 +146,15 @@ public:
    T* elements() const { return v; };
 
    void appendToFront(unsigned int n_to_add, const T& value);
-   void appendToFront(const SimpleVector<T>& other);
+   void appendToFront(const DenseVector<T>& other);
 
    void appendToBack(unsigned int n_to_add, const T& value);
-   void appendToBack(const SimpleVector<T>& other);
+   void appendToBack(const DenseVector<T>& other);
 
    void jointCopyFrom(const Vector<T>& vx, const Vector<T>& vy, const Vector<T>& vz) override;
    void jointCopyTo(Vector<T>& vx, Vector<T>& vy, Vector<T>& vz) const override;
 
-   virtual SimpleVector<T>* shaveBorder(int n_shave, bool shave_top);
+   virtual DenseVector<T>* shaveBorder(int n_shave, bool shave_top);
 
    [[nodiscard]] double barrier_directional_derivative(const Vector<T>& x, const Vector<T>& bound, const Vector<T>& bound_indicator) const override;
    [[nodiscard]] double barrier_directional_derivative(const Vector<T>& x, double bound, const Vector<T>& bound_indicator) const override;

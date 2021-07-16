@@ -413,12 +413,12 @@ std::vector<double> PIPSIPMppInterface::gatherDualResids() {
 }
 
 std::vector<double> PIPSIPMppInterface::getFirstStagePrimalColSolution() const {
-   auto const& v = dynamic_cast<const SimpleVector<double>&>(*dynamic_cast<DistributedVector<double> const&>(*variables->primals).first);
+   auto const& v = dynamic_cast<const DenseVector<double>&>(*dynamic_cast<DistributedVector<double> const&>(*variables->primals).first);
    return std::vector<double>(&v[0], &v[0] + v.length());
 }
 
 std::vector<double> PIPSIPMppInterface::getSecondStagePrimalColSolution(int scen) const {
-   auto const& v = dynamic_cast<const SimpleVector<double>&>(*dynamic_cast<DistributedVector<double> const&>(*variables->primals).children[scen]->first);
+   auto const& v = dynamic_cast<const DenseVector<double>&>(*dynamic_cast<DistributedVector<double> const&>(*variables->primals).children[scen]->first);
    if (!v.length())
       return std::vector<double>(); //this vector is not on this processor
    else

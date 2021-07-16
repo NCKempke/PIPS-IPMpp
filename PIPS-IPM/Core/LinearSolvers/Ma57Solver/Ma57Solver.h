@@ -6,7 +6,7 @@
 #define MA57LINSYS_H
 
 #include "../DoubleLinearSolver.h"
-#include "../../LinearAlgebra/Dense/SimpleVector.hpp"
+#include "../../LinearAlgebra/Dense/DenseVector.hpp"
 #include "../../LinearAlgebra/Sparse/SparseSymmetricMatrix.h"
 #include "../../LinearAlgebra/Dense/DenseMatrix.h"
 

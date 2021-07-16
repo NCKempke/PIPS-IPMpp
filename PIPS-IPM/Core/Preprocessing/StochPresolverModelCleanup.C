@@ -134,7 +134,7 @@ int StochPresolverModelCleanup::removeRedundantRows(SystemType system_type, int 
 
    int n_removed_rows = 0;
 
-   const SimpleVector<int>& nnzs = !linking ? *currNnzRow : *currNnzRowLink;
+   const DenseVector<int>& nnzs = !linking ? *currNnzRow : *currNnzRowLink;
 
    for (int row_index = 0; row_index < nnzs.length(); ++row_index) {
 
@@ -253,11 +253,11 @@ int StochPresolverModelCleanup::removeTinyInnerLoop(SystemType system_type, int 
 
    const SparseStorageDynamic* mat = nullptr;
 
-   const SimpleVector<double>* x_lower = nullptr;
-   const SimpleVector<double>* x_lower_idx = nullptr;
-   const SimpleVector<double>* x_upper = nullptr;
-   const SimpleVector<double>* x_upper_idx = nullptr;
-   const SimpleVector<int>* nnzRow = nullptr;
+   const DenseVector<double>* x_lower = nullptr;
+   const DenseVector<double>* x_lower_idx = nullptr;
+   const DenseVector<double>* x_upper = nullptr;
+   const DenseVector<double>* x_upper_idx = nullptr;
+   const DenseVector<int>* nnzRow = nullptr;
 
    /* set matrix */
    if (block_type == B_MAT) {
@@ -376,12 +376,12 @@ int StochPresolverModelCleanup::fixEmptyColumns() {
 
       updatePointersForCurrentNode(node, EQUALITY_SYSTEM);
 
-      const SimpleVector<double>& g = (node == -1) ? *currgParent : *currgChild;
-      const SimpleVector<double>& ixupp = (node == -1) ? *currIxuppParent : *currIxuppChild;
-      const SimpleVector<double>& ixlow = (node == -1) ? *currIxlowParent : *currIxlowChild;
-      const SimpleVector<double>& xupp = (node == -1) ? *currxuppParent : *currxuppChild;
-      const SimpleVector<double>& xlow = (node == -1) ? *currxlowParent : *currxlowChild;
-      const SimpleVector<int>& nnzs_col = (node == -1) ? *currNnzColParent : *currNnzColChild;
+      const DenseVector<double>& g = (node == -1) ? *currgParent : *currgChild;
+      const DenseVector<double>& ixupp = (node == -1) ? *currIxuppParent : *currIxuppChild;
+      const DenseVector<double>& ixlow = (node == -1) ? *currIxlowParent : *currIxlowChild;
+      const DenseVector<double>& xupp = (node == -1) ? *currxuppParent : *currxuppChild;
+      const DenseVector<double>& xlow = (node == -1) ? *currxlowParent : *currxlowChild;
+      const DenseVector<int>& nnzs_col = (node == -1) ? *currNnzColParent : *currNnzColChild;
 
       for (int col_index = 0; col_index < nnzs_col.length(); ++col_index) {
          const INDEX col(COL, node, col_index);

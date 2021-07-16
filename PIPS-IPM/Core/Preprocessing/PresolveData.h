@@ -46,9 +46,9 @@ private:
 
    /* size of non-zero changes array = #linking rows A + #linking rows C + # linking variables */
    std::vector<int> array_nnz_chgs;
-   std::unique_ptr<SimpleVector<int>> nnzs_row_A_chgs{};
-   std::unique_ptr<SimpleVector<int>> nnzs_row_C_chgs{};
-   std::unique_ptr<SimpleVector<int>> nnzs_col_chgs{};
+   std::unique_ptr<DenseVector<int>> nnzs_row_A_chgs{};
+   std::unique_ptr<DenseVector<int>> nnzs_row_C_chgs{};
+   std::unique_ptr<DenseVector<int>> nnzs_col_chgs{};
 
    /* In the constructor all unbounded entries will be counted.
     * Unbounded entries mean variables with non-zero multiplier that are unbounded in either upper or lower direction.
@@ -70,21 +70,21 @@ private:
 
    /// changes in boundedness and activities of linking rows get stored and synchronized
    std::vector<double> array_act_chgs;
-   std::unique_ptr<SimpleVector<double>> actmax_eq_chgs{};
-   std::unique_ptr<SimpleVector<double>> actmin_eq_chgs{};
-   std::unique_ptr<SimpleVector<double>> actmax_ineq_chgs{};
-   std::unique_ptr<SimpleVector<double>> actmin_ineq_chgs{};
+   std::unique_ptr<DenseVector<double>> actmax_eq_chgs{};
+   std::unique_ptr<DenseVector<double>> actmin_eq_chgs{};
+   std::unique_ptr<DenseVector<double>> actmax_ineq_chgs{};
+   std::unique_ptr<DenseVector<double>> actmin_ineq_chgs{};
 
    std::vector<int> array_act_unbounded_chgs;
-   std::unique_ptr<SimpleVector<int>> actmax_eq_ubndd_chgs{};
-   std::unique_ptr<SimpleVector<int>> actmin_eq_ubndd_chgs{};
-   std::unique_ptr<SimpleVector<int>> actmax_ineq_ubndd_chgs{};
-   std::unique_ptr<SimpleVector<int>> actmin_ineq_ubndd_chgs{};
+   std::unique_ptr<DenseVector<int>> actmax_eq_ubndd_chgs{};
+   std::unique_ptr<DenseVector<int>> actmin_eq_ubndd_chgs{};
+   std::unique_ptr<DenseVector<int>> actmax_ineq_ubndd_chgs{};
+   std::unique_ptr<DenseVector<int>> actmin_ineq_ubndd_chgs{};
 
    /* handling changes in bounds */
    std::vector<double> array_bound_chgs;
-   std::unique_ptr<SimpleVector<double>> bound_chgs_A{};
-   std::unique_ptr<SimpleVector<double>> bound_chgs_C{};
+   std::unique_ptr<DenseVector<double>> bound_chgs_A{};
+   std::unique_ptr<DenseVector<double>> bound_chgs_C{};
 
    /* storing so far found singleton rows and columns */
    std::queue<INDEX> singleton_rows;
@@ -109,7 +109,7 @@ private:
    // objective offset created by presolving
    double objOffset{0.0};
    double obj_offset_chgs{0.0};
-   std::unique_ptr<SimpleVector<double>> objective_vec_chgs{};
+   std::unique_ptr<DenseVector<double>> objective_vec_chgs{};
 
    // store free variables which bounds are only implied by bound tightening to remove bounds later again
    std::unique_ptr<DistributedVector<int>> lower_bound_implied_by_system{};
@@ -275,11 +275,11 @@ private:
    void setUndefinedVarboundsTo(double value);
    void setUndefinedRowboundsTo(double value);
 
-   static void addActivityOfBlock(const SparseStorageDynamic& matrix, SimpleVector<double>& min_partact, SimpleVector<int>& unbounded_min,
-         SimpleVector<double>& max_partact, SimpleVector<int>& unbounded_max, const SimpleVector<double>& xlow, const SimpleVector<double>& ixlow,
-         const SimpleVector<double>& xupp, const SimpleVector<double>& ixupp) ;
+   static void addActivityOfBlock(const SparseStorageDynamic& matrix, DenseVector<double>& min_partact, DenseVector<int>& unbounded_min,
+         DenseVector<double>& max_partact, DenseVector<int>& unbounded_max, const DenseVector<double>& xlow, const DenseVector<double>& ixlow,
+         const DenseVector<double>& xupp, const DenseVector<double>& ixupp) ;
 
-   long resetOriginallyFreeVarsBounds(const SimpleVector<double>& ixlow_orig, const SimpleVector<double>& ixupp_orig, int node);
+   long resetOriginallyFreeVarsBounds(const DenseVector<double>& ixlow_orig, const DenseVector<double>& ixupp_orig, int node);
 
    void adjustMatrixRhsLhsBy(const INDEX& row, double value, bool at_root);
    /// methods for modifying the problem
@@ -334,7 +334,7 @@ private:
    void append_bounds_inequalities_to_equalities_transformation(int node, bool linking, int n_slack_variables);
    void append_new_slacks_to_objective_vector(int node, int n_new_slack_variables);
    void extend_q_matrix_by_new_variables(int node, int n_variables);
-   void adjust_nonzeros_after_inequalities_to_equalities_transformation(int node, bool linking, const SimpleVector<int>& nonzero_pattern_slacks);
+   void adjust_nonzeros_after_inequalities_to_equalities_transformation(int node, bool linking, const DenseVector<int>& nonzero_pattern_slacks);
    void transform_matrices_inequalities_into_equalities(int node, int n_new_slack_variables, const std::vector<int>& diagonal_for_identity);
    void transform_linking_matrices_inequalities_into_equalities(int n_new_slack_variables, const std::vector<int>& diagonal_for_identity);
    void extend_linking_variable_child_matrices_by(int n_new_slack_variables);
@@ -346,8 +346,8 @@ public:
    [[nodiscard]] int countEmptyRowsBDmat() const;
 
 private:
-   void writeMatrixRowToStreamDense(std::ostream& out, const SparseMatrix& mat, int node, int row, const SimpleVector<double>& ixupp,
-         const SimpleVector<double>& xupp, const SimpleVector<double>& ixlow, const SimpleVector<double>& xlow) const;
+   void writeMatrixRowToStreamDense(std::ostream& out, const SparseMatrix& mat, int node, int row, const DenseVector<double>& ixupp,
+         const DenseVector<double>& xupp, const DenseVector<double>& ixlow, const DenseVector<double>& xlow) const;
    void printVarBoundStatistics(std::ostream& out) const;
 };
 

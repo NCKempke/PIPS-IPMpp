@@ -192,8 +192,8 @@ int StochColumnStorage::storeLocalCol(const INDEX& col, const DistributedMatrix&
    return Bi_index;
 }
 
-void StochColumnStorage::axpyAtCol(double beta, DistributedVector<double>* eq_vec, DistributedVector<double>* ineq_vec, SimpleVector<double>* eq_link,
-      SimpleVector<double>* ineq_link, double alpha, const INDEX& col) const {
+void StochColumnStorage::axpyAtCol(double beta, DistributedVector<double>* eq_vec, DistributedVector<double>* ineq_vec, DenseVector<double>* eq_link,
+      DenseVector<double>* ineq_link, double alpha, const INDEX& col) const {
    assert(col.isCol());
 
    if (!PIPSisEQ(1.0, beta)) {
@@ -210,7 +210,7 @@ void StochColumnStorage::axpyAtCol(double beta, DistributedVector<double>* eq_ve
       axpyAtCol(*ineq_vec, ineq_link, alpha, col, INEQUALITY_SYSTEM);
 }
 
-void StochColumnStorage::axpyAtCol(DistributedVector<double>& vec, SimpleVector<double>* vec_link, double alpha, const INDEX& col,
+void StochColumnStorage::axpyAtCol(DistributedVector<double>& vec, DenseVector<double>* vec_link, double alpha, const INDEX& col,
       SystemType system_type) const {
    assert(col.isCol());
    assert(!vec.isKindOf(kStochDummy));
@@ -220,12 +220,12 @@ void StochColumnStorage::axpyAtCol(DistributedVector<double>& vec, SimpleVector<
 
    if (col.isLinkingCol()) {
       /* B0 */
-      SimpleVector<double>& b0_vec = getSimpleVecFromRowStochVec(vec, -1, false);
+      DenseVector<double>& b0_vec = getSimpleVecFromRowStochVec(vec, -1, false);
       B0_mat.axpyWithRowAt(alpha, b0_vec, col.getIndex());
 
       /* Bl0 */
       const SparseMatrix& Bl0_mat = *getSparseGenMatrixFromStochMat(mat, -1, BL_MAT);
-      SimpleVector<double>& bl0_vec = (vec_link == nullptr) ? getSimpleVecFromRowStochVec(vec, -1, true) : *vec_link;
+      DenseVector<double>& bl0_vec = (vec_link == nullptr) ? getSimpleVecFromRowStochVec(vec, -1, true) : *vec_link;
       Bl0_mat.axpyWithRowAt(alpha, bl0_vec, col.getIndex());
 
       /* Amats */
@@ -234,7 +234,7 @@ void StochColumnStorage::axpyAtCol(DistributedVector<double>& vec, SimpleVector<
             assert(!mat.children[node]->is_a(kStochGenDummyMatrix));
 
             const SparseMatrix& A_mat = *getSparseGenMatrixFromStochMat(mat, node, BL_MAT);
-            SimpleVector<double>& a_vec = getSimpleVecFromRowStochVec(vec, node, false);
+            DenseVector<double>& a_vec = getSimpleVecFromRowStochVec(vec, node, false);
 
             A_mat.axpyWithRowAt(alpha, a_vec, col.getIndex());
          }
@@ -244,10 +244,10 @@ void StochColumnStorage::axpyAtCol(DistributedVector<double>& vec, SimpleVector<
       assert(!mat.children[col.getNode()]->is_a(kStochGenDummyMatrix));
 
       const SparseMatrix& Bi_mat = *getSparseGenMatrixFromStochMat(mat, col.getNode(), B_MAT);
-      SimpleVector<double>& bi_vec = getSimpleVecFromRowStochVec(vec, col.getNode(), false);
+      DenseVector<double>& bi_vec = getSimpleVecFromRowStochVec(vec, col.getNode(), false);
 
       const SparseMatrix& Bli_mat = *getSparseGenMatrixFromStochMat(mat, col.getNode(), A_MAT);
-      SimpleVector<double>& bli_vec = (vec_link == nullptr) ? getSimpleVecFromRowStochVec(vec, -1, true) : *vec_link;
+      DenseVector<double>& bli_vec = (vec_link == nullptr) ? getSimpleVecFromRowStochVec(vec, -1, true) : *vec_link;
 
       Bi_mat.axpyWithRowAt(alpha, bi_vec, col.getIndex());
       Bli_mat.axpyWithRowAt(alpha, bli_vec, col.getIndex());
@@ -316,13 +316,13 @@ double StochColumnStorage::multiplyLinkingColTimesVecWithoutRootNode(int col, co
          const SparseMatrix& A_mat = *getSparseGenMatrixFromStochMat(*stored_cols_eq, node, BL_MAT);
          assert(vec_eq.children[node]->first);
 
-         const SimpleVector<double>& a_vec = getSimpleVecFromRowStochVec(vec_eq, node, false);
+         const DenseVector<double>& a_vec = getSimpleVecFromRowStochVec(vec_eq, node, false);
          res += A_mat.localRowTimesVec(a_vec, col);
 
          const SparseMatrix& C_mat = *getSparseGenMatrixFromStochMat(*stored_cols_ineq, node, BL_MAT);
          assert(vec_ineq.children[node]->first);
 
-         const SimpleVector<double>& c_vec = getSimpleVecFromRowStochVec(vec_ineq, node, false);
+         const DenseVector<double>& c_vec = getSimpleVecFromRowStochVec(vec_ineq, node, false);
          res += C_mat.localRowTimesVec(c_vec, col);
       }
    }

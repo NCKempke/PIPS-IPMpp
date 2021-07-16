@@ -19,7 +19,7 @@ sLinsysRootBordered::sLinsysRootBordered(const DistributedFactory& factory_, Dis
    }
 }
 
-void sLinsysRootBordered::computeSchurCompRightHandSide(const DistributedVector<double>& rhs_inner, SimpleVector<double>& b0) {
+void sLinsysRootBordered::computeSchurCompRightHandSide(const DistributedVector<double>& rhs_inner, DenseVector<double>& b0) {
    if (!sol_inner)
       sol_inner.reset(dynamic_cast<DistributedVector<double>*>(rhs_inner.clone_full()));
    else
@@ -40,7 +40,7 @@ void sLinsysRootBordered::computeSchurCompRightHandSide(const DistributedVector<
    PIPS_MPIsumArrayInPlace(b0.elements(), b0.length(), mpiComm);
 }
 
-void sLinsysRootBordered::computeInnerSystemRightHandSide(DistributedVector<double>& rhs_inner, const SimpleVector<double>& b0, bool) {
+void sLinsysRootBordered::computeInnerSystemRightHandSide(DistributedVector<double>& rhs_inner, const DenseVector<double>& b0, bool) {
    BorderLinsys border(*dynamic_cast<const BorderedSymmetricMatrix&>(*data->hessian).border_vertical, *dynamic_cast<const BorderedMatrix&>(*data->equality_jacobian).border_left,
          *dynamic_cast<const BorderedMatrix&>(*data->inequality_jacobian).border_left, 0, *dynamic_cast<const BorderedMatrix&>(*data->equality_jacobian).border_bottom,
          *dynamic_cast<const BorderedMatrix&>(*data->inequality_jacobian).border_bottom);
@@ -64,7 +64,7 @@ void sLinsysRootBordered::Lsolve(Vector<double>& x) {
 
    assert(xs.first);
    assert(!xs.last);
-   auto& b0 = dynamic_cast<SimpleVector<double>&>(*xs.first);
+   auto& b0 = dynamic_cast<DenseVector<double>&>(*xs.first);
 
    computeSchurCompRightHandSide(b, b0);
 }
@@ -78,7 +78,7 @@ void sLinsysRootBordered::Dsolve(Vector<double>& x) {
    assert(xs.children.size() == 1);
    assert(data->children.size() == 1);
    assert(xs.first);
-   auto& b0 = dynamic_cast<SimpleVector<double>&>(*xs.first);
+   auto& b0 = dynamic_cast<DenseVector<double>&>(*xs.first);
 
    solver->solve(b0);
 }
@@ -94,7 +94,7 @@ void sLinsysRootBordered::Ltsolve(Vector<double>& x) {
    DistributedVector<double>& b = *dynamic_cast<DistributedVector<double>&>(x).children[0];
 
    assert(xs.first);
-   auto& b0 = dynamic_cast<SimpleVector<double>&>(*xs.first);
+   auto& b0 = dynamic_cast<DenseVector<double>&>(*xs.first);
 
    computeInnerSystemRightHandSide(b, b0, false);
 

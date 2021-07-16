@@ -9,7 +9,7 @@
 #include "DenseStorage.h"
 #include "SparseStorage.h"
 #include "Vector.hpp"
-#include "SimpleVector.hpp"
+#include "DenseVector.hpp"
 
 int DenseStorageInstances = 0;
 
@@ -19,7 +19,7 @@ void DenseStorage::fromGetDiagonal(int idiag, Vector<double>& vec) const {
    assert(idiag + extent <= n);
    assert(idiag + extent <= m);
 
-   auto& sv = (SimpleVector<double>&) vec;
+   auto& sv = (DenseVector<double>&) vec;
 
    for (int k = idiag; k < idiag + extent; k++) {
       sv[k] = M[k][k];
@@ -37,7 +37,7 @@ void DenseStorage::setToDiagonal(const Vector<double>& vec) {
    assert(extent <= n);
    assert(extent <= m);
 
-   auto& sv = (SimpleVector<double>&) vec;
+   auto& sv = (DenseVector<double>&) vec;
    for (int i = 0; i < m; i++) {
       for (int k = 0; k < n; k++) {
          M[i][k] = 0.0;
@@ -194,7 +194,7 @@ void DenseStorage::putZeros() {
 void DenseStorage::sum_transform_rows(Vector<double>& result_, const std::function<double(const double&)>& transform) const {
    assert(result_.length() == this->n_rows());
 
-   auto& result = dynamic_cast<SimpleVector<double>&>(result_);
+   auto& result = dynamic_cast<DenseVector<double>&>(result_);
 
    auto accumulate = [&transform] (const double& sum, const double& other) {
       return sum + transform(other);
@@ -208,7 +208,7 @@ void DenseStorage::sum_transform_rows(Vector<double>& result_, const std::functi
 void DenseStorage::sum_transform_columns(Vector<double>& result_, const std::function<double(const double&)>& transform) const {
    assert(result_.length() == this->n_columns());
 
-   auto& result = dynamic_cast<SimpleVector<double>&>(result_);
+   auto& result = dynamic_cast<DenseVector<double>&>(result_);
 
    for (int i = 0; i < m; ++i) {
       for (int j = 0; j < n; ++j) {
@@ -260,12 +260,12 @@ void DenseStorage::addToDiagonalAt(double alpha, double x[], int incx, int idiag
 
 
 void DenseStorage::atPutDiagonal(int idiag, const Vector<double>& vvec) {
-   const auto& v = dynamic_cast<const SimpleVector<double>&>(vvec);
+   const auto& v = dynamic_cast<const DenseVector<double>&>(vvec);
    atPutDiagonal(idiag, &v[0], 1, v.length());
 }
 
 void DenseStorage::atAddDiagonal(int idiag, const Vector<double>& vvec) {
-   const auto& v = dynamic_cast<const SimpleVector<double>&>(vvec);
+   const auto& v = dynamic_cast<const DenseVector<double>&>(vvec);
    atAddDiagonal(idiag, &v[0], 1, v.length());
 }
 
@@ -356,7 +356,7 @@ int DenseStorage::non_zeros() const {
 }
 
 void DenseStorage::columnScale(const Vector<double>& scale_in) {
-   const auto& scale = dynamic_cast<const SimpleVector<double>&>(scale_in);
+   const auto& scale = dynamic_cast<const DenseVector<double>&>(scale_in);
 
    assert(scale.length() == n);
 
@@ -374,7 +374,7 @@ void DenseStorage::scalarMult(double num) {
 }
 
 void DenseStorage::rowScale(const Vector<double>& scale_in) {
-   const auto& scale = dynamic_cast<const SimpleVector<double>&>(scale_in);
+   const auto& scale = dynamic_cast<const DenseVector<double>&>(scale_in);
 
    assert(scale.length() == m);
 
@@ -385,7 +385,7 @@ void DenseStorage::rowScale(const Vector<double>& scale_in) {
 }
 
 void DenseStorage::symmetricScale(const Vector<double>& scale_in) {
-   const auto& scale = dynamic_cast<const SimpleVector<double>&>(scale_in);
+   const auto& scale = dynamic_cast<const DenseVector<double>&>(scale_in);
 
    assert(scale.length() == n);
    assert(scale.length() == m);

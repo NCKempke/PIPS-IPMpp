@@ -145,7 +145,7 @@ bool StochPresolverSingletonColumns::removeSingletonColumn(const INDEX& col) {
    assert(!presolve_data.nodeIsDummy(col.getNode()));
 
    updatePointersForCurrentNode(col.getNode(), EQUALITY_SYSTEM);
-   const SimpleVector<int>& nnzs_col = col.isLinkingCol() ? *currNnzColParent : *currNnzColChild;
+   const DenseVector<int>& nnzs_col = col.isLinkingCol() ? *currNnzColParent : *currNnzColChild;
 
    if (nnzs_col[col.getIndex()] == 0 || presolve_data.wasColumnRemoved(col))
       return false;

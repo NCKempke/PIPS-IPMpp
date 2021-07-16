@@ -31,7 +31,7 @@ private:
    void countRowsBlock(int& n_rows_total, int& n_rows_empty, int& n_rows_onesided, int& n_rows_boxed, int& n_rows_fixed, int& n_rows_singleton,
          SystemType system_type, BlockType block_type) const;
    void countBoxedColumns(int& n_cols_total, int& n_cols_empty, int& n_cols_free, int& n_cols_onesided, int& n_cols_boxed, int& n_cols_singleton,
-         int& n_cols_orig_free, int& n_cols_orig_free_removed, const SimpleVector<double>& ixlow_orig, const SimpleVector<double>& ixupp_orig,
+         int& n_cols_orig_free, int& n_cols_orig_free_removed, const DenseVector<double>& ixlow_orig, const DenseVector<double>& ixupp_orig,
          bool at_root_node) const;
 
    void setPointersMatrices(const GeneralMatrix& mat, int node);
@@ -67,34 +67,34 @@ protected:
    const SparseStorageDynamic* currBlmat;
    const SparseStorageDynamic* currBlmatTrans;
 
-   const SimpleVector<double>* currxlowParent;
-   const SimpleVector<double>* currIxlowParent;
-   const SimpleVector<double>* currxuppParent;
-   const SimpleVector<double>* currIxuppParent;
-   const SimpleVector<double>* currxlowChild;
-   const SimpleVector<double>* currIxlowChild;
-   const SimpleVector<double>* currxuppChild;
-   const SimpleVector<double>* currIxuppChild;
+   const DenseVector<double>* currxlowParent;
+   const DenseVector<double>* currIxlowParent;
+   const DenseVector<double>* currxuppParent;
+   const DenseVector<double>* currIxuppParent;
+   const DenseVector<double>* currxlowChild;
+   const DenseVector<double>* currIxlowChild;
+   const DenseVector<double>* currxuppChild;
+   const DenseVector<double>* currIxuppChild;
 
-   const SimpleVector<double>* currEqRhs;
-   const SimpleVector<double>* currIneqLhs;
-   const SimpleVector<double>* currIclow;
-   const SimpleVector<double>* currIneqRhs;
-   const SimpleVector<double>* currIcupp;
-   const SimpleVector<double>* currEqRhsLink;
-   const SimpleVector<double>* currIneqLhsLink;
-   const SimpleVector<double>* currIclowLink;
-   const SimpleVector<double>* currIneqRhsLink;
-   const SimpleVector<double>* currIcuppLink;
+   const DenseVector<double>* currEqRhs;
+   const DenseVector<double>* currIneqLhs;
+   const DenseVector<double>* currIclow;
+   const DenseVector<double>* currIneqRhs;
+   const DenseVector<double>* currIcupp;
+   const DenseVector<double>* currEqRhsLink;
+   const DenseVector<double>* currIneqLhsLink;
+   const DenseVector<double>* currIclowLink;
+   const DenseVector<double>* currIneqRhsLink;
+   const DenseVector<double>* currIcuppLink;
 
-   const SimpleVector<double>* currgParent;
-   const SimpleVector<double>* currgChild;
+   const DenseVector<double>* currgParent;
+   const DenseVector<double>* currgChild;
 
-   const SimpleVector<int>* currNnzRow;
-   const SimpleVector<int>* currNnzRowLink;
+   const DenseVector<int>* currNnzRow;
+   const DenseVector<int>* currNnzRowLink;
 
-   const SimpleVector<int>* currNnzColParent;
-   const SimpleVector<int>* currNnzColChild;
+   const DenseVector<int>* currNnzColParent;
+   const DenseVector<int>* currNnzColChild;
 
    /** the number of children */
    int nChildren;

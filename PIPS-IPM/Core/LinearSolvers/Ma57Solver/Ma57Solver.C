@@ -127,10 +127,10 @@ void Ma57Solver::solve(Vector<double>& rhs_in) {
    int* info_loc = info.data() + my_id * 40;
    double* rinfo_loc = rinfo.data() + my_id * 20;
 
-   SimpleVector<double> x_loc(x.data() + my_id * n, n);
-   SimpleVector<double> resid_loc(resid.data() + my_id * n, n);
+   DenseVector<double> x_loc(x.data() + my_id * n, n);
+   DenseVector<double> resid_loc(resid.data() + my_id * n, n);
 
-   auto& rhs = dynamic_cast<SimpleVector<double>&>(rhs_in);
+   auto& rhs = dynamic_cast<DenseVector<double>&>(rhs_in);
 
    /* job = 0 -> solve + calculate residual + no iterative refinement */
    int job = 0;
@@ -195,7 +195,7 @@ void Ma57Solver::solve(int solveType, Vector<double>& rhs_in) {
       int job = solveType;
       int one_rhs = 1;
 
-      auto& rhs = dynamic_cast<SimpleVector<double>&>(rhs_in);
+      auto& rhs = dynamic_cast<DenseVector<double>&>(rhs_in);
 
       double* drhs = rhs.elements();
 
@@ -217,7 +217,7 @@ void Ma57Solver::solve(int nrhss, double* rhss, int*) {
 #pragma omp parallel for schedule(dynamic, 1) num_threads(n_threads)
    /* the multiple rhs (macd) option in MA57 does not allow for iterative refinement */
    for (int i = 0; i < nrhss; i++) {
-      SimpleVector<double> v(rhss + i * n, n);
+      DenseVector<double> v(rhss + i * n, n);
 
       if (v.isZero())
          continue;

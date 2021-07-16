@@ -6,7 +6,7 @@
  */
 #include "Mc30Scaler.h"
 
-#include "../LinearAlgebra/Dense/SimpleVector.hpp"
+#include "../LinearAlgebra/Dense/DenseVector.hpp"
 
 #include <algorithm>
 
@@ -64,7 +64,7 @@ void Mc30Scaler::scaleMatrixTripletFormat(int n, int nnz, double* M, const int* 
 }
 
 void Mc30Scaler::scaleVector(Vector<double>& vec_in) const {
-   SimpleVector<double>& vec = dynamic_cast<SimpleVector<double>&>(vec_in);
+   DenseVector<double>& vec = dynamic_cast<DenseVector<double>&>(vec_in);
    assert(static_cast<size_t>(vec.length()) == scaling_factors.size());
 
    for (size_t i = 0; i < scaling_factors.size(); ++i)
@@ -72,7 +72,7 @@ void Mc30Scaler::scaleVector(Vector<double>& vec_in) const {
 }
 
 void Mc30Scaler::unscaleVector(Vector<double>& vec_in) const {
-   SimpleVector<double>& vec = dynamic_cast<SimpleVector<double>&>(vec_in);
+   DenseVector<double>& vec = dynamic_cast<DenseVector<double>&>(vec_in);
    assert(static_cast<size_t>(vec.length()) == scaling_factors.size());
 
    for (size_t i = 0; i < scaling_factors.size(); ++i)

@@ -20,13 +20,13 @@ public:
    void Dsolve(Vector<double>& x) override;
    void Ltsolve(Vector<double>& v) override;
 
-   void computeInnerSystemRightHandSide(DistributedVector<double>& rhs_inner, const SimpleVector<double>& x0, bool) override;
+   void computeInnerSystemRightHandSide(DistributedVector<double>& rhs_inner, const DenseVector<double>& x0, bool) override;
 protected:
    void assembleLocalKKT() override;
 
    DoubleLinearSolver* createSolver(const SymmetricMatrix* kktmat);
 private:
-   void computeSchurCompRightHandSide(const DistributedVector<double>& rhs_inner, SimpleVector<double>& b0);
+   void computeSchurCompRightHandSide(const DistributedVector<double>& rhs_inner, DenseVector<double>& b0);
 
 };
 

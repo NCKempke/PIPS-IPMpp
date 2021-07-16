@@ -2,7 +2,7 @@
 #define DISTRIBUTEDVECTOR_H
 
 #include "Vector.hpp"
-#include "SimpleVector.hpp"
+#include "DenseVector.hpp"
 #include "mpi.h"
 #include <vector>
 #include <memory>
@@ -148,7 +148,7 @@ public:
    void move_first_to_parent();
    virtual DistributedVector<T>* raiseBorder(int n_first_to_shave, int n_last_to_shave);
    virtual void collapseFromHierarchical(const DistributedProblem& data_hier, const DistributedTree& tree_hier, VectorType type, bool empty_vec = false);
-   virtual void appendHierarchicalToThis(SimpleVector<T>* new_vec, SimpleVector<T>* new_vecl, std::vector<std::shared_ptr<DistributedVector<T>>>& new_children,
+   virtual void appendHierarchicalToThis(DenseVector<T>* new_vec, DenseVector<T>* new_vecl, std::vector<std::shared_ptr<DistributedVector<T>>>& new_children,
          const DistributedTree& tree_hier, const DistributedProblem& data_hier, VectorType type, bool empty_vec);
 
    [[nodiscard]] virtual Vector<T>* getLinkingVecNotHierarchicalTop() const;
@@ -280,7 +280,7 @@ public:
       return nullptr;
    };
 
-   void appendHierarchicalToThis(SimpleVector<T>* new_vec, SimpleVector<T>* new_vecl, std::vector<std::shared_ptr<DistributedVector<T>>>& new_children,
+   void appendHierarchicalToThis(DenseVector<T>* new_vec, DenseVector<T>* new_vecl, std::vector<std::shared_ptr<DistributedVector<T>>>& new_children,
          const DistributedTree& tree_hier, const DistributedProblem& data_hier, VectorType type, bool empty_vec) override;
 
    Vector<T>* getLinkingVecNotHierarchicalTop() const override {

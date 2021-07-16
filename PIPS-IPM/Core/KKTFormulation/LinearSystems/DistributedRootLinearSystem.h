@@ -64,7 +64,7 @@ public:
 
    virtual void finalizeKKTdist() { assert("not implemented here \n" && 0); };
 
-   void Ltsolve2(DistributedVector<double>& x, SimpleVector<double>& xp, bool) override;
+   void Ltsolve2(DistributedVector<double>& x, DenseVector<double>& xp, bool) override;
 
    /* compute (Br0 - sum_j Br_mod_border) - buffer */
    virtual void
@@ -192,7 +192,7 @@ private:
 
 #ifdef STOCH_TESTING
    protected:
-    static void dumpRhs(int proc, const char* nameToken,  SimpleVector<double>& rhs);
+    static void dumpRhs(int proc, const char* nameToken,  DenseVector<double>& rhs);
     static void dumpMatrix(int scen, int proc, const char* nameToken, DenseSymmetricMatrix& M);
 #endif
 #ifdef TIMING

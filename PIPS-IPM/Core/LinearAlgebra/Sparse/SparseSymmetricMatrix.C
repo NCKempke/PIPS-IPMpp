@@ -7,7 +7,7 @@
 #include "SparseStorage.h"
 #include <cassert>
 #include <cmath>
-#include "SimpleVector.hpp"
+#include "DenseVector.hpp"
 #include "DoubleMatrixTypes.h"
 
 int SparseSymmetricMatrix::is_a(int type) const {
@@ -135,8 +135,8 @@ long long SparseSymmetricMatrix::n_columns() const {
 void SparseSymmetricMatrix::mult(double beta, Vector<double>& y_in, double alpha, const Vector<double>& x_in) const {
    assert(x_in.length() == mStorage->n && y_in.length() == mStorage->m);
 
-   const auto& x = dynamic_cast<const SimpleVector<double>&>(x_in);
-   auto& y = dynamic_cast<SimpleVector<double>&>(y_in);
+   const auto& x = dynamic_cast<const DenseVector<double>&>(x_in);
+   auto& y = dynamic_cast<DenseVector<double>&>(y_in);
 
    mStorage->multSym(beta, y.elements(), alpha, x.elements());
 
@@ -146,8 +146,8 @@ void
 SparseSymmetricMatrix::transpose_mult(double beta, Vector<double>& y_in, double alpha, const Vector<double>& x_in) const {
    assert(x_in.length() == mStorage->n && y_in.length() == mStorage->m);
 
-   const auto& x = dynamic_cast<const SimpleVector<double>&>(x_in);
-   auto& y = dynamic_cast<SimpleVector<double>&>(y_in);
+   const auto& x = dynamic_cast<const DenseVector<double>&>(x_in);
+   auto& y = dynamic_cast<DenseVector<double>&>(y_in);
 
    mStorage->multSym(beta, y.elements(), alpha, x.elements());
 }
@@ -216,7 +216,7 @@ void SparseSymmetricMatrix::reduceToLower() {
 }
 
 void SparseSymmetricMatrix::deleteEmptyRowsCols(const Vector<int>& nnzVec) {
-   const auto& vec = dynamic_cast<const SimpleVector<int>&>(nnzVec);
+   const auto& vec = dynamic_cast<const DenseVector<int>&>(nnzVec);
 #ifndef NDEBUG
    const auto[m, n] = mStorage->n_rows_columns();
    assert(nnzVec.length() == m);

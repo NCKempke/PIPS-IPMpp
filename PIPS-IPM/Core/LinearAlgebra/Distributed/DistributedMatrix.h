@@ -203,10 +203,10 @@ public:
    [[nodiscard]] virtual double localRowTimesVec(const DistributedVector<double>& vec, int child, int row, bool linking) const;
 
    /* y += alpha * RowAt(child, row, linking) */
-   virtual void axpyWithRowAt(double alpha, DistributedVector<double>* y, SimpleVector<double>* y_linking, int child, int row, bool linking) const;
+   virtual void axpyWithRowAt(double alpha, DistributedVector<double>* y, DenseVector<double>* y_linking, int child, int row, bool linking) const;
    virtual void
-   axpyWithRowAtPosNeg(double alpha, DistributedVector<double>* y_pos, SimpleVector<double>* y_link_pos, DistributedVector<double>* y_neg,
-         SimpleVector<double>* y_link_neg, int child, int row, bool linking) const;
+   axpyWithRowAtPosNeg(double alpha, DistributedVector<double>* y_pos, DenseVector<double>* y_link_pos, DistributedVector<double>* y_neg,
+         DenseVector<double>* y_link_neg, int child, int row, bool linking) const;
 
    [[nodiscard]] virtual std::unique_ptr<BorderedMatrix> raiseBorder(int m_conss, int n_vars);
 
@@ -366,8 +366,8 @@ public:
       return -1;
    };
 
-   void axpyWithRowAt(double, DistributedVector<double>*, SimpleVector<double>*, int, int, bool) const override {};
-   void axpyWithRowAtPosNeg(double, DistributedVector<double>*, SimpleVector<double>*, DistributedVector<double>*, SimpleVector<double>*, int, int,
+   void axpyWithRowAt(double, DistributedVector<double>*, DenseVector<double>*, int, int, bool) const override {};
+   void axpyWithRowAtPosNeg(double, DistributedVector<double>*, DenseVector<double>*, DistributedVector<double>*, DenseVector<double>*, int, int,
          bool) const override {};
 
    [[nodiscard]] std::unique_ptr<BorderedMatrix> raiseBorder(int, int) override {

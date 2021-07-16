@@ -7,7 +7,7 @@
 #include "DistributedSymmetricMatrix.h"
 #include "DistributedMatrix.h"
 #include "DistributedVector.h"
-#include "SimpleVector.hpp"
+#include "DenseVector.hpp"
 #include <cmath>
 #include <algorithm>    // std::swap
 #include <numeric>
@@ -164,11 +164,11 @@ DistributedTreeCallbacks::initPresolvedData(const DistributedSymmetricMatrix& Q,
    assert(A.children.size() == children.size());
    assert(C.children.size() == children.size());
 
-   const auto& nxVecSimple = dynamic_cast<const SimpleVector<double>&>(*nxVec.first);
-   const auto& myVecSimple = dynamic_cast<const SimpleVector<double>&>(*myVec.first);
-   const auto& mzVecSimple = dynamic_cast<const SimpleVector<double>&>(*mzVec.first);
-   const auto* const myVecSimpleLink = dynamic_cast<const SimpleVector<double>*>(myVec.last.get());
-   const auto* const mzVecSimpleLink = dynamic_cast<const SimpleVector<double>*>(mzVec.last.get());
+   const auto& nxVecSimple = dynamic_cast<const DenseVector<double>&>(*nxVec.first);
+   const auto& myVecSimple = dynamic_cast<const DenseVector<double>&>(*myVec.first);
+   const auto& mzVecSimple = dynamic_cast<const DenseVector<double>&>(*mzVec.first);
+   const auto* const myVecSimpleLink = dynamic_cast<const DenseVector<double>*>(myVec.last.get());
+   const auto* const mzVecSimpleLink = dynamic_cast<const DenseVector<double>*>(mzVec.last.get());
 
    N_INACTIVE = nxVecSimple.length();
    MY_INACTIVE = myVecSimple.length();
@@ -633,8 +633,8 @@ std::unique_ptr<DistributedVector<double>> DistributedTreeCallbacks::createVecto
    std::unique_ptr<DistributedVector<double>> svec = std::make_unique<DistributedVector<double>>(data->*n_vec, nlinking, commWrkrs);
 
    assert(svec->first);
-   double* elems = dynamic_cast<SimpleVector<double>&>(*svec->first).elements();
-   double* elems_link = (nlinking != -1) ? dynamic_cast<SimpleVector<double>&>(*svec->last).elements() : nullptr;
+   double* elems = dynamic_cast<DenseVector<double>&>(*svec->first).elements();
+   double* elems_link = (nlinking != -1) ? dynamic_cast<DenseVector<double>&>(*svec->last).elements() : nullptr;
 
    (data->*vec)(data->user_data, data->id, elems, data->*n_vec);
 

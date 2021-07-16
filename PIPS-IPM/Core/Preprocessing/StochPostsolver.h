@@ -174,24 +174,24 @@ private:
    /* local changes in linking variables */
    bool& outdated_linking_vars;
    std::vector<double> array_linking_var_changes;
-   std::unique_ptr<SimpleVector<double>> x_changes{};
-   std::unique_ptr<SimpleVector<double>> v_changes{};
-   std::unique_ptr<SimpleVector<double>> w_changes{};
-   std::unique_ptr<SimpleVector<double>> gamma_changes{};
-   std::unique_ptr<SimpleVector<double>> phi_changes{};
+   std::unique_ptr<DenseVector<double>> x_changes{};
+   std::unique_ptr<DenseVector<double>> v_changes{};
+   std::unique_ptr<DenseVector<double>> w_changes{};
+   std::unique_ptr<DenseVector<double>> gamma_changes{};
+   std::unique_ptr<DenseVector<double>> phi_changes{};
 
    /* local changes in equality linking rows */
    bool& outdated_equality_linking_rows;
    std::vector<double> array_eq_linking_row_changes;
-   std::unique_ptr<SimpleVector<double>> y_changes{};
+   std::unique_ptr<DenseVector<double>> y_changes{};
 
    /* local changes in inequality rows */
    bool& outdated_inequality_linking_rows;
    std::vector<double> array_ineq_linking_row_changes;
-   std::unique_ptr<SimpleVector<double>> z_changes{};
-   std::unique_ptr<SimpleVector<double>> s_changes{};
-   std::unique_ptr<SimpleVector<double>> t_changes{};
-   std::unique_ptr<SimpleVector<double>> u_changes{};
+   std::unique_ptr<DenseVector<double>> z_changes{};
+   std::unique_ptr<DenseVector<double>> s_changes{};
+   std::unique_ptr<DenseVector<double>> t_changes{};
+   std::unique_ptr<DenseVector<double>> u_changes{};
 
    void finishNotify();
 
@@ -224,27 +224,27 @@ private:
    [[nodiscard]] bool complementarySlackRowMet(const DistributedVariables& vars, const INDEX& row, double tol) const;
 
    [[nodiscard]] bool sameNonZeroPatternDistributed(const DistributedVector<double>& svec) const; // TODO: move
-   static bool sameNonZeroPatternDistributed(const SimpleVector<double>& vec) ; // TODO: move
+   static bool sameNonZeroPatternDistributed(const DenseVector<double>& vec) ; // TODO: move
 
    template<typename T>
    void setOriginalValuesFromReduced(DistributedVector<T>& original_vector, const DistributedVector<T>& reduced_vector,
          const DistributedVector<int>& padding_original) const;
 
    template<typename T>
-   void setOriginalValuesFromReduced(SimpleVector<T>& original_vector, const SimpleVector<T>& reduced_vector,
-         const SimpleVector<int>& padding_original) const;
+   void setOriginalValuesFromReduced(DenseVector<T>& original_vector, const DenseVector<T>& reduced_vector,
+         const DenseVector<int>& padding_original) const;
 
    template<typename T>
    void set_original_ineq_eq_tranformed_values_from_reduced(DistributedVector<T>& original_first, DistributedVector<T>& original_last,
       const DistributedVector<T>& reduced, const DistributedVector<int>& padding_original_first, const DistributedVector<int>& padding_original_last, bool mixed_row_column) const;
 
    template<typename T>
-   void set_original_ineq_eq_tranformed_values_from_reduced(SimpleVector<T>& original_first, SimpleVector<T>& original_last,
-      const SimpleVector<T>& reduced, const SimpleVector<int>& padding_original_first, const SimpleVector<int>& padding_original_last) const;
+   void set_original_ineq_eq_tranformed_values_from_reduced(DenseVector<T>& original_first, DenseVector<T>& original_last,
+      const DenseVector<T>& reduced, const DenseVector<int>& padding_original_first, const DenseVector<int>& padding_original_last) const;
 
    template<typename T>
-   void set_original_ineq_eq_tranformed_values_from_reduced(SimpleVector<T>& original_first, SimpleVector<T>& original_second, SimpleVector<T>& original_third,
-      const SimpleVector<T>& reduced, const SimpleVector<int>& padding_original_first, const SimpleVector<int>& padding_original_second, const SimpleVector<int>& padding_original_third) const;
+   void set_original_ineq_eq_tranformed_values_from_reduced(DenseVector<T>& original_first, DenseVector<T>& original_second, DenseVector<T>& original_third,
+      const DenseVector<T>& reduced, const DenseVector<int>& padding_original_first, const DenseVector<int>& padding_original_second, const DenseVector<int>& padding_original_third) const;
 
 };
 

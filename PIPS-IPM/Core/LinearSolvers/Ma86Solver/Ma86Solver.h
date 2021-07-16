@@ -9,7 +9,7 @@
 #include "DoubleLinearSolver.h"
 #include "Vector.hpp"
 #include "SparseStorage.h"
-#include "SimpleVector.hpp"
+#include "DenseVector.hpp"
 
 
 #ifndef FNAME
@@ -137,7 +137,7 @@ public:
    virtual void diagonalChanged(int idiag, int extent);
    virtual void matrixChanged();
    virtual void solve(Vector<double>& rhs);
-   virtual void solve(SimpleVector<double>& rhs);
+   virtual void solve(DenseVector<double>& rhs);
    virtual void solve(GenMatrix& rhs);
 
    virtual ~Ma86Solver();

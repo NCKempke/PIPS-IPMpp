@@ -1,5 +1,5 @@
 #include "CGSolver.h"
-#include "SimpleVector.hpp"
+#include "DenseVector.hpp"
 
 extern int print_level;
 
@@ -14,7 +14,7 @@ CGSolver::CGSolver(MatTimesVec* A, MatTimesVec* M1, MatTimesVec* M2) : DoubleIte
 };
 
 void CGSolver::solve(Vector<double>& rhs_) {
-   auto& b = dynamic_cast<SimpleVector<double>&>(rhs_);
+   auto& b = dynamic_cast<DenseVector<double>&>(rhs_);
    int n = b.length();
 
    int flag, imin;
@@ -35,12 +35,12 @@ void CGSolver::solve(Vector<double>& rhs_) {
       tmpVec6.resize(n);
    }
 
-   SimpleVector<double> x(tmpVec1.data(), n);      //iterate
-   SimpleVector<double> r(tmpVec2.data(), n);      //residual
-   SimpleVector<double> xmin(tmpVec3.data(), n);   //minimal residual iterate
-   SimpleVector<double> y(tmpVec4.data(), n);      //work vectors
-   SimpleVector<double> z(tmpVec5.data(), n);      //work vectors
-   SimpleVector<double> p(tmpVec6.data(), n);
+   DenseVector<double> x(tmpVec1.data(), n);      //iterate
+   DenseVector<double> r(tmpVec2.data(), n);      //residual
+   DenseVector<double> xmin(tmpVec3.data(), n);   //minimal residual iterate
+   DenseVector<double> y(tmpVec4.data(), n);      //work vectors
+   DenseVector<double> z(tmpVec5.data(), n);      //work vectors
+   DenseVector<double> p(tmpVec6.data(), n);
    //if(firstSolve)
    //  //initial guess is 0, the previous found solution otherwise
    x.setToZero();
@@ -97,7 +97,7 @@ void CGSolver::solve(Vector<double>& rhs_) {
          p.add(1.0, z); // p=z + beta*p
       }
 
-      SimpleVector<double>& q = y;
+      DenseVector<double>& q = y;
       applyA(0.0, q, 1.0, p); //q=A*p
       pq = p.dotProductWith(q);
       if (pq <= 0) {

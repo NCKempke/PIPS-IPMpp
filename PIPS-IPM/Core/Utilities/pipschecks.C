@@ -6,7 +6,7 @@
  */
 
 #include "pipsdef.h"
-#include "SimpleVector.hpp"
+#include "DenseVector.hpp"
 #include <cmath>
 #include <vector>
 #include <cassert>
@@ -42,8 +42,8 @@ bool submatrix_is_ordered(const int* rowptr, const int* colidx, int rowstart, in
    return true;
 }
 
-void compute_fortran_CSR_matrix_residual_norms(const int* rowptr, const int* colidx, const double* vals, const SimpleVector<double>& rhs,
-      const SimpleVector<double>& x, double& res_norm2, double& res_nrmInf, double& sol_inf, double& mat_max) {
+void compute_fortran_CSR_matrix_residual_norms(const int* rowptr, const int* colidx, const double* vals, const DenseVector<double>& rhs,
+      const DenseVector<double>& x, double& res_norm2, double& res_nrmInf, double& sol_inf, double& mat_max) {
    const int dim = rhs.length();
    double* tmp_resid = new double[dim];
    memcpy(tmp_resid, rhs.elements(), dim * sizeof(double));

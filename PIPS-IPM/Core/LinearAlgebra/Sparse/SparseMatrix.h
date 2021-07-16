@@ -8,7 +8,7 @@
 #include "../Abstract/Vector.hpp"
 #include "../Abstract/AbstractMatrix.h"
 
-#include "../Dense/SimpleVector.hpp"
+#include "../Dense/DenseVector.hpp"
 
 #include "SparseStorage.h"
 #include "SparseStorageDynamic.h"
@@ -245,9 +245,9 @@ public:
    int appendRow(const SparseMatrix& matrix_row, int row);
    int appendCol(const SparseMatrix& matrix_col, int col);
 
-   double localRowTimesVec(const SimpleVector<double>& vec, int row) const;
-   void axpyWithRowAt(double alpha, SimpleVector<double>& y, int row) const;
-   void axpyWithRowAtPosNeg(double alpha, SimpleVector<double>& y_pos, SimpleVector<double>& y_neg, int row) const;
+   double localRowTimesVec(const DenseVector<double>& vec, int row) const;
+   void axpyWithRowAt(double alpha, DenseVector<double>& y, int row) const;
+   void axpyWithRowAtPosNeg(double alpha, DenseVector<double>& y_pos, DenseVector<double>& y_neg, int row) const;
 
    void removeRow(int row);
    void removeCol(int col);

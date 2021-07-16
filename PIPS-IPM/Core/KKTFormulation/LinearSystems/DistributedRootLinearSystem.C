@@ -695,7 +695,7 @@ void DistributedRootLinearSystem::LtsolveHierarchyBorder(AbstractMatrix& res, co
    }
 }
 
-void DistributedRootLinearSystem::Ltsolve2(DistributedVector<double>& x, SimpleVector<double>& x0, bool) {
+void DistributedRootLinearSystem::Ltsolve2(DistributedVector<double>& x, DenseVector<double>& x0, bool) {
    assert(false && "not in use");
    assert(pipsipmpp_options::get_bool_parameter("HIERARCHICAL"));
    assert(children.size() == x.children.size());
@@ -1750,7 +1750,7 @@ void sLinsysRoot::dumpMatrix(int scen, int proc, const char* nameToken, DenseSym
   fclose(file);
 }
 
-void sLinsysRoot::dumpRhs(int proc, const char* nameToken,  SimpleVector<double>& rhs)
+void sLinsysRoot::dumpRhs(int proc, const char* nameToken,  DenseVector<double>& rhs)
 {
   int n = rhs.length();
   char szNumber[30];

@@ -4,7 +4,7 @@
 
 #include "SparseStorage.h"
 #include "Vector.hpp"
-#include "SimpleVector.hpp"
+#include "DenseVector.hpp"
 #include "pipsdef.h"
 #include "sort.h"
 
@@ -75,7 +75,7 @@ int SparseStorage::n_columns() const {
 }
 
 void SparseStorage::fromGetDiagonal(int idiag, Vector<double>& vec_in) const {
-   auto& vec = dynamic_cast<SimpleVector<double>&>(vec_in);
+   auto& vec = dynamic_cast<DenseVector<double>&>(vec_in);
    int extent = vec.length();
 
    assert(idiag + extent <= m);
@@ -95,7 +95,7 @@ void SparseStorage::fromGetDiagonal(int idiag, Vector<double>& vec_in) const {
 }
 
 void SparseStorage::columnScale(const Vector<double>& scale_in) {
-   const auto& scale = dynamic_cast<const SimpleVector<double>&>(scale_in);
+   const auto& scale = dynamic_cast<const DenseVector<double>&>(scale_in);
    assert(scale.length() == n);
 
    for (int i = 0; i < m; ++i) {
@@ -107,7 +107,7 @@ void SparseStorage::columnScale(const Vector<double>& scale_in) {
 }
 
 void SparseStorage::rowScale(const Vector<double>& scale_in) {
-   const auto& scale = dynamic_cast<const SimpleVector<double>&>(scale_in);
+   const auto& scale = dynamic_cast<const DenseVector<double>&>(scale_in);
    assert(scale.length() == m);
 
    for (int i = 0; i < m; ++i) {
@@ -117,7 +117,7 @@ void SparseStorage::rowScale(const Vector<double>& scale_in) {
 }
 
 void SparseStorage::symmetricScale(const Vector<double>& scale_in) {
-   const auto& scale = dynamic_cast<const SimpleVector<double>&>(scale_in);
+   const auto& scale = dynamic_cast<const DenseVector<double>&>(scale_in);
 
    assert(scale.length() == n);
    assert(scale.length() == m);
@@ -142,7 +142,7 @@ void SparseStorage::getDiagonal(Vector<double>& vec_in) const {
 }
 
 void SparseStorage::setToDiagonal(const Vector<double>& vec_in) {
-   const auto& vec = dynamic_cast<const SimpleVector<double>&>(vec_in);
+   const auto& vec = dynamic_cast<const DenseVector<double>&>(vec_in);
    int diagExtent = std::min(m, n);
 
    assert(diagExtent == vec.length());
@@ -1051,12 +1051,12 @@ double SparseStorage::abminnormNonZero(double tol) const {
 }
 
 void SparseStorage::atPutDiagonal(int idiag, const Vector<double>& vvec) {
-   const auto& v = dynamic_cast<const SimpleVector<double>&>(vvec);
+   const auto& v = dynamic_cast<const DenseVector<double>&>(vvec);
    atPutDiagonal(idiag, &v[0], v.length());
 }
 
 void SparseStorage::atAddDiagonal(int idiag, const Vector<double>& vvec) {
-   const auto& v = dynamic_cast<const SimpleVector<double>&>(vvec);
+   const auto& v = dynamic_cast<const DenseVector<double>&>(vvec);
    atAddDiagonal(idiag, &v[0], v.length());
 }
 
@@ -1682,7 +1682,7 @@ void SparseStorage::addNnzPerRow(int* vec, int begin_rows, int end_rows) const {
 
 void SparseStorage::sum_transform_rows(Vector<double>& result_, const std::function<double(const double&)>& transform) const {
    assert(this->n_rows() == result_.length());
-   auto& result = dynamic_cast<SimpleVector<double>&>(result_);
+   auto& result = dynamic_cast<DenseVector<double>&>(result_);
 
    for (int r = 0; r < m; ++r) {
       const int row_end = krowM[r + 1];

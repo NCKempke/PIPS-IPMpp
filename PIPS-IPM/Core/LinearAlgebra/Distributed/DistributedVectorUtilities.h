@@ -8,63 +8,63 @@
 #define DISTRIBUTEDVECTORUTILITIES_H
 
 #include "DistributedVector.h"
-#include "SimpleVector.hpp"
+#include "DenseVector.hpp"
 
 #include <string>
 #include <iostream>
 #include <limits>
 // TODO : Hierarchical approach cannot use any of these...
 
-/* Utility functions to return for a given StochVectorBase<T> a certain SimpleVectorBase<T> 
+/* Utility functions to return for a given StochVectorBase<T> a certain DenseVectorBase<T>
  *	either from one of the children (node = 0, ..., nChildren - 1 )
  * or from the parent node = -1
  *
- * for the col first function SimpleVectorBase<T> first is returned
+ * for the col first function DenseVectorBase<T> first is returned
  *
- * for row first function either the associated SimpleVectorBase<T> first (linking = false) or last (linking = true) is returned
+ * for row first function either the associated DenseVectorBase<T> first (linking = false) or last (linking = true) is returned
  *
  * asserts existence of these vectors as well as the specified child
  */
 template<typename T>
-inline SimpleVector<T>& getSimpleVecFromStochVec(const DistributedVector<T>& stochvec, int node, bool linking) {
+inline DenseVector<T>& getSimpleVecFromStochVec(const DistributedVector<T>& stochvec, int node, bool linking) {
    assert(-1 <= node && node < static_cast<int>(stochvec.children.size()));
 
    if (node == -1) {
       if (linking) {
          assert(stochvec.last);
-         return dynamic_cast<SimpleVector<T>&>(*(stochvec.last));
+         return dynamic_cast<DenseVector<T>&>(*(stochvec.last));
       }
       else {
          assert(stochvec.first);
-         return dynamic_cast<SimpleVector<T>&>(*(stochvec.first));
+         return dynamic_cast<DenseVector<T>&>(*(stochvec.first));
       }
    }
    else {
       if (linking) {
          assert(stochvec.last);
-         return dynamic_cast<SimpleVector<T>&>(*(stochvec.last));
+         return dynamic_cast<DenseVector<T>&>(*(stochvec.last));
       }
       else {
          assert(stochvec.children[node]->first);
-         return dynamic_cast<SimpleVector<T>&>(*(stochvec.children[node]->first));
+         return dynamic_cast<DenseVector<T>&>(*(stochvec.children[node]->first));
       }
    }
 }
 
 template<typename T>
-inline SimpleVector<T>& getSimpleVecFromRowStochVec(const Vector<T>& ooqpvec, int node, bool linking) {
+inline DenseVector<T>& getSimpleVecFromRowStochVec(const Vector<T>& ooqpvec, int node, bool linking) {
    return getSimpleVecFromStochVec(dynamic_cast<const DistributedVector<T>&>(ooqpvec), node, linking);
 }
 
 template<typename T>
-inline SimpleVector<T>& getSimpleVecFromColStochVec(const Vector<T>& ooqpvec, int node) {
+inline DenseVector<T>& getSimpleVecFromColStochVec(const Vector<T>& ooqpvec, int node) {
    return getSimpleVecFromStochVec(dynamic_cast<const DistributedVector<T>&>(ooqpvec), node, false);
 }
 
 template<typename T>
 inline T& getSimpleVecFromRowStochVec(const Vector<T>& ooqpvec, const INDEX& row) {
    assert(row.isRow());
-   SimpleVector<T>& vec = getSimpleVecFromStochVec(dynamic_cast<const DistributedVector<T>&>(ooqpvec), row.getNode(), row.getLinking());
+   DenseVector<T>& vec = getSimpleVecFromStochVec(dynamic_cast<const DistributedVector<T>&>(ooqpvec), row.getNode(), row.getLinking());
    const int index = row.getIndex();
    assert(0 <= index && index < vec.length());
 
@@ -74,7 +74,7 @@ inline T& getSimpleVecFromRowStochVec(const Vector<T>& ooqpvec, const INDEX& row
 template<typename T>
 inline T& getSimpleVecFromColStochVec(const Vector<T>& ooqpvec, const INDEX& col) {
    assert(col.isCol());
-   SimpleVector<T>& vec = getSimpleVecFromStochVec(dynamic_cast<const DistributedVector<T>&>(ooqpvec), col.getNode(), false);
+   DenseVector<T>& vec = getSimpleVecFromStochVec(dynamic_cast<const DistributedVector<T>&>(ooqpvec), col.getNode(), false);
    const int index = col.getIndex();
    assert(0 <= index && index < vec.length());
 
@@ -113,8 +113,8 @@ inline DistributedVector<U>* cloneStochVector(const Vector<T>& ooqpvec) {
       return cloneStochVector<T, U>(dynamic_cast<const DistributedVector<T>&>(ooqpvec));
 }
 
-inline void writeLBltXltUBToStreamAllStringStream(std::stringstream& sout, const SimpleVector<double>& lb, const SimpleVector<double>& ixlow,
-      const SimpleVector<double>& ub, const SimpleVector<double>& ixupp) {
+inline void writeLBltXltUBToStreamAllStringStream(std::stringstream& sout, const DenseVector<double>& lb, const DenseVector<double>& ixlow,
+      const DenseVector<double>& ub, const DenseVector<double>& ixupp) {
    assert(lb.length() == ixlow.length());
    assert(lb.length() == ub.length());
    assert(lb.length() == ixupp.length());
@@ -146,9 +146,9 @@ writeLBltXltUBtoStringStreamDenseChild(std::stringstream& sout, const Distribute
    assert(ixlow.first);
    assert(ub.first);
    assert(ixupp.first);
-   writeLBltXltUBToStreamAllStringStream(sout, dynamic_cast<const SimpleVector<double>&>(*lb.first),
-         dynamic_cast<const SimpleVector<double>&>(*ixlow.first), dynamic_cast<const SimpleVector<double>&>(*ub.first),
-         dynamic_cast<const SimpleVector<double>&>(*ixupp.first));
+   writeLBltXltUBToStreamAllStringStream(sout, dynamic_cast<const DenseVector<double>&>(*lb.first),
+         dynamic_cast<const DenseVector<double>&>(*ixlow.first), dynamic_cast<const DenseVector<double>&>(*ub.first),
+         dynamic_cast<const DenseVector<double>&>(*ixupp.first));
 
 
    for (size_t it = 0; it < lb.children.size(); it++) {
@@ -161,9 +161,9 @@ writeLBltXltUBtoStringStreamDenseChild(std::stringstream& sout, const Distribute
       assert(ub.last);
       assert(ixupp.last);
       sout << "---" << std::endl;
-      writeLBltXltUBToStreamAllStringStream(sout, dynamic_cast<const SimpleVector<double>&>(*lb.last),
-            dynamic_cast<const SimpleVector<double>&>(*ixlow.last), dynamic_cast<const SimpleVector<double>&>(*ub.last),
-            dynamic_cast<const SimpleVector<double>&>(*ixupp.last));
+      writeLBltXltUBToStreamAllStringStream(sout, dynamic_cast<const DenseVector<double>&>(*lb.last),
+            dynamic_cast<const DenseVector<double>&>(*ixlow.last), dynamic_cast<const DenseVector<double>&>(*ub.last),
+            dynamic_cast<const DenseVector<double>&>(*ixupp.last));
    }
 }
 
@@ -194,9 +194,9 @@ inline void writeLBltXltUBtoStreamDense(std::ostream& out, const DistributedVect
       assert(ixlow.first);
       assert(ub.first);
       assert(ixupp.first);
-      writeLBltXltUBToStreamAllStringStream(sout, dynamic_cast<const SimpleVector<double>&>(*lb.first),
-            dynamic_cast<const SimpleVector<double>&>(*ixlow.first), dynamic_cast<const SimpleVector<double>&>(*ub.first),
-            dynamic_cast<const SimpleVector<double>&>(*ixupp.first));
+      writeLBltXltUBToStreamAllStringStream(sout, dynamic_cast<const DenseVector<double>&>(*lb.first),
+            dynamic_cast<const DenseVector<double>&>(*ixlow.first), dynamic_cast<const DenseVector<double>&>(*ub.first),
+            dynamic_cast<const DenseVector<double>&>(*ixupp.first));
 
       for (size_t it = 0; it < lb.children.size(); it++)
          writeLBltXltUBtoStringStreamDenseChild(sout, *lb.children[it], *ixlow.children[it], *ub.children[it], *ixupp.children[it]);
@@ -218,9 +218,9 @@ inline void writeLBltXltUBtoStreamDense(std::ostream& out, const DistributedVect
          assert(ub.last);
          assert(ixupp.last);
          sout << "---" << std::endl;
-         writeLBltXltUBToStreamAllStringStream(sout, dynamic_cast<const SimpleVector<double>&>(*lb.last),
-               dynamic_cast<const SimpleVector<double>&>(*ixlow.last), dynamic_cast<const SimpleVector<double>&>(*ub.last),
-               dynamic_cast<const SimpleVector<double>&>(*ixupp.last));
+         writeLBltXltUBToStreamAllStringStream(sout, dynamic_cast<const DenseVector<double>&>(*lb.last),
+               dynamic_cast<const DenseVector<double>&>(*ixlow.last), dynamic_cast<const DenseVector<double>&>(*ub.last),
+               dynamic_cast<const DenseVector<double>&>(*ixupp.last));
       }
       sout << "----" << std::endl;
       out << sout.str();

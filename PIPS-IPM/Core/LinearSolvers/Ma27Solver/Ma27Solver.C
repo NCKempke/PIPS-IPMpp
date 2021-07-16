@@ -123,7 +123,7 @@ void Ma27Solver::solve(int nrhss, double* rhss, int*) {
 
 #pragma omp parallel for schedule(dynamic, 1) num_threads(n_threads)
    for (int i = 0; i < nrhss; i++) {
-      SimpleVector<double> v(rhss + i * n, n);
+      DenseVector<double> v(rhss + i * n, n);
       solve(v);
       //solveIterRef(v); slower for some reason
    }
@@ -131,7 +131,7 @@ void Ma27Solver::solve(int nrhss, double* rhss, int*) {
 }
 
 void Ma27Solver::solve(Vector<double>& rhs_in) {
-   auto& rhs = dynamic_cast<SimpleVector<double>&>(rhs_in);
+   auto& rhs = dynamic_cast<DenseVector<double>&>(rhs_in);
 
 #ifndef NDEBUG
    for (int i = 0; i < rhs.length(); ++i)
@@ -140,7 +140,7 @@ void Ma27Solver::solve(Vector<double>& rhs_in) {
          break;
       }
 #endif
-//   SimpleVector<double>* rhs_cpy = dynamic_cast<SimpleVector<double>*>(rhs_in.clone_full());
+//   DenseVector<double>* rhs_cpy = dynamic_cast<DenseVector<double>*>(rhs_in.clone_full());
 
 //   /* sparsify rhs */
 //   for( int i = 0; i < rhs.length(); ++i )
@@ -149,11 +149,11 @@ void Ma27Solver::solve(Vector<double>& rhs_in) {
    const int my_id = omp_get_thread_num();
 
    // define structures to save rhs and store residuals
-   SimpleVector<double> iter_loc = SimpleVector<double>(iter.data() + my_id * n, n);
+   DenseVector<double> iter_loc = DenseVector<double>(iter.data() + my_id * n, n);
    iter_loc.setToZero();
-   SimpleVector<double> best_iter_loc = SimpleVector<double>(iter_best.data() + my_id * n, n);
+   DenseVector<double> best_iter_loc = DenseVector<double>(iter_best.data() + my_id * n, n);
    best_iter_loc.setToZero();
-   SimpleVector<double> residual_loc = SimpleVector<double>(resid.data() + my_id * n, n);
+   DenseVector<double> residual_loc = DenseVector<double>(resid.data() + my_id * n, n);
    residual_loc.copyFrom(rhs);
 
    double best_resid = std::numeric_limits<double>::infinity();

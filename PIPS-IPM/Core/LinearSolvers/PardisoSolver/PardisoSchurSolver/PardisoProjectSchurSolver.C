@@ -25,7 +25,7 @@ PardisoProjectSchurSolver::PardisoProjectSchurSolver(const SparseSymmetricMatrix
 }
 
 void PardisoProjectSchurSolver::solve(Vector<double>& rhs_in) {
-   auto& rhs = dynamic_cast<SimpleVector<double>&>(rhs_in);
+   auto& rhs = dynamic_cast<DenseVector<double>&>(rhs_in);
 
    int error = 0;
    assert(iparmUnchanged());

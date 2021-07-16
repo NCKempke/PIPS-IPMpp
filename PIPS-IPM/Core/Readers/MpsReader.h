@@ -5,7 +5,7 @@
 #ifndef MPSREADER
 #define MPSREADER
 
-#include "SimpleVector.hpp"
+#include "DenseVector.hpp"
 #include "Vector.hpp"
 #include <cstdio>
 #include "hash.h"
@@ -142,10 +142,10 @@ protected:
    virtual void readColsSection(double c[], int irowA[], int jcolA[], double dA[], int irowC[], int jcolC[], double dC[], char line[62], int& iErr,
          int& return_getline);
    virtual void
-   readRHSSection(Vector<double>& b, SimpleVector<double>& clow, Vector<double>& iclow, SimpleVector<double>& cupp, Vector<double>& icupp,
+   readRHSSection(Vector<double>& b, DenseVector<double>& clow, Vector<double>& iclow, DenseVector<double>& cupp, Vector<double>& icupp,
          char line[], int& ierr, int& kindOfLine);
    virtual void readRHSSection(double b[], double clow[], char iclow[], double cupp[], char icupp[], char line[], int& ierr, int& kindOfLine);
-   virtual void readRangesSection(SimpleVector<double>& clow, SimpleVector<double>& cupp, char line[], int& ierr, int& kindOfLine);
+   virtual void readRangesSection(DenseVector<double>& clow, DenseVector<double>& cupp, char line[], int& ierr, int& kindOfLine);
    virtual void readRangesSection(double clow[], double cupp[], char line[], int& ierr, int& kindOfLine);
    virtual void readBoundsSection(Vector<double>& xlow, Vector<double>& ixlow, Vector<double>& xupp, Vector<double>& ixupp, char line[], int& ierr,
          int& kindOfLine);

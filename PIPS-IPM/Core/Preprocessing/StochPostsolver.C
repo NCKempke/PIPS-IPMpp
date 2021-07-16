@@ -51,31 +51,31 @@ StochPostsolver::StochPostsolver(const DistributedProblem& original_problem) : P
    const int length_array_linking_var_changes = 5 * n_linking_vars;
    array_linking_var_changes.resize(length_array_linking_var_changes, 0.0);
 
-   x_changes = std::make_unique<SimpleVector<double>>(array_linking_var_changes.data(), n_linking_vars);
-   v_changes = std::make_unique<SimpleVector<double>>(array_linking_var_changes.data() + n_linking_vars,
+   x_changes = std::make_unique<DenseVector<double>>(array_linking_var_changes.data(), n_linking_vars);
+   v_changes = std::make_unique<DenseVector<double>>(array_linking_var_changes.data() + n_linking_vars,
       n_linking_vars);
-   w_changes = std::make_unique<SimpleVector<double>>(array_linking_var_changes.data() + 2 * n_linking_vars,
+   w_changes = std::make_unique<DenseVector<double>>(array_linking_var_changes.data() + 2 * n_linking_vars,
       n_linking_vars);
-   gamma_changes = std::make_unique<SimpleVector<double>>(array_linking_var_changes.data() + 3 * n_linking_vars,
+   gamma_changes = std::make_unique<DenseVector<double>>(array_linking_var_changes.data() + 3 * n_linking_vars,
       n_linking_vars);
-   phi_changes = std::make_unique<SimpleVector<double>>(array_linking_var_changes.data() + 4 * n_linking_vars,
+   phi_changes = std::make_unique<DenseVector<double>>(array_linking_var_changes.data() + 4 * n_linking_vars,
       n_linking_vars);
 
    const int length_array_eq_linking_row_changes = n_linking_A;
    array_eq_linking_row_changes.resize(length_array_eq_linking_row_changes, 0.0);
 
-   y_changes = std::make_unique<SimpleVector<double>>(array_eq_linking_row_changes.data(), n_linking_A);
+   y_changes = std::make_unique<DenseVector<double>>(array_eq_linking_row_changes.data(), n_linking_A);
 
    assert(4.0 * n_linking_C < std::numeric_limits<int>::max());
 
    const int length_array_ineq_linking_row_changes = 4 * n_linking_C;
    array_ineq_linking_row_changes.resize(length_array_ineq_linking_row_changes, 0.0);
 
-   z_changes = std::make_unique<SimpleVector<double>>(array_ineq_linking_row_changes.data(), n_linking_C);
-   s_changes = std::make_unique<SimpleVector<double>>(array_ineq_linking_row_changes.data() + n_linking_C, n_linking_C);
-   t_changes = std::make_unique<SimpleVector<double>>(array_ineq_linking_row_changes.data() + 2 * n_linking_C,
+   z_changes = std::make_unique<DenseVector<double>>(array_ineq_linking_row_changes.data(), n_linking_C);
+   s_changes = std::make_unique<DenseVector<double>>(array_ineq_linking_row_changes.data() + n_linking_C, n_linking_C);
+   t_changes = std::make_unique<DenseVector<double>>(array_ineq_linking_row_changes.data() + 2 * n_linking_C,
       n_linking_C);
-   u_changes = std::make_unique<SimpleVector<double>>(array_ineq_linking_row_changes.data() + 3 * n_linking_C,
+   u_changes = std::make_unique<DenseVector<double>>(array_ineq_linking_row_changes.data() + 3 * n_linking_C,
       n_linking_C);
 
    padding_origcol->setToConstant(1);
@@ -2438,14 +2438,14 @@ bool StochPostsolver::syncLinkingVarChanges(DistributedVariables& original_vars)
       return true;
 
    PIPS_MPIsumArrayInPlace(array_linking_var_changes);
-   PIPS_MPImaxArrayInPlace(dynamic_cast<SimpleVector<int>&>(*padding_origcol->first).elements(),
+   PIPS_MPImaxArrayInPlace(dynamic_cast<DenseVector<int>&>(*padding_origcol->first).elements(),
       padding_origcol->first->length());
 
-   auto& linking_x = dynamic_cast<SimpleVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*original_vars.primals).first);
-   auto& linking_v = dynamic_cast<SimpleVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*original_vars.primal_lower_bound_gap).first);
-   auto& linking_w = dynamic_cast<SimpleVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*original_vars.primal_upper_bound_gap).first);
-   auto& linking_gamma = dynamic_cast<SimpleVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*original_vars.primal_lower_bound_gap_dual).first);
-   auto& linking_phi = dynamic_cast<SimpleVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*original_vars.primal_upper_bound_gap_dual).first);
+   auto& linking_x = dynamic_cast<DenseVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*original_vars.primals).first);
+   auto& linking_v = dynamic_cast<DenseVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*original_vars.primal_lower_bound_gap).first);
+   auto& linking_w = dynamic_cast<DenseVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*original_vars.primal_upper_bound_gap).first);
+   auto& linking_gamma = dynamic_cast<DenseVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*original_vars.primal_lower_bound_gap_dual).first);
+   auto& linking_phi = dynamic_cast<DenseVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*original_vars.primal_upper_bound_gap_dual).first);
 
    for (int i = 0; i < linking_x.length(); ++i) {
       if (wasColumnRemoved(INDEX(COL, -1, i)))
@@ -2492,10 +2492,10 @@ bool StochPostsolver::syncEqLinkingRowChanges(DistributedVariables& original_var
       return true;
 
    PIPS_MPIsumArrayInPlace(array_eq_linking_row_changes);
-   PIPS_MPImaxArrayInPlace(dynamic_cast<SimpleVector<int>&>(*padding_origrow_equality->last).elements(),
+   PIPS_MPImaxArrayInPlace(dynamic_cast<DenseVector<int>&>(*padding_origrow_equality->last).elements(),
       padding_origrow_equality->last->length());
 
-   auto& linking_y = dynamic_cast<SimpleVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*original_vars.equality_duals).last);
+   auto& linking_y = dynamic_cast<DenseVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*original_vars.equality_duals).last);
 
    for (int i = 0; i < linking_y.length(); ++i) {
       if (wasRowRemoved(INDEX(ROW, -1, i, true, EQUALITY_SYSTEM)))
@@ -2529,16 +2529,16 @@ bool StochPostsolver::syncIneqLinkingRowChanges(DistributedVariables& original_v
       return true;
 
    PIPS_MPIsumArrayInPlace(array_ineq_linking_row_changes);
-   PIPS_MPImaxArrayInPlace(dynamic_cast<SimpleVector<int>&>(*padding_origrow_inequality->last).elements(),
+   PIPS_MPImaxArrayInPlace(dynamic_cast<DenseVector<int>&>(*padding_origrow_inequality->last).elements(),
       padding_origrow_inequality->last->length());
 
-   auto& linking_z = dynamic_cast<SimpleVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*original_vars.inequality_duals).last);
-   auto& linking_lambda = dynamic_cast<SimpleVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*original_vars.slack_lower_bound_gap_dual).last);
-   auto& linking_pi = dynamic_cast<SimpleVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*original_vars.slack_upper_bound_gap_dual).last);
+   auto& linking_z = dynamic_cast<DenseVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*original_vars.inequality_duals).last);
+   auto& linking_lambda = dynamic_cast<DenseVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*original_vars.slack_lower_bound_gap_dual).last);
+   auto& linking_pi = dynamic_cast<DenseVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*original_vars.slack_upper_bound_gap_dual).last);
 
-   auto& linking_s = dynamic_cast<SimpleVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*original_vars.slacks).last);
-   auto& linking_t = dynamic_cast<SimpleVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*original_vars.slack_lower_bound_gap).last);
-   auto& linking_u = dynamic_cast<SimpleVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*original_vars.slack_upper_bound_gap).last);
+   auto& linking_s = dynamic_cast<DenseVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*original_vars.slacks).last);
+   auto& linking_t = dynamic_cast<DenseVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*original_vars.slack_lower_bound_gap).last);
+   auto& linking_u = dynamic_cast<DenseVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*original_vars.slack_upper_bound_gap).last);
 
    for (int i = 0; i < linking_z.length(); ++i) {
       if (wasRowRemoved(INDEX(ROW, -1, i, true, INEQUALITY_SYSTEM)))
@@ -2711,17 +2711,17 @@ void StochPostsolver::addIneqRowDual(double& z, double& lambda, double& pi, doub
 bool StochPostsolver::sameNonZeroPatternDistributed(const DistributedVector<double>& vec) const {
    assert(vec.first);
 
-   if (!sameNonZeroPatternDistributed(dynamic_cast<const SimpleVector<double>&>(*vec.first)))
+   if (!sameNonZeroPatternDistributed(dynamic_cast<const DenseVector<double>&>(*vec.first)))
       return false;
 
    if (vec.last) {
-      if (!sameNonZeroPatternDistributed(dynamic_cast<const SimpleVector<double>&>(*vec.last)))
+      if (!sameNonZeroPatternDistributed(dynamic_cast<const DenseVector<double>&>(*vec.last)))
          return false;
    }
    return true;
 }
 
-bool StochPostsolver::sameNonZeroPatternDistributed(const SimpleVector<double>& vec) {
+bool StochPostsolver::sameNonZeroPatternDistributed(const DenseVector<double>& vec) {
    std::vector<double> v(vec.elements(), vec.elements() + vec.length());
 
    bool result = true;
@@ -3094,38 +3094,38 @@ void StochPostsolver::set_original_ineq_eq_tranformed_values_from_reduced(Distri
 
    if (mixed_row_column) {
       /* first and last of original second vector */
-      set_original_ineq_eq_tranformed_values_from_reduced(dynamic_cast<SimpleVector<T>&>(*original_first.first),
-         dynamic_cast<SimpleVector<T>&>(*original_last.first),
-         dynamic_cast<SimpleVector<T>&>(*original_last.last),
-         dynamic_cast<const SimpleVector<T>&>(*reduced.first),
-         dynamic_cast<const SimpleVector<int>&>(*padding_original_first.first),
-         dynamic_cast<const SimpleVector<int>&>(*padding_original_last.first),
-         dynamic_cast<const SimpleVector<int>&>(*padding_original_last.last));
+      set_original_ineq_eq_tranformed_values_from_reduced(dynamic_cast<DenseVector<T>&>(*original_first.first),
+         dynamic_cast<DenseVector<T>&>(*original_last.first),
+         dynamic_cast<DenseVector<T>&>(*original_last.last),
+         dynamic_cast<const DenseVector<T>&>(*reduced.first),
+         dynamic_cast<const DenseVector<int>&>(*padding_original_first.first),
+         dynamic_cast<const DenseVector<int>&>(*padding_original_last.first),
+         dynamic_cast<const DenseVector<int>&>(*padding_original_last.last));
    } else {
       /* root node */
       /* first */
-      set_original_ineq_eq_tranformed_values_from_reduced(dynamic_cast<SimpleVector<T>&>(*original_first.first),
-         dynamic_cast<SimpleVector<T>&>(*original_last.first),
-         dynamic_cast<const SimpleVector<T>&>(*reduced.first),
-         dynamic_cast<const SimpleVector<int>&>(*padding_original_first.first),
-         dynamic_cast<const SimpleVector<int>&>(*padding_original_last.first));
+      set_original_ineq_eq_tranformed_values_from_reduced(dynamic_cast<DenseVector<T>&>(*original_first.first),
+         dynamic_cast<DenseVector<T>&>(*original_last.first),
+         dynamic_cast<const DenseVector<T>&>(*reduced.first),
+         dynamic_cast<const DenseVector<int>&>(*padding_original_first.first),
+         dynamic_cast<const DenseVector<int>&>(*padding_original_last.first));
    }
 
    /* last */
    if (reduced.last) {
       if (original_first.last && original_last.last) {
-         set_original_ineq_eq_tranformed_values_from_reduced(dynamic_cast<SimpleVector<T>&>(*original_first.last),
-            dynamic_cast<SimpleVector<T>&>(*original_last.last),
-            dynamic_cast<const SimpleVector<T>&>(*reduced.last),
-            dynamic_cast<const SimpleVector<int>&>(*padding_original_first.last),
-            dynamic_cast<const SimpleVector<int>&>(*padding_original_last.last));
+         set_original_ineq_eq_tranformed_values_from_reduced(dynamic_cast<DenseVector<T>&>(*original_first.last),
+            dynamic_cast<DenseVector<T>&>(*original_last.last),
+            dynamic_cast<const DenseVector<T>&>(*reduced.last),
+            dynamic_cast<const DenseVector<int>&>(*padding_original_first.last),
+            dynamic_cast<const DenseVector<int>&>(*padding_original_last.last));
       } else {
          const bool first = original_first.last != nullptr;
-         setOriginalValuesFromReduced(first ? dynamic_cast<SimpleVector<T>&>(*original_first.last)
-               : dynamic_cast<SimpleVector<T>&>(*original_last.last),
-            dynamic_cast<const SimpleVector<T>&>(*reduced.last),
-            first ? dynamic_cast<const SimpleVector<int>&>(*padding_original_first.last) :
-               dynamic_cast<const SimpleVector<int>&>(*padding_original_last.last));
+         setOriginalValuesFromReduced(first ? dynamic_cast<DenseVector<T>&>(*original_first.last)
+               : dynamic_cast<DenseVector<T>&>(*original_last.last),
+            dynamic_cast<const DenseVector<T>&>(*reduced.last),
+            first ? dynamic_cast<const DenseVector<int>&>(*padding_original_first.last) :
+               dynamic_cast<const DenseVector<int>&>(*padding_original_last.last));
       }
    }
 
@@ -3138,10 +3138,10 @@ void StochPostsolver::set_original_ineq_eq_tranformed_values_from_reduced(Distri
 }
 
 template<typename T>
-void StochPostsolver::set_original_ineq_eq_tranformed_values_from_reduced(SimpleVector<T>& original_first,
-   SimpleVector<T>& original_last,
-   const SimpleVector<T>& reduced, const SimpleVector<int>& padding_original_first,
-   const SimpleVector<int>& padding_original_last) const {
+void StochPostsolver::set_original_ineq_eq_tranformed_values_from_reduced(DenseVector<T>& original_first,
+   DenseVector<T>& original_last,
+   const DenseVector<T>& reduced, const DenseVector<int>& padding_original_first,
+   const DenseVector<int>& padding_original_last) const {
    assert(original_first.length() == padding_original_first.length());
    assert(original_last.length() == padding_original_last.length());
 
@@ -3188,15 +3188,15 @@ void StochPostsolver::setOriginalValuesFromReduced(DistributedVector<T>& origina
 
    /* root node */
    /* first */
-   setOriginalValuesFromReduced(dynamic_cast<SimpleVector<T>&>(*original_vector.first),
-      dynamic_cast<const SimpleVector<T>&>(*reduced_vector.first),
-      dynamic_cast<const SimpleVector<int>&>(*padding_original.first));
+   setOriginalValuesFromReduced(dynamic_cast<DenseVector<T>&>(*original_vector.first),
+      dynamic_cast<const DenseVector<T>&>(*reduced_vector.first),
+      dynamic_cast<const DenseVector<int>&>(*padding_original.first));
 
    /* last */
    if (reduced_vector.last) {
-      setOriginalValuesFromReduced(dynamic_cast<SimpleVector<T>&>(*original_vector.last),
-         dynamic_cast<const SimpleVector<T>&>(*reduced_vector.last),
-         dynamic_cast<const SimpleVector<int>&>(*padding_original.last));
+      setOriginalValuesFromReduced(dynamic_cast<DenseVector<T>&>(*original_vector.last),
+         dynamic_cast<const DenseVector<T>&>(*reduced_vector.last),
+         dynamic_cast<const DenseVector<int>&>(*padding_original.last));
    }
 
    /* child nodes */
@@ -3208,8 +3208,8 @@ void StochPostsolver::setOriginalValuesFromReduced(DistributedVector<T>& origina
 
 template<typename T>
 void
-StochPostsolver::setOriginalValuesFromReduced(SimpleVector<T>& original_vector, const SimpleVector<T>& reduced_vector,
-   const SimpleVector<int>& padding_original) const {
+StochPostsolver::setOriginalValuesFromReduced(DenseVector<T>& original_vector, const DenseVector<T>& reduced_vector,
+   const DenseVector<int>& padding_original) const {
    assert(original_vector.length() == padding_original.length());
 
    int col_reduced = 0;
@@ -3229,8 +3229,8 @@ StochPostsolver::setOriginalValuesFromReduced(SimpleVector<T>& original_vector, 
 
 
 template<typename T>
-void StochPostsolver::set_original_ineq_eq_tranformed_values_from_reduced(SimpleVector<T>& original_first, SimpleVector<T>& original_second, SimpleVector<T>& original_third,
-   const SimpleVector<T>& reduced, const SimpleVector<int>& padding_original_first, const SimpleVector<int>& padding_original_second, const SimpleVector<int>& padding_original_third) const{
+void StochPostsolver::set_original_ineq_eq_tranformed_values_from_reduced(DenseVector<T>& original_first, DenseVector<T>& original_second, DenseVector<T>& original_third,
+   const DenseVector<T>& reduced, const DenseVector<int>& padding_original_first, const DenseVector<int>& padding_original_second, const DenseVector<int>& padding_original_third) const{
 
    assert(original_first.length() == padding_original_first.length());
    assert(original_second.length() == padding_original_second.length());

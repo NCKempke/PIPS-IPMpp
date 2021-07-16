@@ -8,7 +8,7 @@
 #include "StripMatrix.h"
 
 #include "DistributedVector.h"
-#include "SimpleVector.hpp"
+#include "DenseVector.hpp"
 #include "DoubleMatrixTypes.h"
 #include "DistributedTreeCallbacks.h"
 
@@ -209,7 +209,7 @@ void StripMatrix::recomputeNonzeros() {
 
 void StripMatrix::multVertical(double beta, Vector<double>& y_in, double alpha, const Vector<double>& x_in,
    const std::function<void(const GeneralMatrix*, double, Vector<double>&, double, const Vector<double>&)>& mult) const {
-   const auto& x = dynamic_cast<const SimpleVector<double>&>(x_in);
+   const auto& x = dynamic_cast<const DenseVector<double>&>(x_in);
    auto& y = dynamic_cast<DistributedVector<double>&>(y_in);
 
    assert(is_vertical);
@@ -233,7 +233,7 @@ void StripMatrix::multVertical(double beta, Vector<double>& y_in, double alpha, 
 void StripMatrix::multHorizontal(double beta, Vector<double>& y_in, double alpha, const Vector<double>& x_in,
    bool root, const std::function<void(const GeneralMatrix*, double, Vector<double>&, double, const Vector<double>&)>& mult) const {
    const auto& x = dynamic_cast<const DistributedVector<double>&>(x_in);
-   auto& y = dynamic_cast<SimpleVector<double>&>(y_in);
+   auto& y = dynamic_cast<DenseVector<double>&>(y_in);
 
    assert(!is_vertical);
    assert(x.children.size() == children.size());
@@ -263,7 +263,7 @@ void StripMatrix::multHorizontal(double beta, Vector<double>& y_in, double alpha
 void StripMatrix::transMultVertical(double beta, Vector<double>& y_in, double alpha, const Vector<double>& x_in,
    bool root, const std::function<void(const GeneralMatrix*, double, Vector<double>&, double, const Vector<double>&)>& transpose_mult) const {
    const auto& x = dynamic_cast<const DistributedVector<double>&>(x_in);
-   auto& y = dynamic_cast<SimpleVector<double>&>(y_in);
+   auto& y = dynamic_cast<DenseVector<double>&>(y_in);
 
    assert(is_vertical);
    assert(x.children.size() == children.size());
@@ -295,7 +295,7 @@ void
 StripMatrix::transMultHorizontal(double beta, Vector<double>& y_in, double alpha, const Vector<double>& x_in,
    const std::function<void(const GeneralMatrix*, double, Vector<double>&, double, const Vector<double>&)>& transpose_mult) const {
 
-   const auto& x = dynamic_cast<const SimpleVector<double>&>(x_in);
+   const auto& x = dynamic_cast<const DenseVector<double>&>(x_in);
    auto& y = dynamic_cast<DistributedVector<double>&>(y_in);
 
    assert(!is_vertical);
@@ -348,7 +348,7 @@ void StripMatrix::getColMinMaxVecVertical(bool get_min, bool initialize_vec, con
    const bool has_rowscale = (row_scale_in != nullptr);
 
    const auto* row_scale = dynamic_cast<const DistributedVector<double>*>(row_scale_in);
-   auto& minmax = dynamic_cast<SimpleVector<double>&>(minmax_);
+   auto& minmax = dynamic_cast<DenseVector<double>&>(minmax_);
 
    assert(!has_rowscale || row_scale->children.size() == children.size());
    if (has_rowscale)
@@ -376,7 +376,7 @@ void StripMatrix::getColMinMaxVecVertical(bool get_min, bool initialize_vec, con
       last->getColMinMaxVec(get_min, false, has_rowscale ? row_scale->last.get() : nullptr, minmax);
 }
 
-/** DistributedVector<double> colScaleVec, SimpleVector<double> minmaxVec */
+/** DistributedVector<double> colScaleVec, DenseVector<double> minmaxVec */
 void
 StripMatrix::getRowMinMaxVecHorizontal(bool get_min, bool initialize_vec, const Vector<double>* col_scale_in,
    Vector<double>& minmax_) const {
@@ -384,7 +384,7 @@ StripMatrix::getRowMinMaxVecHorizontal(bool get_min, bool initialize_vec, const 
    const bool has_colscale = (col_scale_in != nullptr);
 
    const auto* col_scale = dynamic_cast<const DistributedVector<double>*>(col_scale_in);
-   auto& minmax = dynamic_cast<SimpleVector<double>&>(minmax_);
+   auto& minmax = dynamic_cast<DenseVector<double>&>(minmax_);
    assert(!has_colscale || col_scale->children.size() == children.size());
    if (has_colscale)
       assert((col_scale->last && last) || (col_scale->last == nullptr && last == nullptr));
@@ -411,7 +411,7 @@ StripMatrix::getRowMinMaxVecHorizontal(bool get_min, bool initialize_vec, const 
       last->getRowMinMaxVec(get_min, false, has_colscale ? col_scale->last.get() : nullptr, minmax);
 }
 
-/** DistributedVector<double> minmaxVec, SimpleVector<double> colScaleVec */
+/** DistributedVector<double> minmaxVec, DenseVector<double> colScaleVec */
 void StripMatrix::getRowMinMaxVecVertical(bool get_min, bool initialize_vec, const Vector<double>* col_scale,
    Vector<double>& minmax_in) const {
    assert(is_vertical);
@@ -561,7 +561,7 @@ void StripMatrix::addRowSumsVertical(Vector<double>& vec_in) const {
 
 void StripMatrix::addRowSumsHorizontal(Vector<double>& vec_in) const {
    assert(!is_vertical);
-   auto& vec = dynamic_cast<SimpleVector<double>&>(vec_in);
+   auto& vec = dynamic_cast<DenseVector<double>&>(vec_in);
 
    for (const auto& i : children)
       i->addRowSumsHorizontal(vec);
@@ -577,7 +577,7 @@ void StripMatrix::addRowSumsHorizontal(Vector<double>& vec_in) const {
 
 void StripMatrix::addColSumsVertical(Vector<double>& vec_in) const {
    assert(is_vertical);
-   auto& vec = dynamic_cast<SimpleVector<double>&>(vec_in);
+   auto& vec = dynamic_cast<DenseVector<double>&>(vec_in);
 
    for (const auto& i : children)
       i->addColSumsVertical(vec);
@@ -639,7 +639,7 @@ void StripMatrix::sum_transform_rows_vertical(Vector<double>& result_, const std
 
 void StripMatrix::sum_transform_rows_horizontal(Vector<double>& result_, const std::function<double(const double&)>& transform) const {
    assert(!is_vertical);
-   auto& result = dynamic_cast<SimpleVector<double>&>(result_);
+   auto& result = dynamic_cast<DenseVector<double>&>(result_);
 
    for (const auto& i : children)
       i->sum_transform_rows(result, transform);
@@ -671,7 +671,7 @@ void StripMatrix::sum_transform_columns(Vector<double>& result, const std::funct
 
 void StripMatrix::sum_transform_columns_vertical(Vector<double>& result_, const std::function<double(const double&)>& transform) const {
    assert(is_vertical);
-   auto& result = dynamic_cast<SimpleVector<double>&>(result_);
+   auto& result = dynamic_cast<DenseVector<double>&>(result_);
 
    for (const auto& i : children)
       i->sum_transform_columns_vertical(result, transform);

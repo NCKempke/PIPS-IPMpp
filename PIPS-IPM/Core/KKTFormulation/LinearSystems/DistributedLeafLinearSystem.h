@@ -40,7 +40,7 @@ public:
 
    //void Lsolve2 ( Vector<double>& x ) override;
    //void Dsolve2 ( Vector<double>& x ) override;
-   void Ltsolve2(DistributedVector<double>& x, SimpleVector<double>& xp, bool) override;
+   void Ltsolve2(DistributedVector<double>& x, DenseVector<double>& xp, bool) override;
 
    void put_primal_diagonal() override;
 
@@ -73,14 +73,14 @@ protected:
 
    void add_regularization_diagonal(int offset, double regularization, Vector<double>& regularization_vector);
 
-   void addBorderTimesRhsToB0(DistributedVector<double>& rhs, SimpleVector<double>& b0, BorderLinsys& border) override;
+   void addBorderTimesRhsToB0(DistributedVector<double>& rhs, DenseVector<double>& b0, BorderLinsys& border) override;
 
-   void addBorderX0ToRhs(DistributedVector<double>& rhs, const SimpleVector<double>& x0, BorderLinsys& border) override;
+   void addBorderX0ToRhs(DistributedVector<double>& rhs, const DenseVector<double>& x0, BorderLinsys& border) override;
 
 private:
-   static void addBorderTimesRhsToB0(SimpleVector<double>& rhs, SimpleVector<double>& b0, BorderBiBlock& border);
+   static void addBorderTimesRhsToB0(DenseVector<double>& rhs, DenseVector<double>& b0, BorderBiBlock& border);
 
-   static void addBorderX0ToRhs(SimpleVector<double>& rhs, const SimpleVector<double>& x0, BorderBiBlock& border);
+   static void addBorderX0ToRhs(DenseVector<double>& rhs, const DenseVector<double>& x0, BorderBiBlock& border);
 
    /* compute result += B_inner^T K^-1 Br */
    void addInnerBorderKiInvBrToRes(DenseMatrix& result, BorderLinsys& Br, int begin_cols, int end_cols);

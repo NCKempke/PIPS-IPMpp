@@ -5,7 +5,7 @@
 #include "WSMPSolver.h"
 #include "SparseStorage.h"
 #include "SparseSymmetricMatrix.h"
-#include "SimpleVector.hpp"
+#include "DenseVector.hpp"
 #include "DenseMatrix.h"
 
 #ifdef HAVE_GETRUSAGE
@@ -260,7 +260,7 @@ void WSMPSolver::solve(Vector<double>& rhs_in) {
    wrecallmat_(&instance, &iparm[63]);
    assert(iparm[63] == 0);
 
-   SimpleVector<double>& rhs = dynamic_cast<SimpleVector<double>&>(rhs_in);
+   DenseVector<double>& rhs = dynamic_cast<DenseVector<double>&>(rhs_in);
    double* drhs = rhs.elements();
    double* rhscpy = new double[n];
    memcpy(rhscpy, drhs, n * sizeof(double)); // make copy of rhs in case we need to redo
@@ -333,7 +333,7 @@ void WSMPSolver::solve(int solveType, Vector<double>& rhs_in) {
    wrecallmat_(&instance, &iparm[63]);
    assert(iparm[63] == 0);
 
-   SimpleVector<double>& rhs = dynamic_cast<SimpleVector<double>&>(rhs_in);
+   DenseVector<double>& rhs = dynamic_cast<DenseVector<double>&>(rhs_in);
    double* drhs = rhs.elements();
 
    iparm[1] = 4;

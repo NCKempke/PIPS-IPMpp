@@ -5,7 +5,7 @@
 #include <cassert>
 #include "DenseSymmetricMatrix.h"
 #include "OoqpBlas.h"
-#include "SimpleVector.hpp"
+#include "DenseVector.hpp"
 
 #include "DenseMatrix.h"
 #include "SparseMatrix.h"
@@ -98,8 +98,8 @@ void DenseSymmetricMatrix::mult(double beta, double y[], int incy, double alpha,
 void DenseSymmetricMatrix::mult(double beta, Vector<double>& y_in, double alpha, const Vector<double>& x_in) const {
    char fortranUplo = 'U';
    int n = mStorage->n;
-   auto& y = (SimpleVector<double>&) y_in;
-   auto& x = (SimpleVector<double>&) x_in;
+   auto& y = (DenseVector<double>&) y_in;
+   auto& x = (DenseVector<double>&) x_in;
    int incx = 1, incy = 1;
 
    if (n != 0) {

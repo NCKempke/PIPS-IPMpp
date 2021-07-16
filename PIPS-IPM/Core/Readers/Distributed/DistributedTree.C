@@ -5,7 +5,7 @@
 #include "DistributedTree.h"
 #include "DistributedProblem.hpp"
 #include "DistributedVector.h"
-#include "SimpleVector.hpp"
+#include "DenseVector.hpp"
 #include <numeric>
 #include <algorithm>
 #include <cmath>

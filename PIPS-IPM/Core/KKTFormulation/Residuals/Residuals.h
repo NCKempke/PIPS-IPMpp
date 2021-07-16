@@ -141,7 +141,7 @@ public:
     * r3_i onto the box [rmin, rmax]. Then if the resulting value is
     * less than -rmax, replace it by -rmax.
     *
-    * @see SimpleVector::gondzioProjection */
+    * @see DenseVector::gondzioProjection */
    void project_r3(double rmin, double rmax);
 
    void copy(const Residuals&);

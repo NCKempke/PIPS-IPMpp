@@ -92,8 +92,8 @@ void StochPresolverBase::countRowsCols()// method is const but changes pointers
       countRowsBlock(n_rows_linking_ineq, n_rows_empty_linking_ineq, n_rows_onsided_ineq, n_rows_boxed_ineq, n_rows_fixed_ineq,
             n_rows_singleton_linking_ineq, INEQUALITY_SYSTEM, BL_MAT);
 
-      const SimpleVector<double>& ixlow_orig = dynamic_cast<const SimpleVector<double>&>(*dynamic_cast<const DistributedVector<double>& >(*origProb.primal_lower_bound_indicators).first);
-      const SimpleVector<double>& ixupp_orig = dynamic_cast<const SimpleVector<double>&>(*dynamic_cast<const DistributedVector<double>& >(*origProb.primal_upper_bound_indicators).first);
+      const DenseVector<double>& ixlow_orig = dynamic_cast<const DenseVector<double>&>(*dynamic_cast<const DistributedVector<double>& >(*origProb.primal_lower_bound_indicators).first);
+      const DenseVector<double>& ixupp_orig = dynamic_cast<const DenseVector<double>&>(*dynamic_cast<const DistributedVector<double>& >(*origProb.primal_upper_bound_indicators).first);
 
       countBoxedColumns(n_cols, n_cols_empty, n_cols_free, n_cols_onesided, n_cols_boxed, n_cols_singleton, n_cols_orig_free,
             n_cols_orig_free_removed, ixlow_orig, ixupp_orig, true);
@@ -142,8 +142,8 @@ void StochPresolverBase::countRowsCols()// method is const but changes pointers
             INEQUALITY_SYSTEM, A_MAT);
       assert(n_rows_ineq - n_rows_empty_ineq == n_rows_onsided_ineq + n_rows_boxed_ineq + n_rows_fixed_ineq);
 
-      const SimpleVector<double>& ixlow_orig = dynamic_cast<const SimpleVector<double>&>(*dynamic_cast<const DistributedVector<double>& >(*origProb.primal_lower_bound_indicators).children[node]->first);
-      const SimpleVector<double>& ixupp_orig = dynamic_cast<const SimpleVector<double>&>(*dynamic_cast<const DistributedVector<double>& >(*origProb.primal_upper_bound_indicators).children[node]->first);
+      const DenseVector<double>& ixlow_orig = dynamic_cast<const DenseVector<double>&>(*dynamic_cast<const DistributedVector<double>& >(*origProb.primal_lower_bound_indicators).children[node]->first);
+      const DenseVector<double>& ixupp_orig = dynamic_cast<const DenseVector<double>&>(*dynamic_cast<const DistributedVector<double>& >(*origProb.primal_upper_bound_indicators).children[node]->first);
 
       countBoxedColumns(n_cols, n_cols_empty, n_cols_free, n_cols_onesided, n_cols_boxed, n_cols_singleton, n_cols_orig_free,
             n_cols_orig_free_removed, ixlow_orig, ixupp_orig, false);
@@ -180,11 +180,11 @@ void StochPresolverBase::countRowsBlock(int& n_rows_total, int& n_rows_empty, in
       if (!presolve_data.hasLinking(system_type))
          return;
 
-   const SimpleVector<int>* nnz_row = (block_type != BL_MAT) ? currNnzRow : currNnzRowLink;
-   const SimpleVector<double>* iclow = (block_type != BL_MAT) ? currIclow : currIclowLink;
-   const SimpleVector<double>* lhs = (block_type != BL_MAT) ? currIneqLhs : currIneqLhsLink;
-   const SimpleVector<double>* icupp = (block_type != BL_MAT) ? currIcupp : currIcuppLink;
-   const SimpleVector<double>* rhs = (block_type != BL_MAT) ? currIneqRhs : currIneqRhsLink;
+   const DenseVector<int>* nnz_row = (block_type != BL_MAT) ? currNnzRow : currNnzRowLink;
+   const DenseVector<double>* iclow = (block_type != BL_MAT) ? currIclow : currIclowLink;
+   const DenseVector<double>* lhs = (block_type != BL_MAT) ? currIneqLhs : currIneqLhsLink;
+   const DenseVector<double>* icupp = (block_type != BL_MAT) ? currIcupp : currIcuppLink;
+   const DenseVector<double>* rhs = (block_type != BL_MAT) ? currIneqRhs : currIneqRhsLink;
    if (system_type == EQUALITY_SYSTEM)
       rhs = (block_type != BL_MAT) ? currEqRhs : currEqRhsLink;
 
@@ -239,15 +239,15 @@ void StochPresolverBase::countRowsBlock(int& n_rows_total, int& n_rows_empty, in
 }
 
 void StochPresolverBase::countBoxedColumns(int& n_cols_total, int& n_cols_empty, int& n_cols_free, int& n_cols_onesided, int& n_cols_boxed,
-      int& n_cols_singleton, int& n_cols_orig_free, int& n_cols_orig_free_removed, const SimpleVector<double>& ixlow_orig,
-      const SimpleVector<double>& ixupp_orig, bool at_root_node) const {
-   const SimpleVector<double>& ixlow = (at_root_node) ? *currIxlowParent : *currIxlowChild;
-   const SimpleVector<double>& ixupp = (at_root_node) ? *currIxuppParent : *currIxuppChild;
-   const SimpleVector<int>& curr_nnz = (at_root_node) ? *currNnzColParent : *currNnzColChild;
+      int& n_cols_singleton, int& n_cols_orig_free, int& n_cols_orig_free_removed, const DenseVector<double>& ixlow_orig,
+      const DenseVector<double>& ixupp_orig, bool at_root_node) const {
+   const DenseVector<double>& ixlow = (at_root_node) ? *currIxlowParent : *currIxlowChild;
+   const DenseVector<double>& ixupp = (at_root_node) ? *currIxuppParent : *currIxuppChild;
+   const DenseVector<int>& curr_nnz = (at_root_node) ? *currNnzColParent : *currNnzColChild;
 
 #ifndef NDEBUG
-   const SimpleVector<double>& xupp = (at_root_node) ? *currxuppParent : *currxuppChild;
-   const SimpleVector<double>& xlow = (at_root_node) ? *currxlowParent : *currxlowChild;
+   const DenseVector<double>& xupp = (at_root_node) ? *currxuppParent : *currxuppChild;
+   const DenseVector<double>& xlow = (at_root_node) ? *currxlowParent : *currxlowChild;
    assert(ixlow.length() == ixupp.length());
    assert(ixlow.length() == xlow.length());
    assert(xlow.length() == xupp.length());

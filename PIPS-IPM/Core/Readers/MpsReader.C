@@ -6,7 +6,7 @@
 
 #include "Vector.hpp"
 #include "AbstractMatrix.h"
-#include "SimpleVector.hpp"
+#include "DenseVector.hpp"
 #include "sort.h"
 
 #include <cstring>
@@ -128,7 +128,7 @@ void MpsReader::readColsSection(Vector<double>& c_, GeneralMatrix& A, GeneralMat
       this->numberOfNonZeros(nnzQ_, nnzA_, nnzC_);
    }
 
-   SimpleVector<double> c(totalCols);
+   DenseVector<double> c(totalCols);
 
    int* irowC = 0, * jcolC = 0;
    double* dC = 0;
@@ -402,7 +402,7 @@ void MpsReader::readRHSSection(double b[], double clow[], char iclow[], double c
 
 
 void
-MpsReader::readRHSSection(Vector<double>& b_, SimpleVector<double>& clow, Vector<double>& iclow_, SimpleVector<double>& cupp, Vector<double>& icupp_,
+MpsReader::readRHSSection(Vector<double>& b_, DenseVector<double>& clow, Vector<double>& iclow_, DenseVector<double>& cupp, Vector<double>& icupp_,
       char line[], int& ierr, int& kindOfLine) {
    char* iclow = 0, * icupp = 0;
    double* db = 0, * dclow = 0, * dcupp = 0;
@@ -410,7 +410,7 @@ MpsReader::readRHSSection(Vector<double>& b_, SimpleVector<double>& clow, Vector
       int nx_, my_, mz_; // Force the computation of the cached values
       this->getSizes(nx_, my_, mz_);
    }
-   SimpleVector<double> b(my);
+   DenseVector<double> b(my);
    if (my > 0)
       db = b.elements();
    if (mz > 0) {
@@ -431,7 +431,7 @@ MpsReader::readRHSSection(Vector<double>& b_, SimpleVector<double>& clow, Vector
    delete[] icupp;
 }
 
-void MpsReader::readRangesSection(SimpleVector<double>& clow, SimpleVector<double>& cupp, char line[], int& iErr, int& kindOfLine) {
+void MpsReader::readRangesSection(DenseVector<double>& clow, DenseVector<double>& cupp, char line[], int& iErr, int& kindOfLine) {
    double* dclow = 0, * dcupp = 0;
 
    if (clow.length() > 0)
@@ -499,9 +499,9 @@ MpsReader::readBoundsSection(Vector<double>& xlow_, Vector<double>& ixlow_, Vect
       this->getSizes(nx_, my_, mz_);
    }
    // Create some temporary simple vectors
-   SimpleVector<double> xlow(totalCols);
+   DenseVector<double> xlow(totalCols);
    char* ixlow = new char[totalCols];
-   SimpleVector<double> xupp(totalCols);
+   DenseVector<double> xupp(totalCols);
    char* ixupp = new char[totalCols];
 
    this->readBoundsSection(xlow.elements(), ixlow, xupp.elements(), ixupp, line, ierr, kindOfLine);
@@ -522,9 +522,9 @@ void MpsReader::defaultBounds(Vector<double>& xlow_, Vector<double>& ixlow_, Vec
       this->getSizes(nx_, my_, mz_);
    }
    // Create some temporary simple vectors
-   SimpleVector<double> xlow(totalCols);
+   DenseVector<double> xlow(totalCols);
    char* ixlow = new char[totalCols];
-   SimpleVector<double> xupp(totalCols);
+   DenseVector<double> xupp(totalCols);
    char* ixupp = new char[totalCols];
 
    this->defaultBounds(xlow.elements(), ixlow, xupp.elements(), ixupp);
@@ -1677,7 +1677,7 @@ void MpsReader::readQpBound(Vector<double>& c, SymmetricMatrix& Q, Vector<double
    char line[200];
    int kindOfLine;
 
-   SimpleVector<double> sc(totalCols);
+   DenseVector<double> sc(totalCols);
    this->readColsSection(sc.elements(), 0, 0, 0, // elements of A
          0, 0, 0, // elements of C
          line, iErr, kindOfLine);
@@ -1726,8 +1726,8 @@ void MpsReader::readQpGen(Vector<double>& c, SymmetricMatrix& Q, Vector<double>&
    if (iErr != mpsok)
       return;
 
-   SimpleVector<double> clow(mz);
-   SimpleVector<double> cupp(mz);
+   DenseVector<double> clow(mz);
+   DenseVector<double> cupp(mz);
 
    // RHS section - required
    this->expectHeader2(kindOfLine, "RHS", line, iErr);

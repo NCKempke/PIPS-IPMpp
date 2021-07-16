@@ -6,7 +6,7 @@
 #include <cassert>
 
 #include "DenseSymmetricMatrix.h"
-#include "SimpleVector.hpp"
+#include "DenseVector.hpp"
 
 // declarations for LAPACK functions used to factor/solve:
 
@@ -38,7 +38,7 @@ void DeSymPSDSolver::solve(Vector<double>& x_in) {
    int one = 1;
 
    int n = mStorage->n;
-   auto& x = dynamic_cast<SimpleVector<double>&>(x_in);
+   auto& x = dynamic_cast<DenseVector<double>&>(x_in);
 
    dpotrs_(&fortranUplo, &n, &one, &mStorage->M[0][0], &n, &x[0], &n, &info);
 }
@@ -84,7 +84,7 @@ void DeSymPSDSolver::Lsolve(GeneralMatrix& mat) {
    double onet = 1.0;
 
    int col=1;
-   SimpleVector<double> rest(nt);
+   DenseVector<double> rest(nt);
    for(int i=0; i<nt; i++)
      rest[i]=BB[i][col-1];
    //printf("rhs:"); for(int i=0; i<nt; i++) printf("%5.3f ", rest[i]); printf("\n----------------\n");
@@ -99,7 +99,7 @@ void DeSymPSDSolver::Lsolve(GeneralMatrix& mat) {
 
    //for(int i=0; i<3; i++) { for(int j=0; j<2; j++) printf("%5.3f ", BB[i][j]); printf("\n"); }; printf("----------------\n");
 
-   SimpleVector<double> solt(nt);
+   DenseVector<double> solt(nt);
    for(int i=0; i<nt; i++)
      solt[i]=BB[i][col-1];
 
@@ -153,7 +153,7 @@ void DeSymPSDSolver::Lsolve(GeneralMatrix& mat) {
    int ldb = cols;
 
    /*
-   SimpleVector<double> res(n);  col=10;
+   DenseVector<double> res(n);  col=10;
    for(int i=0; i<n; i++) res[i]=B[i][col-1];
    */
 
@@ -163,7 +163,7 @@ void DeSymPSDSolver::Lsolve(GeneralMatrix& mat) {
          &n,     //number of cols of B, lie again
          &one, &mStorage->M[0][0], &n, &B.getStorageRef().M[0][0], &ldb);
 
-   /*SimpleVector<double> sol(n);
+   /*DenseVector<double> sol(n);
    for(int i=0; i<n; i++) sol[i]=B[i][col-1];
 
    DenseGenMatrix THIS(&mStorage->M[0][0], n, n);

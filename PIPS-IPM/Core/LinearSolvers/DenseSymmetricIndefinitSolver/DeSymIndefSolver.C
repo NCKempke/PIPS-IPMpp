@@ -3,7 +3,7 @@
  * (C) 2001 University of Chicago. See Copyright Notification in OOQP */
 
 #include "DeSymIndefSolver.h"
-#include "SimpleVector.hpp"
+#include "DenseVector.hpp"
 #include <cassert>
 #include <memory>
 
@@ -104,7 +104,7 @@ void DeSymIndefSolver::solve(Vector<double>& v) {
    int info;
    const int one = 1;
 
-   auto& sv = dynamic_cast<SimpleVector<double>&>(v);
+   auto& sv = dynamic_cast<DenseVector<double>&>(v);
 
    if (n == 0)
       return;

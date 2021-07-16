@@ -92,7 +92,7 @@ public:
 
    /** Perform the projection needed by Gondzio's multiple corrector method.
     *
-    * @see SimpleVector::gondzioProjection
+    * @see DenseVector::gondzioProjection
     */
    virtual void gondzioProjection(T rmin, T rmax) = 0;
 
@@ -268,7 +268,7 @@ public:
 
 // TODO : should be a proper enum class..
 enum {
-   kSimpleVector = 0, kStochVector, kStochDummy,
+   kDenseVector = 0, kStochVector, kStochDummy,
 };
 
 #endif

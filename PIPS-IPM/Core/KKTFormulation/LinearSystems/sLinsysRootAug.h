@@ -42,7 +42,7 @@ public:
 
 protected:
    void assembleLocalKKT() override;
-   void solveReducedLinkCons(SimpleVector<double>& b);
+   void solveReducedLinkCons(DenseVector<double>& b);
    void solveReducedLinkConsBlocked(DenseMatrix& rhs_mat_transp, int rhs_start, int n_rhs);
    void addBlTKiInvBrToRes(AbstractMatrix& result, BorderLinsys& Bl, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border, bool sym_res,
          bool sparse_res) override;
@@ -52,8 +52,8 @@ protected:
 private:
    void finalizeKKTdense();
    void finalizeKKTsparse();
-   void solveWithIterRef(SimpleVector<double>& b);
-   void solveWithBiCGStab(SimpleVector<double>& b);
+   void solveWithIterRef(DenseVector<double>& b);
+   void solveWithBiCGStab(DenseVector<double>& b);
 
    void DsolveHierarchyBorder(DenseMatrix& b, int n_cols) override;
 
@@ -72,12 +72,12 @@ private:
    // add specified columns of given matrix Ht (either Ft or Gt) to Schur complement
    void addLinkConsBlock0Matrix(const SparseMatrix& Ht, int nHtOffsetCols, int nKktOffsetCols, int startCol, int endCol);
 
-   void addBorderX0ToRhs(DistributedVector<double>& rhs, const SimpleVector<double>& x0, BorderLinsys& border) override;
+   void addBorderX0ToRhs(DistributedVector<double>& rhs, const DenseVector<double>& x0, BorderLinsys& border) override;
 
-   void addBorderTimesRhsToB0(DistributedVector<double>& rhs, SimpleVector<double>& b0, BorderLinsys& border) override;
+   void addBorderTimesRhsToB0(DistributedVector<double>& rhs, DenseVector<double>& b0, BorderLinsys& border) override;
 
    /** y = beta*y - alpha* SC * x */
-   void SCmult(double beta, SimpleVector<double>& y, double alpha, SimpleVector<double>& x);
+   void SCmult(double beta, DenseVector<double>& y, double alpha, DenseVector<double>& x);
 
    void schur_complement_put_primal_block(const Vector<double>* diagonal, SymmetricMatrix& schur_complement) const;
    void schur_complement_add_CTDC_block(const Vector<double>* diagonal, SymmetricMatrix& schur_complement);
@@ -92,7 +92,7 @@ private:
    std::unique_ptr<Vector<double>> dual_inequality_diagonal_regularized{};
 
    std::vector<double> reduced_rhss_blocked;
-   std::unique_ptr<SimpleVector<double>> redRhs;
+   std::unique_ptr<DenseVector<double>> redRhs;
 
 
 };

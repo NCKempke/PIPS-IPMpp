@@ -1,5 +1,5 @@
 #include "BiCGStabSolver.h"
-#include "SimpleVector.hpp"
+#include "DenseVector.hpp"
 
 #include <cmath>
 
@@ -15,17 +15,17 @@ BiCGStabSolver::BiCGStabSolver(MatTimesVec* A, MatTimesVec* M1, MatTimesVec* M2)
 };
 
 void BiCGStabSolver::solve(Vector<double>& rhs_) {
-   auto& b = dynamic_cast<SimpleVector<double>&>(rhs_);
+   auto& b = dynamic_cast<DenseVector<double>&>(rhs_);
    int n = b.length();
 
-   SimpleVector<double> r(n);           //residual
-   SimpleVector<double> s(n);           //residual associated with half iterate
-   SimpleVector<double> rt(n);          //shadow residual
-   SimpleVector<double> xmin(n);        //minimal residual iterate
-   SimpleVector<double> x(n);           //iterate
-   SimpleVector<double> xhalf(n);       // half iterate of BiCG
-   SimpleVector<double> p(n), paux(n);
-   SimpleVector<double> v(n), t(n);
+   DenseVector<double> r(n);           //residual
+   DenseVector<double> s(n);           //residual associated with half iterate
+   DenseVector<double> rt(n);          //shadow residual
+   DenseVector<double> xmin(n);        //minimal residual iterate
+   DenseVector<double> x(n);           //iterate
+   DenseVector<double> xhalf(n);       // half iterate of BiCG
+   DenseVector<double> p(n), paux(n);
+   DenseVector<double> v(n), t(n);
    int flag = -1;
    double imin;
    double n2b;                  //norm of b
@@ -105,7 +105,7 @@ void BiCGStabSolver::solve(Vector<double>& rhs_) {
       applyM1(0.0, v, 1.0, p);
       applyM2(0.0, paux, 1.0, v);
       applyA(0.0, v, 1.0, paux);
-      SimpleVector<double>& ph = paux;
+      DenseVector<double>& ph = paux;
 
       double rtv = rt.dotProductWith(v);
       if (rtv == 0.0) {
@@ -175,7 +175,7 @@ void BiCGStabSolver::solve(Vector<double>& rhs_) {
       applyM1(0.0, t, 1.0, s); //applyM1(s,     stemp);
       applyM2(0.0, paux, 1.0, t); //applyM2(stemp, sh);
       applyA(0.0, t, 1.0, paux); //applyA (sh, t);
-      SimpleVector<double>& sh = paux;
+      DenseVector<double>& sh = paux;
 
       double tt = t.dotProductWith(t);
       if (tt == 0.0) {
@@ -284,17 +284,17 @@ void BiCGStabSolver::solve(Vector<double>& rhs_) {
 /*
 void BiCGStabSolver::solve( Vector<double>& rhs_ )
 {
-  SimpleVector<double>& b = dynamic_cast<SimpleVector<double>&>(rhs_);
+  DenseVector<double>& b = dynamic_cast<DenseVector<double>&>(rhs_);
   int n = b.length();
 
-  SimpleVector<double> r(n);           //residual
-  SimpleVector<double> s(n);           //residual associated with half iterate
-  SimpleVector<double> rt(n);          //shadow residual
-  SimpleVector<double> xmin(n);        //minimal residual iterate
-  SimpleVector<double> x(n);           //iterate
-  SimpleVector<double> xhalf(n);       // half iterate of BiCG
-  SimpleVector<double> p(n), ph(n), ptemp(n);
-  SimpleVector<double> v(n);
+  DenseVector<double> r(n);           //residual
+  DenseVector<double> s(n);           //residual associated with half iterate
+  DenseVector<double> rt(n);          //shadow residual
+  DenseVector<double> xmin(n);        //minimal residual iterate
+  DenseVector<double> x(n);           //iterate
+  DenseVector<double> xhalf(n);       // half iterate of BiCG
+  DenseVector<double> p(n), ph(n), ptemp(n);
+  DenseVector<double> v(n);
   int flag, imin;
   double n2b;                  //norm of b 
   double normr, normrmin;      //norm of the residual and norm of residual at min-resid iterate
@@ -398,7 +398,7 @@ void BiCGStabSolver::solve( Vector<double>& rhs_ )
     // Second half of the iterate
     ///////////////////////////////
     //aliasses 
-    SimpleVector<double>& sh = ph; SimpleVector<double>& stemp = ptemp; SimpleVector<double>& t=v;
+    DenseVector<double>& sh = ph; DenseVector<double>& stemp = ptemp; DenseVector<double>& t=v;
 
     applyM1(s,     stemp);
     applyM2(stemp, sh);

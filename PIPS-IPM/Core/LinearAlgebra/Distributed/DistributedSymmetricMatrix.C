@@ -141,7 +141,7 @@ void DistributedSymmetricMatrix::mult(double beta, Vector<double>& y_, double al
       children[it]->mult(beta, *(y.children[it]), alpha, *(x.children[it]));
 
    if (iAmDistrib && !parent)
-      PIPS_MPIsumArrayInPlace(dynamic_cast<SimpleVector<double>&>(*y.first).elements(), y.first->length(), mpiComm);
+      PIPS_MPIsumArrayInPlace(dynamic_cast<DenseVector<double>&>(*y.first).elements(), y.first->length(), mpiComm);
 }
 
 /** y = beta * y + alpha * this^T * x */
@@ -366,7 +366,7 @@ void DistributedSymmetricMatrix::deleteEmptyRowsCols(const Vector<int>& nnzVec, 
    const auto& nnzVecStoch = dynamic_cast<const DistributedVector<int>&>(nnzVec);
    assert(children.size() == nnzVecStoch.children.size());
 
-   const auto* vec = dynamic_cast<const SimpleVector<int>*>(nnzVecStoch.first.get());
+   const auto* vec = dynamic_cast<const DenseVector<int>*>(nnzVecStoch.first.get());
    assert(vec);
 
    const long long n_old = n;
@@ -377,7 +377,7 @@ void DistributedSymmetricMatrix::deleteEmptyRowsCols(const Vector<int>& nnzVec, 
       assert(border);
       assert(children.empty());
       // adapt border
-      assert(dynamic_cast<const SimpleVector<int>*>(linkParent));
+      assert(dynamic_cast<const DenseVector<int>*>(linkParent));
       dynamic_cast<SparseMatrix&>(*border).deleteEmptyRowsCols(*vec, *linkParent);
    } else
       assert(!border);

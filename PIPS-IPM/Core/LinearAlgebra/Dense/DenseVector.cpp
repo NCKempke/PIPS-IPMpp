@@ -3,7 +3,7 @@
  * (C) 2001 University of Chicago. See Copyright Notification in OOQP */
 
 #include "VectorUtilities.h"
-#include "SimpleVector.hpp"
+#include "DenseVector.hpp"
 #include "OoqpBlas.h"
 #include "pipsdef.h"
 
@@ -16,7 +16,7 @@
 #include <memory>
 
 template<typename T>
-SimpleVector<T>::SimpleVector(int n_) : Vector<T>(n_), test(n_) {
+DenseVector<T>::DenseVector(int n_) : Vector<T>(n_), test(n_) {
    preserveVec = 0;
    v = new T[this->n];
 
@@ -24,7 +24,7 @@ SimpleVector<T>::SimpleVector(int n_) : Vector<T>(n_), test(n_) {
 }
 
 template<typename T>
-long long SimpleVector<T>::number_nonzeros() const {
+long long DenseVector<T>::number_nonzeros() const {
    long long i, count = 0;
    for (i = 0; i < this->n; i++) {
       if (v[i] != (T) 0.0)
@@ -34,7 +34,7 @@ long long SimpleVector<T>::number_nonzeros() const {
 }
 
 template<typename T>
-void SimpleVector<T>::min(T& m, int& index) const {
+void DenseVector<T>::min(T& m, int& index) const {
    if (this->n == 0) {
       m = std::numeric_limits<T>::max();
       return;
@@ -50,8 +50,8 @@ void SimpleVector<T>::min(T& m, int& index) const {
 }
 
 template<typename T>
-void SimpleVector<T>::absminVecUpdate(Vector<T>& absminvec) const {
-   SimpleVector<T>& absminvecSimple = dynamic_cast<SimpleVector<T>&>(absminvec);
+void DenseVector<T>::absminVecUpdate(Vector<T>& absminvec) const {
+   DenseVector<T>& absminvecSimple = dynamic_cast<DenseVector<T>&>(absminvec);
    assert(absminvecSimple.length() == this->n);
    T* const absminvecArr = absminvecSimple.elements();
 
@@ -63,8 +63,8 @@ void SimpleVector<T>::absminVecUpdate(Vector<T>& absminvec) const {
 }
 
 template<typename T>
-void SimpleVector<T>::absmaxVecUpdate(Vector<T>& absmaxvec) const {
-   SimpleVector<T>& absmaxvecSimple = dynamic_cast<SimpleVector<T>&>(absmaxvec);
+void DenseVector<T>::absmaxVecUpdate(Vector<T>& absmaxvec) const {
+   DenseVector<T>& absmaxvecSimple = dynamic_cast<DenseVector<T>&>(absmaxvec);
    assert(absmaxvecSimple.length() == this->n);
    T* const absmaxvecArr = absmaxvecSimple.elements();
 
@@ -76,7 +76,7 @@ void SimpleVector<T>::absmaxVecUpdate(Vector<T>& absmaxvec) const {
 }
 
 template<typename T>
-void SimpleVector<T>::absmin(T& m) const {
+void DenseVector<T>::absmin(T& m) const {
    m = std::numeric_limits<T>::infinity();
 
    if (this->n == 0)
@@ -89,7 +89,7 @@ void SimpleVector<T>::absmin(T& m) const {
 /** Compute the min absolute value that is larger than zero_eps.
  * If there is no such value, return inf */
 template<typename T>
-void SimpleVector<T>::absminNonZero(T& m, T zero_eps) const {
+void DenseVector<T>::absminNonZero(T& m, T zero_eps) const {
    assert(zero_eps >= 0.0);
 
    m = std::numeric_limits<T>::infinity();
@@ -104,7 +104,7 @@ void SimpleVector<T>::absminNonZero(T& m, T zero_eps) const {
 }
 
 template<typename T>
-int SimpleVector<T>::getNnzs() const {
+int DenseVector<T>::getNnzs() const {
    int non_zeros = 0;
    for (int i = 0; i < this->n; i++) {
       if (!PIPSisZero(v[i]))
@@ -115,7 +115,7 @@ int SimpleVector<T>::getNnzs() const {
 }
 
 template<typename T>
-void SimpleVector<T>::max(T& m, int& index) const {
+void DenseVector<T>::max(T& m, int& index) const {
    m = -std::numeric_limits<T>::max();
    index = -1;
 
@@ -128,33 +128,33 @@ void SimpleVector<T>::max(T& m, int& index) const {
 }
 
 template<typename T>
-bool SimpleVector<T>::isKindOf(int kind) const {
-   return (kind == kSimpleVector);
+bool DenseVector<T>::isKindOf(int kind) const {
+   return (kind == kDenseVector);
 }
 
 template<typename T>
-void SimpleVector<T>::copyIntoArray(T w[]) const {
+void DenseVector<T>::copyIntoArray(T w[]) const {
    std::copy(v, v + this->n, w);
 }
 
 template<typename T>
-void SimpleVector<T>::copyFromArray(const T w[]) {
+void DenseVector<T>::copyFromArray(const T w[]) {
    std::copy(w, w + this->n, v);
 }
 
 template<typename T>
-void SimpleVector<T>::copyFromArray(const char w[]) {
+void DenseVector<T>::copyFromArray(const char w[]) {
    for (int i = 0; i < this->n; i++) {
       this->v[i] = w[i];
    }
 }
 
 template<typename T>
-void SimpleVector<T>::pushAwayFromZero(double tol, double amount, const Vector<T>* select) {
+void DenseVector<T>::pushAwayFromZero(double tol, double amount, const Vector<T>* select) {
    assert(0 < amount);
    assert(0 < tol);
 
-   const SimpleVector<T>* selects = dynamic_cast<const SimpleVector<T>*>(select);
+   const DenseVector<T>* selects = dynamic_cast<const DenseVector<T>*>(select);
 
    if (selects)
       assert(this->n == selects->n);
@@ -169,37 +169,37 @@ void SimpleVector<T>::pushAwayFromZero(double tol, double amount, const Vector<T
 }
 
 template<typename T>
-SimpleVector<T>::SimpleVector(const SimpleVector<T>& other)
-      : SimpleVector<T>(other.n) {
+DenseVector<T>::DenseVector(const DenseVector<T>& other)
+      : DenseVector<T>(other.n) {
    std::copy(other.v, other.v + this->n, v);
 }
 
 template<typename T>
-SimpleVector<T>::SimpleVector(T* v_, int n_)
+DenseVector<T>::DenseVector(T* v_, int n_)
       : Vector<T>(n_) {
    preserveVec = 1;
    v = v_;
 }
 
 template<typename T>
-SimpleVector<T>::~SimpleVector() {
+DenseVector<T>::~DenseVector() {
    if (!preserveVec) {
       delete[] v;
    }
 }
 
 template<typename T>
-Vector<T>* SimpleVector<T>::clone_full() const {
-   return new SimpleVector<T>(*this);
+Vector<T>* DenseVector<T>::clone_full() const {
+   return new DenseVector<T>(*this);
 }
 
 template<typename T>
-Vector<T>* SimpleVector<T>::clone() const {
-   return new SimpleVector<T>(this->n);
+Vector<T>* DenseVector<T>::clone() const {
+   return new DenseVector<T>(this->n);
 }
 
 template<typename T>
-bool SimpleVector<T>::isZero() const {
+bool DenseVector<T>::isZero() const {
    bool is_zero = true;
 
    for (int i = 0; i < this->n; ++i)
@@ -209,25 +209,25 @@ bool SimpleVector<T>::isZero() const {
 }
 
 template<typename T>
-void SimpleVector<T>::setToZero() {
+void DenseVector<T>::setToZero() {
    setToConstant(0.0);
 }
 
 template<typename T>
-void SimpleVector<T>::setToConstant(T c) {
+void DenseVector<T>::setToConstant(T c) {
    std::fill(v, v + this->n, c);
 }
 
 template<typename T>
-void SimpleVector<T>::copyFrom(const Vector<T>& vec) {
+void DenseVector<T>::copyFrom(const Vector<T>& vec) {
    assert(vec.length() == this->n);
 
    vec.copyIntoArray(this->v);
 }
 
 template<typename T>
-void SimpleVector<T>::copyFromAbs(const Vector<T>& vec) {
-   const auto& vecSimple = dynamic_cast<const SimpleVector<T>&>(vec);
+void DenseVector<T>::copyFromAbs(const Vector<T>& vec) {
+   const auto& vecSimple = dynamic_cast<const DenseVector<T>&>(vec);
    assert(vec.length() == this->n);
    T* const vecArr = vecSimple.elements();
 
@@ -236,7 +236,7 @@ void SimpleVector<T>::copyFromAbs(const Vector<T>& vec) {
 }
 
 template<typename T>
-T SimpleVector<T>::inf_norm() const {
+T DenseVector<T>::inf_norm() const {
 
    if (this->n == 0)
       return -std::numeric_limits<T>::max();
@@ -253,7 +253,7 @@ T SimpleVector<T>::inf_norm() const {
 }
 
 template<>
-double SimpleVector<double>::inf_norm() const {
+double DenseVector<double>::inf_norm() const {
    if (this->n == 0)
       return -std::numeric_limits<double>::max();
 
@@ -262,7 +262,7 @@ double SimpleVector<double>::inf_norm() const {
 }
 
 template<typename T>
-T SimpleVector<T>::one_norm() const {
+T DenseVector<T>::one_norm() const {
    T temp, norm = 0;
    for (int i = 0; i < this->n; i++) {
       temp = std::abs(v[i]);
@@ -272,24 +272,24 @@ T SimpleVector<T>::one_norm() const {
 }
 
 template<typename T>
-double SimpleVector<T>::two_norm() const {
+double DenseVector<T>::two_norm() const {
    T temp = dotProductWith(*this);
    return std::sqrt(temp);
 }
 
 template<typename T>
-void SimpleVector<T>::componentMult(const Vector<T>& vec) {
+void DenseVector<T>::componentMult(const Vector<T>& vec) {
    assert(this->n == vec.length());
-   const auto& sv = dynamic_cast<const SimpleVector<T>&>(vec);
+   const auto& sv = dynamic_cast<const DenseVector<T>&>(vec);
    const T* y = sv.v;
    for (int i = 0; i < this->n; i++)
       v[i] *= y[i];
 }
 
 template<typename T>
-bool SimpleVector<T>::componentEqual(const Vector<T>& vec, T tol) const {
+bool DenseVector<T>::componentEqual(const Vector<T>& vec, T tol) const {
    assert(this->n == vec.length());
-   const auto& sv = dynamic_cast<const SimpleVector<T>&>(vec);
+   const auto& sv = dynamic_cast<const DenseVector<T>&>(vec);
 
    for (int i = 0; i < this->n; ++i) {
       /* two comparisons - a numerical one and one for stuff like infinity/nan/max/min */
@@ -302,7 +302,7 @@ bool SimpleVector<T>::componentEqual(const Vector<T>& vec, T tol) const {
 }
 
 template<typename T>
-bool SimpleVector<T>::componentNotEqual(const T val, const T tol) const {
+bool DenseVector<T>::componentNotEqual(const T val, const T tol) const {
    for (int i = 0; i < this->n; ++i) {
       /* two comparisons - a numerical one and one for stuff like infinity/nan/max/min */
       if (PIPSisRelEQ(v[i], val, tol) || v[i] == val) {
@@ -313,8 +313,8 @@ bool SimpleVector<T>::componentNotEqual(const T val, const T tol) const {
 }
 
 template<typename T>
-void SimpleVector<T>::setNotIndicatedEntriesToVal(const T val, const Vector<T>& ind) {
-   const auto& ind_vec = dynamic_cast<const SimpleVector<T>&>(ind);
+void DenseVector<T>::setNotIndicatedEntriesToVal(const T val, const Vector<T>& ind) {
+   const auto& ind_vec = dynamic_cast<const DenseVector<T>&>(ind);
    assert(ind_vec.length() == this->length());
 
    for (int i = 0; i < ind_vec.length(); ++i) {
@@ -325,17 +325,17 @@ void SimpleVector<T>::setNotIndicatedEntriesToVal(const T val, const Vector<T>& 
 
 
 template<typename T>
-void SimpleVector<T>::scalarMult(T num) {
+void DenseVector<T>::scalarMult(T num) {
    for (int i = 0; i < this->n; i++)
       v[i] *= num;
 }
 
 template<typename T>
-void SimpleVector<T>::componentDiv(const Vector<T>& vec) {
+void DenseVector<T>::componentDiv(const Vector<T>& vec) {
    assert(this->n == vec.length());
    T* pv = v, * lv = v + this->n;
 
-   const auto& sv = dynamic_cast<const SimpleVector<T>&>(vec);
+   const auto& sv = dynamic_cast<const DenseVector<T>&>(vec);
    const T* y = sv.v;
 
    for (; pv < lv; pv++, y++) {
@@ -345,7 +345,7 @@ void SimpleVector<T>::componentDiv(const Vector<T>& vec) {
 }
 
 template<typename T>
-void SimpleVector<T>::write_to_stream(std::ostream& out, int offset) const {
+void DenseVector<T>::write_to_stream(std::ostream& out, int offset) const {
    for (int i = 0; i < this->n; i++) {
       for (int j = 0; j < offset; ++j)
          out << "\t";
@@ -354,7 +354,7 @@ void SimpleVector<T>::write_to_stream(std::ostream& out, int offset) const {
 }
 
 template<>
-void SimpleVector<double>::scale(double alpha) {
+void DenseVector<double>::scale(double alpha) {
    if (this->n == 0)
       return;
 
@@ -364,26 +364,26 @@ void SimpleVector<double>::scale(double alpha) {
 
 // generic implementation without boost 
 template<typename T>
-void SimpleVector<T>::scale(T) {
+void DenseVector<T>::scale(T) {
    assert(0 && "not implemented here");
    // std::transform( this->v, this->v + this->n, this->v, [alpha](T a)->T { return alpha * a; } );
 }
 
 template<>
-void SimpleVector<double>::add(double alpha, const Vector<double>& vec) {
+void DenseVector<double>::add(double alpha, const Vector<double>& vec) {
    assert(this->n == vec.length());
    if (this->n == 0)
       return;
 
-   const auto& sv = dynamic_cast<const SimpleVector<double>&>(vec);
+   const auto& sv = dynamic_cast<const DenseVector<double>&>(vec);
    const int one = 1;
    daxpy_(&this->n, &alpha, sv.v, &one, v, &one);
 }
 
 template<typename T>
-void SimpleVector<T>::add(T alpha, const Vector<T>& vec) {
+void DenseVector<T>::add(T alpha, const Vector<T>& vec) {
    assert(this->n == vec.length());
-   const auto& sv = dynamic_cast<const SimpleVector<T>&>(vec);
+   const auto& sv = dynamic_cast<const DenseVector<T>&>(vec);
 
    if (alpha == 0.0)
       return;
@@ -396,13 +396,13 @@ void SimpleVector<T>::add(T alpha, const Vector<T>& vec) {
 }
 
 template<typename T>
-void SimpleVector<T>::add_constant(T c) {
+void DenseVector<T>::add_constant(T c) {
    for (int i = 0; i < this->n; i++)
       v[i] += c;
 }
 
 template<typename T>
-void SimpleVector<T>::gondzioProjection(T rmin, T rmax) {
+void DenseVector<T>::gondzioProjection(T rmin, T rmax) {
    for (int i = 0; i < this->n; i++) {
       if (v[i] < rmin) {
          v[i] = rmin - v[i];
@@ -420,11 +420,11 @@ void SimpleVector<T>::gondzioProjection(T rmin, T rmax) {
 }
 
 template<typename T>
-void SimpleVector<T>::add_product(T alpha, const Vector<T>& xvec, const Vector<T>& zvec) {
+void DenseVector<T>::add_product(T alpha, const Vector<T>& xvec, const Vector<T>& zvec) {
    assert(this->n == xvec.length() && this->n == zvec.length());
 
-   const auto& sxvec = dynamic_cast<const SimpleVector<T>&>(xvec);
-   const auto& szvec = dynamic_cast<const SimpleVector<T>&>(zvec);
+   const auto& sxvec = dynamic_cast<const DenseVector<T>&>(xvec);
+   const auto& szvec = dynamic_cast<const DenseVector<T>&>(zvec);
 
    T* x = sxvec.v;
    T* z = szvec.v;
@@ -458,10 +458,10 @@ void SimpleVector<T>::add_product(T alpha, const Vector<T>& xvec, const Vector<T
 }
 
 template<typename T>
-void SimpleVector<T>::add_quotient(T alpha, const Vector<T>& xvec, const Vector<T>& zvec) {
-   const auto& sxvec = dynamic_cast<const SimpleVector<T>&>(xvec);
+void DenseVector<T>::add_quotient(T alpha, const Vector<T>& xvec, const Vector<T>& zvec) {
+   const auto& sxvec = dynamic_cast<const DenseVector<T>&>(xvec);
    T* x = sxvec.v;
-   const auto& szvec = dynamic_cast<const SimpleVector<T>&>(zvec);
+   const auto& szvec = dynamic_cast<const DenseVector<T>&>(zvec);
    T* z = szvec.v;
 
    assert(this->n == xvec.length() && this->n == zvec.length());
@@ -474,14 +474,14 @@ void SimpleVector<T>::add_quotient(T alpha, const Vector<T>& xvec, const Vector<
 }
 
 template<typename T>
-void SimpleVector<T>::add_quotient(T alpha, const Vector<T>& xvec, const Vector<T>& zvec, const Vector<T>& select) {
+void DenseVector<T>::add_quotient(T alpha, const Vector<T>& xvec, const Vector<T>& zvec, const Vector<T>& select) {
    assert(this->n == xvec.length() && this->n == zvec.length());
 
-   const auto& sxvec = dynamic_cast<const SimpleVector<T>&>(xvec);
+   const auto& sxvec = dynamic_cast<const DenseVector<T>&>(xvec);
    T* x = sxvec.v;
-   const auto& szvec = dynamic_cast<const SimpleVector<T>&>(zvec);
+   const auto& szvec = dynamic_cast<const DenseVector<T>&>(zvec);
    T* z = szvec.v;
-   const auto& sselect = dynamic_cast<const SimpleVector<T>&>(select);
+   const auto& sselect = dynamic_cast<const DenseVector<T>&>(select);
    T* s = sselect.v;
    if (alpha == 1.0) {
       for (int i = 0; i < this->n; i++) {
@@ -504,21 +504,21 @@ void SimpleVector<T>::add_quotient(T alpha, const Vector<T>& xvec, const Vector<
 }
 
 template<>
-double SimpleVector<double>::dotProductWith(const Vector<double>& vec) const {
+double DenseVector<double>::dotProductWith(const Vector<double>& vec) const {
    assert(this->n == vec.length());
    if (this->n == 0)
       return 0.0;
 
-   const auto& svec = dynamic_cast<const SimpleVector<double>&>(vec);
+   const auto& svec = dynamic_cast<const DenseVector<double>&>(vec);
 
    const int incx = 1;
    return ddot_(&this->n, v, &incx, svec.v, &incx);
 }
 
 template<typename T>
-T SimpleVector<T>::scaled_dot_product_self(const Vector<T>& scale_) const {
+T DenseVector<T>::scaled_dot_product_self(const Vector<T>& scale_) const {
    assert(this->n == scale_.length());
-   const auto& scale = dynamic_cast<const SimpleVector<T>&>(scale_);
+   const auto& scale = dynamic_cast<const DenseVector<T>&>(scale_);
 
    T scaled_dot_product_self = T{};
    for (int i = 0; i < this->n; ++i) {
@@ -529,9 +529,9 @@ T SimpleVector<T>::scaled_dot_product_self(const Vector<T>& scale_) const {
 }
 
 template<typename T>
-T SimpleVector<T>::dotProductWith(const Vector<T>& vec) const {
+T DenseVector<T>::dotProductWith(const Vector<T>& vec) const {
    assert(this->n == vec.length());
-   const auto& svec = dynamic_cast<const SimpleVector<T>&>(vec);
+   const auto& svec = dynamic_cast<const DenseVector<T>&>(vec);
 
    T* vvec = svec.v;
 
@@ -559,22 +559,22 @@ T SimpleVector<T>::dotProductWith(const Vector<T>& vec) const {
 }
 
 template<typename T>
-T SimpleVector<T>::dotProductSelf(T scaleFactor) const {
+T DenseVector<T>::dotProductSelf(T scaleFactor) const {
    assert(scaleFactor >= 0.0);
    return scaleFactor*scaleFactor*dotProductWith(*this);
 }
 
 template<typename T>
-T SimpleVector<T>::shiftedDotProductWith(T alpha, const Vector<T>& mystep, const Vector<T>& yvec, T beta, const Vector<T>& ystep) const {
+T DenseVector<T>::shiftedDotProductWith(T alpha, const Vector<T>& mystep, const Vector<T>& yvec, T beta, const Vector<T>& ystep) const {
    assert(this->n == mystep.length() && this->n == yvec.length() && this->n == ystep.length());
 
-   const SimpleVector<T>& syvec = dynamic_cast<const SimpleVector<T>&>(yvec);
+   const DenseVector<T>& syvec = dynamic_cast<const DenseVector<T>&>(yvec);
    T* y = syvec.v;
 
-   const SimpleVector<T>& smystep = dynamic_cast<const SimpleVector<T>&>(mystep);
+   const DenseVector<T>& smystep = dynamic_cast<const DenseVector<T>&>(mystep);
    T* p = smystep.v;
 
-   const SimpleVector<T>& systep = dynamic_cast<const SimpleVector<T>&>(ystep);
+   const DenseVector<T>& systep = dynamic_cast<const DenseVector<T>&>(ystep);
    T* q = systep.v;
 
    T dot1 = 0.0;
@@ -601,13 +601,13 @@ T SimpleVector<T>::shiftedDotProductWith(T alpha, const Vector<T>& mystep, const
 }
 
 template<typename T>
-void SimpleVector<T>::negate() {
+void DenseVector<T>::negate() {
    for (int i = 0; i < this->n; i++)
       v[i] = -v[i];
 }
 
 template<typename T>
-void SimpleVector<T>::invert() {
+void DenseVector<T>::invert() {
    for (int i = 0; i < this->n; i++) {
       assert(v[i] != 0.0);
       v[i] = 1.0 / v[i];
@@ -615,7 +615,7 @@ void SimpleVector<T>::invert() {
 }
 
 template<typename T>
-void SimpleVector<T>::safe_invert(T zero_replacement_value) {
+void DenseVector<T>::safe_invert(T zero_replacement_value) {
    for (int i = 0; i < this->n; i++) {
       if (v[i] != 0.0)
          v[i] = 1 / v[i];
@@ -625,7 +625,7 @@ void SimpleVector<T>::safe_invert(T zero_replacement_value) {
 }
 
 template<typename T>
-void SimpleVector<T>::sqrt() {
+void DenseVector<T>::sqrt() {
    for (int i = 0; i < this->n; i++) {
       assert(v[i] >= 0.0);
       v[i] = std::sqrt(v[i]);
@@ -633,7 +633,7 @@ void SimpleVector<T>::sqrt() {
 }
 
 template<typename T>
-void SimpleVector<T>::roundToPow2() {
+void DenseVector<T>::roundToPow2() {
    for (int i = 0; i < this->n; i++) {
       int exp;
 #if 0
@@ -651,7 +651,7 @@ void SimpleVector<T>::roundToPow2() {
 }
 
 template<typename T>
-bool SimpleVector<T>::all_positive() const {
+bool DenseVector<T>::all_positive() const {
    for (int i = 0; i < this->n; i++) {
       if (v[i] <= 0)
          return false;
@@ -660,24 +660,24 @@ bool SimpleVector<T>::all_positive() const {
 }
 
 template<typename T>
-void SimpleVector<T>::transform(const std::function<T(const T&)>& transformation) {
+void DenseVector<T>::transform(const std::function<T(const T&)>& transformation) {
    std::transform(v, v + this->n, v, transformation);
 }
 
 template<typename T>
-T SimpleVector<T>::sum_reduce(const std::function<T(const T& a, const T& b)>& reduce) const {
+T DenseVector<T>::sum_reduce(const std::function<T(const T& a, const T& b)>& reduce) const {
    return std::accumulate(v, v + this->n, T{}, reduce); // no reduce for now we are forcing in order?
 }
 
 template<typename T>
-bool SimpleVector<T>::all_of(const std::function<bool(const T&)>& pred) const {
+bool DenseVector<T>::all_of(const std::function<bool(const T&)>& pred) const {
    return std::all_of(v, v + this->n, pred);
 }
 
 template<typename T>
-T SimpleVector<T>::fraction_to_boundary(const Vector<T>& step_in, T fraction) const {
+T DenseVector<T>::fraction_to_boundary(const Vector<T>& step_in, T fraction) const {
    assert(this->n == step_in.length());
-   const auto& step = dynamic_cast<const SimpleVector<T>&>(step_in);
+   const auto& step = dynamic_cast<const DenseVector<T>&>(step_in);
 
    T max_length{1};
    for (int i = 0; i < this->n; i++) {
@@ -691,33 +691,33 @@ T SimpleVector<T>::fraction_to_boundary(const Vector<T>& step_in, T fraction) co
 }
 
 template<typename T>
-T SimpleVector<T>::find_blocking(const Vector<T>& wstep_vec, const Vector<T>& u_vec, const Vector<T>& ustep_vec, T maxStep, T* w_elt, T* wstep_elt,
+T DenseVector<T>::find_blocking(const Vector<T>& wstep_vec, const Vector<T>& u_vec, const Vector<T>& ustep_vec, T maxStep, T* w_elt, T* wstep_elt,
       T* u_elt, T* ustep_elt, int& first_or_second) const {
    T* w = v;
-   const SimpleVector<T>& swstep = dynamic_cast<const SimpleVector<T>&>(wstep_vec);
+   const DenseVector<T>& swstep = dynamic_cast<const DenseVector<T>&>(wstep_vec);
    T* wstep = swstep.v;
 
-   const SimpleVector<T>& su_vec = dynamic_cast<const SimpleVector<T>&>(u_vec);
+   const DenseVector<T>& su_vec = dynamic_cast<const DenseVector<T>&>(u_vec);
    T* u = su_vec.v;
 
-   const SimpleVector<T>& sustep_vec = dynamic_cast<const SimpleVector<T>&>(ustep_vec);
+   const DenseVector<T>& sustep_vec = dynamic_cast<const DenseVector<T>&>(ustep_vec);
    T* ustep = sustep_vec.v;
 
    return ::find_blocking(w, this->n, 1, wstep, 1, u, 1, ustep, 1, maxStep, w_elt, wstep_elt, u_elt, ustep_elt, first_or_second);
 }
 
 template<typename T>
-void SimpleVector<T>::find_blocking_pd(const Vector<T>& wstep_vec, const Vector<T>& u_vec, const Vector<T>& ustep_vec, T& maxStepPri, T& maxStepDual,
+void DenseVector<T>::find_blocking_pd(const Vector<T>& wstep_vec, const Vector<T>& u_vec, const Vector<T>& ustep_vec, T& maxStepPri, T& maxStepDual,
       T& w_elt_p, T& wstep_elt_p, T& u_elt_p, T& ustep_elt_p, T& w_elt_d, T& wstep_elt_d, T& u_elt_d, T& ustep_elt_d, bool& primalBlocking,
       bool& dualBlocking) const {
    const T* w = v;
-   const SimpleVector<T>& swstep = dynamic_cast<const SimpleVector<T>&>(wstep_vec);
+   const DenseVector<T>& swstep = dynamic_cast<const DenseVector<T>&>(wstep_vec);
    const T* wstep = swstep.v;
 
-   const SimpleVector<T>& su_vec = dynamic_cast<const SimpleVector<T>&>(u_vec);
+   const DenseVector<T>& su_vec = dynamic_cast<const DenseVector<T>&>(u_vec);
    const T* u = su_vec.v;
 
-   const SimpleVector<T>& sustep_vec = dynamic_cast<const SimpleVector<T>&>(ustep_vec);
+   const DenseVector<T>& sustep_vec = dynamic_cast<const DenseVector<T>&>(ustep_vec);
    const T* ustep = sustep_vec.v;
 
    ::find_blocking_pd(w, this->n, wstep, u, ustep, maxStepPri, maxStepDual, w_elt_p, wstep_elt_p, u_elt_p, ustep_elt_p, w_elt_d, wstep_elt_d, u_elt_d,
@@ -725,8 +725,8 @@ void SimpleVector<T>::find_blocking_pd(const Vector<T>& wstep_vec, const Vector<
 }
 
 template<typename T>
-bool SimpleVector<T>::matchesNonZeroPattern(const Vector<T>& select) const {
-   const SimpleVector<T>& sselect = dynamic_cast<const SimpleVector<T>&>(select);
+bool DenseVector<T>::matchesNonZeroPattern(const Vector<T>& select) const {
+   const DenseVector<T>& sselect = dynamic_cast<const DenseVector<T>&>(select);
    T* map = sselect.v;
 
    T* lmap = map + this->n;
@@ -744,8 +744,8 @@ bool SimpleVector<T>::matchesNonZeroPattern(const Vector<T>& select) const {
 }
 
 template<typename T>
-void SimpleVector<T>::selectNonZeros(const Vector<T>& select) {
-   const SimpleVector<T>& sselect = dynamic_cast<const SimpleVector<T>&>(select);
+void DenseVector<T>::selectNonZeros(const Vector<T>& select) {
+   const DenseVector<T>& sselect = dynamic_cast<const DenseVector<T>&>(select);
    T* map = sselect.v;
 
    assert(this->n == select.length());
@@ -756,7 +756,7 @@ void SimpleVector<T>::selectNonZeros(const Vector<T>& select) {
 }
 
 template<typename T>
-void SimpleVector<T>::selectPositive() {
+void DenseVector<T>::selectPositive() {
    // TODO : std::transform and lambda for C++11
    for (int i = 0; i < this->n; i++) {
       if (v[i] <= 0.0)
@@ -765,7 +765,7 @@ void SimpleVector<T>::selectPositive() {
 }
 
 template<typename T>
-void SimpleVector<T>::selectNegative() {
+void DenseVector<T>::selectNegative() {
    // TODO : std::transform and lambda for C++11
    for (int i = 0; i < this->n; i++) {
       if (v[i] >= 0.0)
@@ -774,8 +774,8 @@ void SimpleVector<T>::selectNegative() {
 }
 
 template<typename T>
-void SimpleVector<T>::add_constant(T c, const Vector<T>& select) {
-   const SimpleVector<T>& sselect = dynamic_cast<const SimpleVector<T>&>(select);
+void DenseVector<T>::add_constant(T c, const Vector<T>& select) {
+   const DenseVector<T>& sselect = dynamic_cast<const DenseVector<T>&>(select);
    T* map = sselect.v;
 
    assert(this->n == select.length());
@@ -786,8 +786,8 @@ void SimpleVector<T>::add_constant(T c, const Vector<T>& select) {
 }
 
 template<typename T>
-bool SimpleVector<T>::are_positive(const Vector<T>& select) const {
-   const SimpleVector<T>& sselect = dynamic_cast<const SimpleVector<T>&>(select);
+bool DenseVector<T>::are_positive(const Vector<T>& select) const {
+   const DenseVector<T>& sselect = dynamic_cast<const DenseVector<T>&>(select);
    T* map = sselect.v;
 
    assert(this->n == select.length());
@@ -801,14 +801,14 @@ bool SimpleVector<T>::are_positive(const Vector<T>& select) const {
 }
 
 template<typename T>
-void SimpleVector<T>::divideSome(const Vector<T>& div, const Vector<T>& select) {
+void DenseVector<T>::divideSome(const Vector<T>& div, const Vector<T>& select) {
    if (this->n == 0)
       return;
 
-   const SimpleVector<T>& sselect = dynamic_cast<const SimpleVector<T>&>(select);
+   const DenseVector<T>& sselect = dynamic_cast<const DenseVector<T>&>(select);
    T* map = sselect.v;
 
-   const SimpleVector<T>& sdiv = dynamic_cast<const SimpleVector<T>&>(div);
+   const DenseVector<T>& sdiv = dynamic_cast<const DenseVector<T>&>(div);
    T* q = sdiv.v;
    assert(this->n == div.length() && this->n == select.length());
 
@@ -823,8 +823,8 @@ void SimpleVector<T>::divideSome(const Vector<T>& div, const Vector<T>& select) 
 }
 
 template<typename T>
-void SimpleVector<T>::removeEntries(const Vector<int>& select) {
-   const SimpleVector<int>& selectSimple = dynamic_cast<const SimpleVector<int>&>(select);
+void DenseVector<T>::removeEntries(const Vector<int>& select) {
+   const DenseVector<int>& selectSimple = dynamic_cast<const DenseVector<int>&>(select);
    const int* const selectArr = selectSimple.elements();
    assert(selectArr);
 
@@ -840,7 +840,7 @@ void SimpleVector<T>::removeEntries(const Vector<int>& select) {
 }
 
 template<typename T>
-void SimpleVector<T>::permuteEntries(const std::vector<unsigned int>& permvec) {
+void DenseVector<T>::permuteEntries(const std::vector<unsigned int>& permvec) {
    if (this->n == 0)
       return;
 
@@ -860,7 +860,7 @@ void SimpleVector<T>::permuteEntries(const std::vector<unsigned int>& permvec) {
 }
 
 template<typename T>
-void SimpleVector<T>::appendToFront(unsigned int n_to_add, const T& value) {
+void DenseVector<T>::appendToFront(unsigned int n_to_add, const T& value) {
    assert(!preserveVec);
 
    const int new_len = this->n + n_to_add;
@@ -877,7 +877,7 @@ void SimpleVector<T>::appendToFront(unsigned int n_to_add, const T& value) {
 }
 
 template<typename T>
-void SimpleVector<T>::appendToFront(const SimpleVector<T>& other) {
+void DenseVector<T>::appendToFront(const DenseVector<T>& other) {
    assert(!preserveVec);
 
    const int new_len = this->n + other.n;
@@ -894,12 +894,12 @@ void SimpleVector<T>::appendToFront(const SimpleVector<T>& other) {
 }
 
 template<typename T>
-void SimpleVector<T>::jointCopyFrom(const Vector<T>& vx, const Vector<T>& vy, const Vector<T>& vz) {
+void DenseVector<T>::jointCopyFrom(const Vector<T>& vx, const Vector<T>& vy, const Vector<T>& vz) {
    assert(this->length() == vx.length() + vy.length() + vz.length());
 
-   const SimpleVector<T>& x = dynamic_cast<const SimpleVector<T>&>(vx);
-   const SimpleVector<T>& y = dynamic_cast<const SimpleVector<T>&>(vy);
-   const SimpleVector<T>& z = dynamic_cast<const SimpleVector<T>&>(vz);
+   const DenseVector<T>& x = dynamic_cast<const DenseVector<T>&>(vx);
+   const DenseVector<T>& y = dynamic_cast<const DenseVector<T>&>(vy);
+   const DenseVector<T>& z = dynamic_cast<const DenseVector<T>&>(vz);
 
    std::copy(x.v, x.v + x.length(), v);
    std::copy(y.v, y.v + y.length(), v + x.length());
@@ -907,12 +907,12 @@ void SimpleVector<T>::jointCopyFrom(const Vector<T>& vx, const Vector<T>& vy, co
 }
 
 template<typename T>
-void SimpleVector<T>::jointCopyTo(Vector<T>& vx, Vector<T>& vy, Vector<T>& vz) const {
+void DenseVector<T>::jointCopyTo(Vector<T>& vx, Vector<T>& vy, Vector<T>& vz) const {
    assert(this->length() == vx.length() + vy.length() + vz.length());
 
-   SimpleVector<T>& x = dynamic_cast<SimpleVector<T>&>(vx);
-   SimpleVector<T>& y = dynamic_cast<SimpleVector<T>&>(vy);
-   SimpleVector<T>& z = dynamic_cast<SimpleVector<T>&>(vz);
+   DenseVector<T>& x = dynamic_cast<DenseVector<T>&>(vx);
+   DenseVector<T>& y = dynamic_cast<DenseVector<T>&>(vy);
+   DenseVector<T>& z = dynamic_cast<DenseVector<T>&>(vz);
 
    std::copy(v, v + x.length(), x.v);
    std::copy(v + x.length(), v + x.length() + y.length(), y.v);
@@ -920,7 +920,7 @@ void SimpleVector<T>::jointCopyTo(Vector<T>& vx, Vector<T>& vy, Vector<T>& vz) c
 }
 
 template<typename T>
-void SimpleVector<T>::appendToBack(unsigned int n_to_add, const T& value) {
+void DenseVector<T>::appendToBack(unsigned int n_to_add, const T& value) {
    assert(!preserveVec);
 
    const int new_len = this->n + n_to_add;
@@ -937,7 +937,7 @@ void SimpleVector<T>::appendToBack(unsigned int n_to_add, const T& value) {
 }
 
 template<typename T>
-void SimpleVector<T>::appendToBack(const SimpleVector<T>& other) {
+void DenseVector<T>::appendToBack(const DenseVector<T>& other) {
    assert(!preserveVec);
 
    const int new_len = this->n + other.n;
@@ -954,11 +954,11 @@ void SimpleVector<T>::appendToBack(const SimpleVector<T>& other) {
 }
 
 template<typename T>
-SimpleVector<T>* SimpleVector<T>::shaveBorder(int n_shave, bool shave_top) {
+DenseVector<T>* DenseVector<T>::shaveBorder(int n_shave, bool shave_top) {
    // TODO : adjust for n_shave == this->n
    assert(n_shave <= this->n);
    assert(0 <= n_shave);
-   auto* vec_new = new SimpleVector<T>(n_shave);
+   auto* vec_new = new DenseVector<T>(n_shave);
 
    T* vec_shaved = new T[this->n - n_shave];
 
@@ -979,11 +979,11 @@ SimpleVector<T>* SimpleVector<T>::shaveBorder(int n_shave, bool shave_top) {
 
 
 template<typename T>
-void SimpleVector<T>::getSumCountIfSmall(double tol, double& sum_small, int& n_close, const Vector<T>* select) const {
+void DenseVector<T>::getSumCountIfSmall(double tol, double& sum_small, int& n_close, const Vector<T>* select) const {
    if (this->n == 0)
       return;
 
-   const auto* selects = dynamic_cast<const SimpleVector<T>*>(select);
+   const auto* selects = dynamic_cast<const DenseVector<T>*>(select);
    if (selects)
       assert(this->n == selects->n);
 
@@ -998,7 +998,7 @@ void SimpleVector<T>::getSumCountIfSmall(double tol, double& sum_small, int& n_c
 }
 
 template<typename T>
-void SimpleVector<T>::pushSmallComplementarityPairs(Vector<T>& other_vec_in, const Vector<T>& select_in, double tol_this, double tol_other,
+void DenseVector<T>::pushSmallComplementarityPairs(Vector<T>& other_vec_in, const Vector<T>& select_in, double tol_this, double tol_other,
       double tol_pairs) {
    assert(tol_other > 0);
    assert(tol_this > 0);
@@ -1006,8 +1006,8 @@ void SimpleVector<T>::pushSmallComplementarityPairs(Vector<T>& other_vec_in, con
    assert(this->n == other_vec_in.length());
    assert(this->n == select_in.length());
 
-   SimpleVector<T>& other_vec = dynamic_cast<SimpleVector<T>&>(other_vec_in);
-   const SimpleVector<T>& select = dynamic_cast<const SimpleVector<T>&>(select_in);
+   DenseVector<T>& other_vec = dynamic_cast<DenseVector<T>&>(other_vec_in);
+   const DenseVector<T>& select = dynamic_cast<const DenseVector<T>&>(select_in);
 
    for (int i = 0; i < this->n; ++i) {
       if (PIPSisEQ(1.0, select[i])) {
@@ -1032,10 +1032,10 @@ void SimpleVector<T>::pushSmallComplementarityPairs(Vector<T>& other_vec_in, con
 }
 
 template<typename T>
-double SimpleVector<T>::barrier_directional_derivative(const Vector<T>& x_in, const Vector<T>& bound_in, const Vector<T>& bound_indicator_in) const {
-   const auto& x = dynamic_cast<const SimpleVector<T>&>(x_in);
-   const auto& bound = dynamic_cast<const SimpleVector<T>&>(bound_in);
-   const auto& bound_indicator = dynamic_cast<const SimpleVector<T>&>(bound_indicator_in);
+double DenseVector<T>::barrier_directional_derivative(const Vector<T>& x_in, const Vector<T>& bound_in, const Vector<T>& bound_indicator_in) const {
+   const auto& x = dynamic_cast<const DenseVector<T>&>(x_in);
+   const auto& bound = dynamic_cast<const DenseVector<T>&>(bound_in);
+   const auto& bound_indicator = dynamic_cast<const DenseVector<T>&>(bound_indicator_in);
    assert(this->n == x.length());
    assert(this->n == bound.length());
 
@@ -1049,9 +1049,9 @@ double SimpleVector<T>::barrier_directional_derivative(const Vector<T>& x_in, co
 }
 
 template<typename T>
-double SimpleVector<T>::barrier_directional_derivative(const Vector<T>& x_in, double bound, const Vector<T>& bound_indicator_in) const {
-   const auto& x = dynamic_cast<const SimpleVector<T>&>(x_in);
-   const auto& bound_indicator = dynamic_cast<const SimpleVector<T>&>(bound_indicator_in);
+double DenseVector<T>::barrier_directional_derivative(const Vector<T>& x_in, double bound, const Vector<T>& bound_indicator_in) const {
+   const auto& x = dynamic_cast<const DenseVector<T>&>(x_in);
+   const auto& bound_indicator = dynamic_cast<const DenseVector<T>&>(bound_indicator_in);
    assert(this->n == x.length());
 
    double result = 0.;
@@ -1064,15 +1064,15 @@ double SimpleVector<T>::barrier_directional_derivative(const Vector<T>& x_in, do
 }
 
 template <typename T>
-std::tuple<double, double, double, double> SimpleVector<T>::find_abs_nonzero_max_min_pair_a_by_b_plus_c_by_d(const Vector<T>& a_in, const Vector<T>& b_in,
+std::tuple<double, double, double, double> DenseVector<T>::find_abs_nonzero_max_min_pair_a_by_b_plus_c_by_d(const Vector<T>& a_in, const Vector<T>& b_in,
    const Vector<T>& select_ab_in, bool use_ab, const Vector<T>& c_in, const Vector<T>& d_in, const Vector<T>& select_cd_in, bool use_cd, bool find_min) const {
 
-   const auto& a = dynamic_cast<const SimpleVector<T>&>(a_in);
-   const auto& b = dynamic_cast<const SimpleVector<T>&>(b_in);
-   const auto& c = dynamic_cast<const SimpleVector<T>&>(c_in);
-   const auto& d = dynamic_cast<const SimpleVector<T>&>(d_in);
-   const auto& select_ab = dynamic_cast<const SimpleVector<T>&>(select_ab_in);
-   const auto& select_cd = dynamic_cast<const SimpleVector<T>&>(select_cd_in);
+   const auto& a = dynamic_cast<const DenseVector<T>&>(a_in);
+   const auto& b = dynamic_cast<const DenseVector<T>&>(b_in);
+   const auto& c = dynamic_cast<const DenseVector<T>&>(c_in);
+   const auto& d = dynamic_cast<const DenseVector<T>&>(d_in);
+   const auto& select_ab = dynamic_cast<const DenseVector<T>&>(select_ab_in);
+   const auto& select_cd = dynamic_cast<const DenseVector<T>&>(select_cd_in);
 
    auto compute_value = [use_ab, use_cd](const double& a, const double&b, const double& select_ab, const double& c, const double& d, const double select_cd) {
       if(use_ab && select_ab == 1.0) assert(b != 0.0);
@@ -1105,7 +1105,7 @@ std::tuple<double, double, double, double> SimpleVector<T>::find_abs_nonzero_max
 }
 
 template
-class SimpleVector<int>;
+class DenseVector<int>;
 
 template
-class SimpleVector<double>;
+class DenseVector<double>;

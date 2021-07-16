@@ -20,7 +20,7 @@ public:
    void Lsolve(Vector<double>&) override {};
    void Dsolve(Vector<double>&) override {};
    void Ltsolve(Vector<double>&) override {};
-   void Ltsolve2(DistributedVector<double>&, SimpleVector<double>&, bool) override {};
+   void Ltsolve2(DistributedVector<double>&, DenseVector<double>&, bool) override {};
 
    void solveCompressed(Vector<double>&) override {};
 
@@ -34,9 +34,9 @@ public:
    void addLniziLinkCons(Vector<double>&, Vector<double>&, bool) override {};
 
    /** y += alpha * Lni^T * x */
-   //  void LniTransMult(rob, SimpleVector<double>& y, double alpha, SimpleVector<double>& x) override {};
+   //  void LniTransMult(rob, DenseVector<double>& y, double alpha, DenseVector<double>& x) override {};
 
-   void addTermToSchurResidual(SimpleVector<double>&, SimpleVector<double>&) override {};
+   void addTermToSchurResidual(DenseVector<double>&, DenseVector<double>&) override {};
 
    void LsolveHierarchyBorder(DenseMatrix&, BorderLinsys&, std::vector<BorderMod>&, int, int) override {};
    void LsolveHierarchyBorder(DenseMatrix&, BorderLinsys&, std::vector<BorderMod>&, bool, int, int) override {};
@@ -47,9 +47,9 @@ public:
 
    [[nodiscard]] bool isDummy() const override { return true; };
 
-   void addBorderTimesRhsToB0(DistributedVector<double>&, SimpleVector<double>&, BorderLinsys&) override {};
-   void addBorderX0ToRhs(DistributedVector<double>&, const SimpleVector<double>&, BorderLinsys&) override {};
-   void computeInnerSystemRightHandSide(DistributedVector<double>&, const SimpleVector<double>&, bool) override {};
+   void addBorderTimesRhsToB0(DistributedVector<double>&, DenseVector<double>&, BorderLinsys&) override {};
+   void addBorderX0ToRhs(DistributedVector<double>&, const DenseVector<double>&, BorderLinsys&) override {};
+   void computeInnerSystemRightHandSide(DistributedVector<double>&, const DenseVector<double>&, bool) override {};
 };
 
 #endif

@@ -41,7 +41,7 @@ void Ma27SolverRoot::matrixChanged() {
 }
 
 void Ma27SolverRoot::solve(Vector<double>& rhs) {
-   auto& sv = dynamic_cast<SimpleVector<double>&>(rhs);
+   auto& sv = dynamic_cast<DenseVector<double>&>(rhs);
 
    assert(n == rhs.length());
 

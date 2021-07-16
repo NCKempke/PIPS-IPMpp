@@ -104,30 +104,30 @@ private:
    const SparseStorageDynamic* currCmatTrans{};
    const SparseStorageDynamic* currDmat{};
    const SparseStorageDynamic* currDmatTrans{};
-   const SimpleVector<int>* currNnzRowC{};
+   const DenseVector<int>* currNnzRowC{};
 
    // pointers to the normalized and copied matrix blocks
    std::unique_ptr<SparseStorageDynamic> norm_Amat{};
    std::unique_ptr<SparseStorageDynamic> norm_Bmat{};
    std::unique_ptr<SparseStorageDynamic> norm_Cmat{};
    std::unique_ptr<SparseStorageDynamic> norm_Dmat{};
-   std::unique_ptr<SimpleVector<double>> norm_b{};
-   std::unique_ptr<SimpleVector<double>> norm_clow{};
-   std::unique_ptr<SimpleVector<double>> norm_cupp{};
-   std::unique_ptr<SimpleVector<double>> norm_iclow{};
-   std::unique_ptr<SimpleVector<double>> norm_icupp{};
-   std::unique_ptr<SimpleVector<double>> norm_factorC{};
-   std::unique_ptr<SimpleVector<double>> norm_factorA{};
+   std::unique_ptr<DenseVector<double>> norm_b{};
+   std::unique_ptr<DenseVector<double>> norm_clow{};
+   std::unique_ptr<DenseVector<double>> norm_cupp{};
+   std::unique_ptr<DenseVector<double>> norm_iclow{};
+   std::unique_ptr<DenseVector<double>> norm_icupp{};
+   std::unique_ptr<DenseVector<double>> norm_factorC{};
+   std::unique_ptr<DenseVector<double>> norm_factorA{};
 
    // data for the nearly parallel row case
-   std::unique_ptr<SimpleVector<int>> rowContainsSingletonVariableA{};
-   std::unique_ptr<SimpleVector<int>> rowContainsSingletonVariableC{};
-   std::unique_ptr<SimpleVector<double>> singletonCoeffsColParent{};
-   std::unique_ptr<SimpleVector<double>> singletonCoeffsColChild{};
-   std::unique_ptr<SimpleVector<int>> normNnzRowA{};
-   std::unique_ptr<SimpleVector<int>> normNnzRowC{};
-   std::unique_ptr<SimpleVector<int>> normNnzColParent{};
-   std::unique_ptr<SimpleVector<int>> normNnzColChild{};
+   std::unique_ptr<DenseVector<int>> rowContainsSingletonVariableA{};
+   std::unique_ptr<DenseVector<int>> rowContainsSingletonVariableC{};
+   std::unique_ptr<DenseVector<double>> singletonCoeffsColParent{};
+   std::unique_ptr<DenseVector<double>> singletonCoeffsColChild{};
+   std::unique_ptr<DenseVector<int>> normNnzRowA{};
+   std::unique_ptr<DenseVector<int>> normNnzRowC{};
+   std::unique_ptr<DenseVector<int>> normNnzColParent{};
+   std::unique_ptr<DenseVector<int>> normNnzColChild{};
    std::unique_ptr<SparseStorageDynamic> norm_AmatTrans{};
    std::unique_ptr<SparseStorageDynamic> norm_BmatTrans{};
    std::unique_ptr<SparseStorageDynamic> norm_CmatTrans{};
@@ -151,15 +151,15 @@ private:
    void updateExtendedPointersForCurrentNode(int node);
 
    void removeSingletonVars();
-   void removeEntry(int colIdx, SimpleVector<int>& rowContainsSingletonVar, SparseStorageDynamic& matrix, SparseStorageDynamic& matrixTrans,
-         SimpleVector<int>& nnzRow, SimpleVector<int>& nnzCol, bool parent);
+   void removeEntry(int colIdx, DenseVector<int>& rowContainsSingletonVar, SparseStorageDynamic& matrix, SparseStorageDynamic& matrixTrans,
+         DenseVector<int>& nnzRow, DenseVector<int>& nnzCol, bool parent);
    double removeEntryInDynamicStorage(SparseStorageDynamic& storage, int row, int col) const;
 
-   void normalizeBlocksRowwise(SystemType system_type, SparseStorageDynamic* a_mat, SparseStorageDynamic* b_mat, SimpleVector<double>* cupp,
-         SimpleVector<double>* clow, SimpleVector<double>* icupp, SimpleVector<double>* iclow) const;
+   void normalizeBlocksRowwise(SystemType system_type, SparseStorageDynamic* a_mat, SparseStorageDynamic* b_mat, DenseVector<double>* cupp,
+         DenseVector<double>* clow, DenseVector<double>* icupp, DenseVector<double>* iclow) const;
    void
    insertRowsIntoHashtable(boost::unordered_set<rowlib::rowWithColInd, boost::hash<rowlib::rowWithColInd> >& rows, const SparseStorageDynamic* Ablock,
-         const SparseStorageDynamic* Bblock, SystemType system_type, const SimpleVector<int>* nnz_row_norm, const SimpleVector<int>* nnz_row_orig);
+         const SparseStorageDynamic* Bblock, SystemType system_type, const DenseVector<int>* nnz_row_norm, const DenseVector<int>* nnz_row_orig);
    void compareRowsInCoeffHashTable(int& nRowElims, int it);
    bool checkRowsAreParallel(const rowlib::rowWithEntries& row1, const rowlib::rowWithEntries& row2) const;
 

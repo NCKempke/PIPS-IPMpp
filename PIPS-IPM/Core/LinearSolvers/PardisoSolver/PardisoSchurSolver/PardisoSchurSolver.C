@@ -19,7 +19,7 @@ int dumpAugMatrix(int n, int nnz, int nSys, //size, nnz and size of the (1,1) bl
         const char* fname=nullptr);
 int dumpSysMatrix(SparseSymMatrix* Msys,
                   const char* fname=nullptr);
-int dumpRhs(SimpleVector<double>& v);
+int dumpRhs(DenseVector<double>& v);
 #endif
 
 #ifdef TIMING_FLOPS
@@ -620,7 +620,7 @@ int dumpSysMatrix(SparseSymMatrix* Msys, const char* fname)
 
   return 0;
 }
-int dumpRhs(SimpleVector<double>& v)
+int dumpRhs(DenseVector<double>& v)
 {
   rhsCount++;
   char filename[1024];

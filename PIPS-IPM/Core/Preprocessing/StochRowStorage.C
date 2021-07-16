@@ -22,7 +22,7 @@ int StochRowStorage::storeRow(const INDEX& row, const DistributedMatrix& matrix_
 /* TODO : it would probably be nice to have something like a DistributedVector<double>View that one can create at this point and then use like a normal StochVec.. */
 /** y = beta * y + alpha * stored */
 /** if y_linking is defined the result of beta * y + alpha * stored for linking variables will be put there */
-void StochRowStorage::axpyAtRow(double beta, DistributedVector<double>* y, SimpleVector<double>* y_linking, double alpha, const INDEX& row) const {
+void StochRowStorage::axpyAtRow(double beta, DistributedVector<double>* y, DenseVector<double>* y_linking, double alpha, const INDEX& row) const {
    assert(row.isRow());
    assert(y);
    if (!PIPSisEQ(beta, 1.0)) {
@@ -35,8 +35,8 @@ void StochRowStorage::axpyAtRow(double beta, DistributedVector<double>* y, Simpl
 }
 
 void
-StochRowStorage::axpyAtRowPosNeg(double beta, DistributedVector<double>* y_pos, SimpleVector<double>* y_link_pos, DistributedVector<double>* y_neg,
-      SimpleVector<double>* y_link_neg, double alpha, const INDEX& row) const {
+StochRowStorage::axpyAtRowPosNeg(double beta, DistributedVector<double>* y_pos, DenseVector<double>* y_link_pos, DistributedVector<double>* y_neg,
+      DenseVector<double>* y_link_neg, double alpha, const INDEX& row) const {
    assert(row.isRow());
    assert((y_link_pos && y_link_neg) || (!y_link_pos && !y_link_neg));
 
@@ -75,7 +75,7 @@ double StochRowStorage::multRowTimesVec(const INDEX& row, const DistributedVecto
 double StochRowStorage::multLinkingRowTimesVecWithoutBl0(int row, const DistributedVector<double>& vec) const {
    const double res_full = row_storage->localRowTimesVec(vec, -1, row, true);
    const double res_bl0 = dynamic_cast<const SparseMatrix&>(*row_storage->Blmat).localRowTimesVec(
-         dynamic_cast<const SimpleVector<double>&>(*vec.first), row);
+         dynamic_cast<const DenseVector<double>&>(*vec.first), row);
 
    return res_full - res_bl0;
 }

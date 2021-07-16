@@ -42,16 +42,16 @@ void sLinsysRootAugHierInner::assembleLocalKKT() {
 
 void sLinsysRootAugHierInner::Ltsolve(Vector<double>& x) {
    auto& b = dynamic_cast<DistributedVector<double>&>(x);
-   auto& b0 = dynamic_cast<SimpleVector<double>&>(*b.first);
+   auto& b0 = dynamic_cast<DenseVector<double>&>(*b.first);
 
    //dumpRhs(0, "sol",  b0);
-   SimpleVector<double>& z0 = b0; //just another name, for clarity
+   DenseVector<double>& z0 = b0; //just another name, for clarity
 
    for (size_t it = 0; it < children.size(); it++)
       children[it]->Ltsolve2(*b.children[it], z0, false);
 }
 
-void sLinsysRootAugHierInner::Ltsolve2(DistributedVector<double>& x, SimpleVector<double>& x0, bool use_local_RAC) {
+void sLinsysRootAugHierInner::Ltsolve2(DistributedVector<double>& x, DenseVector<double>& x0, bool use_local_RAC) {
    assert(pipsipmpp_options::get_bool_parameter("HIERARCHICAL"));
 
    auto& b = dynamic_cast<DistributedVector<double>&>(x);
@@ -77,7 +77,7 @@ void sLinsysRootAugHierInner::LtsolveHierarchyBorder(AbstractMatrix& res, const 
 
 void
 sLinsysRootAugHierInner::computeInnerSystemRightHandSide(DistributedVector<double>& rhs_inner,
-   const SimpleVector<double>& b0, bool use_local_RAC) {
+   const DenseVector<double>& b0, bool use_local_RAC) {
    BorderLinsys Border(0, dynamic_cast<StripMatrix&>(*dynamic_cast<const DistributedMatrix&>(*data->equality_jacobian).Blmat),
       dynamic_cast<StripMatrix&>(*dynamic_cast<const DistributedMatrix&>(*data->inequality_jacobian).Blmat), use_local_RAC);
 
@@ -94,7 +94,7 @@ void sLinsysRootAugHierInner::Lsolve(Vector<double>& x) {
    auto& b = dynamic_cast<DistributedVector<double>&>(x);
    assert(children.size() == b.children.size());
 
-   auto& b0 = dynamic_cast<SimpleVector<double>&>(*b.first);
+   auto& b0 = dynamic_cast<DenseVector<double>&>(*b.first);
    assert(!b.last);
 
    if (iAmDistrib && PIPS_MPIgetRank(mpiComm) > 0)
@@ -110,7 +110,7 @@ void sLinsysRootAugHierInner::Lsolve(Vector<double>& x) {
 
 void sLinsysRootAugHierInner::addLniziLinkCons(Vector<double>& z0_, Vector<double>& zi, bool use_local_RAC) {
    assert(zi.isKindOf(kStochVector));
-   auto& z0 = dynamic_cast<SimpleVector<double>&>(z0_);
+   auto& z0 = dynamic_cast<DenseVector<double>&>(z0_);
 
    if (!sol_inner)
       sol_inner.reset(dynamic_cast<DistributedVector<double>*>(zi.clone_full()));
@@ -126,7 +126,7 @@ void sLinsysRootAugHierInner::addLniziLinkCons(Vector<double>& z0_, Vector<doubl
    addBorderTimesRhsToB0(*sol_inner, z0, Bl);
 }
 
-void sLinsysRootAugHierInner::addBorderTimesRhsToB0(DistributedVector<double>& rhs, SimpleVector<double>& b0,
+void sLinsysRootAugHierInner::addBorderTimesRhsToB0(DistributedVector<double>& rhs, DenseVector<double>& b0,
    BorderLinsys& border) {
    assert(rhs.children.size() == children.size());
    assert(border.F.children.size() == children.size());
@@ -159,19 +159,19 @@ void sLinsysRootAugHierInner::addBorderTimesRhsToB0(DistributedVector<double>& r
 
       assert(b0.length() >= mFb);
 
-      auto& zi = dynamic_cast<SimpleVector<double>&>(*rhs.first);
+      auto& zi = dynamic_cast<DenseVector<double>&>(*rhs.first);
 
-      SimpleVector<double> zi1(&zi[0], nFb);
-      SimpleVector<double> zi2(&zi[nFb], nGb);
+      DenseVector<double> zi1(&zi[0], nFb);
+      DenseVector<double> zi2(&zi[nFb], nGb);
 
-      SimpleVector<double> b1(&b0[0], mFb);
+      DenseVector<double> b1(&b0[0], mFb);
 
       F_border.mult(1.0, b1, -1.0, zi1);
       G_border.mult(1.0, b1, -1.0, zi2);
    }
 }
 
-void sLinsysRootAugHierInner::addBorderX0ToRhs(DistributedVector<double>& rhs, const SimpleVector<double>& x0,
+void sLinsysRootAugHierInner::addBorderX0ToRhs(DistributedVector<double>& rhs, const DenseVector<double>& x0,
    BorderLinsys& border) {
    assert(rhs.children.size() == children.size());
    assert(border.F.children.size() == children.size());
@@ -200,12 +200,12 @@ void sLinsysRootAugHierInner::addBorderX0ToRhs(DistributedVector<double>& rhs, c
       assert(nFb == G_border.n_columns());
       assert(x0.length() >= nFb);
 
-      auto& rhs0 = dynamic_cast<SimpleVector<double>&>(*rhs.first);
+      auto& rhs0 = dynamic_cast<DenseVector<double>&>(*rhs.first);
 
-      SimpleVector<double> rhs01(&rhs0[0], mFb);
-      SimpleVector<double> rhs02(&rhs0[mFb], mGb);
+      DenseVector<double> rhs01(&rhs0[0], mFb);
+      DenseVector<double> rhs02(&rhs0[mFb], mGb);
 
-      SimpleVector<double> x1((double*) &x0[0], nFb);
+      DenseVector<double> x1((double*) &x0[0], nFb);
 
       F_border.mult(1.0, rhs01, -1.0, x1);
       G_border.mult(1.0, rhs02, -1.0, x1);

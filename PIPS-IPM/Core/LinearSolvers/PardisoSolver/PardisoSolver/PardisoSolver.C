@@ -6,7 +6,7 @@
 #include <algorithm>
 
 #include "PardisoSolver.h"
-#include "../../../LinearAlgebra/Dense/SimpleVector.hpp"
+#include "../../../LinearAlgebra/Dense/DenseVector.hpp"
 #include "../../../LinearAlgebra/Dense/DenseMatrix.h"
 
 #include "mpi.h"
@@ -205,7 +205,7 @@ void PardisoSolver::matrixChanged() {
 }
 
 void PardisoSolver::solve(Vector<double>& rhs_in) {
-   auto& rhs = dynamic_cast<SimpleVector<double>&>(rhs_in);
+   auto& rhs = dynamic_cast<DenseVector<double>&>(rhs_in);
    double* sol_local = nvec;
 
    //int maxRefinSteps=(gLackOfAccuracy==0?3:6);

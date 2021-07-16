@@ -365,7 +365,7 @@ void PardisoIndefSolver::solve(Vector<double>& v) {
    const int my_rank = PIPS_MPIgetRank(mpi_comm);
 
    phase = 33;
-   auto& sv = dynamic_cast<SimpleVector<double>&>(v);
+   auto& sv = dynamic_cast<DenseVector<double>&>(v);
 
    double* b = sv.elements();
 

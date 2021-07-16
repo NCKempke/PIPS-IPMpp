@@ -6,7 +6,7 @@
  */
 
 #include "SparseStorageDynamic.h"
-#include "SimpleVector.hpp"
+#include "DenseVector.hpp"
 #include "pipsdef.h"
 #include <cassert>
 #include <algorithm>
@@ -354,7 +354,7 @@ std::unique_ptr<SparseStorageDynamic> SparseStorageDynamic::getTranspose() const
 void SparseStorageDynamic::sum_transform_rows(Vector<double>& result_, const std::function<double(const double&)>& transform) const {
    assert(result_.length() == this->n_rows());
 
-   auto& result = dynamic_cast<SimpleVector<double>&>(result_);
+   auto& result = dynamic_cast<DenseVector<double>&>(result_);
 
    auto accumulate = [&transform] (const double& sum, const double& other) {
       return sum + transform(other);

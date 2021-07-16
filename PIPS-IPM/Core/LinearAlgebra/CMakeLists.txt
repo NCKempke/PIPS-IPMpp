@@ -12,7 +12,7 @@ target_sources(pips-ipmpp
         PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/Dense/DenseMatrix.C
         PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/Dense/DenseStorage.C
         PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/Dense/DenseSymmetricMatrix.C
-        PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/Dense/SimpleVector.cpp
+        PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/Dense/DenseVector.cpp
 
         PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/Distributed/BorderedMatrix.C
         PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/Distributed/BorderedMatrixLiftedA0wrapper.cpp

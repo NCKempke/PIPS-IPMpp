@@ -11,7 +11,7 @@
 #include "DenseSymmetricMatrix.h"
 #include "SparseSymmetricMatrix.h"
 #include "DenseMatrix.h"
-#include "SimpleVector.hpp"
+#include "DenseVector.hpp"
 #include "DistributedVector.h"
 #include "StripMatrix.h"
 #include "PIPSIPMppOptions.h"
@@ -57,7 +57,7 @@ public:
 
    virtual void Ltsolve(Vector<double>& x) = 0;
 
-   virtual void Ltsolve2(DistributedVector<double>& x, SimpleVector<double>& xp, bool use_local_RAC) = 0;
+   virtual void Ltsolve2(DistributedVector<double>& x, DenseVector<double>& xp, bool use_local_RAC) = 0;
 
    void solveCompressed(Vector<double>& rhs) override;
 
@@ -112,7 +112,7 @@ public:
          int /*end_cols*/, int /*n_empty_rows_inner_border*/) { assert(false && "not implemented here"); };
 
    /** y += alpha * Lni^T * x */
-   virtual void LniTransMult(SimpleVector<double>& y, double alpha, SimpleVector<double>& x);
+   virtual void LniTransMult(DenseVector<double>& y, double alpha, DenseVector<double>& x);
 
    /** Method(s) that use a memory-friendly mechanism for computing
     *  the terms from the Schur Complement
@@ -123,15 +123,15 @@ public:
          int /*n_empty_rows_inner_border*/) { assert(0 && "not implemented here"); };
 
    virtual void
-   computeInnerSystemRightHandSide(DistributedVector<double>& /*rhs_inner*/, const SimpleVector<double>& /*b0*/, bool /*use_local_RAC*/) {
+   computeInnerSystemRightHandSide(DistributedVector<double>& /*rhs_inner*/, const DenseVector<double>& /*b0*/, bool /*use_local_RAC*/) {
       assert(false && "not implemented here");
    };
 
    /* add you part of the border times rhs to b0 */
-   virtual void addBorderTimesRhsToB0(DistributedVector<double>& rhs, SimpleVector<double>& b0, BorderLinsys& border) = 0;
+   virtual void addBorderTimesRhsToB0(DistributedVector<double>& rhs, DenseVector<double>& b0, BorderLinsys& border) = 0;
 
    /* add you part of the border times rhs to b0 */
-   virtual void addBorderX0ToRhs(DistributedVector<double>& rhs, const SimpleVector<double>& x0, BorderLinsys& border)  = 0;
+   virtual void addBorderX0ToRhs(DistributedVector<double>& rhs, const DenseVector<double>& x0, BorderLinsys& border)  = 0;
 
    virtual void addBiTLeftKiBiRightToResBlockedParallelSolvers(bool sparse_res, bool sym_res, const BorderBiBlock& border_left_transp,
          /* const */ BorderBiBlock& border_right, AbstractMatrix& result, int begin_cols, int end_cols, int begin_rows_res, int end_rows_res);
@@ -144,7 +144,7 @@ public:
    /** Used in the iterative refinement for the dense Schur complement systems
     * Computes res += [0 A^T C^T ]*inv(KKT)*[0;A;C] x
     */
-   virtual void addTermToSchurResidual(SimpleVector<double>& res, SimpleVector<double>& x);
+   virtual void addTermToSchurResidual(DenseVector<double>& res, DenseVector<double>& x);
 
    // TODO only compute bottom left part for symmetric matrices
    /* compute result += Bl^T K^-1 Br where K is our own linear system */

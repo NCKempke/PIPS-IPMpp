@@ -7,7 +7,7 @@
 
 #include <stdlib.h>
 #include "MumpsSolverBase.h"
-#include "SimpleVector.hpp"
+#include "DenseVector.hpp"
 #include "SparseMatrix.h"
 #include "pipsport.h"
 
@@ -81,7 +81,7 @@ void MumpsSolverBase::solve(double* vec) {
 void MumpsSolverBase::solve(Vector<double>& rhs) {
    PIPSdebugMessage("MUMPS solver: solve (single rhs) \n");
 
-   auto& sv = dynamic_cast<SimpleVector<double>&>(rhs);
+   auto& sv = dynamic_cast<DenseVector<double>&>(rhs);
 
    if (mpiCommMumps != MPI_COMM_NULL) {
       assert(n == rhs.length());

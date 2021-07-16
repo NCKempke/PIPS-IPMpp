@@ -261,12 +261,12 @@ void StochPresolverParallelRows::setNormalizedPointersMatrixBounds(int node) {
    assert(-1 <= node && node < nChildren);
    assert(!presolve_data.nodeIsDummy(node));
 
-   norm_b.reset(dynamic_cast<SimpleVector<double>*>(getSimpleVecFromRowStochVec(*presolve_data.getPresProb().equality_rhs, node, false).clone_full()));
+   norm_b.reset(dynamic_cast<DenseVector<double>*>(getSimpleVecFromRowStochVec(*presolve_data.getPresProb().equality_rhs, node, false).clone_full()));
 
-   norm_cupp.reset(dynamic_cast<SimpleVector<double>*>(getSimpleVecFromRowStochVec(*presolve_data.getPresProb().inequality_upper_bounds, node, false).clone_full()));
-   norm_icupp.reset(dynamic_cast<SimpleVector<double>*>(getSimpleVecFromRowStochVec(*presolve_data.getPresProb().inequality_upper_bound_indicators, node, false).clone_full()));
-   norm_clow.reset(dynamic_cast<SimpleVector<double>*>(getSimpleVecFromRowStochVec(*presolve_data.getPresProb().inequality_lower_bounds, node, false).clone_full()));
-   norm_iclow.reset(dynamic_cast<SimpleVector<double>*>(getSimpleVecFromRowStochVec(*presolve_data.getPresProb().inequality_lower_bound_indicators, node, false).clone_full()));
+   norm_cupp.reset(dynamic_cast<DenseVector<double>*>(getSimpleVecFromRowStochVec(*presolve_data.getPresProb().inequality_upper_bounds, node, false).clone_full()));
+   norm_icupp.reset(dynamic_cast<DenseVector<double>*>(getSimpleVecFromRowStochVec(*presolve_data.getPresProb().inequality_upper_bound_indicators, node, false).clone_full()));
+   norm_clow.reset(dynamic_cast<DenseVector<double>*>(getSimpleVecFromRowStochVec(*presolve_data.getPresProb().inequality_lower_bounds, node, false).clone_full()));
+   norm_iclow.reset(dynamic_cast<DenseVector<double>*>(getSimpleVecFromRowStochVec(*presolve_data.getPresProb().inequality_lower_bound_indicators, node, false).clone_full()));
 }
 
 // TODO : does not yet set any pointers for linking constraints of the other system - necessary when trying to process parallel linking constraints
@@ -285,12 +285,12 @@ void StochPresolverParallelRows::updateExtendedPointersForCurrentNode(int node) 
       currDmat = nullptr;
       currDmatTrans = nullptr;
 
-      currIneqRhs = dynamic_cast<const SimpleVector<double>*>(dynamic_cast<const DistributedVector<double>&>(*(presolve_data.getPresProb().inequality_upper_bounds)).first.get());
-      currIneqLhs = dynamic_cast<const SimpleVector<double>*>(dynamic_cast<const DistributedVector<double>&>(*(presolve_data.getPresProb().inequality_lower_bounds)).first.get());
-      currIcupp = dynamic_cast<const SimpleVector<double>*>(dynamic_cast<const DistributedVector<double>&>(*(presolve_data.getPresProb().inequality_upper_bound_indicators)).first.get());
-      currIclow = dynamic_cast<const SimpleVector<double>*>(dynamic_cast<const DistributedVector<double>&>(*(presolve_data.getPresProb().inequality_lower_bound_indicators)).first.get());
+      currIneqRhs = dynamic_cast<const DenseVector<double>*>(dynamic_cast<const DistributedVector<double>&>(*(presolve_data.getPresProb().inequality_upper_bounds)).first.get());
+      currIneqLhs = dynamic_cast<const DenseVector<double>*>(dynamic_cast<const DistributedVector<double>&>(*(presolve_data.getPresProb().inequality_lower_bounds)).first.get());
+      currIcupp = dynamic_cast<const DenseVector<double>*>(dynamic_cast<const DistributedVector<double>&>(*(presolve_data.getPresProb().inequality_upper_bound_indicators)).first.get());
+      currIclow = dynamic_cast<const DenseVector<double>*>(dynamic_cast<const DistributedVector<double>&>(*(presolve_data.getPresProb().inequality_lower_bound_indicators)).first.get());
 
-      currNnzRowC = dynamic_cast<const SimpleVector<int>*>(presolve_data.getNnzsRowC().first.get());
+      currNnzRowC = dynamic_cast<const DenseVector<int>*>(presolve_data.getNnzsRowC().first.get());
    }
    else {
 
@@ -301,12 +301,12 @@ void StochPresolverParallelRows::updateExtendedPointersForCurrentNode(int node) 
       currDmat = dynamic_cast<SparseMatrix&>(*dynamic_cast<const DistributedMatrix&>(*(presolve_data.getPresProb().inequality_jacobian)).children[node]->Bmat).getStorageDynamicPtr();
       currDmatTrans = dynamic_cast<SparseMatrix&>(*dynamic_cast<const DistributedMatrix&>(*(presolve_data.getPresProb().inequality_jacobian)).children[node]->Bmat).getStorageDynamicTransposedPtr();
 
-      currIneqRhs = dynamic_cast<const SimpleVector<double>*>(dynamic_cast<const DistributedVector<double>&>(*(presolve_data.getPresProb().inequality_upper_bounds)).children[node]->first.get());
-      currIneqLhs = dynamic_cast<const SimpleVector<double>*>(dynamic_cast<const DistributedVector<double>&>(*(presolve_data.getPresProb().inequality_lower_bounds)).children[node]->first.get());
-      currIcupp = dynamic_cast<const SimpleVector<double>*>(dynamic_cast<const DistributedVector<double>&>(*(presolve_data.getPresProb().inequality_upper_bound_indicators)).children[node]->first.get());
-      currIclow = dynamic_cast<const SimpleVector<double>*>(dynamic_cast<const DistributedVector<double>&>(*(presolve_data.getPresProb().inequality_lower_bound_indicators)).children[node]->first.get());
+      currIneqRhs = dynamic_cast<const DenseVector<double>*>(dynamic_cast<const DistributedVector<double>&>(*(presolve_data.getPresProb().inequality_upper_bounds)).children[node]->first.get());
+      currIneqLhs = dynamic_cast<const DenseVector<double>*>(dynamic_cast<const DistributedVector<double>&>(*(presolve_data.getPresProb().inequality_lower_bounds)).children[node]->first.get());
+      currIcupp = dynamic_cast<const DenseVector<double>*>(dynamic_cast<const DistributedVector<double>&>(*(presolve_data.getPresProb().inequality_upper_bound_indicators)).children[node]->first.get());
+      currIclow = dynamic_cast<const DenseVector<double>*>(dynamic_cast<const DistributedVector<double>&>(*(presolve_data.getPresProb().inequality_lower_bound_indicators)).children[node]->first.get());
 
-      currNnzRowC = dynamic_cast<const SimpleVector<int>*>(presolve_data.getNnzsRowC().children[node]->first.get());
+      currNnzRowC = dynamic_cast<const DenseVector<int>*>(presolve_data.getNnzsRowC().children[node]->first.get());
    }
 
 }
@@ -315,9 +315,9 @@ void StochPresolverParallelRows::setNormalizedNormFactors(int node) {
    assert(-1 <= node && node < nChildren);
    assert(!presolve_data.nodeIsDummy(node));
 
-   norm_factorA.reset(dynamic_cast<SimpleVector<double>*>(getSimpleVecFromRowStochVec(*presolve_data.getPresProb().equality_rhs, node, false).clone()));
+   norm_factorA.reset(dynamic_cast<DenseVector<double>*>(getSimpleVecFromRowStochVec(*presolve_data.getPresProb().equality_rhs, node, false).clone()));
    norm_factorA->setToZero();
-   norm_factorC.reset(dynamic_cast<SimpleVector<double>*>(getSimpleVecFromRowStochVec(*presolve_data.getPresProb().inequality_upper_bounds, node, false).clone()));
+   norm_factorC.reset(dynamic_cast<DenseVector<double>*>(getSimpleVecFromRowStochVec(*presolve_data.getPresProb().inequality_upper_bounds, node, false).clone()));
    norm_factorC->setToZero();
 }
 
@@ -325,18 +325,18 @@ void StochPresolverParallelRows::setNormalizedSingletonFlags(int node) {
    assert(-1 <= node && node < nChildren);
    assert(!presolve_data.nodeIsDummy(node));
 
-   singletonCoeffsColParent.reset(dynamic_cast<SimpleVector<double>*>(getSimpleVecFromColStochVec(*presolve_data.getPresProb().objective_gradient, -1).clone()));
+   singletonCoeffsColParent.reset(dynamic_cast<DenseVector<double>*>(getSimpleVecFromColStochVec(*presolve_data.getPresProb().objective_gradient, -1).clone()));
    singletonCoeffsColParent->setToZero();
 
-   rowContainsSingletonVariableA = std::make_unique<SimpleVector<int>>(getSimpleVecFromRowStochVec(presolve_data.getNnzsRowA(), node, false).length());
+   rowContainsSingletonVariableA = std::make_unique<DenseVector<int>>(getSimpleVecFromRowStochVec(presolve_data.getNnzsRowA(), node, false).length());
    rowContainsSingletonVariableA->setToConstant(-1);
-   rowContainsSingletonVariableC = std::make_unique<SimpleVector<int>>(getSimpleVecFromRowStochVec(presolve_data.getNnzsRowC(), node, false).length());
+   rowContainsSingletonVariableC = std::make_unique<DenseVector<int>>(getSimpleVecFromRowStochVec(presolve_data.getNnzsRowC(), node, false).length());
    rowContainsSingletonVariableC->setToConstant(-1);
 
    if (node == -1)
       singletonCoeffsColChild.reset();
    else {
-      singletonCoeffsColChild.reset(dynamic_cast<SimpleVector<double>*>(getSimpleVecFromColStochVec(*presolve_data.getPresProb().objective_gradient, node).clone()));
+      singletonCoeffsColChild.reset(dynamic_cast<DenseVector<double>*>(getSimpleVecFromColStochVec(*presolve_data.getPresProb().objective_gradient, node).clone()));
       singletonCoeffsColChild->setToZero();
    }
 }
@@ -344,12 +344,12 @@ void StochPresolverParallelRows::setNormalizedSingletonFlags(int node) {
 void StochPresolverParallelRows::setNormalizedReductionPointers(int node) {
    assert(-1 <= node && node < nChildren);
 
-   normNnzColParent.reset(dynamic_cast<SimpleVector<int>*>(getSimpleVecFromColStochVec(presolve_data.getNnzsCol(), -1).clone_full()));
+   normNnzColParent.reset(dynamic_cast<DenseVector<int>*>(getSimpleVecFromColStochVec(presolve_data.getNnzsCol(), -1).clone_full()));
    (node == -1) ? normNnzColChild.reset() : normNnzColChild.reset(
-         dynamic_cast<SimpleVector<int>*>(getSimpleVecFromColStochVec(presolve_data.getNnzsCol(), node).clone_full()));
+         dynamic_cast<DenseVector<int>*>(getSimpleVecFromColStochVec(presolve_data.getNnzsCol(), node).clone_full()));
 
-   normNnzRowA.reset(dynamic_cast<SimpleVector<int>*>(getSimpleVecFromRowStochVec(presolve_data.getNnzsRowA(), node, false).clone_full()));
-   normNnzRowC.reset(dynamic_cast<SimpleVector<int>*>(getSimpleVecFromRowStochVec(presolve_data.getNnzsRowC(), node, false).clone_full()));
+   normNnzRowA.reset(dynamic_cast<DenseVector<int>*>(getSimpleVecFromRowStochVec(presolve_data.getNnzsRowA(), node, false).clone_full()));
+   normNnzRowC.reset(dynamic_cast<DenseVector<int>*>(getSimpleVecFromRowStochVec(presolve_data.getNnzsRowC(), node, false).clone_full()));
 }
 
 void StochPresolverParallelRows::setNormalizedPointers(int node) {
@@ -424,7 +424,7 @@ void StochPresolverParallelRows::removeSingletonVars() {
    assert(normNnzColChild || normNnzColParent);
    const bool at_root_node = (normNnzColChild == nullptr);
 
-   SimpleVector<int>& nnzs_bmat = (at_root_node) ? *normNnzColParent : *normNnzColChild;
+   DenseVector<int>& nnzs_bmat = (at_root_node) ? *normNnzColParent : *normNnzColChild;
 
    /* Bmat */
    for (int col = 0; col < nnzs_bmat.length(); col++) {
@@ -462,8 +462,8 @@ void StochPresolverParallelRows::removeSingletonVars() {
  * the nnz vectors nnzRow and nnzColChild accordingly. Sets the entries in
  * rowContainsSingletonVar to the corresponding column index in which the singleton entry occurs.
  */
-void StochPresolverParallelRows::removeEntry(int col, SimpleVector<int>& rowContainsSingletonVar, SparseStorageDynamic& matrix,
-      SparseStorageDynamic& matrixTrans, SimpleVector<int>& nnzRow, SimpleVector<int>& nnzCol, bool parent) {
+void StochPresolverParallelRows::removeEntry(int col, DenseVector<int>& rowContainsSingletonVar, SparseStorageDynamic& matrix,
+      SparseStorageDynamic& matrixTrans, DenseVector<int>& nnzRow, DenseVector<int>& nnzCol, bool parent) {
    assert(0 <= col && col < matrixTrans.n_rows());
    assert(matrixTrans.getRowPtr(col).start + 1 == matrixTrans.getRowPtr(col).end);
    assert(nnzRow.length() == matrix.n_rows());
@@ -519,7 +519,7 @@ void StochPresolverParallelRows::removeEntry(int col, SimpleVector<int>& rowCont
 // TODO : there seems to be no numerical threshold for the normalization below .. this should be fixed - rows with fairly different coefficients could be regarded equal
 /// cupp can be either the rhs for the equality system or upper bounds for inequalities
 void StochPresolverParallelRows::normalizeBlocksRowwise(SystemType system_type, SparseStorageDynamic* a_mat, SparseStorageDynamic* b_mat,
-      SimpleVector<double>* cupp, SimpleVector<double>* clow, SimpleVector<double>* icupp, SimpleVector<double>* iclow) const {
+      DenseVector<double>* cupp, DenseVector<double>* clow, DenseVector<double>* icupp, DenseVector<double>* iclow) const {
    assert(b_mat);
    assert(cupp);
    assert(b_mat->n_rows() == cupp->length());
@@ -616,8 +616,8 @@ void StochPresolverParallelRows::normalizeBlocksRowwise(SystemType system_type, 
  */
 // TODO : I think this is wrong or at least not complete - in theory we should sort the rows first (according to the colindices)
 void StochPresolverParallelRows::insertRowsIntoHashtable(boost::unordered_set<rowlib::rowWithColInd, boost::hash<rowlib::rowWithColInd> >& rows,
-      const SparseStorageDynamic* a_mat, const SparseStorageDynamic* b_mat, SystemType system_type, const SimpleVector<int>* nnz_row_norm,
-      const SimpleVector<int>* nnz_row_orig) {
+      const SparseStorageDynamic* a_mat, const SparseStorageDynamic* b_mat, SystemType system_type, const DenseVector<int>* nnz_row_norm,
+      const DenseVector<int>* nnz_row_orig) {
    assert(b_mat);
    if (a_mat)
       assert(a_mat->n_rows() == b_mat->n_rows());

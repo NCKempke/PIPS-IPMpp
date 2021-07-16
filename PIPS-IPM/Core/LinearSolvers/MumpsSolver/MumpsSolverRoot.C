@@ -7,7 +7,7 @@
 
 
 #include "MumpsSolverRoot.h"
-#include "SimpleVector.hpp"
+#include "DenseVector.hpp"
 #include <stdlib.h>
 
 MumpsSolverRoot::MumpsSolverRoot(MPI_Comm mpiComm, const SparseSymmetricMatrix* sgm, bool solve_in_parallel) : MumpsSolverBase(mpiComm, mpiComm, sgm),
@@ -123,7 +123,7 @@ void MumpsSolverRoot::factorize() {
 void MumpsSolverRoot::solve(Vector<double>& rhs) {
    PIPSdebugMessage("MUMPS solver: solve (single rhs) \n");
 
-   SimpleVector<double>& sv = dynamic_cast<SimpleVector<double>&>(rhs);
+   DenseVector<double>& sv = dynamic_cast<DenseVector<double>&>(rhs);
 
    if (mpiCommMumps != MPI_COMM_NULL) {
       assert(n == rhs.length());

@@ -160,7 +160,7 @@ void Problem::evaluate_objective_gradient(const Variables& variables, Vector<dou
 }
 
 double Problem::evaluate_objective(const Variables& variables) const {
-   SimpleVector<double> gradient(nx);
+   DenseVector<double> gradient(nx);
    this->get_objective_gradient(gradient);
    this->hessian_multiplication(1., gradient, 0.5, *variables.primals);
    return gradient.dotProductWith(*variables.primals);

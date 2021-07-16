@@ -139,7 +139,7 @@ void Ma86Solver::matrixChanged() {
 
 // Solve
 void Ma86Solver::solve(Vector<double>& rhs_in) {
-   SimpleVector<double>& rhs = dynamic_cast<SimpleVector<double>&>(rhs_in);
+   DenseVector<double>& rhs = dynamic_cast<DenseVector<double>&>(rhs_in);
    double* sol = rhs.elements();
 
 
@@ -184,7 +184,7 @@ void Ma86Solver::solve(GenMatrix& rhs_in) {
 }
 
 
-void Ma86Solver::solve(SimpleVector<double>& rhs_in) {
+void Ma86Solver::solve(DenseVector<double>& rhs_in) {
 
    x = rhs_in.elements();
 

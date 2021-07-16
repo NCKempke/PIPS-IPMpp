@@ -1,5 +1,5 @@
 #include "DoubleLinearSolver.h"
-#include "SimpleVector.hpp"
+#include "DenseVector.hpp"
 
 DoubleIterativeLinearSolver::DoubleIterativeLinearSolver(MatTimesVec* Ain, MatTimesVec* M1in, MatTimesVec* M2in) : A(Ain), ML(M1in), MR(M2in) {
 

@@ -7,7 +7,7 @@
 #include "PardisoMKLSchurSolver.h"
 
 #include "pipschecks.h"
-#include "SimpleVector.hpp"
+#include "DenseVector.hpp"
 #include "pipsdef.h"
 
 #include "PIPSIPMppOptions.h"
@@ -54,7 +54,7 @@ void PardisoMKLSchurSolver::initPardiso() {
 }
 
 void PardisoMKLSchurSolver::solve(Vector<double>& rhs_in) {
-   SimpleVector<double>& rhs = dynamic_cast<SimpleVector<double>&>(rhs_in);
+   DenseVector<double>& rhs = dynamic_cast<DenseVector<double>&>(rhs_in);
 
    int error = 0;
    assert(iparmUnchanged());

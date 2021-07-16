@@ -427,7 +427,7 @@ void DistributedLinearSystem::solveCompressed(Vector<double>& rhs_) {
  *  y = beta*y + Di\Li\ (  [ A 0 0 ] * x )
  *                      (  [ C 0 0 ]    )
  */
-void DistributedLinearSystem::LniTransMult(SimpleVector<double>& y, double alpha, SimpleVector<double>& x) {
+void DistributedLinearSystem::LniTransMult(DenseVector<double>& y, double alpha, DenseVector<double>& x) {
    const SparseMatrix& A = data->getLocalA();
    int N{0}, nx0{0};
 
@@ -441,15 +441,15 @@ void DistributedLinearSystem::LniTransMult(SimpleVector<double>& y, double alpha
    assert(y.length() == N);
 
    //!memopt
-   SimpleVector<double> LniTx(N);
+   DenseVector<double> LniTx(N);
 
-   SimpleVector<double> x1(&x[0], nx0);
-   SimpleVector<double> LniTx1(&LniTx[0], locnx);
+   DenseVector<double> x1(&x[0], nx0);
+   DenseVector<double> LniTx1(&LniTx[0], locnx);
 
    LniTx1.setToZero();
    if (data->hasRAC()) {
-      SimpleVector<double> LniTx2(&LniTx[locnx], locmy);
-      SimpleVector<double> LniTx3(&LniTx[locnx + locmy], locmz);
+      DenseVector<double> LniTx2(&LniTx[locnx], locmy);
+      DenseVector<double> LniTx3(&LniTx[locnx + locmy], locmz);
 
       const SparseMatrix& C = data->getLocalC();
       const SparseMatrix& R = data->getLocalCrossHessian();
@@ -463,7 +463,7 @@ void DistributedLinearSystem::LniTransMult(SimpleVector<double>& y, double alpha
       int nxMyMzP = x.length() - locmyl - locmzl;
 
       const SparseMatrix& F = data->getLocalF();
-      SimpleVector<double> xlink(&x[nxMyMzP], locmyl);
+      DenseVector<double> xlink(&x[nxMyMzP], locmyl);
 
       F.transpose_mult(1.0, LniTx1, 1.0, xlink);
    }
@@ -472,7 +472,7 @@ void DistributedLinearSystem::LniTransMult(SimpleVector<double>& y, double alpha
       int nxMyMzMylP = x.length() - locmzl;
 
       const SparseMatrix& G = data->getLocalG();
-      SimpleVector<double> xlink(&x[nxMyMzMylP], locmzl);
+      DenseVector<double> xlink(&x[nxMyMzMylP], locmzl);
 
       G.transpose_mult(1.0, LniTx1, 1.0, xlink);
    }
@@ -490,7 +490,7 @@ void DistributedLinearSystem::LniTransMult(SimpleVector<double>& y, double alpha
  *                 [G           ]
  */
 
-void DistributedLinearSystem::addTermToSchurResidual(SimpleVector<double>& res, SimpleVector<double>& x) {
+void DistributedLinearSystem::addTermToSchurResidual(DenseVector<double>& res, DenseVector<double>& x) {
    const SparseMatrix& A = data->getLocalA();
    const SparseMatrix& C = data->getLocalC();
    const SparseMatrix& F = data->getLocalF();
@@ -510,7 +510,7 @@ void DistributedLinearSystem::addTermToSchurResidual(SimpleVector<double>& res, 
 
    // res contains mz buffer part
    int N = locnx + locmy + locmz;
-   SimpleVector<double> y(N);
+   DenseVector<double> y(N);
 
    R.getStorage().mult(0.0, &y[0], 1.0, &x[0]);
    A.getStorage().mult(0.0, &y[locnx], 1.0, &x[0]);
@@ -574,8 +574,8 @@ void DistributedLinearSystem::addTermToDenseSchurCompl(DenseSymmetricMatrix& SC)
 
    const int N = locnx + locmy + locmz;
 
-   SimpleVector<double> col(N);
-   SimpleVector<int> nnzPerColRAC(nRAC);
+   DenseVector<double> col(N);
+   DenseVector<int> nnzPerColRAC(nRAC);
 
    if (withR)
       R.addNnzPerCol(nnzPerColRAC);
@@ -627,7 +627,7 @@ void DistributedLinearSystem::addTermToDenseSchurCompl(DenseSymmetricMatrix& SC)
 
    // do we have linking equality constraints?
    if (withMyl) {
-      SimpleVector<int> nnzPerColFt(locmyl);
+      DenseVector<int> nnzPerColFt(locmyl);
       F.addNnzPerRow(nnzPerColFt);
 
       // do column-wise multiplication for columns containing Ft (F transposed)
@@ -662,7 +662,7 @@ void DistributedLinearSystem::addTermToDenseSchurCompl(DenseSymmetricMatrix& SC)
 
    // do we have linking inequality constraints?
    if (withMzl) {
-      SimpleVector<int> nnzPerColGt(locmzl);
+      DenseVector<int> nnzPerColGt(locmzl);
       G.addNnzPerRow(nnzPerColGt);
 
       // do column-wise multiplication for columns containing Gt (G transposed)
@@ -867,7 +867,7 @@ void DistributedLinearSystem::addBiTLeftKiBiRightToResBlockedParallelSolvers(boo
 
          const int n_cols = end_block_RAC - begin_block_RAC;
          // TODO : add buffer for nonzeros and do not reallocate all the time
-         SimpleVector<int> nnzPerColRAC(n_cols);
+         DenseVector<int> nnzPerColRAC(n_cols);
 
          border_right.R.addNnzPerCol(nnzPerColRAC, begin_block_RAC, end_block_RAC);
          border_right.A.addNnzPerCol(nnzPerColRAC, begin_block_RAC, end_block_RAC);
@@ -929,7 +929,7 @@ void DistributedLinearSystem::addBiTLeftKiBiRightToResBlockedParallelSolvers(boo
 
          const int n_cols = end_block_F - begin_block_F;
 
-         SimpleVector<int> nnzPerColFt(n_cols);
+         DenseVector<int> nnzPerColFt(n_cols);
          border_right.F.addNnzPerCol(nnzPerColFt, begin_block_F, end_block_F);
 
          const int chunks_F = std::ceil(static_cast<double>(n_cols) / chunk_length);
@@ -982,7 +982,7 @@ void DistributedLinearSystem::addBiTLeftKiBiRightToResBlockedParallelSolvers(boo
 
          const int n_cols = end_block_G - begin_block_G;
 
-         SimpleVector<int> nnzPerColGt(n_cols);
+         DenseVector<int> nnzPerColGt(n_cols);
          border_right.G.addNnzPerCol(nnzPerColGt, begin_block_G, end_block_G);
 
          const int chunks_G = std::ceil(static_cast<double>(n_cols) / chunk_length);

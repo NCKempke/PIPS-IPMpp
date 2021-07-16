@@ -56,7 +56,7 @@ void DistributedLeafLinearSystem::create_kkt() {
    data->getLocalNnz(nnzQ, nnzB, nnzD);
 
    kkt = std::make_unique<SparseSymmetricMatrix>(n, n + nnzQ + nnzB + nnzD);
-   SimpleVector<double> v(n);
+   DenseVector<double> v(n);
    v.setToZero();
    kkt->setToDiagonal(v);
 
@@ -150,9 +150,9 @@ void DistributedLeafLinearSystem::Dsolve(Vector<double>& x_in) {
    resource_monitor->recDsolveTmChildren_stop();
 }
 
-void DistributedLeafLinearSystem::Ltsolve2(DistributedVector<double>& x, SimpleVector<double>& xp, bool) {
+void DistributedLeafLinearSystem::Ltsolve2(DistributedVector<double>& x, DenseVector<double>& xp, bool) {
    auto& b = dynamic_cast<DistributedVector<double>&>(x);
-   auto& bi = dynamic_cast<SimpleVector<double>&>(*b.first);
+   auto& bi = dynamic_cast<DenseVector<double>&>(*b.first);
    assert(b.children.empty());
 
 #ifdef TIMING
@@ -169,23 +169,23 @@ void DistributedLeafLinearSystem::Ltsolve2(DistributedVector<double>& x, SimpleV
 
 /** sum up right hand side for (current) scenario i and add it to right hand side of scenario 0 */
 void DistributedLeafLinearSystem::addLniziLinkCons(Vector<double>& z0_, Vector<double>& zi_, bool /*use_local_RAC*/) {
-   auto& z0 = dynamic_cast<SimpleVector<double>&>(z0_);
-   auto& zi = dynamic_cast<SimpleVector<double>&>(*dynamic_cast<DistributedVector<double>&>(zi_).first);
+   auto& z0 = dynamic_cast<DenseVector<double>&>(z0_);
+   auto& zi = dynamic_cast<DenseVector<double>&>(*dynamic_cast<DistributedVector<double>&>(zi_).first);
 
    solver->solve(zi);
 
    const int nx0 = data->hasRAC() ? data->getLocalA().n_columns() : 0;
 
-   SimpleVector<double> z01(&z0[0], nx0);
-   SimpleVector<double> zi1(&zi[0], locnx);
+   DenseVector<double> z01(&z0[0], nx0);
+   DenseVector<double> zi1(&zi[0], locnx);
 
    if (data->hasRAC()) {
       const SparseMatrix& A = data->getLocalA();
       const SparseMatrix& C = data->getLocalC();
       const SparseMatrix& R = data->getLocalCrossHessian();
 
-      SimpleVector<double> zi2(&zi[locnx], locmy);
-      SimpleVector<double> zi3(&zi[locnx + locmy], locmz);
+      DenseVector<double> zi2(&zi[locnx], locmy);
+      DenseVector<double> zi3(&zi[locnx + locmy], locmz);
 
       R.transpose_mult(1.0, z01, -1.0, zi1);
       A.transpose_mult(1.0, z01, -1.0, zi2);
@@ -196,7 +196,7 @@ void DistributedLeafLinearSystem::addLniziLinkCons(Vector<double>& z0_, Vector<d
       assert(locmyl >= 0);
       const int nxMyMz = z0.length() - locmyl - locmzl;
 
-      SimpleVector<double> z0myl(&z0[nxMyMz], locmyl);
+      DenseVector<double> z0myl(&z0[nxMyMz], locmyl);
       const SparseMatrix& F = data->getLocalF();
       F.mult(1.0, z0myl, -1.0, zi1);
    }
@@ -205,7 +205,7 @@ void DistributedLeafLinearSystem::addLniziLinkCons(Vector<double>& z0_, Vector<d
       assert(locmyl >= 0);
       const int nxMyMzMyl = z0.length() - locmzl;
 
-      SimpleVector<double> z0mzl(&z0[nxMyMzMyl], locmzl);
+      DenseVector<double> z0mzl(&z0[nxMyMzMyl], locmzl);
       const SparseMatrix& G = data->getLocalG();
       G.mult(1.0, z0mzl, -1.0, zi1);
    }
@@ -432,7 +432,7 @@ DistributedLeafLinearSystem::LniTransMultHierarchyBorder(AbstractMatrix& res, co
 
 }
 
-void DistributedLeafLinearSystem::addBorderTimesRhsToB0(DistributedVector<double>& rhs, SimpleVector<double>& b0,
+void DistributedLeafLinearSystem::addBorderTimesRhsToB0(DistributedVector<double>& rhs, DenseVector<double>& b0,
    BorderLinsys& border) {
    assert(border.F.children.empty());
    assert(rhs.children.empty());
@@ -467,10 +467,10 @@ void DistributedLeafLinearSystem::addBorderTimesRhsToB0(DistributedVector<double
    if (border_block->isEmpty())
       return;
 
-   addBorderTimesRhsToB0(dynamic_cast<SimpleVector<double>&>(*rhs.first), b0, *border_block);
+   addBorderTimesRhsToB0(dynamic_cast<DenseVector<double>&>(*rhs.first), b0, *border_block);
 }
 
-void DistributedLeafLinearSystem::addBorderTimesRhsToB0(SimpleVector<double>& rhs, SimpleVector<double>& b0,
+void DistributedLeafLinearSystem::addBorderTimesRhsToB0(DenseVector<double>& rhs, DenseVector<double>& b0,
    BorderBiBlock& border) {
    if (border.isEmpty())
       return;
@@ -495,28 +495,28 @@ void DistributedLeafLinearSystem::addBorderTimesRhsToB0(SimpleVector<double>& rh
    assert(b0.length() >= nRi + mFi + mGi);
    const int nb0 = b0.length();
 
-   auto& zi = dynamic_cast<SimpleVector<double>&>(rhs);
-   SimpleVector<double> zi1(&zi[0], nFi);
+   auto& zi = dynamic_cast<DenseVector<double>&>(rhs);
+   DenseVector<double> zi1(&zi[0], nFi);
 
    if (border.has_RAC) {
-      SimpleVector<double> zi2(&zi[mRi], mAi);
-      SimpleVector<double> zi3(&zi[mRi + mAi], mCi);
+      DenseVector<double> zi2(&zi[mRi], mAi);
+      DenseVector<double> zi3(&zi[mRi + mAi], mCi);
 
-      SimpleVector<double> b1(&b0[0], nRi);
+      DenseVector<double> b1(&b0[0], nRi);
 
       border.R.transpose_mult(1.0, b1, -1.0, zi1);
       border.A.transpose_mult(1.0, b1, -1.0, zi2);
       border.C.transpose_mult(1.0, b1, -1.0, zi3);
    }
 
-   SimpleVector<double> b2(&b0[nb0 - mFi - mGi], mFi);
-   SimpleVector<double> b3(&b0[nb0 - mGi], mGi);
+   DenseVector<double> b2(&b0[nb0 - mFi - mGi], mFi);
+   DenseVector<double> b3(&b0[nb0 - mGi], mGi);
 
    border.F.mult(1.0, b2, -1.0, zi1);
    border.G.mult(1.0, b3, -1.0, zi1);
 }
 
-void DistributedLeafLinearSystem::addBorderX0ToRhs(DistributedVector<double>& rhs, const SimpleVector<double>& x0,
+void DistributedLeafLinearSystem::addBorderX0ToRhs(DistributedVector<double>& rhs, const DenseVector<double>& x0,
    BorderLinsys& border) {
    assert(border.F.children.empty());
    assert(rhs.children.empty());
@@ -551,10 +551,10 @@ void DistributedLeafLinearSystem::addBorderX0ToRhs(DistributedVector<double>& rh
    if (border_block->isEmpty())
       return;
 
-   addBorderX0ToRhs(dynamic_cast<SimpleVector<double>&>(*rhs.first), x0, *border_block);
+   addBorderX0ToRhs(dynamic_cast<DenseVector<double>&>(*rhs.first), x0, *border_block);
 }
 
-void DistributedLeafLinearSystem::addBorderX0ToRhs(SimpleVector<double>& rhs, const SimpleVector<double>& x0,
+void DistributedLeafLinearSystem::addBorderX0ToRhs(DenseVector<double>& rhs, const DenseVector<double>& x0,
    BorderBiBlock& border) {
    const auto mFi = border.F.n_rows();
    const auto mGi = border.G.n_rows();
