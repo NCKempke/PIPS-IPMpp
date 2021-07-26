@@ -179,6 +179,10 @@ TerminationStatus PIPSIPMppInterface::run() {
    return result;
 }
 
+TerminationStatus PIPSIPMppInterface::termination_status() const {
+   return result;
+}
+
 int PIPSIPMppInterface::n_iterations() const {
    if(!ran_solver)
       throw std::logic_error("Must call run() and start solution process before trying to retrieve the iteration count!");

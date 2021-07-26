@@ -48,18 +48,7 @@ slurm*
 
 # Ignore build directory
 build
-SharedLibraries
-build_pips
 
-# no additional .gitignore file for that
-ThirdPartyLibs/PARDISO
-ThirdPartyLibs/MUMPS
-ThirdPartyLibs/METIS
-ThirdPartyLibs/LUSOL
-ThirdPartyLibs/METIS_4
-pipstmp
-GAMSsmall
-PIPS-IPM/Drivers/simple/simple_data_12.gdx
 # Ignore the OS X DS_Store
 .DS_Store
 
@@ -70,36 +59,7 @@ PIPS-IPM/Drivers/simple/simple_data_12.gdx
 # Ignore Eclipse files
 .metadata*
 .project
-
 RemoteSystemsTempFiles*
 .cproject
 .settings
-/Debug/
-/PIPS-NLP/
-/Lagrange/
-/Input/
-/cmake/
-/SolverInterface/
-/BasisBootstrap/
-/Utilities/
-/UCTests/
-/UCRolling/
-/Swift/
-/PIPS-S/
-/build_3rdparty.sh
-/BGPToolchain.cmake
-/BGQToolchain.cmake
-/blocked_0_0_2solvers.txt
-/blocked_0_0.txt
-/build_pips.sh
-/deploy_rsa.enc
 /Dockerfile
-/FAQ.md
-/LICENSE
-/LLNL-Sierra-README.md
-/OSX.cmake
-/README.md
-/README.txt
-/XC30Toolchain.cmake
-/XE6Toolchain.cmake
-/Toolchain.cmake

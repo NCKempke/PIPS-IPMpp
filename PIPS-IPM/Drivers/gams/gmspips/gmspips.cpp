@@ -9,7 +9,6 @@
 
 #include "pipsdef.h"
 #include "gmspips_reader.hpp"
-#include "gmspipsio.h"
 
 #include <cstdlib>
 #include <cstring>
@@ -32,35 +31,6 @@ static void setParams(ScalerType& scaler_type, bool& stepDiffLp, bool& presolve,
       printsol = true;
    else if (strcmp(paramname, "hierarchical") == 0)
       hierarchical = true;
-}
-
-void writeSolutionGDX(PIPSIPMppInterface& ipm_interface, const std::string& file_name, const std::string& path_to_gams) {
-   std::vector<double> primalSolVec;
-   std::vector<double> dualSolEqVec;
-   std::vector<double> dualSolIneqVec;
-   std::vector<double> dualSolVarBounds;
-
-   std::vector<double> eqValues;
-   std::vector<double> ineqValues;
-
-   const double objective = ipm_interface.getObjective();
-   primalSolVec = ipm_interface.gatherPrimalSolution();
-   dualSolEqVec = ipm_interface.gatherDualSolutionEq();
-   dualSolIneqVec = ipm_interface.gatherDualSolutionIneq();
-   dualSolVarBounds = ipm_interface.gatherDualSolutionVarBounds();
-   eqValues = ipm_interface.gatherEqualityConsValues();
-   ineqValues = ipm_interface.gatherInequalityConsValues();
-
-   if (PIPS_MPIgetRank() == 0) {
-      const int rc = writeSolution(file_name.c_str(), primalSolVec.size(), dualSolEqVec.size(), dualSolIneqVec.size(), objective, &primalSolVec[0], &dualSolVarBounds[0],
-         &eqValues[0], &ineqValues[0], &dualSolEqVec[0], &dualSolIneqVec[0], path_to_gams.c_str());
-      if (0 == rc)
-         std::cout << "Solution written to " << file_name << "_sol.gdx\n";
-      else if (-1 == rc)
-         std::cout << "Could not access " << file_name << ".map\n";
-      else
-         std::cout << "Other error writing solution: rc=" << rc << "\n";
-   }
 }
 
 int main(int argc, char** argv) {
@@ -150,7 +120,7 @@ int main(int argc, char** argv) {
    }
 
    if (printsol) {
-      writeSolutionGDX(pipsIpm, file_name, path_to_gams);
+      reader.write_solution(pipsIpm, file_name);
    }
 
    MPI_Barrier(MPI_COMM_WORLD);

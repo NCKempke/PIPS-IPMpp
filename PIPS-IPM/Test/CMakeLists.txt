@@ -20,7 +20,7 @@ macro(package_add_test TESTNAME)
     # link the Google test infrastructure, mocking library, and a default main fuction to
     # the test executable.  Remove g_test_main if writing your own main function.
     target_link_libraries(${TESTNAME}
-            PRIVATE gmspips_reader
+            PRIVATE gmspips_read_write
             PRIVATE pips-ipmpp
             PRIVATE OpenMP::OpenMP_CXX
             PRIVATE customMain

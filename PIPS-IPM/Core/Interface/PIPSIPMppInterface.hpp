@@ -9,10 +9,10 @@
 #include <string>
 #include <memory>
 
-#include "TerminationStatus.hpp"
-#include "InteriorPointMethodType.hpp"
-#include "pipsdef.h"
-#include "PreprocessType.h"
+#include "../InteriorPointMethod/TerminationStatus.hpp"
+#include "../InteriorPointMethod/InteriorPointMethodType.hpp"
+#include "../Utilities/pipsdef.h"
+#include "../Preprocessing/PreprocessType.h"
 
 template<typename T>
 class Vector;
@@ -37,6 +37,7 @@ public:
    ~PIPSIPMppInterface();
 
    TerminationStatus run();
+   TerminationStatus termination_status() const;
 
    double getObjective();
 

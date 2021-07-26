@@ -11,7 +11,7 @@ include_directories(../../Core/LinearAlgebra/Abstract)
 include_directories(../../Core/LinearAlgebra/Dense)
 include_directories(../../Core/Base)
 include_directories(../../Core/Utilities)
-include_directories(../../Drivers/gmspips)
+include_directories(../../Drivers/gams/gmspips)
 
 package_add_test(pipsTest t_pips.cpp)
 package_add_test(presolveTest t_presolvers.cpp)

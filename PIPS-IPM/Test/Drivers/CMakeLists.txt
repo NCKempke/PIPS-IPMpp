@@ -8,6 +8,6 @@ include_directories(../../Core/LinearAlgebra/Dense)
 include_directories(../../Core/Base)
 include_directories(../../Core/Utilities)
 include_directories(../../Core/LinearAlgebra/Sparse)
-include_directories(../../Drivers/gmspips)
+include_directories(../../Drivers/gams/gmspips)
 
 package_add_test(gmspipsReaderTest t_gmspips_reader.cpp)
