@@ -5,9 +5,9 @@
 #ifndef PIPSIPMPP_PIPS_READER_H
 #define PIPSIPMPP_PIPS_READER_H
 
+#include "../Core/Utilities/pipsdef.h"
 #include <memory>
 #include <utility>
-#include "pipsdef.h"
 
 class DistributedInputTree;
 class PIPSIPMppInterface;

@@ -1,14 +1,9 @@
-#include "PIPSIPMppInterface.hpp"
+#include "../../../Core/Interface/PIPSIPMppInterface.hpp"
+#include "../../../Core/Options/PIPSIPMppOptions.h"
 #include "DistributedInputTree.h"
-
-#include "PIPSIPMppOptions.h"
-#include "PreprocessType.h"
-#include "InteriorPointMethodType.hpp"
+#include "gmspips_reader.hpp"
 
 #include "mpi.h"
-
-#include "pipsdef.h"
-#include "gmspips_reader.hpp"
 
 #include <cstdlib>
 #include <cstring>

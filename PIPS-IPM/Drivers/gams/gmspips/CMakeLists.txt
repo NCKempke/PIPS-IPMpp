@@ -111,7 +111,6 @@ target_link_libraries(gmspipsio
         PRIVATE ${DL_LIBRARY}
         )
 
-
 ########### gmpipsreader ###########
 add_library(gmspips_read_write gmspips_reader.cpp)
 
@@ -133,4 +132,24 @@ add_executable(gmschk
 target_link_libraries(gmschk
         PRIVATE gmspipsio
         PRIVATE OpenMP::OpenMP_CXX
+        )
+
+############## gmspips ##############
+add_executable(gmspips gmspips.cpp)
+
+target_include_directories(gmspips PRIVATE ${includes_for_interface})
+target_compile_options(gmspips
+        PRIVATE "$<$<COMPILE_LANGUAGE:CXX>:-Wextra>"
+        PRIVATE "$<$<COMPILE_LANGUAGE:CXX>:-Wsuggest-override>"
+        )
+
+#target_compile_definitions(gmspips
+#        PRIVATE GMS_LOG
+#        )
+
+target_link_libraries(gmspips
+        PRIVATE pips-ipmpp
+        PRIVATE gmspips_read_write
+        PRIVATE OpenMP::OpenMP_CXX
+        PRIVATE MPI::MPI_CXX
         )

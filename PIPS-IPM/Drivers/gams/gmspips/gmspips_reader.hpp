@@ -10,7 +10,6 @@
 
 #include <string>
 #include <cassert>
-#include "pipsdef.h"
 
 #include "../../pips_reader.h"
 #include "gmspipsio.h"

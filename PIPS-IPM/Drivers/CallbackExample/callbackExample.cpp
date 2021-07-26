@@ -1,9 +1,7 @@
-#include "PIPSIPMppInterface.hpp"
-#include "DistributedInputTree.h"
 
-#include "PIPSIPMppOptions.h"
-#include "PreprocessType.h"
-#include "InteriorPointMethodType.hpp"
+#include "../../Core/Interface/PIPSIPMppInterface.hpp"
+#include "../../Core/Options/PIPSIPMppOptions.h"
+#include "DistributedInputTree.h"
 
 #include "mpi.h"
 
