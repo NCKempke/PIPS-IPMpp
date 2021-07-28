@@ -22,7 +22,7 @@ In Linux(Ubuntu):\
  * The user can not pass/define anything and cmake will try to automatically find blas and lapack on the system (if installed)
 In either way the cmake output shows the finally chosen lapack/blas routines.
 
-2. Check out the current PIPS-IPM++ "master" **linking-zib-pardiso-hierarchical** (or **PyomoToPIPS-Hierarchical**, for using the Pyomo-Interface):\
+2. Check out the current PIPS-IPM++ "master" **pipsipm** (or **PyomoToPIPS**, for using the Pyomo-Interface):\
    ```
    git checkout linking-zib-pardiso-hierarchical
    ```
@@ -42,7 +42,7 @@ In either way the cmake output shows the finally chosen lapack/blas routines.
     mkdir PARDISO 
     mkdir PARDISO/src
     ```
-    Copy the correct PARDISO library (the one compiled with GNU) as **pardiso.so** into the folder ThirdPartyLibs/PARDISO/src. Either copy the lincense (in a file named pardiso.lic) into your home directory or alternatively into the directory pips will be run from or, and this is the recommended way, set the environment variable PARDISO_LIC_PATH to the folder where the pardiso.lic file can be found (see also the [pardiso user guide](https://pardiso-project.org/manual/manual.pdf)).
+    Copy the correct PARDISO library (the one compiled with GNU) as **libpardiso.so** into the folder ThirdPartyLibs/PARDISO/src. Either copy the lincense (in a file named pardiso.lic) into your home directory or alternatively into the directory pips will be run from or, and this is the recommended way, set the environment variable PARDISO_LIC_PATH to the folder where the pardiso.lic file can be found (see also the [pardiso user guide](https://pardiso-project.org/manual/manual.pdf)).
 
     Even though this step is theoretically optional we **highly recommend** using PARDISO for proper performance of PIPS-IPM++. Currently MA27 and MA57 are not well integrated and tested (creating the folder will become deprecated in the future).
 
