@@ -12,13 +12,8 @@
 
 #include <vector>
 
-// TODO : deprecated - we're not computing on BlueGene
 #ifndef FNAME
-#ifndef __bg__
 #define FNAME(f) f ## _
-#else
-#define FNAME(f) f // no underscores for fortran names on bgp
-#endif
 #endif
 
 extern "C" {

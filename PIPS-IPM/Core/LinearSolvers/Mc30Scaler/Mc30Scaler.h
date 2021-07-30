@@ -12,11 +12,7 @@
 #include <vector>
 
 #ifndef FNAME
-#ifndef __bg__
 #define FNAME(f) f ## _
-#else
-#define FNAME(f) f // no underscores for fortran names on bgp
-#endif
 #endif
 
 extern "C" {
@@ -29,7 +25,7 @@ public:
 
    ~Mc30Scaler() override = default;
 
-   const double* getScaling() const override { return scaling_factors.data(); }
+   [[nodiscard]] const double* getScaling() const override { return scaling_factors.data(); }
 
    /** compute scaling for a symmetric indefinite matrix and scale it */
    void scaleMatrixTripletFormat(int n, int nnz, double* M, const int* rowM, const int* colM, bool fortran_indexed) override;
