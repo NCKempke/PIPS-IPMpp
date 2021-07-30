@@ -151,7 +151,8 @@ protected:
    bool checkErrorsAndReact();
 
    /* scaler */
-   SymmetricLinearScaler* scaler{};
+   bool apply_scaling{false};
+   std::unique_ptr<SymmetricLinearScaler> scaler{};
 
    /* stuff for MA60 iterative refinement */
    int icntl_ma60[5]{};
