@@ -13,27 +13,23 @@
 #include <vector>
 #include <string>
 
-// TODO : deprecated - we're not computing on BlueGene
+
 #ifndef FNAME
-#ifndef __bg__
 #define FNAME(f) f ## _
-#else
-#define FNAME(f) f // no underscores for fortran names on bgp
-#endif
 #endif
 
 extern "C" {
 void FNAME(ma27id)(int icntl[], double cntl[]);
 
 void FNAME(ma27ad)(const int* n, const int* nz, int irn[], int icn[], int iw[], int* liw, int ikeep[], int iw1[], int* nsteps, int* iflag, int icntl[],
-      double cntl[], int info[], double* ops);
+   double cntl[], int info[], double* ops);
 
 void FNAME(ma27bd)(const int* n, const int* nz, int irn[], int icn[], double a[], int* la, int iw[], int* liw, int ikeep[], int* nsteps, int* maxfrt,
-      int iw1[], int icntl[], double cntl[], int info[]);
+   int iw1[], int icntl[], double cntl[], int info[]);
 
 void
 FNAME(ma27cd)(const int* n, const double a[], const int* la, const int iw[], const int* liw, double w[], const int* maxfrt, double rhs[], int iw1[],
-      const int* nsteps, const int icntl[], int info[]);
+   const int* nsteps, const int icntl[], int info[]);
 
 }
 
@@ -155,7 +151,8 @@ protected:
    bool checkErrorsAndReact();
 
    /* scaler */
-   SymmetricLinearScaler* scaler{};
+   bool apply_scaling{false};
+   std::unique_ptr<SymmetricLinearScaler> scaler{};
 
    /* stuff for MA60 iterative refinement */
    int icntl_ma60[5]{};

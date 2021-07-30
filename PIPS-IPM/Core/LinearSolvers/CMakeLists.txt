@@ -44,18 +44,24 @@ if (HAVE_MUMPS)
 endif (HAVE_MUMPS)
 
 if (HAVE_MA27)
-    add_library(ma27_solver STATIC Mc30Scaler/Mc30Scaler.C Ma27Solver/Ma27Solver.C Ma27Solver/Ma27SolverRoot.C)
-    target_include_directories(ma27_solver PRIVATE ./)
-    target_link_libraries(ma27_solver
+   if(WITH_MC30)
+      add_library(ma27_solver STATIC Mc30Scaler/Mc30Scaler.C Ma27Solver/Ma27Solver.C Ma27Solver/Ma27SolverRoot.C)
+      target_compile_definitions(ma27solver PRIVATE -DWITH_MC30)
+      target_include_directories(ma27solver PRIVATE Mc30Scaler)
+   else(WITH_MC30)
+      add_library(ma27_solver STATIC Ma27Solver/Ma27Solver.C Ma27Solver/Ma27SolverRoot.C)
+   endif(WITH_MC30)
+
+   target_include_directories(ma27_solver PRIVATE ./)
+   target_link_libraries(ma27_solver
             PRIVATE ${MA27_LIBRARY}
             PRIVATE ${GFORTRAN_LIBRARY}
             )
 
-    target_include_directories(pips-ipmpp PRIVATE Mc30Scaler Ma27Solver)
-    target_compile_definitions(pips-ipmpp PUBLIC -DWITH_MA27)
-    list(APPEND lin_solvers_list "ma27_solver")
-    set(lin_solvers_list ${lin_solvers_list} PARENT_SCOPE)
-
+   target_include_directories(pips-ipmpp PRIVATE Ma27Solver)
+   target_compile_definitions(pips-ipmpp PUBLIC -DWITH_MA27)
+   list(APPEND lin_solvers_list "ma27_solver")
+   set(lin_solvers_list ${lin_solvers_list} PARENT_SCOPE)
 endif (HAVE_MA27)
 
 if (HAVE_MA57)

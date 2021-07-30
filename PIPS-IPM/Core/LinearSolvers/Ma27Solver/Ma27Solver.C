@@ -4,10 +4,17 @@
 
 #include "Ma27Solver.h"
 
+#ifdef WITH_MC30
+#include "../Mc30Scaler/Mc30Scaler.h"
+#endif
+
 extern int print_level;
 
 Ma27Solver::Ma27Solver(const SparseSymmetricMatrix& sgm, std::string name_) : mat_storage(&sgm.getStorage()), n{mat_storage->n},
-      nnz{sgm.numberOfNonZeros()}, n_threads{PIPSgetnOMPthreads()}, name(std::move(name_))//, scaler( new Mc30Scaler() )
+      nnz{sgm.numberOfNonZeros()}, n_threads{PIPSgetnOMPthreads()}, name(std::move(name_))
+#ifdef WITH_MC30
+      ,scaler{std::make_unique<Mc30Scaler>() )
+#endif
 {
    assert(n_threads >= 1);
 
@@ -93,7 +100,7 @@ void Ma27Solver::matrixChanged() {
    do {
       // copy M to fact
       copyMatrixElements(fact, la);
-      if (scaler)
+      if (scaler && apply_scaling)
          scaler->scaleMatrixTripletFormat(n, nnz, fact.data(), irowM.data(), jcolM.data(), true);
 
       FNAME(ma27bd)(&n, &nnz, irowM.data(), jcolM.data(), fact.data(), &la, iw, &liw, ikeep, &nsteps, &maxfrt, iw1, icntl.data(), cntl.data(),
@@ -181,11 +188,11 @@ void Ma27Solver::solve(Vector<double>& rhs_in) {
       assert(iw1_loc);
 
       /* solve DAD y = D*residual */
-      if (scaler)
+      if (scaler && apply_scaling)
          scaler->scaleVector(residual_loc);
       FNAME(ma27cd)(&n, fact.data(), &la, iw, &liw, ww_loc, &maxfrt, residual_loc.elements(), iw1_loc, &nsteps, icntl.data(), info_loc);
       /* Dy = x */
-      if (scaler)
+      if (scaler && apply_scaling)
          scaler->scaleVector(residual_loc);
 
       iter_loc.add(1.0, residual_loc);
@@ -339,7 +346,6 @@ void Ma27Solver::getIndices(std::vector<int>& irowM, std::vector<int>& jcolM) co
 }
 
 Ma27Solver::~Ma27Solver() {
-   delete scaler;
    freeWorkingArrays();
 }
 
