@@ -916,6 +916,28 @@ void copyGDXSymbol(int         numBlocks,
       }
       return;
    }
+   if (!rc && 0==strcmp(symName,"jb"))
+   {
+      printf("Copying %s\n", symName); fflush(stdout);
+      for (k=(actBlock < 0)? 0:actBlock; k<numBlocks; k++)
+      {
+         GDXSAVECALLX(bGDX[k],gdxDataWriteRawStart(bGDX[k], symName, "binary variables", 1, dt_set, 0));
+         GDXSAVECALLX(bGDX[k],gdxDataWriteDone(bGDX[k]));
+		 if (actBlock >= 0) break;
+      }
+      return;
+   }
+   if (!rc && 0==strcmp(symName,"ji"))
+   {
+      printf("Copying %s\n", symName); fflush(stdout);
+      for (k=(actBlock < 0)? 0:actBlock; k<numBlocks; k++)
+      {
+         GDXSAVECALLX(bGDX[k],gdxDataWriteRawStart(bGDX[k], symName, "integer variables", 1, dt_set, 0));
+         GDXSAVECALLX(bGDX[k],gdxDataWriteDone(bGDX[k]));
+		 if (actBlock >= 0) break;
+      }
+      return;
+   }
    GDXSAVECALLX(fGDX,gdxSymbolInfo(fGDX, symNr, symText, &symDim, &symType));
    GDXSAVECALLX(fGDX,gdxSymbolInfoX(fGDX, symNr, &recNr, &userInfo, symText));
    printf("Copying %s (#recs=%d)\n", symName, recNr); fflush(stdout);
@@ -1287,6 +1309,10 @@ int gdxSplitting(const int numBlocks,        /** < total number of blocks n in p
    //size = 0; for (k=(actBlock < 0)? 0:actBlock;k<numBlocks; k++) size += gdxGetMemoryUsed(bGDX[k]); printf("after j %ld\n", size);
    copyGDXSymbol(numBlocks,actBlock,bGDX,fGDX,"jobj",   gdxM,offset,NULL,    NULL,     NULL,    0        ,1,objVarUel,objRowUel);
    //size = 0; for (k=(actBlock < 0)? 0:actBlock;k<numBlocks; k++) size += gdxGetMemoryUsed(bGDX[k]); printf("after jobj %ld\n", size);
+   copyGDXSymbol(numBlocks,actBlock,bGDX,fGDX,"jb",     gdxM,offset,varstage,NULL,     NULL,    0        ,3,objVarUel,objRowUel);
+   //size = 0; for (k=(actBlock < 0)? 0:actBlock;k<numBlocks; k++) size += gdxGetMemoryUsed(bGDX[k]); printf("after jb %ld\n", size);
+   copyGDXSymbol(numBlocks,actBlock,bGDX,fGDX,"ji",     gdxM,offset,varstage,NULL,     NULL,    0        ,3,objVarUel,objRowUel);
+   //size = 0; for (k=(actBlock < 0)? 0:actBlock;k<numBlocks; k++) size += gdxGetMemoryUsed(bGDX[k]); printf("after ji %ld\n", size);
    copyGDXSymbol(numBlocks,actBlock,bGDX,fGDX,"iobj",   gdxM,offset,NULL,    NULL,     NULL,    0        ,1,objVarUel,objRowUel);
    //size = 0; for (k=(actBlock < 0)? 0:actBlock;k<numBlocks; k++) size += gdxGetMemoryUsed(bGDX[k]); printf("after iobj %ld\n", size);
    copyGDXSymbol(numBlocks,actBlock,bGDX,fGDX,"objcoef",gdxM,offset,NULL,    NULL,     NULL,    0        ,1,objVarUel,objRowUel);
@@ -1554,6 +1580,7 @@ int readBlock(const int numBlocks,       /** < total number of blocks n in probl
       blk->xupp  = (double *)  calloc(blk->ni, sizeof(double)); 
       blk->ixlow = (int16_t *) calloc(blk->ni, sizeof(int16_t)); 
       blk->ixupp = (int16_t *) calloc(blk->ni, sizeof(int16_t));
+      blk->ixtyp = (int16_t *) calloc(blk->ni, sizeof(int16_t));
       
       DEBUG("Second pass over the variables to get the bounds");
       /* Second pass over the variables to get the bounds */
@@ -1582,7 +1609,54 @@ int readBlock(const int numBlocks,       /** < total number of blocks n in probl
          }
       }
       GDXSAVECALLX(fGDX,gdxDataReadDone(fGDX));
-      
+
+      if ( !zjv )
+      {
+          rc = gdxFindSymbol(fGDX, "jb", &symNr);
+          if ( rc == 1 )
+          {
+              GDXSAVECALLX(fGDX,gdxDataReadRawStart(fGDX, symNr, &idummy));
+              while ( gdxDataReadRaw(fGDX, keyInt, vals, &dimFirst) )
+              {
+                  int col = vemap[keyInt[0]-1]-1;
+                  if ( 0==varPerm[col] )
+                  {
+                     if ( debugMode > 1)
+                        printf("*** Binary variable %s with block index %d while scanning for block index %d\n", varname[col], varstage[col], actBlock+offset);
+                     continue;
+                  }
+                  if ( varPerm[col] <= blk->n0 && actBlock > 0 )
+                     continue;
+            
+                  col = varPerm[col] - ((varPerm[col] <= blk->n0)? 1:(blk->n0+1));
+                  blk->ixtyp[col] = 1;
+              }
+              GDXSAVECALLX(fGDX,gdxDataReadDone(fGDX));
+          }
+          rc = gdxFindSymbol(fGDX, "ji", &symNr);
+          if ( rc == 1 )
+          {
+              GDXSAVECALLX(fGDX,gdxDataReadRawStart(fGDX, symNr, &idummy));
+              while ( gdxDataReadRaw(fGDX, keyInt, vals, &dimFirst) )
+              {
+                  int col = vemap[keyInt[0]-1]-1;
+                  if ( 0==varPerm[col] )
+                  {
+                     if ( debugMode > 1)
+                        printf("*** Integer variable %s with block index %d while scanning for block index %d\n", varname[col], varstage[col], actBlock+offset);
+                     continue;
+                  }
+                  if ( varPerm[col] <= blk->n0 && actBlock > 0 )
+                     continue;
+            
+                  col = varPerm[col] - ((varPerm[col] <= blk->n0)? 1:(blk->n0+1));
+                  blk->ixtyp[col] = 2;
+              }
+              GDXSAVECALLX(fGDX,gdxDataReadDone(fGDX));
+          }
+      }
+
+
       DEBUG("First pass over the matrix to identify objective function");
       /* First pass over the matrix to identify objective function */
       cVal = (double *)malloc(gdxN*sizeof(double));

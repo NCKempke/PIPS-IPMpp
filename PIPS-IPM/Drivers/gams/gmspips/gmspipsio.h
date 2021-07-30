@@ -37,6 +37,7 @@ typedef struct
   int16_t*    idupp;             /**< upper bound indicator of DL, length: mDL */
   int32_t*    permN;             /**< GDX n vector with pointer to 0..(n0+ni-1) space */
   int32_t*    permM;             /**< GDX m vector with pointer to 0..(mA+mC+mBL+mDL-1) space */
+  int16_t*    ixtyp;             /**< variable type indicator of x_i: 0=cont., 1=binary, 2=integer */  
 /* Matrices */
   int32_t*    rmA;               /**< row major of A, length: mA+1 */
   int32_t*    ciA;               /**< column index of A, length: nnzA */
