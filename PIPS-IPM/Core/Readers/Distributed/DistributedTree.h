@@ -91,6 +91,8 @@ public:
    [[nodiscard]] virtual std::unique_ptr<DistributedVector<double>> createxupp() const = 0;
    [[nodiscard]] virtual std::unique_ptr<DistributedVector<double>> createixupp() const = 0;
 
+   [[nodiscard]] virtual std::unique_ptr<DistributedVector<double>> create_variable_integrality_type() const = 0;
+
    [[nodiscard]] virtual std::unique_ptr<DistributedMatrix> createA() const = 0;
    [[nodiscard]] virtual std::unique_ptr<DistributedVector<double>> createb() const = 0;
 
@@ -99,6 +101,7 @@ public:
    [[nodiscard]] virtual std::unique_ptr<DistributedVector<double>> createiclow() const = 0;
    [[nodiscard]] virtual std::unique_ptr<DistributedVector<double>> createcupp() const = 0;
    [[nodiscard]] virtual std::unique_ptr<DistributedVector<double>> createicupp() const = 0;
+
 
    template<typename T>
    [[nodiscard]] std::unique_ptr<DistributedVector<T>> new_primal_vector(bool empty = false) const;

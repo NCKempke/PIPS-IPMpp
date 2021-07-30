@@ -9,6 +9,10 @@
 #include "Vector.hpp"
 #include "AbstractMatrix.h"
 
+enum class IntegralityType {
+   CONTINUOUS = 0, BINARY = 1, INTEGER = 2,
+};
+
 class MpsReader;
 
 class Variables;
@@ -31,6 +35,9 @@ public:
    std::shared_ptr<Vector<double>> inequality_upper_bound_indicators; // index upper bounds
    std::shared_ptr<Vector<double>> inequality_lower_bounds; // lower bounds C
    std::shared_ptr<Vector<double>> inequality_lower_bound_indicators; // index lower bounds
+
+   std::shared_ptr<Vector<double>> variable_integrality_type; // if nun-null defines integrality type of variable (continuous, binary, integer)
+
    std::shared_ptr<Vector<double>> sc; // scale (and diag of Q) -> not maintained currently
 
    long long nx{0};
@@ -43,11 +50,12 @@ public:
    long long number_inequality_upper_bounds{0};
 
    Problem(std::shared_ptr<Vector<double>> g_in, std::shared_ptr<SymmetricMatrix> Q_in,
-         std::shared_ptr<Vector<double>> xlow_in,
-      std::shared_ptr<Vector<double>> ixlow_in, std::shared_ptr<Vector<double>> xupp_in, std::shared_ptr<Vector<double>> ixupp_in,
+      std::shared_ptr<Vector<double>> xlow_in, std::shared_ptr<Vector<double>> ixlow_in,
+      std::shared_ptr<Vector<double>> xupp_in, std::shared_ptr<Vector<double>> ixupp_in,
       std::shared_ptr<GeneralMatrix> A_in, std::shared_ptr<Vector<double>> bA_in, std::shared_ptr<GeneralMatrix> C_in,
       std::shared_ptr<Vector<double>> clow_in, std::shared_ptr<Vector<double>> iclow_in,
-      std::shared_ptr<Vector<double>> cupp_in, std::shared_ptr<Vector<double>> icupp_in);
+      std::shared_ptr<Vector<double>> cupp_in, std::shared_ptr<Vector<double>> icupp_in,
+      std::shared_ptr<Vector<double>> variable_integrality_type_in = nullptr);
 
    virtual ~Problem() = default;
 

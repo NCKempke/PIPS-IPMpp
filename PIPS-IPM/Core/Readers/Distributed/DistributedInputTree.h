@@ -36,7 +36,7 @@ public:
       DistributedInputNode(void* user_data, int id, FNNZ n, FNNZ my, FNNZ myl, FNNZ mz, FNNZ mzl, FMAT fQ, FNNZ fnnzQ, FVEC fc, FMAT fA, FNNZ fnnzA,
             FMAT fB, FNNZ fnnzB, FMAT fBl, FNNZ fnnzBl, FVEC fb, FVEC fbl, FMAT fC, FNNZ fnnzC, FMAT fD, FNNZ fnnzD, FMAT fDl, FNNZ fnnzDl,
             FVEC fclow, FVEC ficlow, FVEC fcupp, FVEC ficupp, FVEC fdllow, FVEC fidllow, FVEC fdlupp, FVEC fidlupp, FVEC fxlow, FVEC fixlow,
-            FVEC fxupp, FVEC fixupp, bool deleteUserData = false);
+            FVEC fxupp, FVEC fixupp, FVEC fixtyp, bool deleteUserData = false);
 
       ~DistributedInputNode();
 
@@ -98,6 +98,8 @@ public:
       FVEC fxupp{};
       FVEC fixlow{};
       FVEC fixupp{};
+
+      FVEC fixtyp{};
 
       void* user_data{};
 
