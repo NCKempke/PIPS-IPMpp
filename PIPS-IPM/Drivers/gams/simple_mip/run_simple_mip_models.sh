@@ -41,12 +41,12 @@ echo "Running the models one by one"
 
 min4 = $(( ${n_procs} <= 4 ? ${n_procs} : 4 ))
 echo "Running ${mpirun_command} -${mpi_nprocs_flag} ${min4} ${DIR}/../../../../build/gmspips 5 ${DIR}/5_blk/allblocks_mip_5blk ${GAMSSYSDIR} presolve scaleGeo stepLp"
-$mpirun_command -$mpi_nprocs_flag min4 $DIR/../../../../build/gmspips 5 $DIR/5_blk/allblocks_mip_5blk $GAMSSYSDIR presolve scaleGeo stepLp
+$mpirun_command -$mpi_nprocs_flag ${min4} $DIR/../../../../build/gmspips 5 $DIR/5_blk/allblocks_mip_5blk $GAMSSYSDIR presolve scaleGeo stepLp
 
 min55 = $(( ${n_procs} <= 55 ? ${n_procs} : 55 ))
 echo "Running ${mpirun_command} -${mpi_nprocs_flag} ${min55} ${DIR}/../../../../build/gmspips 56 ${DIR}/56_blk/allblocks_mip_56blk ${GAMSSYSDIR} presolve scaleGeo stepLp"
-$mpirun_command -$mpi_nprocs_flag min55 $DIR/../../../../build/gmspips 56 $DIR/56_blk/allblocks_mip_56blk $GAMSSYSDIR presolve scaleGeo stepLp
+$mpirun_command -$mpi_nprocs_flag ${min55} $DIR/../../../../build/gmspips 56 $DIR/56_blk/allblocks_mip_56blk $GAMSSYSDIR presolve scaleGeo stepLp
 
 min365 = $(( ${n_procs} < 366 ? ${n_procs} : 365 ))
 echo "Running ${mpirun_command} -${mpi_nprocs_flag} ${min365} ${DIR}/../../../../build/gmspips 366 ${DIR}/366_blk/allblocks_mip_366blk ${GAMSSYSDIR} presolve scaleGeo stepLp"
-$mpirun_command -$mpi_nprocs_flag min365 $DIR/../../../../build/gmspips 366 $DIR/366_blk/allblocks_mip_366blk $GAMSSYSDIR presolve scaleGeo stepLp
+$mpirun_command -$mpi_nprocs_flag ${min365} $DIR/../../../../build/gmspips 366 $DIR/366_blk/allblocks_mip_366blk $GAMSSYSDIR presolve scaleGeo stepLp
