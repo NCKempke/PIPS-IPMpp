@@ -2,8 +2,7 @@
 
 PIPS-IPM++ is a (MPI + OpenMP) parallel interior-point method for doubly bordered block diagonal Linear Programms (QPs with linear constraints are currently not supported - we could do that if wished for). For more information on the current algorithm implemented in PIPS and on how to use it see [here](https://opus4.kobv.de/opus4-zib/files/7432/ip4energy.pdf). There exist two general purpose interfaces to PIPS-IPM++, one via [GAMS](https://www.gams.com/) and thus a GAMS license is required, and one esablished with the [METIS-project](https://www.fz-juelich.de/ias/jsc/EN/Research/Projects/_projects/metis.html) (on branch PyomoToPIPS). We encourage and support writing additional interfaces, too.
 
-PIPS-IPM++ is a (highly modified) derivative of the [PIPS](https://github.com/Argonne-National-Laboratory/PIPS) solver originally developed at Argonne National Laboratory.
-
+PIPS-IPM++ is a (highly modified) derivative of the [PIPS](https://github.com/Argonne-National-Laboratory/PIPS) solver originally developed at Argonne National Laboratory. You can find our most recent publications [here](https://www.sciencedirect.com/science/article/abs/pii/S0377221721005944) and [here](https://www.springerprofessional.de/en/first-experiments-with-structure-aware-presolving-for-a-parallel/18413092).
 
 # INSTALLATION Instructions
 
@@ -16,13 +15,13 @@ In Linux(Ubuntu):\
    ```
    (sudo) apt install xxxx
    ```
-   Note, that PIPS (and its third party libraries) heavily rely on a proper installation of **lapack** and **blas**. The correct libraries can be provided to PIPS' cmake in 3 ways (priority as follows):
- * The user can pass the variable MATH_LIBS to cmake passing all necessary linker information for custom defined lapack and blas to used
- * The user can define the environment variable MKLROOT to make PIPS use the Intel MKL libraries (suitable for Intel processing units). This environment variable can and should be set correctly by one of the scrips provided by Intel with each of its installations of MKL (for more information we recommend checking out the Intel MKL installation instructions)
+   Note, that PIPS-IPM++ (and its third party libraries) heavily rely on a proper installation of **lapack** and **blas**. The correct libraries can be provided to PIPS' cmake in 3 ways (priority as follows):
+ * The user can pass the variable MATH_LIBS to cmake passing all necessary linker information for custom defined lapack and blas to be used.
+ * The user can define the environment variable MKLROOT to make PIPS use the Intel MKL libraries (suitable for Intel processing units). This environment variable can and should be set correctly by one of the scrips provided by Intel with each of its installations of MKL (for more information we recommend checking out the Intel MKL installation instructions).
  * The user can not pass/define anything and cmake will try to automatically find blas and lapack on the system (if installed)
 In either way the cmake output shows the finally chosen lapack/blas routines.
 
-2. Check out the current PIPS-IPM++ "master" **pipsipm** (or **PyomoToPIPS**, for using the Pyomo-Interface):\
+2. Check out the current PIPS-IPM++ "master" **pipsipm** (or **PyomoToPIPS**, for using the Pyomo-Interface):
    ```
    git checkout linking-zib-pardiso-hierarchical
    ```
@@ -36,29 +35,40 @@ In either way the cmake output shows the finally chosen lapack/blas routines.
 4. **OPTIONAL:** Download **MA27** and/or **MA57** from HSL and put the .tar.gz in the correct folder ThirdPartyLibs/MAXX and run the respective install script (see ThirdPartyLibs/MA27/README.txt and ThirdPartyLibs/MA57/README.txt for more details.)
 
 
-5. **OPTIONAL:** Obtain a **PARDISO** (best >= 7.2) license and download PARDISO from [here](http://www.pardiso-project.org/). Got to ThirdPartyLibs and create a folder PARDISO as well as a folder src:
+5. **OPTIONAL:** Obtain a **PARDISO** (best >= 7.2) license and download PARDISO from [here](http://www.pardiso-project.org/).
+   
+    Copy the correct PARDISO library (the one compiled with GNU - this step might depend on your system and which version of gclib is used there - check out [this stack overflow answer](https://stackoverflow.com/questions/57155333/undefined-reference-to-log2fglibc-2-27-undefined-reference-to-logfglibc-2-2/61729571#61729571) for more info)) as **libpardiso.so** into the folder ThirdPartyLibs/PARDISO/src.
     ```
-    cd ThirdPartyLibs
-    mkdir PARDISO 
-    mkdir PARDISO/src
+    cp pardiso_lib_name <pips_root>/ThirdPartyLibs/PARDISO/src
     ```
-    Copy the correct PARDISO library (the one compiled with GNU) as **libpardiso.so** into the folder ThirdPartyLibs/PARDISO/src. Either copy the lincense (in a file named pardiso.lic) into your home directory or alternatively into the directory pips will be run from or, and this is the recommended way, set the environment variable PARDISO_LIC_PATH to the folder where the pardiso.lic file can be found (see also the [pardiso user guide](https://pardiso-project.org/manual/manual.pdf)).
-
+    Either copy the lincense (in a file named pardiso.lic) into your home directory or alternatively into the directory pips will be run from or, and this is the recommended way, set the environment variable PARDISO_LIC_PATH to the folder where the pardiso.lic file can be found (see also the [pardiso user guide](https://pardiso-project.org/manual/manual.pdf)).
+    
     Even though this step is theoretically optional we **highly recommend** using PARDISO for proper performance of PIPS-IPM++. Currently MA27 and MA57 are not well integrated and tested (creating the folder will become deprecated in the future).
 
 **NOTE:** At least one of the solvers MA27, MA57 or PARDISO must be available in order to proceed! So you must got through at least step 4 or 5!    
 
-6. We should now be able to **compile PIPS-IPM++**. Assuming we are trying to install PIPS-IPM++ in the folder PIPSMAINPATH/build, where 
-PIPSMAINPATH is the root installation folder, use the following commands in the PIPSMAINPATH
-folder to configure and install PIPS:
+6. We should now be able to **compile PIPS-IPM++**. Assuming we are trying to install PIPS-IPM++ in the folder <pips_root>/build, where
+   <pips_root> is the root installation folder, use the following commands to configure and install PIPS:
     ```
+    cd <pips_root>
     mkdir build
     cd build
     cmake .. -DCMAKE_BUILD_TYPE=RELEASE
     make
     ```
-    (alternatively ```-DCMAKE_BUILD_TYPE=DEBUG```)
-    (alternatively ```make -j``` to use all your PCs available resources to compile PIPS-IPM++ or ```make -jxx``` where xx is some max number of threads allowed eg. make -j10)
+    Alternatively:
+    ```
+    -DCMAKE_BUILD_TYPE=DEBUG
+    ```
+    Alternatively 
+    ```
+    make -j
+    ``` 
+    to use all your PCs available resources to compile PIPS-IPM++ or 
+    ```
+    make -jXX
+    ```
+    where XX is some max number of threads allowed eg. make -j10).
     
     Note: the ```cmake ..``` command should display a list of all solvers you installed. If your solver is not printed there it cannot be found and you might want to reconcile with steps 4 or 5.
    
@@ -115,6 +125,7 @@ cmake -DCMAKE_TOOLCHAIN_FILE=../Toolchain.cmake -DWITH_TIMING=ON ..
 This is an expert option and requires in-depth knowledge of PIPS-IPM++'s algorithm. It is in refactoring currently.
 
 # CONTRIBUTIONS
+(in alphabetical order)
 
 ## PIPS-IPM++
 Developed by:
@@ -126,13 +137,14 @@ Contributions from:
   * Svenja Uslu 
 
 We thank for their work on interfaces/testing/bug reoprting and general support
-  * Frederick Fiand (GAMS)
+  * Thomas Breuer (FZ Juelich)
   * Michael Bussieck (GAMS)
-  * Manuel Wetzel (DLR)
   * Henrik Büsing (FZ Juelich)
+  * Frederick Fiand (GAMS)
   * Theresa Groß (FZ Juelich)
   * Maximilian Hoffmann (FZ Juelich)
-  * Thomas Breuer (FZ Juelich)
+  * Manuel Wetzel (DLR)
+
 ## PIPS-IPM
 Originally developed by:
   * Cosmin G. Petra - Lawrence Livermore National Laboratory
@@ -142,7 +154,7 @@ Contributions from:
 
 # LICENSE
 
-PIPS-IPM++ is derivative work of PIPS-IPM.
+PIPS-IPM++ is derivative work of PIPS-IPM. While the original code retains it old licensing all PIPS-IPM++ additions are distirbuted under the [LPGLv3](https://www.gnu.org/licenses/lgpl-3.0.en.html).
 
 See LICENSE file.
 
