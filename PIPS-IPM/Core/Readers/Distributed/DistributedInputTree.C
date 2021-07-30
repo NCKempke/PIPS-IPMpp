@@ -25,11 +25,11 @@ DistributedInputTree::DistributedInputNode::DistributedInputNode(int id_, int n_
 DistributedInputTree::DistributedInputNode::DistributedInputNode(void* user_data_, int id_, FNNZ n_, FNNZ my_, FNNZ myl_, FNNZ mz_, FNNZ mzl_, FMAT fQ_, FNNZ fnnzQ_,
       FVEC fc_, FMAT fA_, FNNZ fnnzA_, FMAT fB_, FNNZ fnnzB_, FMAT fBl_, FNNZ fnnzBl_, FVEC fb_, FVEC fbl_, FMAT fC_, FNNZ fnnzC_, FMAT fD_,
       FNNZ fnnzD_, FMAT fDl_, FNNZ fnnzDl_, FVEC fclow_, FVEC ficlow_, FVEC fcupp_, FVEC ficupp_, FVEC fdllow_, FVEC fidllow_, FVEC fdlupp_,
-      FVEC fidlupp_, FVEC fxlow_, FVEC fixlow_, FVEC fxupp_, FVEC fixupp_, bool deleteUserData_/*=false*/) : id(id_), nCall(n_), myCall(my_),
+      FVEC fidlupp_, FVEC fxlow_, FVEC fixlow_, FVEC fxupp_, FVEC fixupp_, FVEC fixtyp_, bool deleteUserData_/*=false*/) : id(id_), nCall(n_), myCall(my_),
       mzCall(mz_), mylCall(myl_), mzlCall(mzl_), fnnzQ(fnnzQ_), fnnzA(fnnzA_), fnnzB(fnnzB_), fnnzBl(fnnzBl_), fnnzC(fnnzC_), fnnzD(fnnzD_),
       fnnzDl(fnnzDl_), fQ(fQ_), fA(fA_), fB(fB_), fBl(fBl_), fC(fC_), fD(fD_), fDl(fDl_), fc(fc_), fb(fb_), fbl(fbl_), fclow(fclow_), fcupp(fcupp_),
       ficlow(ficlow_), ficupp(ficupp_), fdllow(fdllow_), fdlupp(fdlupp_), fidllow(fidllow_), fidlupp(fidlupp_), fxlow(fxlow_), fxupp(fxupp_),
-      fixlow(fixlow_), fixupp(fixupp_), user_data(user_data_), deleteUserData(deleteUserData_) {}
+      fixlow(fixlow_), fixupp(fixupp_), fixtyp(fixtyp_), user_data(user_data_), deleteUserData(deleteUserData_) {}
 
 DistributedInputTree::DistributedInputNode::~DistributedInputNode() {
    if (deleteUserData)

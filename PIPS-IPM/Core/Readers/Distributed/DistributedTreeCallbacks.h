@@ -48,11 +48,14 @@ public:
    [[nodiscard]] std::unique_ptr<DistributedVector<double>> createxupp() const override;
    [[nodiscard]] std::unique_ptr<DistributedVector<double>> createixupp() const override;
 
+   [[nodiscard]] std::unique_ptr<DistributedVector<double>> create_variable_integrality_type() const override;
+
    [[nodiscard]] std::unique_ptr<DistributedVector<double>> createb() const override;
    [[nodiscard]] std::unique_ptr<DistributedVector<double>> createclow() const override;
    [[nodiscard]] std::unique_ptr<DistributedVector<double>> createiclow() const override;
    [[nodiscard]] std::unique_ptr<DistributedVector<double>> createcupp() const override;
    [[nodiscard]] std::unique_ptr<DistributedVector<double>> createicupp() const override;
+
 
    [[nodiscard]] int nx() const override;
    [[nodiscard]] int my() const override;

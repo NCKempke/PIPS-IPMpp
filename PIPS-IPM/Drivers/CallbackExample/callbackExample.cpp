@@ -409,14 +409,14 @@ int main(int argc, char** argv) {
    //build the problem tree
    std::unique_ptr<DistributedInputTree::DistributedInputNode> data_root = std::make_unique<DistributedInputTree::DistributedInputNode>(&probData, 0, nCall, myCall, mylCall, mzCall, mzlCall, fQ, fnnzQ, fc, fA, fnnzA, fB, fnnzB, fBl,
          fnnzBl, fb, fbl, fC, fnnzC, fD, fnnzD, fDl, fnnzDl, fclow, ficlow, fcupp, ficupp, fdllow, fidllow, fdlupp, fidlupp, fxlow, fixlow, fxupp,
-         fixupp, false);
+         fixupp, nullptr, false);
 
    auto* root = new DistributedInputTree(std::move(data_root));
 
    for (int id = 1; id <= nScenarios; id++) {
       std::unique_ptr<DistributedInputTree::DistributedInputNode> data_child = std::make_unique<DistributedInputTree::DistributedInputNode>(&probData, id, nCall, myCall, mylCall, mzCall, mzlCall, fQ, fnnzQ, fc, fA, fnnzA, fB, fnnzB,
             fBl, fnnzBl, fb, fbl, fC, fnnzC, fD, fnnzD, fDl, fnnzDl, fclow, ficlow, fcupp, ficupp, fdllow, fidllow, fdlupp, fidlupp, fxlow, fixlow,
-            fxupp, fixupp, false);
+            fxupp, fixupp, nullptr, false);
 
       root->add_child(std::make_unique<DistributedInputTree>(std::move(data_child)));
    }

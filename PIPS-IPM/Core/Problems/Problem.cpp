@@ -12,7 +12,7 @@ Problem::Problem(std::shared_ptr<Vector<double>> g_in, std::shared_ptr<Symmetric
    std::shared_ptr<Vector<double>> ixupp_in,
    std::shared_ptr<GeneralMatrix> A_in, std::shared_ptr<Vector<double>> bA_in, std::shared_ptr<GeneralMatrix> C_in,
    std::shared_ptr<Vector<double>> clow_in, std::shared_ptr<Vector<double>> iclow_in,
-   std::shared_ptr<Vector<double>> cupp_in, std::shared_ptr<Vector<double>> icupp_in) :
+   std::shared_ptr<Vector<double>> cupp_in, std::shared_ptr<Vector<double>> icupp_in, std::shared_ptr<Vector<double>> variable_integrality_type_in) :
    hessian(std::move(Q_in)),
    equality_jacobian{std::move(A_in)},
    inequality_jacobian{std::move(C_in)},
@@ -20,9 +20,11 @@ Problem::Problem(std::shared_ptr<Vector<double>> g_in, std::shared_ptr<Symmetric
    primal_lower_bounds{std::move(xlow_in)},
    primal_lower_bound_indicators{std::move(ixlow_in)}, inequality_upper_bounds{std::move(cupp_in)}, inequality_upper_bound_indicators{std::move(icupp_in)}, inequality_lower_bounds{std::move(clow_in)},
    inequality_lower_bound_indicators{std::move(iclow_in)},
+   variable_integrality_type{std::move(variable_integrality_type_in)},
    nx{objective_gradient->length()}, my{equality_jacobian->n_rows()}, mz{inequality_jacobian->n_rows()}, number_primal_lower_bounds{primal_lower_bound_indicators->number_nonzeros()},
    number_primal_upper_bounds{primal_upper_bound_indicators->number_nonzeros()},
-   number_inequality_lower_bounds{inequality_lower_bound_indicators->number_nonzeros()}, number_inequality_upper_bounds{inequality_upper_bound_indicators->number_nonzeros()} {
+   number_inequality_lower_bounds{inequality_lower_bound_indicators->number_nonzeros()},
+   number_inequality_upper_bounds{inequality_upper_bound_indicators->number_nonzeros()} {
    assert(primal_lower_bound_indicators && primal_upper_bound_indicators && inequality_lower_bound_indicators && inequality_upper_bound_indicators);
 }
 

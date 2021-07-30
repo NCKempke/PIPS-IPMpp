@@ -688,6 +688,17 @@ std::unique_ptr<DistributedVector<double>> DistributedTreeCallbacks::createixupp
    return createVector(n_func, func, nullptr, nullptr);
 }
 
+std::unique_ptr<DistributedVector<double>> DistributedTreeCallbacks::create_variable_integrality_type() const {
+   DATA_INT n_func = &InputNode::n;
+   DATA_VEC func = &InputNode::fixtyp;
+
+   if (!func) {
+      return nullptr;
+   } else{
+      return createVector(n_func, func, nullptr, nullptr);
+   }
+}
+
 std::unique_ptr<DistributedVector<double>> DistributedTreeCallbacks::createb() const {
    DATA_INT n_func = &InputNode::my;
    DATA_VEC func = &InputNode::fb;
