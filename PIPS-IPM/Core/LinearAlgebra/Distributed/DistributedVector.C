@@ -1501,6 +1501,71 @@ void DistributedVector<T>::transform(const std::function<T(const T&)>& transform
 }
 
 template<typename T>
+void DistributedVector<T>::transform_value(const std::function<T(const T&, const T&, const T&, const T&)>& transformation, const Vector<T>& lower_bounds_,
+      const Vector<T>& upper_bounds_, const Vector<T>& integrality_) {
+   const auto& lower_bounds = dynamic_cast<const DistributedVector<T>&>(lower_bounds_);
+   const auto& upper_bound = dynamic_cast<const DistributedVector<T>&>(upper_bounds_);
+   const auto& integrality = dynamic_cast<const DistributedVector<T>&>(integrality_);
+
+   assert(lower_bounds.children.size() == this->children.size());
+   assert(upper_bound.children.size() == this->children.size());
+   assert(integrality.children.size() == this->children.size());
+   for (size_t it = 0; it < this->children.size(); it++) {
+      this->children[it]->transform_value(transformation, *lower_bounds.children[it], *upper_bound.children[it], *integrality.children[it]);
+   }
+
+   if (this->first && (this->iAmSpecial || this->first->isKindOf(kStochVector))) {
+       assert(lower_bounds.first);
+      assert(upper_bound.first);
+      assert(integrality.first);
+      this->first->transform_value(transformation, *lower_bounds.first, *upper_bound.first, *integrality.first);
+   }
+   else if (!this->first) {
+      assert(lower_bounds.first == nullptr);
+      assert(upper_bound.first == nullptr);
+      assert(integrality.first == nullptr);
+   }
+
+   if (this->iAmSpecial && this->last) {
+      assert(lower_bounds.last);
+      assert(upper_bound.last);
+      assert(integrality.last);
+      this->last->transform_value(transformation, *lower_bounds.last, *upper_bound.last, *integrality.last);
+   }
+   else if (!this->last) {
+      assert(lower_bounds.last == nullptr);
+      assert(upper_bound.last == nullptr);
+      assert(integrality.last == nullptr);
+   }
+}
+
+template<typename T>
+void DistributedVector<T>::fix_values(const Vector<T>& integrality_, double value) {
+   const auto& integrality = dynamic_cast<const DistributedVector<T>&>(integrality_);
+
+   assert(integrality.children.size() == this->children.size());
+   for (size_t it = 0; it < this->children.size(); it++) {
+      this->children[it]->fix_values(*integrality.children[it], value);
+   }
+
+   if (this->first && (this->iAmSpecial || this->first->isKindOf(kStochVector))) {
+      assert(integrality.first);
+      this->first->fix_values(*integrality.first, value);
+   }
+   else if (!this->first) {
+      assert(integrality.first == nullptr);
+   }
+
+   if (this->iAmSpecial && this->last) {
+      assert(integrality.last);
+      this->last->fix_values(*integrality.last, value);
+   }
+   else if (!this->last) {
+      assert(integrality.last == nullptr);
+   }
+}
+
+template<typename T>
 T DistributedVector<T>::sum_reduce(const std::function<T(const T&, const T&)>& reduce) const {
    T sum_reduce{};
 

@@ -113,6 +113,10 @@ public:
    [[nodiscard]] bool all_positive() const override;
 
    void transform(const std::function<T(const T&)>& transformation) override;
+    void transform_value(const std::function<T(const T&, const T&, const T&, const T&)>& transformation, const Vector<T>& lower_bounds_, const
+    Vector<T>& upper_bounds_, const Vector<T>& integrality_) override;
+    void fix_values(const Vector<T>& integrality_, double value) override;
+
    [[nodiscard]] T sum_reduce(const std::function<T(const T& a, const T& b)>& reduce) const override;
    [[nodiscard]] bool all_of(const std::function<bool(const T&)>& pred) const override;
 

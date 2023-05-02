@@ -33,7 +33,7 @@ public:
    [[nodiscard]] virtual std::unique_ptr<DistributedTree> clone() const = 0;
 protected:
 
-   DistributedTree(const DistributedTree& other);
+   explicit DistributedTree(const DistributedTree& other);
 
    MPI_Comm commWrkrs{MPI_COMM_NULL};
    std::vector<int> myProcs, myOldProcs;

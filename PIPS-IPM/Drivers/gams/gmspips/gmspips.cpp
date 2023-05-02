@@ -1,7 +1,10 @@
-#include "../../../Core/Interface/PIPSIPMppInterface.hpp"
-#include "../../../Core/Options/PIPSIPMppOptions.h"
+#include "PIPSIPMppInterface.hpp"
+#include "PIPSIPMppOptions.h"
+#include "Residuals.h"
 #include "DistributedInputTree.h"
+#include "DistributedFactory.hpp"
 #include "gmspips_reader.hpp"
+#include "Problem.hpp"
 
 #include "mpi.h"
 
@@ -26,6 +29,35 @@ static void setParams(ScalerType& scaler_type, bool& stepDiffLp, bool& presolve,
       printsol = true;
    else if (strcmp(paramname, "hierarchical") == 0)
       hierarchical = true;
+}
+
+struct Result {
+    TerminationStatus status;
+    double objective;
+    double constraint_violation;
+};
+
+Result run_pips(PIPSIPMppInterface& pipsIpm, const Problem& problem) {
+    // set the problem
+    pipsIpm.get_presolved_problem() = problem;
+
+    // solve the continuous problem
+    TerminationStatus status = TerminationStatus::DID_NOT_RUN;
+    double objective = std::numeric_limits<double>::infinity();
+    double constraint_violation = std::numeric_limits<double>::infinity();
+    int number_iterations = -1;
+    try {
+        status = pipsIpm.run();
+        objective = pipsIpm.getObjective();
+        number_iterations = pipsIpm.n_iterations();
+        constraint_violation = pipsIpm.get_residuals().constraint_violation();
+    }
+    catch (const std::exception&) {
+    }
+    if (PIPS_MPIgetRank() == 0) {
+        std::cout << "Status: " << status << " reached in " << number_iterations << " iterations.\n";
+    }
+    return {status, objective, constraint_violation};
 }
 
 int main(int argc, char** argv) {
@@ -61,9 +93,8 @@ int main(int argc, char** argv) {
       std::cout << "GAMS located at " << path_to_gams << "\n";
    }
 
-   gmspips_reader reader(file_name, path_to_gams, numBlocks);
-
-   std::unique_ptr<DistributedInputTree> root{reader.read_problem()};
+   gmspips_reader gams_reader(file_name, path_to_gams, numBlocks);
+   std::unique_ptr<DistributedInputTree> tree{gams_reader.read_problem()};
 
    MPI_Barrier(MPI_COMM_WORLD);
    if (my_rank == 0)
@@ -90,13 +121,45 @@ int main(int argc, char** argv) {
    if( my_rank == 0 )
       std::cout << "Creating PIPSIpmInterface ...\n";
 
-   PIPSIPMppInterface pipsIpm(root.get(), primal_dual_step_length ? InteriorPointMethodType::PRIMAL_DUAL : InteriorPointMethodType::PRIMAL, MPI_COMM_WORLD, scaler_type,
+   PIPSIPMppInterface pipsIpm(tree.get(), primal_dual_step_length ? InteriorPointMethodType::PRIMAL_DUAL : InteriorPointMethodType::PRIMAL, MPI_COMM_WORLD, scaler_type,
          presolve ? PresolverType::PRESOLVE : PresolverType::NONE);
 
    if (my_rank == 0) {
       std::cout << "PIPSIPMppInterface created\n";
-      std::cout << "solving...\n";
    }
+
+   // relax the integers
+
+    // get information from the problem
+    //const Vector<double>& initial_point = pipsIpm.get_primal_variables();
+    const Problem& problem = pipsIpm.get_presolved_problem();
+    assert (problem.variable_integrality_type != nullptr && "The problem has only continuous variables");
+    const Vector<double>& integrality = *problem.variable_integrality_type;
+    std::unique_ptr<DistributedFactory> factory = std::make_unique<DistributedFactory>(tree.get(), MPI_COMM_WORLD);
+    const size_t number_variables = factory->tree->nx();
+    if (my_rank == 0) {
+        std::cout << "The problem has " << number_variables << " variables\n";
+        std::cout << "solving...\n";
+    }
+    // lower bounding: solve the LP relaxation
+    // if number_blocks = 5: continuous relaxation: Objective: 29.0771 reached in 24 iterations
+    const Result LP_result = run_pips(pipsIpm, problem);
+    if (my_rank == 0) {
+        std::cout << "\nComputing the lower bound (LP relaxation):\n";
+        std::cout << "LP status: " << LP_result.status << "\n";
+        std::cout << "LP objective: " << LP_result.objective << "\n";
+        std::cout << "LP constraint_violation: " << LP_result.constraint_violation << "\n";
+    }
+
+    // generate an initial integer point
+    pipsIpm.get_primal_variables().transform_value([&](double current_value, double /*lb*/, double /*ub*/, double variable_integrality) {
+        if (0 < variable_integrality) {
+            return std::round(current_value);
+        }
+        else {
+            return current_value;
+        }
+    }, *problem.primal_lower_bounds, *problem.primal_upper_bounds, integrality);
 
    const TerminationStatus status = pipsIpm.run();
    const double objective = pipsIpm.getObjective();
@@ -115,7 +178,7 @@ int main(int argc, char** argv) {
    }
 
    if (printsol) {
-      reader.write_solution(pipsIpm, file_name);
+      gams_reader.write_solution(pipsIpm, file_name);
    }
 
    MPI_Barrier(MPI_COMM_WORLD);

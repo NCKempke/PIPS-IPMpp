@@ -599,3 +599,15 @@ void PIPSIPMppInterface::postsolveComputedSolution() {
       printComplementarityResiduals(*postsolved_variables);
    }
 }
+
+Problem& PIPSIPMppInterface::get_presolved_problem() {
+    return *this->presolved_problem;
+}
+
+Vector<double>& PIPSIPMppInterface::get_primal_variables() {
+    return *(this->variables->primals);
+}
+
+Residuals& PIPSIPMppInterface::get_residuals() {
+    return *this->residuals;
+}

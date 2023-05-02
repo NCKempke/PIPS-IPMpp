@@ -115,8 +115,8 @@ target_link_libraries(gmspipsio
 add_library(gmspips_read_write gmspips_reader.cpp)
 
 target_include_directories(gmspips_read_write
-        PRIVATE ../../../Core/Readers/Distributed
-        PRIVATE ../../../Core/Utilities)
+        PRIVATE ../PIPS-IPM/Core/Readers/Distributed
+        PRIVATE ../PIPS-IPM/Core/Utilities)
 
 target_link_libraries(gmspips_read_write
         PRIVATE gmspipsio
@@ -137,6 +137,31 @@ target_link_libraries(gmschk
 ############## gmspips ##############
 add_executable(gmspips gmspips.cpp)
 
+set(DIRECTORIES
+        ${PROJECT_SOURCE_DIR}/PIPS-IPM/Core
+        ${PROJECT_SOURCE_DIR}/PIPS-IPM/Core/Interface
+        ${PROJECT_SOURCE_DIR}/PIPS-IPM/Core/KKTFormulation/Variables
+        ${PROJECT_SOURCE_DIR}/PIPS-IPM/Core/KKTFormulation/Residuals
+        ${PROJECT_SOURCE_DIR}/PIPS-IPM/Core/LinearAlgebra/Abstract
+        ${PROJECT_SOURCE_DIR}/PIPS-IPM/Core/LinearAlgebra/Dense
+        ${PROJECT_SOURCE_DIR}/PIPS-IPM/Core/LinearAlgebra/Distributed
+        ${PROJECT_SOURCE_DIR}/PIPS-IPM/Core/LinearAlgebra/Sparse
+        ${PROJECT_SOURCE_DIR}/PIPS-IPM/Core/Preprocessing
+        ${PROJECT_SOURCE_DIR}/PIPS-IPM/Core/Problems
+        ${PROJECT_SOURCE_DIR}/PIPS-IPM/Core/Readers/Distributed
+        ${PROJECT_SOURCE_DIR}/PIPS-IPM/Core/LinearSolvers
+        ${PROJECT_SOURCE_DIR}/PIPS-IPM/Core/LinearSolvers/Ma27Solver
+        ${PROJECT_SOURCE_DIR}/PIPS-IPM/Core/LinearSolvers/Ma57Solver
+        ${PROJECT_SOURCE_DIR}/PIPS-IPM/Core/LinearSolvers/PardisoSolver/PardisoIndefSolver
+        ${PROJECT_SOURCE_DIR}/PIPS-IPM/Core/LinearSolvers/PardisoSolver/PardisoSchurSolver
+        ${PROJECT_SOURCE_DIR}/PIPS-IPM/Core/LinearSolvers/PardisoSolver/PardisoSolver
+        ${PROJECT_SOURCE_DIR}/PIPS-IPM/Core/Options
+        ${PROJECT_SOURCE_DIR}/PIPS-IPM/Drivers
+        ${PROJECT_SOURCE_DIR}/PIPS-IPM/Drivers/gams/gmspips
+)
+
+
+target_include_directories(gmspips PUBLIC ${DIRECTORIES})
 target_include_directories(gmspips PRIVATE ${includes_for_interface})
 target_compile_options(gmspips
         PRIVATE "$<$<COMPILE_LANGUAGE:CXX>:-Wextra>"

@@ -95,6 +95,10 @@ public:
    void getResidsUnscaledUnperm();
    //more get methods to follow here
 
+   Problem& get_presolved_problem();
+   Vector<double>& get_primal_variables();
+   Residuals& get_residuals();
+
 private:
    static void printComplementarityResiduals(const Variables& vars) ;
 

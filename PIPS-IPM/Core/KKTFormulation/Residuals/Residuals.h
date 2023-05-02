@@ -1,7 +1,7 @@
 #ifndef RESIDUALS_H
 #define RESIDUALS_H
 
-#include "Vector.hpp"
+#include "../../LinearAlgebra/Abstract/Vector.hpp"
 #include <memory>
 #include <iostream>
 #include <limits>

@@ -145,6 +145,11 @@ public:
 
    virtual void transform(const std::function<T(const T&)>& transformation) = 0;
 
+    virtual void transform_value(const std::function<T(const T&, const T&, const T&, const T&)>& transformation, const Vector<T>& lower_bounds_, const
+    Vector<T>& upper_bounds_, const Vector<T>& integrality_) = 0;
+
+    virtual void fix_values(const Vector<T>& integrality_, double value) = 0;
+
    virtual T sum_reduce(const std::function<T(const T& a, const T& b)>& reduce) const = 0;
 
    virtual bool all_of(const std::function<bool(const T&)>& pred) const = 0;

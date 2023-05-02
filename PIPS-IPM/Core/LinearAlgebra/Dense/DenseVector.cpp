@@ -665,6 +665,36 @@ void DenseVector<T>::transform(const std::function<T(const T&)>& transformation)
 }
 
 template<typename T>
+void DenseVector<T>::transform_value(const std::function<T(const T&, const T&, const T&, const T&)>& transformation, const Vector<T>& lower_bounds_,
+      const Vector<T>& upper_bounds_, const Vector<T>& integrality_) {
+   assert(lower_bounds_.length() == this->n);
+   assert(upper_bounds_.length() == this->n);
+   assert(integrality_.length() == this->n);
+   const auto& lower_bounds = dynamic_cast<const DenseVector<T>&>(lower_bounds_);
+   const auto& upper_bounds = dynamic_cast<const DenseVector<T>&>(upper_bounds_);
+   const auto& integrality = dynamic_cast<const DenseVector<T>&>(integrality_);
+   // (0 = continuous, 1 = binary, 2 = integer)
+
+   for (int i = 0; i < this->n; i++) {
+      this->v[i] = transformation(this->v[i], lower_bounds[i], upper_bounds[i], integrality[i]);
+   }
+}
+
+template<typename T>
+void DenseVector<T>::fix_values(const Vector<T>& integrality_, double value) {
+   assert(this->n == integrality_.length());
+   const auto& integrality = dynamic_cast<const DenseVector<T>&>(integrality_);
+   // (0 = continuous, 1 = binary, 2 = integer)
+
+   for (int i = 0; i < this->n; ++i) {
+      // if the variable is discrete, fix the value
+      if (0 < integrality[i]) {
+         this->v[i] = value;
+      }
+   }
+}
+
+template<typename T>
 T DenseVector<T>::sum_reduce(const std::function<T(const T& a, const T& b)>& reduce) const {
    return std::accumulate(v, v + this->n, T{}, reduce); // no reduce for now we are forcing in order?
 }
