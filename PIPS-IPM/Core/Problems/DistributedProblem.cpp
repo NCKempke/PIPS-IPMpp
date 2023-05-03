@@ -1119,12 +1119,14 @@ DistributedProblem::DistributedProblem(const DistributedTree* tree_, std::shared
    std::shared_ptr<GeneralMatrix> C_in, std::shared_ptr<Vector<double>> clow_in,
    std::shared_ptr<Vector<double>> iclow_in,
    std::shared_ptr<Vector<double>> cupp_in,
-   std::shared_ptr<Vector<double>> icupp_in, bool add_children, bool is_hierarchy_root,
+   std::shared_ptr<Vector<double>> icupp_in,
+   std::shared_ptr<Vector<double>> integrality,
+   bool add_children, bool is_hierarchy_root,
    bool is_hierarchy_inner_root, bool is_hierarchy_inner_leaf) :
    Problem(std::move(c_in), std::move(Q_in),
    std::move(xlow_in), std::move(ixlow_in),
    std::move(xupp_in), std::move(ixupp_in), std::move(A_in), std::move(bA_in), std::move(C_in), std::move(clow_in),
-   std::move(iclow_in), std::move(cupp_in), std::move(icupp_in)), stochNode{tree_},
+   std::move(iclow_in), std::move(cupp_in), std::move(icupp_in), std::move(integrality)), stochNode{tree_},
    is_hierarchy_root{is_hierarchy_root},
    is_hierarchy_inner_root{is_hierarchy_inner_root}, is_hierarchy_inner_leaf{is_hierarchy_inner_leaf} {
 
@@ -1189,6 +1191,8 @@ std::unique_ptr<DistributedProblem> DistributedProblem::clone_full(bool switchTo
    std::shared_ptr<DistributedVector<double>> icupp_clone(dynamic_cast<DistributedVector<double>*>(inequality_upper_bound_indicators->clone_full()));
    std::shared_ptr<DistributedVector<double>> clow_clone(dynamic_cast<DistributedVector<double>*>(inequality_lower_bounds->clone_full()));
    std::shared_ptr<DistributedVector<double>> iclow_clone(dynamic_cast<DistributedVector<double>*>(inequality_lower_bound_indicators->clone_full()));
+    assert(variable_integrality_type != nullptr);
+    std::shared_ptr<DistributedVector<double>> integrality_clone(dynamic_cast<DistributedVector<double>*>(variable_integrality_type->clone_full()));
 
    // TODO : tree is not actually cloned..
    const DistributedTree* tree_clone = stochNode;
@@ -1197,7 +1201,7 @@ std::unique_ptr<DistributedProblem> DistributedProblem::clone_full(bool switchTo
    return std::make_unique<DistributedProblem>(tree_clone, std::move(c_clone), std::move(Q_clone), std::move(xlow_clone),
       std::move(ixlow_clone), std::move(xupp_clone), std::move(ixupp_clone),
       std::move(A_clone), std::move(bA_clone),
-      std::move(C_clone), std::move(clow_clone), std::move(iclow_clone), std::move(cupp_clone), std::move(icupp_clone));
+      std::move(C_clone), std::move(clow_clone), std::move(iclow_clone), std::move(cupp_clone), std::move(icupp_clone), std::move(integrality_clone));
 }
 
 void DistributedProblem::createChildren() {
@@ -1218,13 +1222,15 @@ void DistributedProblem::createChildren() {
    auto& iclowSt = dynamic_cast<DistributedVector<double>&>(*inequality_lower_bound_indicators);
    auto& cuppSt = dynamic_cast<DistributedVector<double>&>(*inequality_upper_bounds);
    auto& icuppSt = dynamic_cast<DistributedVector<double>&>(*inequality_upper_bound_indicators);
+    assert(variable_integrality_type != nullptr);
+    auto& integrality = dynamic_cast<DistributedVector<double>&>(*variable_integrality_type);
 
    for (size_t it = 0; it < gSt.children.size(); it++) {
       add_child(new DistributedProblem(stochNode->getChildren()[it].get(), gSt.children[it], QSt.children[it], xlowSt.children[it],
          ixlowSt.children[it],
          xuppSt.children[it], ixuppSt.children[it], ASt.children[it], bASt.children[it], CSt.children[it],
          clowSt.children[it],
-         iclowSt.children[it], cuppSt.children[it], icuppSt.children[it]));
+         iclowSt.children[it], cuppSt.children[it], icuppSt.children[it], integrality.children[it]));
    }
 }
 
@@ -1271,13 +1277,16 @@ DistributedProblem* DistributedProblem::shaveBorderFromDataAndCreateNewTop(const
       dynamic_cast<DistributedVector<double>&>(*inequality_lower_bounds).raiseBorder(-1, n_global_ineq_linking_conss));
    std::shared_ptr<DistributedVector<double>> iclow_hier(
       dynamic_cast<DistributedVector<double>&>(*inequality_lower_bound_indicators).raiseBorder(-1, n_global_ineq_linking_conss));
+    assert(variable_integrality_type != nullptr);
+    std::shared_ptr<DistributedVector<double>> integrality_hier(
+            dynamic_cast<DistributedVector<double>&>(*variable_integrality_type).raiseBorder(-1, n_global_ineq_linking_conss));
 
    // TODO what is this?
    //DistributedVector<double>* sc_hier = dynamic_cast<DistributedVector<double>&>(*sc).shaveBorder(-1);
 
    return new DistributedProblem(&tree, std::move(g_hier), std::move(Q_hier), std::move(blx_hier), std::move(ixlow_hier), std::move(bux_hier), std::move(ixupp_hier), std::move(A_hier), std::move(bA_hier), std::move(C_hier),
                   std::move(bl_hier), std::move(iclow_hier), std::move(bu_hier),
-                  std::move(icupp_hier), false, true);
+                  std::move(icupp_hier), std::move(integrality_hier), false, true);
 }
 
 DistributedProblem* DistributedProblem::shaveDenseBorder(const DistributedTree& tree) {
@@ -1466,13 +1475,17 @@ void DistributedProblem::addChildrenForSplit() {
       std::shared_ptr<DistributedVector<double>> icupp_child = is_hierarchy_inner_root
          ? dynamic_cast<DistributedVector<double>&>(*inequality_upper_bound_indicators).children[i]
          : dynamic_cast<DistributedVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*inequality_upper_bound_indicators).first).children[i];
+       assert(variable_integrality_type != nullptr);
+       std::shared_ptr<DistributedVector<double>> integrality_child = is_hierarchy_inner_root
+         ? dynamic_cast<DistributedVector<double>&>(*variable_integrality_type).children[i]
+         : dynamic_cast<DistributedVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*variable_integrality_type).first).children[i];
 
       assert(dynamic_cast<const DistributedTreeCallbacks&>(*tree.getChildren()[i]).isHierarchicalInnerLeaf());
       const DistributedTree* tree_child = dynamic_cast<const DistributedTreeCallbacks&>(*tree.getChildren()[i]).getSubRoot();
 
       auto* child = new DistributedProblem(tree_child, g_child, Q_child, blx_child, ixlow_child, bux_child, ixupp_child,
          A_child, bA_child,
-         C_child, bl_child, iclow_child, bu_child, icupp_child, false, false, false, true);
+         C_child, bl_child, iclow_child, bu_child, icupp_child, integrality_child, false, false, false, true);
       new_children[i] = child;
 
       const int myl = tree_child->myl();

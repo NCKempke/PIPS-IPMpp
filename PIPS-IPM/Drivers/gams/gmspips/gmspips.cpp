@@ -69,13 +69,13 @@ int main(int argc, char** argv) {
    const double t0 = MPI_Wtime();
 
    ScalerType scaler_type = ScalerType::NONE;
-   bool primal_dual_step_length = false;
+   bool primal_dual_step_length = true;
    bool presolve = false;
    bool printsol = false;
    bool hierarchical = false;
 
    if ((argc < 3) || (argc > 9)) {
-      std::cout << "Usage: " << argv[0] << " numBlocks file_name[.gdx] GDXLibDir [scale] [stepLp] [presolve] [printsol] [hierarchical_approach]\n";
+      std::cout << "Usage: " << argv[0] << " numBlocks file_name[.gdx] GDXLibDir [scale] [stepLp] [presolve] [printsol] [hierarchical]\n";
       std::cout << "Expecting files to be of the form \"file_nameXX\", where XX specifies a block from 0 to num_blocks!\n";
       exit(1);
    }
@@ -133,7 +133,16 @@ int main(int argc, char** argv) {
     // get information from the problem
     //const Vector<double>& initial_point = pipsIpm.get_primal_variables();
     const Problem& problem = pipsIpm.get_presolved_problem();
-    assert (problem.variable_integrality_type != nullptr && "The problem has only continuous variables");
+    //assert (problem.variable_integrality_type != nullptr && "The problem has only continuous variables");
+    if (my_rank == 0) {
+        if (problem.variable_integrality_type == nullptr) {
+            std::cout << "All variables are continuous\n";
+        }
+        else {
+            std::cout << "The problem has discrete variables\n";
+        }
+    }
+
     const Vector<double>& integrality = *problem.variable_integrality_type;
     std::unique_ptr<DistributedFactory> factory = std::make_unique<DistributedFactory>(tree.get(), MPI_COMM_WORLD);
     const size_t number_variables = factory->tree->nx();

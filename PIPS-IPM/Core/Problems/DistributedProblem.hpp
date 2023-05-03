@@ -29,7 +29,9 @@ public:
       std::shared_ptr<Vector<double>> ixupp, std::shared_ptr<GeneralMatrix> A, std::shared_ptr<Vector<double>> bA,
       std::shared_ptr<GeneralMatrix> C, std::shared_ptr<Vector<double>> clow, std::shared_ptr<Vector<double>> iclow,
       std::shared_ptr<Vector<double>> cupp,
-      std::shared_ptr<Vector<double>> icupp, bool add_children = true, bool is_hierarchy_root = false,
+      std::shared_ptr<Vector<double>> icupp,
+      std::shared_ptr<Vector<double>> integrality,
+      bool add_children = true, bool is_hierarchy_root = false,
       bool is_hierarchy_inner_root = false,
       bool is_hierarchy_inner_leaf = false);
 

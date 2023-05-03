@@ -211,6 +211,8 @@ std::unique_ptr<Problem> DistributedFactory::make_problem() const {
    std::shared_ptr<DistributedVector<double>> xupp(tree->createxupp());
    std::shared_ptr<DistributedVector<double>> ixupp(tree->createixupp());
 
+    std::shared_ptr<DistributedVector<double>> integrality(tree->create_variable_integrality_type());
+
 #ifdef TIMING
    MPI_Barrier( tree->getCommWrkrs() );
    t2 = MPI_Wtime() - t2;
@@ -220,7 +222,7 @@ std::unique_ptr<Problem> DistributedFactory::make_problem() const {
 
    return std::make_unique<DistributedProblem>(tree.get(), std::move(c), std::move(Q), std::move(xlow), std::move(ixlow), std::move(xupp),
       std::move(ixupp), std::move(A), std::move(b), std::move(C), std::move(clow), std::move(iclow), std::move(cupp),
-      std::move(icupp));
+      std::move(icupp), std::move(integrality));
 }
 
 std::unique_ptr<Variables> DistributedFactory::make_variables(const Problem& problem) const {
